@@ -6,6 +6,7 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xiaou.common.constant.AdminUserConstant;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.exception.ErrorCode;
@@ -27,12 +28,12 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
         String password = user.getPassword();
         // 1. 校验
         if (StrUtil.isBlank(username) || StrUtil.isBlank(password)) {
-            return R.fail("参数错误");
+            return R.fail(AdminUserConstant.PARAMETER_ERROR);
         }
         // 2. 查询数据库中的用户是否存在
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);
-        queryWrapper.eq("password", password);
+        queryWrapper.eq(AdminUserConstant.USERNAME, username);
+        queryWrapper.eq(AdminUserConstant.PASSWORD, password);
         User userinfo = this.baseMapper.selectOne(queryWrapper);
         // 不存在
         if (userinfo == null) {
