@@ -30,7 +30,7 @@
         <redis.version>3.3.2</redis.version>
         <jackson.version>2.18.3</jackson.version>
         <fastjson2.version>2.0.53</fastjson2.version>
-
+        <satoken.version>1.40.0</satoken.version>
 
         <!-- 插件版本 -->
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -48,6 +48,8 @@
 
     <dependencyManagement>
 
+
+
         <dependencies>
             <!-- SpringBoot的依赖配置-->
             <dependency>
@@ -58,6 +60,12 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- Sa-Token 权限认证, 在线文档：http://sa-token.dev33.cn/ -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot3-starter</artifactId>
+                <version>${satoken.version}</version>
+            </dependency>
             <!-- hutool 的依赖配置-->
             <dependency>
                 <groupId>cn.hutool</groupId>

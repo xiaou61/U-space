@@ -1,5 +1,8 @@
 package com.xiaou.web.service.impl;
 
+import cn.dev33.satoken.stp.SaTokenInfo;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,6 +10,7 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.exception.ErrorCode;
 import com.xiaou.web.domain.User;
+import com.xiaou.web.domain.UserDto;
 import com.xiaou.web.mapper.UserMapper;
 import com.xiaou.web.service.AdminUserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +22,7 @@ import org.springframework.stereotype.Service;
 public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
         implements AdminUserService {
     @Override
-    public R<User> login(User user, HttpServletRequest request) {
+    public R<SaResult> login(User user, HttpServletRequest request) {
         String username = user.getUsername();
         String password = user.getPassword();
         // 1. 校验
@@ -35,9 +39,14 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
             return R.fail("用户名或密码错误");
 
         }
-        // 4. 保存用户的登录态
+        // 3. 保存用户的登录态
         request.getSession().setAttribute("user_login", userinfo);
-        return R.ok("登录成功");
+        //4.保存到sa-token
+        StpUtil.login(userinfo.getId());
+        // 第2步，获取 Token  相关参数
+        SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
+        // 5. 返回结果
+        return R.ok("登录成功", SaResult.data(tokenInfo));
     }
 
     @Override
@@ -59,13 +68,10 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public boolean userLogout(HttpServletRequest request) {
-        // 判断是否已经登录
-        Object userObj = request.getSession().getAttribute("user_login");
-        if (userObj == null) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
-        }
         // 移除登录态
         request.getSession().removeAttribute("user_login");
+        //sa-token登录态移除
+        StpUtil.logout();
         return true;
     }
 }

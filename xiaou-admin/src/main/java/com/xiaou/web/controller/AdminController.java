@@ -1,9 +1,11 @@
 package com.xiaou.web.controller;
 
+import cn.dev33.satoken.util.SaResult;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.ErrorCode;
 import com.xiaou.common.exception.ThrowUtils;
 import com.xiaou.web.domain.User;
+import com.xiaou.web.domain.UserDto;
 import com.xiaou.web.service.AdminUserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +18,7 @@ public class AdminController {
     private AdminUserService adminUserService;
 
     @PostMapping("/login")
-    public R<User> userLogin(@RequestBody User user, HttpServletRequest request) {
+    public R<SaResult> userLogin(@RequestBody User user, HttpServletRequest request) {
         ThrowUtils.throwIf(user == null, ErrorCode.PARAMS_ERROR);
         return adminUserService.login(user, request);
     }
