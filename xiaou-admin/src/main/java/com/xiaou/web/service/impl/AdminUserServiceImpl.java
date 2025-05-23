@@ -1,0 +1,71 @@
+package com.xiaou.web.service.impl;
+
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xiaou.common.domain.R;
+import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.exception.ErrorCode;
+import com.xiaou.web.domain.User;
+import com.xiaou.web.mapper.UserMapper;
+import com.xiaou.web.service.AdminUserService;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+@Service
+@Slf4j
+public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
+        implements AdminUserService {
+    @Override
+    public R<User> login(User user, HttpServletRequest request) {
+        String username = user.getUsername();
+        String password = user.getPassword();
+        // 1. 校验
+        if (StrUtil.isBlank(username) || StrUtil.isBlank(password)) {
+            return R.fail("参数错误");
+        }
+        // 2. 查询数据库中的用户是否存在
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("username", username);
+        queryWrapper.eq("password", password);
+        User userinfo = this.baseMapper.selectOne(queryWrapper);
+        // 不存在
+        if (userinfo == null) {
+            return R.fail("用户名或密码错误");
+
+        }
+        // 4. 保存用户的登录态
+        request.getSession().setAttribute("user_login", userinfo);
+        return R.ok("登录成功");
+    }
+
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        // 判断是否已经登录
+        Object userObj = request.getSession().getAttribute("user_login");
+        User currentUser = (User) userObj;
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 从数据库中查询（追求性能的话可以注释，直接返回上述结果）
+        Integer userId = currentUser.getId();
+        currentUser = this.getById(userId);
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return currentUser;
+    }
+
+    @Override
+    public boolean userLogout(HttpServletRequest request) {
+        // 判断是否已经登录
+        Object userObj = request.getSession().getAttribute("user_login");
+        if (userObj == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+        }
+        // 移除登录态
+        request.getSession().removeAttribute("user_login");
+        return true;
+    }
+}
