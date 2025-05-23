@@ -37,23 +37,23 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
         User userinfo = this.baseMapper.selectOne(queryWrapper);
         // 不存在
         if (userinfo == null) {
-            return R.fail("用户名或密码错误");
+            return R.fail(AdminUserConstant.WRONG_USERNAME_OR_PASSWORD);
 
         }
         //3.保存到sa-token
         StpUtil.login(userinfo.getId());
         // 4. 保存用户的登录态
-        StpUtil.getSession().set("user_login", userinfo);
+        StpUtil.getSession().set(AdminUserConstant.USER_LOGIN, userinfo);
 
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
         // 5. 返回结果
-        return R.ok("登录成功", SaResult.data(tokenInfo));
+        return R.ok(AdminUserConstant.USER_LOGIN_SUCCESS, SaResult.data(tokenInfo));
     }
 
     @Override
     public User getLoginUser() {
         // 判断是否已经登录
-        User currentUser = (User)StpUtil.getSession().get("user_login");
+        User currentUser = (User)StpUtil.getSession().get(AdminUserConstant.USER_LOGIN);
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
@@ -69,7 +69,7 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean userLogout(HttpServletRequest request) {
         // 移除登录态
-        request.getSession().removeAttribute("user_login");
+        request.getSession().removeAttribute(AdminUserConstant.USER_LOGIN);
         //sa-token登录态移除
         StpUtil.logout();
         return true;
