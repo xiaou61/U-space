@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.xiaou</groupId>
+    <artifactId>xiaou-common-bom</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+
+    <description>
+        xiaou-common-bom common依赖项
+    </description>
+
+
+    <properties>
+        <revision>0.0.1</revision>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- web服务 -->
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

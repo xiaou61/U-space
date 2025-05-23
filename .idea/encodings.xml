@@ -2,5 +2,18 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-admin/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-admin/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-bom/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-bom/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-core/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-core/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-web/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-web/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-modules/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-modules/src/main/resources" charset="UTF-8" />
   </component>
 </project>

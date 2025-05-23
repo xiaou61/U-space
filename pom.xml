@@ -6,12 +6,220 @@
 
     <groupId>com.xiaou</groupId>
     <artifactId>u-space</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>xiaou-admin</module>
+        <module>xiaou-common</module>
+        <module>xiaou-modules</module>
+    </modules>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <revision>0.0.1</revision>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+
+
+        <spring-boot.version>3.4.4</spring-boot.version>
+        <hutool.version>5.8.35</hutool.version>
+        <lombok.version>1.18.36</lombok.version>
+        <springdoc.version>2.8.5</springdoc.version>
+        <mybatis-plus.version>3.5.11</mybatis-plus.version>
+        <p6spy.version>3.9.1</p6spy.version>
+        <redis.version>3.3.2</redis.version>
+        <jackson.version>2.18.3</jackson.version>
+        <fastjson2.version>2.0.53</fastjson2.version>
+
+
+        <!-- 插件版本 -->
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-war-plugin.version>3.2.2</maven-war-plugin.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <flatten-maven-plugin.version>1.3.0</flatten-maven-plugin.version>
+
+
+        <!-- 打包默认跳过测试 -->
+        <skipTests>true</skipTests>
+
     </properties>
+
+
+
+    <dependencyManagement>
+
+        <dependencies>
+            <!-- SpringBoot的依赖配置-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- hutool 的依赖配置-->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-bom</artifactId>
+                <version>${hutool.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <!-- sql性能分析插件 -->
+            <dependency>
+                <groupId>p6spy</groupId>
+                <artifactId>p6spy</artifactId>
+                <version>${p6spy.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>${redis.version}</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
+            </dependency>
+
+
+            <!-- common 的依赖配置-->
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+
+
+
+        </dependencies>
+    </dependencyManagement>
+
+
+    <build>
+        <plugins>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <!--关于为什么要开启这个接口-->
+                    <!-- 启用 -parameters 编译器标志 -->
+                    <compilerArgument>-parameters</compilerArgument>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- 插件的 GroupId，标识插件所属的组织 -->
+                <groupId>org.codehaus.mojo</groupId>
+                <!-- 插件的 ArtifactId，标识插件的名称 -->
+                <artifactId>flatten-maven-plugin</artifactId>
+                <!-- 插件的版本号，这里通过变量引用上面定义的版本号 -->
+                <version>${flatten-maven-plugin.version}</version>
+                <configuration>
+                    <!-- 配置扁平化后的 POM 文件的名称 -->
+                    <flattenedPomFilename>pom-xml-flattened</flattenedPomFilename>
+                    <!-- 是否更新原始 POM 文件 -->
+                    <updatePomFile>true</updatePomFile>
+                    <!-- 指定扁平化模式，resolveCiFriendliesOnly 表示仅解析 CI 友好的占位符 -->
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <!-- 定义插件的执行配置 -->
+                    <execution>
+                        <!-- 执行的唯一标识 -->
+                        <id>flatten</id>
+                        <!-- 指定插件绑定的生命周期阶段 -->
+                        <phase>process-resources</phase>
+                        <!-- 定义执行的目标 -->
+                        <goals>
+                            <!-- 执行扁平化操作 -->
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <!-- 定义清理阶段的执行配置 -->
+                    <execution>
+                        <!-- 清理阶段的唯一标识 -->
+                        <id>flatten.clean</id>
+                        <!-- 指定清理阶段绑定的生命周期阶段 -->
+                        <phase>clean</phase>
+                        <!-- 定义清理阶段执行的目标 -->
+                        <goals>
+                            <!-- 执行清理操作 -->
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+
+    </build>
 
 </project>
