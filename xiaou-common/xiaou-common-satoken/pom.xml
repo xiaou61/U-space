@@ -17,6 +17,26 @@
            <groupId>cn.dev33</groupId>
            <artifactId>sa-token-spring-boot3-starter</artifactId>
        </dependency>
+
+       <!-- Sa-Token 整合 RedisTemplate -->
+       <dependency>
+           <groupId>cn.dev33</groupId>
+           <artifactId>sa-token-redis-template</artifactId>
+       </dependency>
+
+       <!-- 提供 Redis 连接池 -->
+       <dependency>
+           <groupId>org.apache.commons</groupId>
+           <artifactId>commons-pool2</artifactId>
+       </dependency>
+
+       <!-- Sa-Token插件：权限缓存与业务缓存分离 -->
+       <dependency>
+           <groupId>cn.dev33</groupId>
+           <artifactId>sa-token-alone-redis</artifactId>
+       </dependency>
+
+
    </dependencies>
 
 </project>

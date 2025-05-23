@@ -30,7 +30,7 @@
         <redis.version>3.3.2</redis.version>
         <jackson.version>2.18.3</jackson.version>
         <fastjson2.version>2.0.53</fastjson2.version>
-        <satoken.version>1.40.0</satoken.version>
+        <satoken.version>1.43.0</satoken.version>
         <redisson.version>3.45.1</redisson.version>
         <lock4j.version>2.2.7</lock4j.version>
 
@@ -66,6 +66,19 @@
             <dependency>
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-spring-boot3-starter</artifactId>
+                <version>${satoken.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-redis-template</artifactId>
+                <version>${satoken.version}</version>
+            </dependency>
+
+            <!-- Sa-Token插件：权限缓存与业务缓存分离 -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-alone-redis</artifactId>
                 <version>${satoken.version}</version>
             </dependency>
             <!-- hutool 的依赖配置-->
