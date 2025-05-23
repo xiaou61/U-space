@@ -16,6 +16,7 @@
         <module>xiaou-common-core</module>
         <module>xiaou-common-mybatis</module>
         <module>xiaou-common-satoken</module>
+        <module>xiaou-common-redis</module>
     </modules>
 
     <properties>
