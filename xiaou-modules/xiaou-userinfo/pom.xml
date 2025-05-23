@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.xiaou</groupId>
+        <artifactId>xiaou-modules</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>xiaou-userinfo</artifactId>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-redis</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

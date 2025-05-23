@@ -24,8 +24,8 @@ public class AdminController {
     }
 
     @GetMapping("/get/login")
-    public R<User> getLoginUser(HttpServletRequest request) {
-        User loginUser = adminUserService.getLoginUser(request);
+    public R<User> getLoginUser() {
+        User loginUser = adminUserService.getLoginUser();
         return R.ok(loginUser);
     }
 

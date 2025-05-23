@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface AdminUserService {
     R<SaResult> login(User user, HttpServletRequest request);
 
-    User getLoginUser(HttpServletRequest request);
+    User getLoginUser();
 
     boolean userLogout(HttpServletRequest request);
 }

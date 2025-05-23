@@ -10,6 +10,10 @@
     </parent>
 
     <artifactId>xiaou-modules</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>xiaou-userinfo</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

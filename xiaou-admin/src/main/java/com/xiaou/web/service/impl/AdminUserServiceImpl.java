@@ -39,21 +39,20 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
             return R.fail("用户名或密码错误");
 
         }
-        // 3. 保存用户的登录态
-        request.getSession().setAttribute("user_login", userinfo);
-        //4.保存到sa-token
+        //3.保存到sa-token
         StpUtil.login(userinfo.getId());
-        // 第2步，获取 Token  相关参数
+        // 4. 保存用户的登录态
+        StpUtil.getSession().set("user_login", userinfo);
+
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
         // 5. 返回结果
         return R.ok("登录成功", SaResult.data(tokenInfo));
     }
 
     @Override
-    public User getLoginUser(HttpServletRequest request) {
+    public User getLoginUser() {
         // 判断是否已经登录
-        Object userObj = request.getSession().getAttribute("user_login");
-        User currentUser = (User) userObj;
+        User currentUser = (User)StpUtil.getSession().get("user_login");
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
