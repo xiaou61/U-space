@@ -12,6 +12,7 @@
     <artifactId>xiaou-common</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>xiaou-common-bom</module>
         <module>xiaou-common-web</module>
         <module>xiaou-common-core</module>
         <module>xiaou-common-mybatis</module>
