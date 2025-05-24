@@ -146,3 +146,17 @@ create table sys_oper_log (
                               key idx_sys_oper_log_s  (status),
                               key idx_sys_oper_log_ot (oper_time)
 ) engine=innodb comment = '操作日志记录';
+
+
+#校园指南表
+CREATE TABLE u_campus_guide (
+                              id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                              title VARCHAR(255) NOT NULL COMMENT '标题',
+                              content TEXT COMMENT '内容描述',
+                              image_list TEXT COMMENT '图片URL列表(JSON字符串)',
+                              keywords TEXT COMMENT '关键词列表(JSON字符串)',
+                              category VARCHAR(50) DEFAULT '校园指南' COMMENT '分类标签，例如 校历、迎新、食堂等',
+                              create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                              is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标记 0-正常 1-删除'
+);

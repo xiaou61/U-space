@@ -36,4 +36,20 @@ public class ServletUtils extends JakartaServletUtil {
             return null;
         }
     }
+
+    /**
+     * 获取客户端 IP 地址（自动获取当前请求）
+     *
+     * @return 客户端 IP 地址
+     */
+    public static String getClientIP() {
+        String ip = getClientIP(getRequest());
+
+        // 如果是 IPv6 本地地址，替换为 localhost（或 127.0.0.1）
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1"; // 或者 return "localhost";
+        }
+        return ip;
+    }
+
 }

@@ -56,8 +56,6 @@ public class LogAspect {
      */
     @Before(value = "@annotation(controllerLog)")
     public void doBefore(JoinPoint joinPoint, Log controllerLog) {
-        log.info(">>> LogAspect.doBefore: 拦截到方法：{}，title={}",
-                joinPoint.getSignature().toShortString(), controllerLog.title());
         StopWatch stopWatch = new StopWatch();
         KEY_CACHE.set(stopWatch);
         stopWatch.start();
@@ -91,8 +89,8 @@ public class LogAspect {
             OperLogEvent operLog = new OperLogEvent();
             operLog.setStatus(BusinessStatus.SUCCESS.ordinal());
             // todo 后续添加
-//            String ip = ServletUtils.getClientIP();
-//            operLog.setOperIp(ip);
+            String ip = ServletUtils.getClientIP();
+            operLog.setOperIp(ip);
             operLog.setOperUrl(StringUtils.substring(ServletUtils.getRequest().getRequestURI(), 0, 255));
             operLog.setOperName(LoginHelper.getCurrentUsername());
 

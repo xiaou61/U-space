@@ -61,6 +61,11 @@
             <artifactId>xiaou-moudules-log</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-campus</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 
