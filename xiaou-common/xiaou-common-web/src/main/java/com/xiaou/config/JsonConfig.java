@@ -1,28 +1,40 @@
 package com.xiaou.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import org.springframework.boot.jackson.JsonComponent;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 
-/**
- * Spring MVC Json 配置
- */
-@JsonComponent
+import java.time.format.DateTimeFormatter;
+
+@Configuration
 public class JsonConfig {
 
-    /**
-     * 添加 Long 转 json 精度丢失的配置
-     */
+    private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     @Bean
-    public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {
-        ObjectMapper objectMapper = builder.createXmlMapper(false).build();
-        SimpleModule module = new SimpleModule();
-        module.addSerializer(Long.class, ToStringSerializer.instance);
-        module.addSerializer(Long.TYPE, ToStringSerializer.instance);
-        objectMapper.registerModule(module);
-        return objectMapper;
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> {
+            // Long 转 String
+            SimpleModule longModule = new SimpleModule();
+            longModule.addSerializer(Long.class, ToStringSerializer.instance);
+            longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
+            builder.modulesToInstall(longModule);
+
+            // JavaTimeModule + LocalDateTime 序列化器
+            JavaTimeModule javaTimeModule = new JavaTimeModule();
+            javaTimeModule.addSerializer(java.time.LocalDateTime.class,
+                    new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT)));
+            builder.modulesToInstall(javaTimeModule);
+
+            builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+            // 设置 java.util.Date 格式
+            builder.simpleDateFormat(DATETIME_FORMAT);
+        };
     }
 }

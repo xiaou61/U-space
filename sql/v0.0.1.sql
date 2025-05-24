@@ -160,3 +160,13 @@ CREATE TABLE u_campus_guide (
                               update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                               is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标记 0-正常 1-删除'
 );
+
+
+CREATE TABLE u_place_category (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                                name VARCHAR(100) NOT NULL COMMENT '分类名称',
+                                create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                create_by VARCHAR(50) DEFAULT NULL COMMENT '创建人',
+                                update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                update_by VARCHAR(50) DEFAULT NULL COMMENT '更新人'
+) COMMENT='地点分类表';
