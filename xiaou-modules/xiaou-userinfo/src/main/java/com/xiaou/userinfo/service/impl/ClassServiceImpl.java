@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.xiaou.userinfo.utils.UserContextUtil.getCurrentUsername;
+import static com.xiaou.utils.LoginHelper.getCurrentUsername;
 
 @Service
 public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity> implements ClassService {

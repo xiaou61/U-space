@@ -17,6 +17,7 @@ import com.xiaou.userinfo.mapper.ClassMapper;
 import com.xiaou.userinfo.mapper.CollegeMapper;
 import com.xiaou.userinfo.mapper.MajorMapper;
 import com.xiaou.userinfo.service.MajorService;
+import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.xiaou.userinfo.utils.UserContextUtil.getCurrentUsername;
+import static com.xiaou.utils.LoginHelper.getCurrentUsername;
+
 
 @Service
 public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements MajorService {

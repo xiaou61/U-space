@@ -1,9 +1,6 @@
 
 package com.xiaou.userinfo.service.impl;
 
-import cn.dev33.satoken.stp.StpUtil;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -24,9 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import static com.xiaou.userinfo.utils.UserContextUtil.getCurrentUsername;
-
 import java.time.LocalDateTime;
+
+import static com.xiaou.utils.LoginHelper.getCurrentUsername;
 
 @Service
 @Slf4j

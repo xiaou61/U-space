@@ -1,14 +1,15 @@
-package com.xiaou.userinfo.utils;
+package com.xiaou.utils;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import lombok.NoArgsConstructor;
 
-public class UserContextUtil {
-
+@NoArgsConstructor
+public class LoginHelper {
     /**
      * 获取当前登录用户的用户名
-     * 
+     *
      * @return 用户名（如果未登录则可能返回 null）
      */
     public static String getCurrentUsername() {

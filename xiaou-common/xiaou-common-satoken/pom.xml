@@ -36,6 +36,14 @@
            <artifactId>sa-token-alone-redis</artifactId>
        </dependency>
 
+       <dependency>
+           <groupId>com.alibaba.fastjson2</groupId>
+           <artifactId>fastjson2</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.projectlombok</groupId>
+           <artifactId>lombok</artifactId>
+       </dependency>
 
    </dependencies>
 
