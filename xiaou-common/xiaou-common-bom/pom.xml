@@ -46,6 +46,11 @@
                 <artifactId>xiaou-common-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

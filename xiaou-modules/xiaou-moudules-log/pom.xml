@@ -9,8 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-userinfo</artifactId>
-
+    <artifactId>xiaou-moudules-log</artifactId>
 
     <dependencies>
         <dependency>
@@ -23,23 +22,11 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-mybatis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-satoken</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.fastjson2</groupId>
-            <artifactId>fastjson2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mybatis</artifactId>
         </dependency>
     </dependencies>
 

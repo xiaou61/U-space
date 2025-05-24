@@ -8,4 +8,6 @@ server:
 spring:
   profiles:
     active: dev
-
+thread-pool:
+  # 是否开启线程池
+  enabled: true

@@ -5,7 +5,6 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.userinfo.domain.bo.UClassBO;
 import com.xiaou.userinfo.domain.vo.UClassVO;
-import com.xiaou.userinfo.domain.vo.UMajorVO;
 import com.xiaou.userinfo.service.ClassService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
