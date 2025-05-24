@@ -23,13 +23,14 @@ public class JsonConfig {
             SimpleModule longModule = new SimpleModule();
             longModule.addSerializer(Long.class, ToStringSerializer.instance);
             longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
-            builder.modulesToInstall(longModule);
 
             // JavaTimeModule + LocalDateTime 序列化器
             JavaTimeModule javaTimeModule = new JavaTimeModule();
             javaTimeModule.addSerializer(java.time.LocalDateTime.class,
                     new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT)));
-            builder.modulesToInstall(javaTimeModule);
+
+            // 一次性注册两个模块，确保都生效
+            builder.modulesToInstall(longModule, javaTimeModule);
 
             builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
