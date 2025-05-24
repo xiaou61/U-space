@@ -38,7 +38,6 @@ import java.util.StringJoiner;
 @Slf4j
 @Aspect
 @AutoConfiguration
-@Component
 public class LogAspect {
 
     /**
