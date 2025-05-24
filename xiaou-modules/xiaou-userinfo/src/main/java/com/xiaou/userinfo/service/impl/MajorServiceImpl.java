@@ -3,6 +3,7 @@ package com.xiaou.userinfo.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,10 +12,12 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.userinfo.domain.bo.UMajorBO;
+import com.xiaou.userinfo.domain.entity.ClassEntity;
 import com.xiaou.userinfo.domain.entity.College;
 import com.xiaou.userinfo.domain.entity.Major;
 import com.xiaou.userinfo.domain.vo.UCollegeVO;
 import com.xiaou.userinfo.domain.vo.UMajorVO;
+import com.xiaou.userinfo.mapper.ClassMapper;
 import com.xiaou.userinfo.mapper.CollegeMapper;
 import com.xiaou.userinfo.mapper.MajorMapper;
 import com.xiaou.userinfo.service.MajorService;
@@ -34,6 +37,9 @@ public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements
 
     @Resource
     private CollegeMapper collegeMapper;
+
+    @Resource
+    private ClassMapper classMapper;
 
     @Override
     public R<UMajorVO> addMajor(UMajorBO majorBO) {
@@ -67,6 +73,16 @@ public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements
 
     @Override
     public R<Void> deleteMajor(Long id) {
+        // 先检查该专业下是否还有班级存在
+        Long count = classMapper.selectCount(
+                new LambdaQueryWrapper<ClassEntity>()
+                        .eq(ClassEntity::getMajorId, id)
+        );
+        if (count != null && count > 0) {
+            return R.fail("该专业下仍有班级存在，请先删除其下属班级");
+        }
+
+        // 没有班级了，才执行删除
         int rows = majorMapper.deleteById(id);
         if (rows > 0) {
             return R.ok();
@@ -74,6 +90,7 @@ public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements
             return R.fail("专业不存在或已被删除");
         }
     }
+
 
     @Override
     public R<PageRespDto<UMajorVO>> allMajorPage(PageReqDto dto) {
@@ -102,7 +119,6 @@ public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements
         }
         return R.ok(UMajorVO.fromEntity(major, getCollegeNameById(id)));
     }
-
 
 
     /**
