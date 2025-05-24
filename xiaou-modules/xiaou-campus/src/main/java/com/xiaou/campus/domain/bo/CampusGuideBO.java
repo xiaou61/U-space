@@ -1,15 +1,16 @@
 package com.xiaou.campus.domain.bo;
 
+import com.alibaba.fastjson2.JSON;
 import com.xiaou.campus.domain.entity.CampusGuide;
 import io.github.linpeilie.annotations.AutoMapper;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@AutoMapper(target = CampusGuide.class)
 public class CampusGuideBO {
 
     @NotBlank(message = "标题不能为空")
@@ -30,5 +31,23 @@ public class CampusGuideBO {
     private List<String> keywords;
 
     private String category;
+
+    public CampusGuide toEntity() {
+        CampusGuide entity = new CampusGuide();
+        entity.setTitle(this.title);
+        entity.setContent(this.content);
+        entity.setCategory(this.category);
+        if (this.imageList != null) {
+            entity.setImageList(JSON.toJSONString(this.imageList));
+        }
+        if (this.keywords != null) {
+            entity.setKeywords(JSON.toJSONString(this.keywords));
+        }
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreateTime(now);
+        entity.setUpdateTime(now);
+        entity.setIsDeleted(0);
+        return entity;
+    }
 
 }

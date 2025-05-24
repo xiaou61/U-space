@@ -1,5 +1,7 @@
 package com.xiaou.campus.domain.vo;
 
+import com.alibaba.fastjson2.JSON;
+import com.xiaou.campus.domain.entity.CampusGuide;
 import lombok.Data;
 
 import java.util.List;
@@ -17,6 +19,19 @@ public class CampusGuideVO {
 
     private String category;
 
+    public static CampusGuideVO fromEntity(CampusGuide entity) {
+        CampusGuideVO vo = new CampusGuideVO();
+        vo.setTitle(entity.getTitle());
+        vo.setContent(entity.getContent());
+        vo.setCategory(entity.getCategory());
+        if (entity.getImageList() != null) {
+            vo.setImageList(JSON.parseArray(entity.getImageList(), String.class));
+        }
+        if (entity.getKeywords() != null) {
+            vo.setKeywords(JSON.parseArray(entity.getKeywords(), String.class));
+        }
+        return vo;
+    }
 
 
 }
