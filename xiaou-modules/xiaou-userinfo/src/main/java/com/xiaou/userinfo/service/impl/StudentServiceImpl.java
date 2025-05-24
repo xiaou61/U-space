@@ -1,5 +1,6 @@
 package com.xiaou.userinfo.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -68,6 +69,67 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
         //封装数据
         return R.ok(StudentVO.fromEntity(student, collegeName, majorName, className));
 
+    }
+
+
+
+    @Override
+    @Transactional
+    public R<StudentVO> updateStudent(UStudentBO studentBO) {
+        // 1. 根据学号查出原实体
+        Student student = studentMapper.selectOne(
+                new LambdaQueryWrapper<Student>()
+                        .eq(Student::getStudentNumber, studentBO.getStudentNumber())
+        );
+        if (student == null) {
+            return R.fail("学生不存在");
+        }
+
+        // 2. 只复制可更新字段
+        student.setName(studentBO.getName());
+        student.setGender(studentBO.getGender());
+        student.setPhone(studentBO.getPhone());
+        student.setStatus(studentBO.getStatus());
+        student.setUpdatedBy(getCurrentUsername());
+        student.setUpdatedTime(LocalDateTime.now());
+        studentMapper.updateById(student);
+
+        // 3. 关联表中取出已有的关联信息，用于 VO 返回
+        StudentInfoLink link = studentInfoLinkMapper.selectOne(
+                new LambdaQueryWrapper<StudentInfoLink>()
+                        .eq(StudentInfoLink::getStudentNumber, student.getStudentNumber())
+        );
+        String collegeName = collegeMapper.selectById(link.getCollegeId()).getName();
+        String majorName   = majorMapper.selectById(link.getMajorId()).getName();
+        String className   = classMapper.selectById(link.getClassId()).getName();
+
+        // 4. 返回更新后的 VO
+        StudentVO vo = StudentVO.fromEntity(student, collegeName, majorName, className);
+        return R.ok(vo);
+    }
+
+    /**
+     * 删除学生（先删关联表，再删学生表）
+     */
+    @Override
+    @Transactional
+    public R<Void> deleteStudent(String studentNumber) {
+        // 1. 删除关联信息
+        int linkRows = studentInfoLinkMapper.delete(
+                new LambdaQueryWrapper<StudentInfoLink>()
+                        .eq(StudentInfoLink::getStudentNumber, studentNumber)
+        );
+
+        // 2. 删除学生记录
+        int stuRows = studentMapper.delete(
+                new LambdaQueryWrapper<Student>()
+                        .eq(Student::getStudentNumber, studentNumber)
+        );
+        if (stuRows > 0) {
+            return R.ok();
+        } else {
+            return R.fail("学生不存在或已被删除");
+        }
     }
 
     @Override

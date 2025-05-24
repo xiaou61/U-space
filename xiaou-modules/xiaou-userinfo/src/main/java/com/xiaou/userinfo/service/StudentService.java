@@ -13,5 +13,11 @@ public interface StudentService {
     R<StudentVO> addStudent(UStudentBO studentBO);
 
 
+    R<StudentVO> updateStudent(UStudentBO studentBO);
+
+    R<Void> deleteStudent(String studentNumber);
+
+
+
     R<PageRespDto<StudentInfoVO>> allStudentPage(StudentPageReqDto pageReqDto);
 }

@@ -1,8 +1,5 @@
 package com.xiaou.userinfo.service.impl;
 
-import cn.dev33.satoken.stp.StpUtil;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -15,7 +12,6 @@ import com.xiaou.userinfo.domain.bo.UMajorBO;
 import com.xiaou.userinfo.domain.entity.ClassEntity;
 import com.xiaou.userinfo.domain.entity.College;
 import com.xiaou.userinfo.domain.entity.Major;
-import com.xiaou.userinfo.domain.vo.UCollegeVO;
 import com.xiaou.userinfo.domain.vo.UMajorVO;
 import com.xiaou.userinfo.mapper.ClassMapper;
 import com.xiaou.userinfo.mapper.CollegeMapper;

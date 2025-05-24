@@ -13,10 +13,7 @@ import com.xiaou.userinfo.service.StudentService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/student")
@@ -34,6 +31,26 @@ public class StudentController {
     @PostMapping("/add")
     public R<StudentVO> addStudent(@RequestBody @Valid UStudentBO studentBO) {
         return studentService.addStudent(studentBO);
+    }
+
+    /**
+     * 更新学生信息
+     * @param studentBO
+     * @return
+     */
+    @PostMapping("/update")
+    public R<StudentVO> updateStudent(@RequestBody @Valid UStudentBO studentBO) {
+        return studentService.updateStudent(studentBO);
+    }
+
+    /**
+     * 删除学生信息
+     * @param studentNumber
+     * @return
+     */
+    @DeleteMapping("/delete/{studentNumber}")
+    public R<Void> deleteStudent(@PathVariable String studentNumber) {
+        return studentService.deleteStudent(studentNumber);
     }
 
 
