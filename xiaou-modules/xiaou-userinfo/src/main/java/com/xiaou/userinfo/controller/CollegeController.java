@@ -26,8 +26,8 @@ public class CollegeController {
     /**
      * 添加学院
      */
-    @PostMapping("/add")
     @Log(title = "添加学院", businessType = BusinessType.INSERT)
+    @PostMapping("/add")
     public R<UCollegeVO> addCollege(@RequestBody @Valid UCollegeBO collegeBO) {
         return collegeService.addCollege(collegeBO);
     }
@@ -35,6 +35,7 @@ public class CollegeController {
     /**
      * 修改学院
      */
+    @Log(title = "修改学院", businessType = BusinessType.UPDATE)
     @PutMapping("/update/{id}")
     public R<UCollegeVO> updateCollege(
             @PathVariable("id") Long id,
@@ -45,6 +46,7 @@ public class CollegeController {
     /**
      * 删除学院
      */
+    @Log(title = "删除学院", businessType = BusinessType.DELETE)
     @DeleteMapping("/delete/{id}")
     public R<Void> deleteCollege(@PathVariable("id") Long id) {
         return collegeService.deleteCollege(id);
