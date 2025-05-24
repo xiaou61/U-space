@@ -48,10 +48,15 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
     @Override
     public R<PageRespDto<SysOperLogVo>> selectPageOperLogList(PageReqDto dto) {
         IPage<SysOperLog> page = new Page<>();
+
         page.setCurrent(dto.getPageNum());
         page.setSize(dto.getPageSize());
 
-        IPage<SysOperLog> collegeIPage = baseMapper.selectPage(page, new QueryWrapper<>());
+        // 添加排序字段（以 create_time 字段为例）
+        QueryWrapper<SysOperLog> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("oper_time");
+
+        IPage<SysOperLog> collegeIPage = baseMapper.selectPage(page, queryWrapper);
 
         // 转换实体为 VO
         List<SysOperLogVo> voList = collegeIPage.getRecords().stream()
