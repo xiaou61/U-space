@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.log.domain.bo.SysOperLogBo;
 import com.xiaou.log.domain.entity.SysOperLog;
 import com.xiaou.log.domain.vo.SysOperLogVo;
@@ -54,7 +55,7 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
 
         // 添加排序字段（以 create_time 字段为例）
         QueryWrapper<SysOperLog> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("oper_time");
+        QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
 
         IPage<SysOperLog> collegeIPage = baseMapper.selectPage(page, queryWrapper);
 

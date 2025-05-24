@@ -20,4 +20,8 @@ public class PageReqDto {
      */
     private boolean fetchAll = false;
 
+    private String sortField; // 排序字段
+
+    private Boolean desc = true; // 是否降序，默认 true（倒序）
+
 }

@@ -72,6 +72,11 @@
             <artifactId>mapstruct-plus-spring-boot-starter</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mybatis</artifactId>
+        </dependency>
+
 
     </dependencies>
 </project>
