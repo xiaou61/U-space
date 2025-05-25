@@ -21,3 +21,18 @@ spring:
 thread-pool:
   # 是否开启线程池
   enabled: true
+dromara:
+  x-file-storage: #文件存储配置
+    default-platform: tencent-cos-1 #默认使用的存储平台
+    thumbnail-suffix: ".min.jpg" #缩略图后缀，例如【.min.jpg】【.png】
+    tencent-cos: #腾讯云cos配置
+      - platform: tencent-cos-1 #平台标识
+        enable-storage: true  # 启用存储
+        secret-id: AKIDYzDG8oGX2PZdU8YkjV4PXSCj393jKisF
+        secret-key: Y6VhhXAdtwlOo0zlJl26wZzBAvTnxtc7
+        region: ap-chengdu #存仓库所在地域
+        bucket-name: 11-1305448902
+        domain: https://11-1305448902.cos.ap-chengdu.myqcloud.com/ # 访问域名，注意“/”结尾，例如：https://abc.cos.ap-nanjing.myqcloud.com/
+        base-path: upload/ # 基础路径
+
+

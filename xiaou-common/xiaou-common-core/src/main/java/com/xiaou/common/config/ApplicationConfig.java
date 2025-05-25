@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAspectJAutoProxy
 @EnableAsync(proxyTargetClass = true)
 @EnableConfigurationProperties
+
 public class ApplicationConfig {
 
 }

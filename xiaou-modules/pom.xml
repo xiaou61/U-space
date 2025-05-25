@@ -15,6 +15,7 @@
         <module>xiaou-userinfo</module>
         <module>xiaou-modules-log</module>
         <module>xiaou-campus</module>
+        <module>xiaou-modules-fileupload</module>
     </modules>
 
     <properties>
