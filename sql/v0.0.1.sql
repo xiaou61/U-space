@@ -227,3 +227,10 @@ CREATE TABLE u_building_info (
                                  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                                  CONSTRAINT fk_building_category FOREIGN KEY (category_id) REFERENCES u_place_category(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='建筑信息表';
+
+#qa问答
+CREATE TABLE `u_qa_pairs` (
+                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          q TEXT NOT NULL,
+                          a TEXT NOT NULL
+);

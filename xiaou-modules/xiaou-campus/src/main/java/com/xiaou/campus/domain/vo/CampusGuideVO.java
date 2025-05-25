@@ -9,6 +9,8 @@ import java.util.List;
 @Data
 public class CampusGuideVO {
 
+    private Long id;
+
     private String title;
 
     private String content;
@@ -21,6 +23,7 @@ public class CampusGuideVO {
 
     public static CampusGuideVO fromEntity(CampusGuide entity) {
         CampusGuideVO vo = new CampusGuideVO();
+        vo.setId(entity.getId());
         vo.setTitle(entity.getTitle());
         vo.setContent(entity.getContent());
         vo.setCategory(entity.getCategory());
