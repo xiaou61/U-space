@@ -49,7 +49,6 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
     @Override
     public R<PageRespDto<SysOperLogVo>> selectPageOperLogList(PageReqDto dto) {
         IPage<SysOperLog> page = new Page<>();
-
         page.setCurrent(dto.getPageNum());
         page.setSize(dto.getPageSize());
 

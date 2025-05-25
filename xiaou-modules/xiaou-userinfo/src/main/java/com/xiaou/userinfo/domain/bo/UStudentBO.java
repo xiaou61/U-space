@@ -28,13 +28,10 @@ public class UStudentBO {
     private String status;          // 学籍状态（在读、休学、退学、毕业）
 
     //专业id
-    @NotNull(message = "专业id不能为空")
     private Long majorId;
     //班级id
-    @NotNull(message = "班级id不能为空")
     private Long classId;
     //学院id
-    @NotNull(message = "学院id不能为空")
     private Long collegeId;
 
 

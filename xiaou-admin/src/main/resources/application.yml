@@ -8,6 +8,16 @@ server:
 spring:
   profiles:
     active: dev
+  # 文件上传
+  servlet:
+    multipart:
+      # 单个文件大小
+      max-file-size: 100MB
+      # 设置总上传的文件大小
+      max-request-size: 200MB
+  mvc:
+    # 设置静态资源路径 防止所有请求都去查静态资源
+    static-path-pattern: /static/**
 thread-pool:
   # 是否开启线程池
   enabled: true
