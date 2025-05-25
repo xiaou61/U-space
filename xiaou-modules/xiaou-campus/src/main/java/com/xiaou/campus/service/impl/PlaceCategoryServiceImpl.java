@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.campus.domain.bo.PlaceCategoryBO;
+import com.xiaou.campus.domain.entity.BuildingInfo;
 import com.xiaou.campus.domain.entity.CampusGuide;
 import com.xiaou.campus.domain.entity.PlaceCategory;
 import com.xiaou.campus.domain.vo.PlaceCategoryVO;
+import com.xiaou.campus.mapper.BuildingMapper;
 import com.xiaou.campus.mapper.PlaceCategoryMapper;
 import com.xiaou.campus.service.PlaceCategoryService;
 import com.xiaou.common.domain.R;
@@ -26,6 +28,9 @@ public class PlaceCategoryServiceImpl extends ServiceImpl<PlaceCategoryMapper, P
     @Resource
     private PlaceCategoryMapper placeCategoryMapper;
 
+    @Resource
+    private BuildingMapper buildingMapper;
+
     @Override
     public R<PlaceCategoryVO> addCategory(PlaceCategoryBO bo) {
         PlaceCategory placeCategory = MapstructUtils.convert(bo, PlaceCategory.class);
@@ -43,12 +48,21 @@ public class PlaceCategoryServiceImpl extends ServiceImpl<PlaceCategoryMapper, P
             return R.fail("分类不存在");
         }
 
+        // 判断该分类下是否有建筑信息
+        QueryWrapper<BuildingInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("category_id", id);
+        Long count = buildingMapper.selectCount(queryWrapper);
+        if (count > 0) {
+            return R.fail("该分类下存在地点信息，不能删除");
+        }
+
         int rows = placeCategoryMapper.deleteById(id);
         return rows > 0 ? R.ok(true) : R.fail("删除失败");
     }
 
+
     @Override
-    public R<PlaceCategoryVO> updateCategory(Long id,PlaceCategoryBO bo) {
+    public R<PlaceCategoryVO> updateCategory(Long id, PlaceCategoryBO bo) {
         PlaceCategory existing = placeCategoryMapper.selectById(id);
         if (existing == null) {
             return R.fail("分类不存在");
