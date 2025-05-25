@@ -16,3 +16,16 @@ sa-token:
     host: 127.0.0.1
     port: 6379
 
+#文件上传
+#dromara:
+#  x-file-storage:
+#    default-platform: tencent-cos-1
+#    tencent-cos:
+#      - platform: tencent-cos-1
+#        enable-storage: true
+#        secret-id: xxx
+#        secret-key: xxxx
+#        region: ap-chengdu
+#        bucket-name: xxx
+#        domain: xxx
+#        base-path: upload/
