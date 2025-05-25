@@ -36,3 +36,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# 忽略敏感配置文件
+application-secret.yml
