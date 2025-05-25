@@ -162,14 +162,7 @@ CREATE TABLE u_campus_guide (
 );
 
 
-CREATE TABLE u_place_category (
-                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-                                name VARCHAR(100) NOT NULL COMMENT '分类名称',
-                                create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                create_by VARCHAR(50) DEFAULT NULL COMMENT '创建人',
-                                update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                                update_by VARCHAR(50) DEFAULT NULL COMMENT '更新人'
-) COMMENT='地点分类表';
+
 
 
 
@@ -206,3 +199,31 @@ CREATE TABLE `u_file_detail`
     PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 ROW_FORMAT = DYNAMIC COMMENT ='文件记录表';
 
+
+
+CREATE TABLE u_place_category (
+                                  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                                  name VARCHAR(100) NOT NULL COMMENT '分类名称',
+                                  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                  create_by VARCHAR(50) DEFAULT NULL COMMENT '创建人',
+                                  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                  update_by VARCHAR(50) DEFAULT NULL COMMENT '更新人'
+) COMMENT='地点分类表';
+
+-- 地点信息表
+CREATE TABLE u_building_info (
+                                 id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+                                 name VARCHAR(255) NOT NULL COMMENT '建筑名称',
+                                 aliases VARCHAR(255) DEFAULT NULL COMMENT '别名或用途说明',
+                                 img TEXT COMMENT '全景图 URL',
+                                 images JSON COMMENT '详情图列表，JSON 数组字符串',
+                                 description TEXT COMMENT '建筑描述信息',
+                                 latitude DECIMAL(10, 7) COMMENT '纬度',
+                                 longitude DECIMAL(10, 7) COMMENT '经度',
+                                 category_id BIGINT NOT NULL COMMENT '分类ID',
+                                 create_by VARCHAR(50) DEFAULT NULL COMMENT '创建人',
+                                 create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 update_by VARCHAR(50) DEFAULT NULL COMMENT '更新人',
+                                 update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                 CONSTRAINT fk_building_category FOREIGN KEY (category_id) REFERENCES u_place_category(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='建筑信息表';
