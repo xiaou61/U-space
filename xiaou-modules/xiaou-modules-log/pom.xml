@@ -9,7 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-moudules-log</artifactId>
+    <artifactId>xiaou-modules-log</artifactId>
 
     <dependencies>
         <dependency>

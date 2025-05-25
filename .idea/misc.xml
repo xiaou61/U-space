@@ -11,6 +11,7 @@
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/xiaou-common/xiaou-common-bom/pom.xml" />
+        <option value="$PROJECT_DIR$/xiaou-modules/xiaou-modules-log/pom.xml" />
       </list>
     </option>
   </component>

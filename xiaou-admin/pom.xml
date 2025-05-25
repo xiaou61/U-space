@@ -58,7 +58,7 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-moudules-log</artifactId>
+            <artifactId>xiaou-modules-log</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>
