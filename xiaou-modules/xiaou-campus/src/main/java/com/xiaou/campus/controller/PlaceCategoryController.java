@@ -50,7 +50,7 @@ public class PlaceCategoryController {
     /**
      * 分页查询地点分类
      */
-    @GetMapping("/list")
+    @PostMapping("/list")
     public R<PageRespDto<PlaceCategoryVO>> list(@RequestBody PageReqDto req) {
         return placeCategoryService.list(req);
     }
