@@ -212,7 +212,7 @@ CREATE TABLE u_place_category (
 
 -- 地点信息表
 CREATE TABLE u_building_info (
-                                 id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+                                 id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
                                  name VARCHAR(255) NOT NULL COMMENT '建筑名称',
                                  aliases VARCHAR(255) DEFAULT NULL COMMENT '别名或用途说明',
                                  img TEXT COMMENT '全景图 URL',
@@ -230,7 +230,7 @@ CREATE TABLE u_building_info (
 
 #qa问答
 CREATE TABLE `u_qa_pairs` (
-                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
                           q TEXT NOT NULL,
                           a TEXT NOT NULL
 );

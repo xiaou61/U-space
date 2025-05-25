@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class BuildingInfoVO {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 

@@ -36,7 +36,7 @@ public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, BuildingInf
     }
 
     @Override
-    public R<BuildingInfoVO> updateBuild(Integer id, BuildingInfoBO buildingInfoBO) {
+    public R<BuildingInfoVO> updateBuild(Long id, BuildingInfoBO buildingInfoBO) {
         BuildingInfo existing = baseMapper.selectById(id);
         if (existing == null) {
             return R.fail("更新失败，建筑信息不存在");
@@ -58,7 +58,7 @@ public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, BuildingInf
 
 
     @Override
-    public R<String> deleteBuild(Integer id) {
+    public R<String> deleteBuild(Long id) {
         int rows = baseMapper.deleteById(id);
         if (rows > 0) {
             return R.ok("删除成功");

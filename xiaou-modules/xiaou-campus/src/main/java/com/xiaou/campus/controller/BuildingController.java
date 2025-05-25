@@ -35,14 +35,14 @@ public class BuildingController {
 
     @Log(title = "更新建筑地点", businessType = BusinessType.UPDATE)
     @PutMapping("/update/{id}")
-    public R<BuildingInfoVO> updateBuilding(@PathVariable Integer id,
+    public R<BuildingInfoVO> updateBuilding(@PathVariable Long id,
                                             @Valid @RequestBody BuildingInfoBO buildingInfoBO) {
         return buildingService.updateBuild(id, buildingInfoBO);
     }
 
     @Log(title = "删除建筑地点", businessType = BusinessType.DELETE)
     @DeleteMapping("/delete/{id}")
-    public R<String> deleteBuilding(@PathVariable Integer id) {
+    public R<String> deleteBuilding(@PathVariable Long id) {
         return buildingService.deleteBuild(id);
     }
 

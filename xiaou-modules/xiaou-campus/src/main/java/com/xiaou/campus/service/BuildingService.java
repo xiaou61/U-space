@@ -11,9 +11,9 @@ import com.xiaou.common.page.PageRespDto;
 public interface BuildingService {
     R<BuildingInfoVO> addBuild(BuildingInfoBO bo);
 
-    R<BuildingInfoVO> updateBuild(Integer id, BuildingInfoBO buildingInfoBO);
+    R<BuildingInfoVO> updateBuild(Long id, BuildingInfoBO buildingInfoBO);
 
-    R<String> deleteBuild(Integer id);
+    R<String> deleteBuild(Long id);
 
     R<PageRespDto<BuildingInfoVO>> allGuidePage(PageReqDto pageReqDto);
 }

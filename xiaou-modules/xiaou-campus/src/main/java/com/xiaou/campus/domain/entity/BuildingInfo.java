@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class BuildingInfo {
 
     @TableId
-    private Integer id;
+    private Long id;
 
     private String name;
 

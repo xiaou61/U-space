@@ -1,7 +1,6 @@
 package com.xiaou.campus.controller;
 
 import com.xiaou.campus.domain.bo.CampusGuideBO;
-import com.xiaou.campus.domain.entity.CampusGuide;
 import com.xiaou.campus.domain.vo.CampusGuideVO;
 import com.xiaou.campus.service.CampusGuideService;
 import com.xiaou.common.domain.R;
@@ -10,8 +9,6 @@ import com.xiaou.common.page.PageRespDto;
 import com.xiaou.log.annotation.Log;
 import com.xiaou.log.enums.BusinessType;
 import jakarta.annotation.Resource;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
