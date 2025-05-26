@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.common.utils.PasswordUtil;
+import com.xiaou.user.domain.entity.StudentUser;
+import com.xiaou.user.mapper.StudentUserMapper;
 import com.xiaou.userinfo.domain.bo.UStudentBO;
 import com.xiaou.userinfo.domain.entity.Student;
 import com.xiaou.userinfo.domain.entity.StudentInfoLink;
@@ -38,9 +41,23 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     @Resource
     private StudentInfoLinkMapper studentInfoLinkMapper;
 
+    @Resource
+    private StudentUserMapper studentUserMapper;
+
     @Override
     @Transactional
     public R<StudentVO> addStudent(UStudentBO studentBO) {
+
+        //首先确认学号是否重复 不重复再执行下面操作
+        Student count = studentMapper.selectOne(
+                new LambdaQueryWrapper<Student>()
+                        .eq(Student::getStudentNumber, studentBO.getStudentNumber())
+        );
+        if (count != null) {
+            return R.fail("学号重复");
+        }
+
+
         Student student = new Student();
         BeanUtils.copyProperties(studentBO, student);
         student.setCreatedTime(LocalDateTime.now());
@@ -65,11 +82,18 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
         studentInfoLink.setCreatedTime(LocalDateTime.now());
         studentInfoLinkMapper.insert(studentInfoLink);
 
+        //为学生创建账号
+        StudentUser studentUser = new StudentUser();
+        studentUser.setStudentNumber(student.getStudentNumber());
+        //密码设置为学生手机号后六位
+        studentUser.setPassword(PasswordUtil.getEncryptPassword(studentBO.getPhone().substring(studentBO.getPhone().length() - 6)));
+        studentUser.setName(studentBO.getName());
+        studentUserMapper.insert(studentUser);
+
         //封装数据
         return R.ok(StudentVO.fromEntity(student, collegeName, majorName, className));
 
     }
-
 
 
     @Override
@@ -99,8 +123,8 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                         .eq(StudentInfoLink::getStudentNumber, student.getStudentNumber())
         );
         String collegeName = collegeMapper.selectById(link.getCollegeId()).getName();
-        String majorName   = majorMapper.selectById(link.getMajorId()).getName();
-        String className   = classMapper.selectById(link.getClassId()).getName();
+        String majorName = majorMapper.selectById(link.getMajorId()).getName();
+        String className = classMapper.selectById(link.getClassId()).getName();
 
         // 4. 返回更新后的 VO
         StudentVO vo = StudentVO.fromEntity(student, collegeName, majorName, className);
@@ -124,7 +148,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                 new LambdaQueryWrapper<Student>()
                         .eq(Student::getStudentNumber, studentNumber)
         );
-        if (stuRows > 0) {
+        //3.删除学生账户信息
+        int stuUserRows = studentUserMapper.delete(
+                new LambdaQueryWrapper<StudentUser>()
+                        .eq(StudentUser::getStudentNumber, studentNumber)
+        );
+        if (stuRows > 0 && stuUserRows > 0) {
             return R.ok();
         } else {
             return R.fail("学生不存在或已被删除");

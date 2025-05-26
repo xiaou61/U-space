@@ -13,16 +13,32 @@ public class LoginHelper {
     private static final Logger log = LoggerFactory.getLogger(LoginHelper.class);
 
     /**
-     * 获取当前登录用户的用户名
+     * 获取当前登录admin的用户名
      *
      * @return 用户名（如果未登录则可能返回 null）
      */
     public static String getCurrentUsername() {
-        Object obj = StpUtil.getSession().get("user_login");
+        Object obj = StpUtil.getSession().get("adminUserLogin");
         if (obj == null) return null;
 
         JSONObject json = JSON.parseObject(JSON.toJSONString(obj));
         return json.getString("username");
     }
+    /**
+     * 获取当前登录appuser的id
+     *
+     * @return 用户名（如果未登录则可能返回 null）
+     */
+    public static String getCurrentStudentId() {
+        Object obj = StpUtil.getSession().get("appUserLogin");
+        if (obj == null) return null;
+
+        JSONObject json = JSON.parseObject(JSON.toJSONString(obj));
+        return json.getString("id");
+    }
+
+
+
+
 
 }

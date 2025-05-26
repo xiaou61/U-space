@@ -6,12 +6,11 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.common.constant.AdminUserConstant;
+import com.xiaou.common.constant.UserConstant;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.exception.ErrorCode;
 import com.xiaou.web.domain.User;
-import com.xiaou.web.domain.UserDto;
 import com.xiaou.web.mapper.UserMapper;
 import com.xiaou.web.service.AdminUserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,32 +27,32 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
         String password = user.getPassword();
         // 1. 校验
         if (StrUtil.isBlank(username) || StrUtil.isBlank(password)) {
-            return R.fail(AdminUserConstant.PARAMETER_ERROR);
+            return R.fail(UserConstant.PARAMETER_ERROR);
         }
         // 2. 查询数据库中的用户是否存在
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(AdminUserConstant.USERNAME, username);
-        queryWrapper.eq(AdminUserConstant.PASSWORD, password);
+        queryWrapper.eq(UserConstant.USERNAME, username);
+        queryWrapper.eq(UserConstant.PASSWORD, password);
         User userinfo = this.baseMapper.selectOne(queryWrapper);
         // 不存在
         if (userinfo == null) {
-            return R.fail(AdminUserConstant.WRONG_USERNAME_OR_PASSWORD);
+            return R.fail(UserConstant.WRONG_USERNAME_OR_PASSWORD);
 
         }
         //3.保存到sa-token
         StpUtil.login(userinfo.getId());
         // 4. 保存用户的登录态
-        StpUtil.getSession().set(AdminUserConstant.USER_LOGIN, userinfo);
+        StpUtil.getSession().set(UserConstant.ADMINUSERLOGIN, userinfo);
 
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
         // 5. 返回结果
-        return R.ok(AdminUserConstant.USER_LOGIN_SUCCESS, SaResult.data(tokenInfo));
+        return R.ok(UserConstant.USER_LOGIN_SUCCESS, SaResult.data(tokenInfo));
     }
 
     @Override
     public User getLoginUser() {
         // 判断是否已经登录
-        User currentUser = (User)StpUtil.getSession().get(AdminUserConstant.USER_LOGIN);
+        User currentUser = (User)StpUtil.getSession().get(UserConstant.ADMINUSERLOGIN);
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
@@ -69,7 +68,7 @@ public class AdminUserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean userLogout(HttpServletRequest request) {
         // 移除登录态
-        request.getSession().removeAttribute(AdminUserConstant.USER_LOGIN);
+        request.getSession().removeAttribute(UserConstant.ADMINUSERLOGIN);
         //sa-token登录态移除
         StpUtil.logout();
         return true;
