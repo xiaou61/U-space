@@ -5,13 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.xiaou</groupId>
-        <artifactId>xiaou-modules</artifactId>
+        <artifactId>xiaou-common</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-modules-appuser</artifactId>
+    <artifactId>xiaou-common-ratelimiter</artifactId>
 
-
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.xiaou</groupId>
@@ -19,15 +23,7 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-satoken</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-ratelimiter</artifactId>
+            <artifactId>xiaou-common-redis</artifactId>
         </dependency>
     </dependencies>
 

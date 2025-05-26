@@ -28,4 +28,10 @@ public class GlobalExceptionHandler {
         return R.fail("未登录");
     }
 
+    @ExceptionHandler(ServiceException.class)
+    public R<?> notLoginExceptionHandler(ServiceException e) {
+        log.error(e.getMessage());
+        return R.fail(e.getMessage());
+    }
+
 }

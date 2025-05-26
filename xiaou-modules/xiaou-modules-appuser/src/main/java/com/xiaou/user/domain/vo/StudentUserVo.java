@@ -11,6 +11,8 @@ import lombok.Data;
 @Data
 @AutoMapper(target = StudentUser.class)
 public class StudentUserVo {
+
+    private Long id;
     /**
      * 学号
      */
@@ -25,5 +27,11 @@ public class StudentUserVo {
      * 密码
      */
     private String password;
+
+    /**
+     * 头像
+     */
+    private String avatarUrl;
+
 
 }

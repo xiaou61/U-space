@@ -19,6 +19,7 @@
         <module>xiaou-common-satoken</module>
         <module>xiaou-common-redis</module>
         <module>xiaou-common-log</module>
+        <module>xiaou-common-ratelimiter</module>
     </modules>
 
     <properties>

@@ -234,3 +234,17 @@ CREATE TABLE `u_qa_pairs` (
                           q TEXT NOT NULL,
                           a TEXT NOT NULL
 );
+
+#app用户表
+CREATE TABLE u_student_user (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                                student_number VARCHAR(50) NOT NULL COMMENT '学号',
+                                name VARCHAR(100) NOT NULL COMMENT '姓名',
+                                password VARCHAR(255) NOT NULL COMMENT '密码',
+                                create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生用户表';
+
+ALTER TABLE u_student_user
+    ADD COLUMN avatar_url VARCHAR(500) DEFAULT NULL COMMENT '头像地址';
+

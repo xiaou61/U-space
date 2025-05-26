@@ -14,4 +14,8 @@ public interface StudentUserService extends IService<StudentUser> {
     R<SaResult> login(StudentUserBo bo);
 
     R<StudentUserVo> getLogin(String currentStudentId);
+
+    R<String> uploadAvatar(String avatar);
+
+    R<String> resetPassword(String password);
 }

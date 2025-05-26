@@ -9,9 +9,10 @@ import java.util.Date;
 
 /**
  * 学生用户表
+ *
  * @TableName u_student_user
  */
-@TableName(value ="u_student_user")
+@TableName(value = "u_student_user")
 @Data
 public class StudentUser {
     /**
@@ -44,4 +45,9 @@ public class StudentUser {
      * 更新时间
      */
     private Date updateTime;
+
+    /**
+     * 头像
+     */
+    private String avatarUrl;
 }

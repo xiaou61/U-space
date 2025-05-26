@@ -36,7 +36,7 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
         // 4. 保存用户的登录态
         StpUtil.getSession().set(UserConstant.APPUSERLOGIN, studentUser);
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
-        return R.ok("登录成功",SaResult.data(tokenInfo));
+        return R.ok("登录成功", SaResult.data(tokenInfo));
     }
 
     @Override
@@ -45,6 +45,24 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
         StudentUser studentUser = baseMapper.selectById(currentStudentId);
         StudentUserVo studentUserVo = MapstructUtils.convert(studentUser, StudentUserVo.class);
         return R.ok(studentUserVo);
+    }
+
+    @Override
+    public R<String> uploadAvatar(String avatar) {
+        StudentUser studentUser = baseMapper.selectById(StpUtil.getLoginIdAsLong());
+        studentUser.setAvatarUrl(avatar);
+        baseMapper.updateById(studentUser);
+        //todo 头像上传审核
+        return R.ok("头像上传成功");
+    }
+
+    @Override
+    public R<String> resetPassword(String password) {
+        String encryptPassword = PasswordUtil.getEncryptPassword(password);
+        StudentUser studentUser = baseMapper.selectById(StpUtil.getLoginIdAsLong());
+        studentUser.setPassword(encryptPassword);
+        baseMapper.updateById(studentUser);
+        return R.ok("密码修改成功");
     }
 }
 
