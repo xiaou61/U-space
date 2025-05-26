@@ -5,28 +5,30 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.xiaou</groupId>
-        <artifactId>u-space</artifactId>
+        <artifactId>xiaou-common</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-common</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>xiaou-common-bom</module>
-        <module>xiaou-common-web</module>
-        <module>xiaou-common-core</module>
-        <module>xiaou-common-mybatis</module>
-        <module>xiaou-common-satoken</module>
-        <module>xiaou-common-redis</module>
-        <module>xiaou-common-log</module>
-        <module>xiaou-common-ratelimiter</module>
-        <module>xiaou-common-mail</module>
-    </modules>
+    <artifactId>xiaou-common-mail</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>jakarta.mail</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
