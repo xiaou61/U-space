@@ -8,10 +8,12 @@ import com.xiaou.user.domain.bo.StudentUserBo;
 import com.xiaou.user.domain.entity.StudentUser;
 import com.xiaou.user.domain.vo.StudentUserVo;
 
+import java.util.Map;
+
 
 public interface StudentUserService extends IService<StudentUser> {
 
-    R<SaResult> login(StudentUserBo bo);
+    R<Map<String, Object>> login(StudentUserBo bo);
 
     R<StudentUserVo> getLogin(String currentStudentId);
 

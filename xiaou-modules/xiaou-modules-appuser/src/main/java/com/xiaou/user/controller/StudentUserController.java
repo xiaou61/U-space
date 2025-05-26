@@ -1,7 +1,10 @@
 package com.xiaou.user.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.ratelimiter.annotation.RateLimiter;
 import com.xiaou.user.domain.bo.StudentUserBo;
 import com.xiaou.user.domain.entity.StudentUser;
@@ -12,6 +15,8 @@ import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/student")
 @Validated
@@ -20,21 +25,21 @@ public class StudentUserController {
     private StudentUserService studentUserService;
 
     @PostMapping("/login")
-    public R<SaResult> login(@RequestBody @Validated StudentUserBo bo) {
+    public R<Map<String, Object>> login(@RequestBody @Validated StudentUserBo bo) {
         return studentUserService.login(bo);
     }
 
 
-    /**
-     * 获得当前登录学生信息
-     */
-    @GetMapping("/get/login")
-    @RateLimiter(key = "#getlogin", time = 60, count = 10)
-    public R<StudentUserVo> getLogin() {
-        String currentStudentId = LoginHelper.getCurrentStudentId();
-        return studentUserService.getLogin(currentStudentId);
+    @GetMapping("/user/info")
+    public R<StudentUserVo> getLoginInfo() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        StudentUser user = studentUserService.getById(userId);
+        if (user == null) {
+            return R.fail("用户不存在");
+        }
+        StudentUserVo vo = MapstructUtils.convert(user, StudentUserVo.class);
+        return R.ok(vo);
     }
-
     /**
      * 上传头像
      */

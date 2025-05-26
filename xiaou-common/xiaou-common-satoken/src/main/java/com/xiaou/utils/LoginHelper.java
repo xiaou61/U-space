@@ -29,8 +29,8 @@ public class LoginHelper {
      *
      * @return 用户名（如果未登录则可能返回 null）
      */
-    public static String getCurrentStudentId() {
-        Object obj = StpUtil.getSession().get("appUserLogin");
+    public static String getCurrentStudentId(String token) {
+        Object obj = StpUtil.getTokenSessionByToken(token).get("appUserLogin");
         if (obj == null) return null;
 
         JSONObject json = JSON.parseObject(JSON.toJSONString(obj));
