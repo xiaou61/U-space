@@ -77,6 +77,11 @@
             <artifactId>xiaou-modules-appuser</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-bbs</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 

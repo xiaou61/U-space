@@ -13,6 +13,16 @@ CREATE TABLE `admin_user`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='管理员用户表';
 
+CREATE TABLE user_role (
+                           id BIGINT PRIMARY KEY COMMENT '主键ID',
+                           role VARCHAR(50) NOT NULL COMMENT '角色名称'
+) COMMENT='用户角色表';
+
+
+
+
+
+
 
 DROP TABLE IF EXISTS u_college;
 
@@ -250,3 +260,25 @@ ALTER TABLE u_student_user
 ALTER TABLE u_student_user
     ADD COLUMN email VARCHAR(100) DEFAULT NULL COMMENT '邮箱地址';
 
+
+
+#bbs帖子表
+CREATE TABLE `u_post` (
+                          `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '帖子ID',
+                          `user_id` BIGINT NOT NULL COMMENT '作者用户ID',
+                          `title` VARCHAR(255) NOT NULL COMMENT '帖子标题',
+                          `content` TEXT NOT NULL COMMENT '帖子内容',
+                          `like_count` INT DEFAULT 0 COMMENT '点赞数',
+                          `comment_count` INT DEFAULT 0 COMMENT '评论数',
+                          `view_count` INT DEFAULT 0 COMMENT '浏览数',
+                          `status` TINYINT DEFAULT 1 COMMENT '状态（1:正常，0:禁用）',
+                          `is_deleted` TINYINT(1) DEFAULT 0 COMMENT '是否已删除（0：未删除，1：已删除）',
+                          `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                          `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+                          PRIMARY KEY (`id`),
+                          KEY `idx_user_id` (`user_id`),
+                          KEY `idx_status` (`status`),
+                          KEY `idx_is_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子表';
+ALTER TABLE `u_post`
+    ADD COLUMN `image_urls` JSON DEFAULT NULL COMMENT '图片地址列表（JSON数组）';

@@ -24,21 +24,13 @@ public class LoginHelper {
         JSONObject json = JSON.parseObject(JSON.toJSONString(obj));
         return json.getString("username");
     }
+
     /**
-     * 获取当前登录appuser的id
-     *
-     * @return 用户名（如果未登录则可能返回 null）
+     * 获取当前登录appuser的id Login类型的
      */
-    public static String getCurrentStudentId(String token) {
-        Object obj = StpUtil.getTokenSessionByToken(token).get("appUserLogin");
-        if (obj == null) return null;
-
-        JSONObject json = JSON.parseObject(JSON.toJSONString(obj));
-        return json.getString("id");
+    public static Long getCurrentAppUserId() {
+        return StpUtil.getLoginIdAsLong();
     }
-
-
-
 
 
 }

@@ -1,8 +1,6 @@
 package com.xiaou.user.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.dev33.satoken.util.SaResult;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.ratelimiter.annotation.RateLimiter;
@@ -10,7 +8,6 @@ import com.xiaou.user.domain.bo.StudentUserBo;
 import com.xiaou.user.domain.entity.StudentUser;
 import com.xiaou.user.domain.vo.StudentUserVo;
 import com.xiaou.user.service.StudentUserService;
-import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
