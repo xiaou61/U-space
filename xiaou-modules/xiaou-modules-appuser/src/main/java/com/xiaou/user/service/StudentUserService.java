@@ -22,4 +22,6 @@ public interface StudentUserService extends IService<StudentUser> {
     R<String> resetPassword(String password);
 
     R<String> bindEmail(String email,String code);
+
+    R<String> forgetPassword(String email, String code, String password);
 }

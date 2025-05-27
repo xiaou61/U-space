@@ -65,6 +65,13 @@ public class StudentUserController {
     public R<String> bindEmail(@RequestParam String email, String code) {
         return studentUserService.bindEmail(email, code);
     }
+    /**
+     * 忘记密码后根据邮箱重置密码
+     */
+    @PostMapping("/forget/password")
+    public R<String> forgetPassword(@RequestParam String email, String code, String password) {
+        return studentUserService.forgetPassword(email, code, password);
+    }
 
 
 }

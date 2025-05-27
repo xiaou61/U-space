@@ -94,6 +94,25 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
         baseMapper.updateById(studentUser);
         return R.ok("绑定成功");
     }
+
+    @Override
+    public R<String> forgetPassword(String email, String code, String password) {
+        String s = GlobalConstants.CAPTCHA_CODE_KEY + email;
+        String redisCode = (String) RedisUtils.getCacheObject(s);
+        if (redisCode == null) {
+            return R.fail("验证码已过期");
+        }
+        if (!redisCode.equals(code)) {
+            return R.fail("验证码错误");
+        }
+        StudentUser studentUser = lambdaQuery().eq(StudentUser::getEmail, email).one();
+        if (studentUser == null) {
+            return R.fail("该邮箱未绑定");
+        }
+        studentUser.setPassword(PasswordUtil.getEncryptPassword(password));
+        baseMapper.updateById(studentUser);
+        return R.ok("密码重置成功");
+    }
 }
 
 
