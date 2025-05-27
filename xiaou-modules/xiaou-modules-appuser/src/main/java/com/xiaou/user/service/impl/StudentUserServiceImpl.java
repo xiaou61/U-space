@@ -5,15 +5,19 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.constant.UserConstant;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
+import com.xiaou.mail.utils.MailUtils;
 import com.xiaou.user.domain.bo.StudentUserBo;
 import com.xiaou.user.domain.entity.StudentUser;
 import com.xiaou.user.domain.vo.StudentUserVo;
 import com.xiaou.user.mapper.StudentUserMapper;
 import com.xiaou.user.service.StudentUserService;
+import com.xiaou.utils.RedisUtils;
+import org.springframework.data.repository.cdi.Eager;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -73,6 +77,22 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
         studentUser.setPassword(encryptPassword);
         baseMapper.updateById(studentUser);
         return R.ok("密码修改成功");
+    }
+
+    @Override
+    public R<String> bindEmail(String email, String code) {
+        StudentUser studentUser = baseMapper.selectById(StpUtil.getLoginIdAsLong());
+        String s = GlobalConstants.CAPTCHA_CODE_KEY + email;
+        String redisCode = (String) RedisUtils.getCacheObject(s);
+        if (redisCode == null) {
+            return R.fail("验证码已过期");
+        }
+        if (!redisCode.equals(code)) {
+            return R.fail("验证码错误");
+        }
+        studentUser.setEmail(email);
+        baseMapper.updateById(studentUser);
+        return R.ok("绑定成功");
     }
 }
 

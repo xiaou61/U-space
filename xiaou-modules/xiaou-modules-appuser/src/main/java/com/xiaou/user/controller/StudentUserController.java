@@ -40,6 +40,7 @@ public class StudentUserController {
         StudentUserVo vo = MapstructUtils.convert(user, StudentUserVo.class);
         return R.ok(vo);
     }
+
     /**
      * 上传头像
      */
@@ -54,6 +55,15 @@ public class StudentUserController {
     @PostMapping("/reset/password")
     public R<String> resetPassword(@RequestParam String password) {
         return studentUserService.resetPassword(password);
+    }
+
+    /**
+     * 用户绑定邮箱
+     */
+    @PostMapping("/bind/email")
+    @RateLimiter(key = "#email", time = 60, count = 10)
+    public R<String> bindEmail(@RequestParam String email, String code) {
+        return studentUserService.bindEmail(email, code);
     }
 
 

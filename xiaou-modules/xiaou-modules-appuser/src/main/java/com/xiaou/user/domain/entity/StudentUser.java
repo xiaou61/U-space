@@ -50,4 +50,10 @@ public class StudentUser {
      * 头像
      */
     private String avatarUrl;
+
+
+    /**
+     * 邮箱
+     */
+    private String email;
 }

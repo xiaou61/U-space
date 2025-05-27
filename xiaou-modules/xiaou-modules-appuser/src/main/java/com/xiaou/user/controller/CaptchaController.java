@@ -81,9 +81,9 @@ public class CaptchaController {
     public void emailCodeImpl(String email) {
         String key = GlobalConstants.CAPTCHA_CODE_KEY + email;
         String code = RandomUtil.randomNumbers(4);
-        RedisUtils.setCacheObject(key, code, Duration.ofMinutes(2));
+        RedisUtils.setCacheObject(key, code, Duration.ofMinutes(5));
         try {
-            MailUtils.sendText(email, "登录验证码", "您本次验证码为：" + code + "，有效性为" + 2 + "分钟，请尽快填写。");
+            MailUtils.sendText(email, "登录验证码", "您本次验证码为：" + code + "，有效性为" + 5 + "分钟，请尽快填写。");
         } catch (Exception e) {
             log.error("验证码短信发送异常 => {}", e.getMessage());
             throw new ServiceException(e.getMessage());
