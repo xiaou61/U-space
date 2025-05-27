@@ -1,7 +1,6 @@
 package com.xiaou.bbs.controller;
 
 
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.vo.PostVo;
@@ -12,10 +11,12 @@ import com.xiaou.common.page.PageRespDto;
 import com.xiaou.log.annotation.Log;
 import com.xiaou.log.enums.BusinessType;
 import jakarta.annotation.Resource;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/user/post")
+@Validated
 public class PostController {
 
     @Resource
@@ -33,9 +34,12 @@ public class PostController {
     /**
      * 获取帖子详情
      */
-    @PostMapping("/get/{id}")
-    public R<PostVo> get(@PathVariable Long id) {
-        return postService.get(id);
+    @PostMapping("/get/{postId}")
+    public R<PostVo> get(@PathVariable Long postId) {
+        // 增加浏览量
+        postService.addViewCount(postId);
+        //获得信息
+        return postService.get(postId);
     }
 
     /**
@@ -72,6 +76,12 @@ public class PostController {
             return postService.banAdmin(id);
         }
         return R.fail("权限不足");
-
+    }
+    /**
+     * 帖子点赞 传入post_id
+     */
+    @PostMapping("/like/{postId}")
+    public R<String> toggleLike(@PathVariable Long postId) {
+        return postService.toggleLike(postId);
     }
 }

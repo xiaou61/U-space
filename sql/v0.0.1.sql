@@ -282,3 +282,12 @@ CREATE TABLE `u_post` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子表';
 ALTER TABLE `u_post`
     ADD COLUMN `image_urls` JSON DEFAULT NULL COMMENT '图片地址列表（JSON数组）';
+
+
+CREATE TABLE u_post_like (
+                             id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                             user_id BIGINT NOT NULL,
+                             post_id BIGINT NOT NULL,
+                             create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                             UNIQUE KEY uk_user_post (user_id, post_id)
+);

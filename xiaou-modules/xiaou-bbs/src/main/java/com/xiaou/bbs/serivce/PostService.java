@@ -24,4 +24,11 @@ public interface PostService extends IService<Post> {
     R<String> banAdmin(Long id);
 
     R<PageRespDto<PostVo>> allPostPage(PageReqDto dto);
+
+    /**
+     * 点赞/取消点赞切换
+     */
+    R<String> toggleLike(Long postId);
+
+    void addViewCount(Long postId);
 }
