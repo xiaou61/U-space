@@ -1,6 +1,9 @@
 package com.xiaou.bbs.serivce.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import com.xiaou.bbs.domain.bo.PostBo;
@@ -9,9 +12,14 @@ import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.mapper.PostMapper;
 import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.page.PageReqDto;
+import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
+import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.utils.LoginHelper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -38,9 +46,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Override
     public R<String> delete(Long id) {
-        //检测是否删除的是自己的帖子或者当前的管理员
+        //查询是不是自己的帖子
         Long userId = LoginHelper.getCurrentAppUserId();
-
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
         queryWrapper.eq("id", id);
@@ -57,7 +64,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Override
     public R<String> edit(Long id, PostBo postBo) {
-        //判断是否编辑的是自己的帖子
+        //查询是不是自己帖子
         Long userId = LoginHelper.getCurrentAppUserId();
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
@@ -71,6 +78,35 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         baseMapper.updateById(post);
         return R.ok("编辑成功");
     }
+
+    @Override
+    public R<String> banAdmin(Long id) {
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        Post post = baseMapper.selectOne(queryWrapper);
+        //封禁帖子
+        post.setStatus(0);
+        baseMapper.updateById(post);
+        return R.ok("封禁成功");
+    }
+
+    @Override
+    public R<PageRespDto<PostVo>> allPostPage(PageReqDto dto) {
+        //默认按照创建时间来倒叙 这个和前端商量着来
+        IPage<Post> page = new Page<>();
+        page.setCurrent(dto.getPageNum());
+        page.setSize(dto.getPageSize());
+        // 添加排序字段（以 create_time 字段为例）
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
+        IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
+        //转换为vo
+        List<PostVo> vo = MapstructUtils.convert(postIPage.getRecords(), PostVo.class);
+
+        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
+    }
+
+
 }
 
 

@@ -6,6 +6,8 @@ import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.page.PageReqDto;
+import com.xiaou.common.page.PageRespDto;
 
 
 public interface PostService extends IService<Post> {
@@ -17,4 +19,9 @@ public interface PostService extends IService<Post> {
     R<String> delete(Long id);
 
     R<String> edit(Long id, PostBo postBo);
+
+
+    R<String> banAdmin(Long id);
+
+    R<PageRespDto<PostVo>> allPostPage(PageReqDto dto);
 }

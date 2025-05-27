@@ -3,7 +3,6 @@ package com.xiaou.component;
 import cn.dev33.satoken.stp.StpInterface;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xiaou.domain.UserRoles;
-import com.xiaou.mapper.UserRolesMapper;
 import com.xiaou.service.UserRolesService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
