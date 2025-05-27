@@ -291,3 +291,28 @@ CREATE TABLE u_post_like (
                              create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                              UNIQUE KEY uk_user_post (user_id, post_id)
 );
+
+
+
+CREATE TABLE u_post_comment (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '评论ID',
+                                post_id BIGINT NOT NULL COMMENT '帖子ID',
+                                parent_id BIGINT DEFAULT 0 COMMENT '父评论ID（0表示一级评论）',
+                                user_id BIGINT NOT NULL COMMENT '评论者用户ID',
+                                content TEXT NOT NULL COMMENT '评论内容',
+                                like_count INT DEFAULT 0 COMMENT '点赞数',
+                                is_deleted TINYINT DEFAULT 0 COMMENT '是否删除 0否 1是',
+                                create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+);
+
+
+CREATE TABLE u_post_comment_like (
+                                     id         BIGINT      PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                                     user_id    BIGINT      NOT NULL COMMENT '用户ID',
+                                     comment_id BIGINT      NOT NULL COMMENT '评论ID',
+                                     create_time DATETIME   DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+                                     UNIQUE KEY uk_user_comment (user_id, comment_id),
+                                     KEY idx_comment_id (comment_id),
+                                     KEY idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子评论点赞表';
+

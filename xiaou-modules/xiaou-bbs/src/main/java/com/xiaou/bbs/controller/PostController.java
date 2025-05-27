@@ -77,6 +77,7 @@ public class PostController {
         }
         return R.fail("权限不足");
     }
+
     /**
      * 帖子点赞 传入post_id
      */
