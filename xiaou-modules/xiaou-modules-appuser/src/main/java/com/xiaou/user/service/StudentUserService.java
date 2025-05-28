@@ -9,6 +9,7 @@ import com.xiaou.user.domain.entity.StudentUser;
 import com.xiaou.user.domain.vo.StudentUserVo;
 
 import java.util.Map;
+import java.util.Set;
 
 
 public interface StudentUserService extends IService<StudentUser> {
@@ -24,4 +25,6 @@ public interface StudentUserService extends IService<StudentUser> {
     R<String> bindEmail(String email,String code);
 
     R<String> forgetPassword(String email, String code, String password);
+
+    Map<Long, StudentUser> getUserMapByIds(Set<Long> fromUserIds);
 }

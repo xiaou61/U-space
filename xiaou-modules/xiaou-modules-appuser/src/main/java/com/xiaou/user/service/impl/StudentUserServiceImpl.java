@@ -20,8 +20,8 @@ import com.xiaou.utils.RedisUtils;
 import org.springframework.data.repository.cdi.Eager;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -113,6 +113,21 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
         baseMapper.updateById(studentUser);
         return R.ok("密码重置成功");
     }
+
+    @Override
+    public Map<Long, StudentUser> getUserMapByIds(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // 批量查询用户列表
+        List<StudentUser> userList = this.listByIds(userIds);
+
+        // 转换成 Map<Long, StudentUser>
+        return userList.stream()
+                .collect(Collectors.toMap(StudentUser::getId, user -> user));
+    }
+
 }
 
 

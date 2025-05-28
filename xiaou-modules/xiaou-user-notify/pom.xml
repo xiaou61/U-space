@@ -33,6 +33,11 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-mybatis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-appuser</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 </project>

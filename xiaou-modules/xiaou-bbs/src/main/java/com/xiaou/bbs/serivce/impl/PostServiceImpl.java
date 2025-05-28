@@ -19,6 +19,7 @@ import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.notify.domain.Notification;
 import com.xiaou.notify.enums.NotificationTypeEnum;
 import com.xiaou.notify.mapper.NotificationMapper;
+import com.xiaou.notify.utils.NotificationUtils;
 import com.xiaou.utils.LoginHelper;
 import com.xiaou.websocket.utils.WebSocketUtils;
 import jakarta.annotation.Resource;
@@ -34,8 +35,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Resource
     private PostLikeMapper postLikeMapper;
+
     @Resource
-    private NotificationMapper notificationMapper;
+    private NotificationUtils notificationUtils;
 
     @Override
     public R<String> create(PostBo postBo) {
@@ -121,42 +123,36 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Transactional
     public R<String> toggleLike(Long postId) {
         Long userId = LoginHelper.getCurrentAppUserId();
-        // 查询是否已经点赞
+
         QueryWrapper<PostLike> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId);
-        queryWrapper.eq("post_id", postId);
+        queryWrapper.eq("user_id", userId).eq("post_id", postId);
         PostLike postLike = postLikeMapper.selectOne(queryWrapper);
+
         if (postLike != null) {
-            // 取消点赞
             postLikeMapper.deleteById(postLike.getId());
             baseMapper.decrementLikeCount(postId);
             return R.ok("取消点赞成功");
         } else {
-            // 点赞
             postLike = new PostLike();
             postLike.setUserId(userId);
             postLike.setPostId(postId);
             postLikeMapper.insert(postLike);
             baseMapper.incrementLikeCount(postId);
 
-
-            // 新增消息通知逻辑
             Post post = baseMapper.selectById(postId);
-            if (post != null && !post.getUserId().equals(userId)) { // 避免自己点赞自己
-                Notification notification = new Notification();
-                notification.setFromUserId(userId);   //谁去发消息
-                notification.setUserId(post.getUserId());      // 消息发给谁
-                notification.setType(NotificationTypeEnum.LIKE.getCode());
-                notification.setContent("你的帖子《" + post.getTitle() + "》被点赞了");
-                notificationMapper.insert(notification);
+            if (post != null) {
+                notificationUtils.sendNotification(
+                        userId,
+                        post.getUserId(),
+                        NotificationTypeEnum.LIKE,
+                        "你的帖子《" + post.getTitle() + "》被点赞了"
+                );
             }
-            //进行通知
-            WebSocketUtils.sendMessage(post.getUserId(), "有一条点赞消息");
-
 
             return R.ok("点赞成功");
         }
     }
+
 
     @Override
     public void addViewCount(Long postId) {
