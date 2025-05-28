@@ -40,12 +40,13 @@ public class ClassScheduleController {
     }
 
     /**
-     * 根据班级id查询课表
+     * 根据班级id查询课表 用户可以用到的每次需要带入用户的班级id 根据学号查询班级id
      */
     @GetMapping("/list/{classId}")
     public R<List<ClassScheduleVo>> listClassSchedule(@PathVariable Long classId) {
         return classScheduleService.listClassSchedule(classId);
     }
+
     /**
      * 查询所有班级课表分页
      */

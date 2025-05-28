@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xiaou.common.domain.R;
 import com.xiaou.userinfo.domain.entity.ClassEntity;
 import com.xiaou.userinfo.domain.entity.Major;
+import com.xiaou.userinfo.domain.entity.StudentInfoLink;
 import com.xiaou.userinfo.domain.vo.UClassVO;
 import com.xiaou.userinfo.mapper.ClassMapper;
 import com.xiaou.userinfo.mapper.MajorMapper;
+import com.xiaou.userinfo.mapper.StudentInfoLinkMapper;
 import com.xiaou.userinfo.service.UserInfoByIdService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,9 @@ public class UserInfoByIdServiceImpl implements UserInfoByIdService {
     @Resource
     private ClassMapper classMapper;
 
+    @Resource
+    private StudentInfoLinkMapper basemapper;
+
     @Override
     public R<List<Major>> getMajor(Long id) {
         QueryWrapper<Major> queryWrapper = new QueryWrapper<>();
@@ -35,5 +40,17 @@ public class UserInfoByIdServiceImpl implements UserInfoByIdService {
         QueryWrapper<ClassEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("major_id", id);
         return R.ok(classMapper.selectList(queryWrapper));
+    }
+
+    @Override
+    public R<Long> getClassIdByStudentNumber(Long id) {
+        QueryWrapper<StudentInfoLink> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("student_number", id);
+        //查询到后取出class_id
+        StudentInfoLink studentInfoLink = basemapper.selectOne(queryWrapper);
+        if (studentInfoLink != null) {
+            return R.ok(studentInfoLink.getClassId());
+        }
+        return null;
     }
 }
