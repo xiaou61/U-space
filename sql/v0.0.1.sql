@@ -316,3 +316,14 @@ CREATE TABLE u_post_comment_like (
                                      KEY idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子评论点赞表';
 
+
+
+CREATE TABLE u_notification (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                                user_id BIGINT NOT NULL COMMENT '接收通知的用户 ID',
+                                from_user_id BIGINT NOT NULL COMMENT '触发通知的用户 ID',
+                                type VARCHAR(50) NOT NULL COMMENT '通知类型（LIKE、COMMENT 等）',
+                                content TEXT COMMENT '通知内容',
+                                biz_id BIGINT COMMENT '关联的业务 ID（如帖子 ID）',
+                                create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) COMMENT='用户消息通知表';

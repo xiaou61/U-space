@@ -61,6 +61,11 @@
                 <artifactId>xiaou-common-mail</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-websocket</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

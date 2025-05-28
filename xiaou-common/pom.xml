@@ -21,6 +21,7 @@
         <module>xiaou-common-log</module>
         <module>xiaou-common-ratelimiter</module>
         <module>xiaou-common-mail</module>
+        <module>xiaou-common-websocket</module>
     </modules>
 
     <properties>

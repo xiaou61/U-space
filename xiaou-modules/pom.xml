@@ -18,6 +18,7 @@
         <module>xiaou-modules-fileupload</module>
         <module>xiaou-modules-appuser</module>
         <module>xiaou-bbs</module>
+        <module>xiaou-user-notify</module>
     </modules>
 
     <properties>

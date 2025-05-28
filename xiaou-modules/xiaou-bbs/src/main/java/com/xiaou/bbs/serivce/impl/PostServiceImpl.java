@@ -1,11 +1,9 @@
 package com.xiaou.bbs.serivce.impl;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostLike;
@@ -18,7 +16,11 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
+import com.xiaou.notify.domain.Notification;
+import com.xiaou.notify.enums.NotificationTypeEnum;
+import com.xiaou.notify.mapper.NotificationMapper;
 import com.xiaou.utils.LoginHelper;
+import com.xiaou.websocket.utils.WebSocketUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Resource
     private PostLikeMapper postLikeMapper;
+    @Resource
+    private NotificationMapper notificationMapper;
 
     @Override
     public R<String> create(PostBo postBo) {
@@ -134,6 +138,22 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             postLike.setPostId(postId);
             postLikeMapper.insert(postLike);
             baseMapper.incrementLikeCount(postId);
+
+
+            // 新增消息通知逻辑
+            Post post = baseMapper.selectById(postId);
+            if (post != null && !post.getUserId().equals(userId)) { // 避免自己点赞自己
+                Notification notification = new Notification();
+                notification.setFromUserId(userId);   //谁去发消息
+                notification.setUserId(post.getUserId());      // 消息发给谁
+                notification.setType(NotificationTypeEnum.LIKE.getCode());
+                notification.setContent("你的帖子《" + post.getTitle() + "》被点赞了");
+                notificationMapper.insert(notification);
+            }
+            //进行通知
+            WebSocketUtils.sendMessage(post.getUserId(), "有一条点赞消息");
+
+
             return R.ok("点赞成功");
         }
     }
