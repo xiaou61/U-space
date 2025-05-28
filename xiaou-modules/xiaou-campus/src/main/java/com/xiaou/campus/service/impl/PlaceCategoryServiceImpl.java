@@ -88,6 +88,7 @@ public class PlaceCategoryServiceImpl extends ServiceImpl<PlaceCategoryMapper, P
                 new QueryWrapper<>()
         );
 
+
         List<PlaceCategoryVO> voList = MapstructUtils.convert(page.getRecords(), PlaceCategoryVO.class);
 
         return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), page.getTotal(), voList));

@@ -25,8 +25,28 @@ public class NotifyController {
      * 查看通知分页
      */
     @PostMapping("/page")
-    private R<PageRespDto<NotificationVo>> getNotifyPage(@RequestBody PageReqDto dto){
+    private R<PageRespDto<NotificationVo>> getNotifyPage(@RequestBody PageReqDto dto) {
         return notificationService.getNotifyPage(dto);
+    }
+
+    /**
+     * 获取未读消息个数
+     *
+     * @return
+     */
+    @PostMapping("/unreadCount")
+    public R<Integer> getUnreadCount() {
+        return notificationService.getUnreadCount();
+    }
+
+    /**
+     * 设置全部已读
+     *
+     * @return
+     */
+    @PostMapping("/readAll")
+    public R<String> markAllAsRead() {
+        return notificationService.markAllAsRead();
     }
 
 }

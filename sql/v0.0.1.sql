@@ -327,3 +327,7 @@ CREATE TABLE u_notification (
                                 biz_id BIGINT COMMENT '关联的业务 ID（如帖子 ID）',
                                 create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
 ) COMMENT='用户消息通知表';
+
+ALTER TABLE u_notification
+    ADD COLUMN is_online BOOLEAN DEFAULT FALSE COMMENT '发送通知时用户是否在线';
+

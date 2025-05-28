@@ -12,4 +12,9 @@ import com.xiaou.notify.domain.NotificationVo;
 public interface NotificationService extends IService<Notification> {
 
     R<PageRespDto<NotificationVo>> getNotifyPage(PageReqDto dto);
+
+    R<Integer> getUnreadCount();
+
+    R<String> markAllAsRead();
+
 }

@@ -69,6 +69,29 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         });
         return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), notificationIPage.getTotal(), voList));
     }
+
+
+    @Override
+    public R<Integer> getUnreadCount() {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        long count = lambdaQuery()
+                .eq(Notification::getUserId, userId)
+                .eq(Notification::getIs_read, false)
+                .count();
+        return R.ok((int) count);
+    }
+
+    @Override
+    public R<String> markAllAsRead() {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        lambdaUpdate()
+                .eq(Notification::getUserId, userId)
+                .eq(Notification::getIs_read, false)
+                .set(Notification::getIs_read, true)
+                .update();
+        return R.ok("全部已读");
+    }
+
 }
 
 
