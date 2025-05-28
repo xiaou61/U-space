@@ -331,3 +331,22 @@ CREATE TABLE u_notification (
 ALTER TABLE u_notification
     ADD COLUMN is_online BOOLEAN DEFAULT FALSE COMMENT '发送通知时用户是否在线';
 
+
+
+CREATE TABLE `u_class_schedule` (
+                                  id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+
+                                  class_id BIGINT NOT NULL COMMENT '班级ID（关联学生的所属班级）',
+
+                                  course_name VARCHAR(100) NOT NULL COMMENT '课程名称',
+                                  teacher_name VARCHAR(100) NOT NULL COMMENT '任课老师名称',
+                                  classroom VARCHAR(100) DEFAULT NULL COMMENT '上课教室',
+
+                                  day_of_week TINYINT NOT NULL COMMENT '星期几（1=周一，7=周日）',
+                                  period TINYINT NOT NULL COMMENT '第几节课（如1表示第一节）',
+
+                                  week_range VARCHAR(50) NOT NULL COMMENT '周次范围，如"1-16"、"1,3,5,7"',
+
+                                  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT='班级课表';

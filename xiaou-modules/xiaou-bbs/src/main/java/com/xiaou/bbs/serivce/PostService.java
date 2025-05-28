@@ -34,5 +34,5 @@ public interface PostService extends IService<Post> {
 
     void addViewCount(Long postId);
 
-    List<PostVo> searchPosts(String keyword);
+    List<PostVo> searchPosts(java.lang.String keyword);
 }

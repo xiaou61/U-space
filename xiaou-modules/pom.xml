@@ -19,6 +19,7 @@
         <module>xiaou-modules-appuser</module>
         <module>xiaou-bbs</module>
         <module>xiaou-user-notify</module>
+        <module>xiaou-modules-student-life</module>
     </modules>
 
     <properties>
