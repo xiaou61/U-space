@@ -43,11 +43,4 @@ public class UserInfoByIdController {
         return userInfoByIdService.getClazz(id);
     }
 
-    /**
-     * 根据学号查询班级id 查询u-student-info-link
-     */
-    @GetMapping("/classId/{id}")
-    public R<Long> getClassIdById(@PathVariable Long id) {
-        return userInfoByIdService.getClassIdByStudentNumber(id);
-    }
 }

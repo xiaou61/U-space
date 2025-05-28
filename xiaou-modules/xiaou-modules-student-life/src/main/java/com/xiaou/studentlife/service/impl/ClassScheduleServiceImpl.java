@@ -51,7 +51,9 @@ public class ClassScheduleServiceImpl extends ServiceImpl<ClassScheduleMapper, C
     }
 
     @Override
-    public R<List<ClassScheduleVo>> listClassSchedule(Long classId) {
+    public R<List<ClassScheduleVo>> listClassSchedule(Long userId) {
+        //根据userId查询classid
+        Long classId = baseMapper.selectClassIdByUserId(userId);
         //根据classid查询
         QueryWrapper<ClassSchedule> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("class_id", classId);

@@ -42,15 +42,4 @@ public class UserInfoByIdServiceImpl implements UserInfoByIdService {
         return R.ok(classMapper.selectList(queryWrapper));
     }
 
-    @Override
-    public R<Long> getClassIdByStudentNumber(Long id) {
-        QueryWrapper<StudentInfoLink> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("student_number", id);
-        //查询到后取出class_id
-        StudentInfoLink studentInfoLink = basemapper.selectOne(queryWrapper);
-        if (studentInfoLink != null) {
-            return R.ok(studentInfoLink.getClassId());
-        }
-        return null;
-    }
 }

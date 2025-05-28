@@ -13,5 +13,4 @@ public interface UserInfoByIdService {
 
     R<List<ClassEntity>> getClazz(Long id);
 
-    R<Long> getClassIdByStudentNumber(Long id);
 }

@@ -6,6 +6,7 @@ import com.xiaou.common.page.PageRespDto;
 import com.xiaou.studentlife.domain.bo.ClassScheduleBo;
 import com.xiaou.studentlife.domain.vo.ClassScheduleVo;
 import com.xiaou.studentlife.service.ClassScheduleService;
+import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -40,11 +41,12 @@ public class ClassScheduleController {
     }
 
     /**
-     * 根据班级id查询课表 用户可以用到的每次需要带入用户的班级id 根据学号查询班级id
+     * 查询自己的课表
      */
-    @GetMapping("/list/{classId}")
-    public R<List<ClassScheduleVo>> listClassSchedule(@PathVariable Long classId) {
-        return classScheduleService.listClassSchedule(classId);
+    @GetMapping("/list")
+    public R<List<ClassScheduleVo>> listClassSchedule() {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        return classScheduleService.listClassSchedule(userId);
     }
 
     /**

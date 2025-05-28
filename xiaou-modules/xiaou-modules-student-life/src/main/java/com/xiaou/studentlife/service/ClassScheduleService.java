@@ -20,7 +20,7 @@ public interface ClassScheduleService extends IService<ClassSchedule> {
 
     R<ClassScheduleVo> updateClassSchedule(Long id,ClassScheduleBo scheduleBo);
 
-    R<List<ClassScheduleVo>> listClassSchedule(Long classId);
+    R<List<ClassScheduleVo>> listClassSchedule(Long userid);
 
     R<PageRespDto<ClassScheduleVo>> listClassSchedulePage(PageReqDto pageReqDto);
 }
