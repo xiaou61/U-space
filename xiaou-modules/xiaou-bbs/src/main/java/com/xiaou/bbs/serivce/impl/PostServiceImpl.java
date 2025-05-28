@@ -158,6 +158,19 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     public void addViewCount(Long postId) {
         baseMapper.incrementViewCount(postId);
     }
+
+    @Override
+    public List<PostVo> searchPosts(String keyword) {
+        QueryWrapper<Post> wrapper = new QueryWrapper<>();
+        wrapper.lambda()
+                .like(Post::getTitle, keyword)
+                .or()
+                .like(Post::getContent, keyword);
+
+        List<Post> posts = this.list(wrapper);
+
+        return MapstructUtils.convert(posts, PostVo.class);
+    }
 }
 
 

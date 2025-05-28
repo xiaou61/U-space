@@ -14,6 +14,8 @@ import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/user/post")
 @Validated
@@ -84,5 +86,16 @@ public class PostController {
     @PostMapping("/like/{postId}")
     public R<String> toggleLike(@PathVariable Long postId) {
         return postService.toggleLike(postId);
+    }
+
+
+    /**
+     * 帖子搜索
+     * @param keyword
+     * @return
+     */
+    @GetMapping("/search")
+    public R<List<PostVo>> search(@RequestParam String keyword) {
+        return R.ok(postService.searchPosts(keyword));
     }
 }

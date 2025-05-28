@@ -9,6 +9,8 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 
+import java.util.List;
+
 
 public interface PostService extends IService<Post> {
 
@@ -31,4 +33,6 @@ public interface PostService extends IService<Post> {
     R<String> toggleLike(Long postId);
 
     void addViewCount(Long postId);
+
+    List<PostVo> searchPosts(String keyword);
 }
