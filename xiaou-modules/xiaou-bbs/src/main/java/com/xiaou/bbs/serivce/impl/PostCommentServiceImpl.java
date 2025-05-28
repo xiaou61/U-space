@@ -5,18 +5,22 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.bbs.domain.bo.PostCommentBo;
+import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostComment;
 import com.xiaou.bbs.domain.entity.PostCommentLike;
 import com.xiaou.bbs.domain.vo.PostCommentPageVo;
 import com.xiaou.bbs.domain.vo.PostCommentVo;
 import com.xiaou.bbs.mapper.PostCommentLikeMapper;
 import com.xiaou.bbs.mapper.PostCommentMapper;
+import com.xiaou.bbs.mapper.PostMapper;
 import com.xiaou.bbs.serivce.PostCommentService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
+import com.xiaou.notify.enums.NotificationTypeEnum;
+import com.xiaou.notify.utils.NotificationUtils;
 import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
@@ -35,13 +39,38 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
     @Resource
     private PostCommentLikeMapper postCommentLikeMapper;
 
+    @Resource
+    private NotificationUtils notificationUtils;
+
+    @Resource
+    private PostMapper postMapper;  // 查询帖子
+
     @Override
+    @Transactional
     public R<String> create(PostCommentBo bo) {
         Long userId = LoginHelper.getCurrentAppUserId();
         PostComment postComment = MapstructUtils.convert(bo, PostComment.class);
         postComment.setUserId(userId);
-        return R.ok(save(postComment) ? "评论成功" : "评论失败");
+
+        boolean saved = save(postComment);
+        if (!saved) {
+            return R.fail("评论失败");
+        }
+
+        // 发送评论通知
+        Post post = postMapper.selectById(postComment.getPostId());
+        if (post != null) {
+            notificationUtils.sendNotification(
+                    userId,
+                    post.getUserId(),
+                    NotificationTypeEnum.COMMENT,
+                    "你的帖子《" + post.getTitle() + "》有了新评论"
+            );
+        }
+
+        return R.ok("评论成功");
     }
+
 
     @Override
     public R<String> delete(Long id) {
@@ -124,6 +153,17 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
             like.setCommentId(commentId);
             postCommentLikeMapper.insert(like);
             baseMapper.incrementLikeCount(commentId);
+
+            //通知逻辑
+            PostComment comment = baseMapper.selectById(commentId);
+            if (comment != null && !comment.getUserId().equals(userId)) {
+                notificationUtils.sendNotification(
+                        userId,
+                        comment.getUserId(),
+                        NotificationTypeEnum.LIKE,
+                        "你的评论被点赞了"
+                );
+            }
             return R.ok("评论点赞成功");
         }
     }
