@@ -3,6 +3,7 @@ package com.xiaou.bbs.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.bbs.domain.bo.PostBo;
+import com.xiaou.bbs.domain.dto.PostUpdateCountReqDto;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.serivce.PostService;
@@ -101,6 +102,7 @@ public class PostController {
 
     /**
      * 帖子搜索
+     *
      * @param keyword
      * @return
      */
@@ -108,4 +110,17 @@ public class PostController {
     public R<List<PostVo>> search(@RequestParam String keyword) {
         return R.ok(postService.searchPosts(keyword));
     }
+
+    /**
+     * 刷新帖子后返回新增的帖子数量
+     *
+     * @param dto
+     * @return
+     */
+    @PostMapping("/countNewPosts")
+    public R<Long> countNewPosts(@RequestBody PostUpdateCountReqDto dto) {
+        Long count = postService.countNewPostsSince(dto.getLastRefreshTime());
+        return R.ok(count);
+    }
+
 }

@@ -10,6 +10,7 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -38,4 +39,6 @@ public interface PostService extends IService<Post> {
     List<PostVo> searchPosts(java.lang.String keyword);
 
     R<PageRespDto<PostVo>> pageByCategory(CategoryPageReqDto dto);
+
+    Long countNewPostsSince(LocalDateTime lastRefreshTime);
 }

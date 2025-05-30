@@ -29,6 +29,7 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -200,6 +201,17 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
     }
+
+    public Long countNewPostsSince(LocalDateTime lastRefreshTime) {
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        if (lastRefreshTime != null) {
+            queryWrapper.gt("update_time", lastRefreshTime);
+        }
+        queryWrapper.eq("status", 1);      // 只统计正常帖
+        queryWrapper.eq("is_deleted", 0);  // 过滤删除帖
+        return baseMapper.selectCount(queryWrapper);
+    }
+
 
 }
 
