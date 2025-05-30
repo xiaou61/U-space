@@ -282,6 +282,13 @@ CREATE TABLE `u_post` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子表';
 ALTER TABLE `u_post`
     ADD COLUMN `image_urls` JSON DEFAULT NULL COMMENT '图片地址列表（JSON数组）';
+-- 添加分类字段
+ALTER TABLE `u_post`
+    ADD COLUMN `category` VARCHAR(64) DEFAULT NULL COMMENT '帖子分类';
+
+-- 为分类字段添加索引
+CREATE INDEX `idx_category` ON `u_post` (`category`);
+
 
 
 CREATE TABLE u_post_like (

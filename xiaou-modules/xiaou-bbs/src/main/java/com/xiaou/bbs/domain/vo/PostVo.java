@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xiaou.bbs.domain.entity.Post;
 import io.github.linpeilie.annotations.AutoMapper;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.Date;
@@ -69,4 +70,9 @@ public class PostVo {
      * 图标地址
      */
     private List<String> imageUrls;
+
+    /**
+     * 分类
+     */
+    private String category;
 }

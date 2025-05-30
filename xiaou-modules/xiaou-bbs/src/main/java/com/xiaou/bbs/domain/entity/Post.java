@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xiaou.bbs.domain.enums.PostCategoryEnum;
 import lombok.Data;
 
 /**
@@ -79,4 +80,6 @@ public class Post {
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> imageUrls;
+
+    private PostCategoryEnum category;
 }

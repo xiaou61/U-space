@@ -3,6 +3,7 @@ package com.xiaou.bbs.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.bbs.domain.bo.PostBo;
+import com.xiaou.bbs.domain.page.CategoryPageReqDto;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
@@ -67,6 +68,15 @@ public class PostController {
     public R<PageRespDto<PostVo>> list(@RequestBody PageReqDto dto) {
         return postService.allPostPage(dto);
     }
+
+    /**
+     * 分页查看指定分类帖子
+     */
+    @PostMapping("/listByCategory")
+    public R<PageRespDto<PostVo>> listByCategory(@RequestBody CategoryPageReqDto dto) {
+        return postService.pageByCategory(dto);
+    }
+
 
     /**
      * 封禁帖子目前只有管理员可以

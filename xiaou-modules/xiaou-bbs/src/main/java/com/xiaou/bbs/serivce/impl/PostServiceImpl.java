@@ -1,5 +1,6 @@
 package com.xiaou.bbs.serivce.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -7,6 +8,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostLike;
+import com.xiaou.bbs.domain.enums.PostCategoryEnum;
+import com.xiaou.bbs.domain.page.CategoryPageReqDto;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.mapper.PostLikeMapper;
 import com.xiaou.bbs.mapper.PostMapper;
@@ -44,6 +47,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         Long userId = LoginHelper.getCurrentAppUserId();
         Post post = MapstructUtils.convert(postBo, Post.class);
         post.setUserId(userId);
+        post.setCategory(PostCategoryEnum.valueOfCode(postBo.getCategory()));
         baseMapper.insert(post);
         return R.ok("创建成功");
     }
@@ -116,6 +120,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         //转换为vo
         List<PostVo> vo = MapstructUtils.convert(postIPage.getRecords(), PostVo.class);
 
+
         return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
     }
 
@@ -171,6 +176,31 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         return MapstructUtils.convert(posts, PostVo.class);
     }
+
+    public R<PageRespDto<PostVo>> pageByCategory(CategoryPageReqDto dto) {
+        IPage<Post> page = new Page<>();
+        page.setCurrent(dto.getPageNum());
+        page.setSize(dto.getPageSize());
+
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+
+        if (StrUtil.isNotBlank(dto.getCategory())) {
+            queryWrapper.eq("category", dto.getCategory());
+        }
+
+        //根据传入的字段排序
+        queryWrapper.orderBy(StrUtil.isNotBlank(dto.getSortField()),
+                dto.getDesc(),
+                dto.getSortField()
+        );
+
+
+        IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
+        List<PostVo> vo = MapstructUtils.convert(postIPage.getRecords(), PostVo.class);
+
+        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
+    }
+
 }
 
 

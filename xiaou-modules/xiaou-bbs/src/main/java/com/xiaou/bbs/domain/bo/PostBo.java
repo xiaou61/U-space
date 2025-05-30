@@ -33,4 +33,7 @@ public class PostBo {
 
     private List<String> imageUrls;
 
+    @NotBlank(message = "帖子分类不能为空")
+    private String category;
+
 }
