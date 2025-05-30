@@ -5,6 +5,7 @@ import com.xiaou.campus.domain.bo.BuildingInfoBO;
 import com.xiaou.campus.domain.bo.CampusGuideBO;
 import com.xiaou.campus.domain.vo.BuildingInfoVO;
 import com.xiaou.campus.domain.vo.CampusGuideVO;
+import com.xiaou.campus.domain.vo.CategoryWithBuildingListVO;
 import com.xiaou.campus.service.BuildingService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
@@ -51,7 +52,7 @@ public class BuildingController {
      * 分页查询校园指南
      */
     @PostMapping("/list")
-    public R<PageRespDto<BuildingInfoVO>> allGuidePage(@RequestBody PageReqDto pageReqDto) {
+    public R<PageRespDto<CategoryWithBuildingListVO>> allGuidePage(@RequestBody PageReqDto pageReqDto) {
         return buildingService.allGuidePage(pageReqDto);
     }
 }

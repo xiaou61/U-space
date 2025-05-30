@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.campus.domain.bo.BuildingInfoBO;
 import com.xiaou.campus.domain.entity.BuildingInfo;
+import com.xiaou.campus.domain.entity.PlaceCategory;
 import com.xiaou.campus.domain.vo.BuildingInfoVO;
+import com.xiaou.campus.domain.vo.CategoryWithBuildingListVO;
 import com.xiaou.campus.mapper.BuildingMapper;
 import com.xiaou.campus.mapper.PlaceCategoryMapper;
 import com.xiaou.campus.service.BuildingService;
@@ -19,6 +21,7 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, BuildingInfo> implements BuildingService {
@@ -68,27 +71,31 @@ public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, BuildingInf
     }
 
     @Override
-    public R<PageRespDto<BuildingInfoVO>> allGuidePage(PageReqDto dto) {
-        IPage<BuildingInfo> page = new Page<>();
-        page.setCurrent(dto.getPageNum());
-        page.setSize(dto.getPageSize());
-        // 添加排序字段（以 create_time 字段为例）
-        QueryWrapper<BuildingInfo> queryWrapper = new QueryWrapper<>();
-        QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
-        IPage<BuildingInfo> buildingPage = baseMapper.selectPage(page, queryWrapper);
-        // 转换实体到VO
-        List<BuildingInfoVO> voList = buildingPage.getRecords().stream().map(entity -> {
-            // 先查分类名
-            String categoryName = null;
-            if (entity.getCategoryId() != null) {
-                var category = placeCategoryMapper.selectById(entity.getCategoryId());
-                if (category != null) {
-                    categoryName = category.getName();
-                }
-            }
-            return BuildingInfoVO.fromEntity(entity, categoryName);
-        }).toList();
-        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), buildingPage.getTotal(), voList));
+    public R<PageRespDto<CategoryWithBuildingListVO>> allGuidePage(PageReqDto dto) {
+        // 1. 分页查分类
+        IPage<PlaceCategory> categoryPage = placeCategoryMapper.selectPage(
+                new Page<>(dto.getPageNum(), dto.getPageSize()),
+                new QueryWrapper<PlaceCategory>()
+        );
 
+        // 2. 对每个分类查对应建筑物列表
+        List<CategoryWithBuildingListVO> voList = categoryPage.getRecords().stream().map(category -> {
+            // 查该分类下所有建筑物（不分页）
+            List<BuildingInfo> buildingList = baseMapper.selectList(
+                    new QueryWrapper<BuildingInfo>().eq("category_id", category.getId())
+            );
+
+            // 转换建筑物实体为VO
+            List<BuildingInfoVO> buildingVOList = buildingList.stream()
+                    .map(b -> BuildingInfoVO.fromEntity(b, category.getName()))
+                    .collect(Collectors.toList());
+
+            // 返回带嵌套建筑物列表的分类VO
+            return new CategoryWithBuildingListVO(category.getId(), category.getName(), buildingVOList);
+        }).collect(Collectors.toList());
+
+        // 3. 返回分页结果（分页的是分类）
+        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), categoryPage.getTotal(), voList));
     }
+
 }
