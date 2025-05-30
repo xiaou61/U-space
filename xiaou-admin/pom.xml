@@ -92,6 +92,11 @@
             <artifactId>xiaou-modules-student-life</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-ai</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 

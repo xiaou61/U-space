@@ -1,4 +1,7 @@
 spring:
+  ai:
+    deepseek:
+      api-key: sk-459fe7b76fe348de9b69df7219452c24
   datasource:
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     url: jdbc:p6spy:mysql://45.192.101.164:3306/u-space?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
@@ -29,3 +32,4 @@ sa-token:
 #        bucket-name: xxx
 #        domain: xxx
 #        base-path: upload/
+

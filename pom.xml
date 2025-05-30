@@ -20,7 +20,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 
-
         <spring-boot.version>3.4.4</spring-boot.version>
         <hutool.version>5.8.35</hutool.version>
         <lombok.version>1.18.36</lombok.version>
@@ -50,9 +49,7 @@
     </properties>
 
 
-
     <dependencyManagement>
-
 
 
         <dependencies>
@@ -89,6 +86,14 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-bom</artifactId>
                 <version>${hutool.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -189,8 +194,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-
 
 
         </dependencies>
@@ -294,5 +297,6 @@
         </resources>
 
     </build>
+
 
 </project>
