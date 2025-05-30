@@ -81,6 +81,7 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
         return R.ok(remove(queryWrapper) ? "删除成功" : "删除失败");
     }
 
+    //todo 暂时可能会有bug
     @Override
     public R<PageRespDto<PostCommentPageVo>> allPostCommentPage(PageReqDto dto) {
         // 分页查询一级评论（parentId = 0）

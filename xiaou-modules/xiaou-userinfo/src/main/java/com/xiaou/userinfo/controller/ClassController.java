@@ -9,7 +9,7 @@ import com.xiaou.userinfo.domain.bo.UClassBO;
 import com.xiaou.userinfo.domain.vo.UClassVO;
 import com.xiaou.userinfo.service.ClassService;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
+
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,7 @@ public class ClassController {
      */
     @Log(title = "添加班级", businessType = BusinessType.INSERT)
     @PostMapping("/add")
-    public R<UClassVO> addClass(@RequestBody @Valid UClassBO classBO) {
+    public R<UClassVO> addClass(@RequestBody  UClassBO classBO) {
         return classService.addClass(classBO);
     }
 
@@ -37,7 +37,7 @@ public class ClassController {
     @PutMapping("/update/{id}")
     public R<UClassVO> updateClass(
             @PathVariable("id") Long id,
-            @RequestBody @Valid UClassBO classBO) {
+            @RequestBody UClassBO classBO) {
         return classService.updateClass(id, classBO);
     }
 

@@ -373,13 +373,12 @@ CREATE TABLE `u_class_schedule`
 
 
 #题库分类
-DROP TABLE IF EXISTS `u_exam_category`;
-CREATE TABLE `u_exam_category`
+DROP TABLE IF EXISTS `u_question_category`;
+CREATE TABLE `u_question_category`
 (
-    `id`          int(11)                         NOT NULL AUTO_INCREMENT COMMENT '分类ID',
+    `id`          bigint                          NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name`        varchar(50) COLLATE utf8mb4_bin NOT NULL COMMENT '分类名称',
     `parent_id`   int(11)                                  DEFAULT '0' COMMENT '父分类ID，0表示一级分类',
-    `sort`        int(11)                                  DEFAULT '0' COMMENT '排序',
     `create_time` datetime                                 DEFAULT NULL COMMENT '创建时间',
     `is_deleted`  int(11)                         NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
     PRIMARY KEY (`id`) USING BTREE
