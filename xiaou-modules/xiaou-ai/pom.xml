@@ -29,6 +29,12 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-core</artifactId>
         </dependency>
+        <!-- Redis 依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
 
     </dependencies>
 
