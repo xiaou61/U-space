@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ServiceException.class)
-    public R<?> notLoginExceptionHandler(ServiceException e) {
+    public R<?> ServiceExceptionHandler(ServiceException e) {
         log.error(e.getMessage());
         return R.fail(e.getMessage());
     }

@@ -97,6 +97,11 @@
             <artifactId>xiaou-ai</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-online-exam</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 

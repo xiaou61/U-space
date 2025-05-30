@@ -23,8 +23,6 @@ import static com.xiaou.websocket.constant.WebSocketConstants.WEB_SOCKET_TOPIC;
 
 /**
  * 工具类
- *
- * @author zendwang
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
