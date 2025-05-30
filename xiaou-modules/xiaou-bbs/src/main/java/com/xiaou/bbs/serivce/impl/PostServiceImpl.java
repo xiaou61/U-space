@@ -19,13 +19,13 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
-import com.xiaou.notify.domain.Notification;
 import com.xiaou.notify.enums.NotificationTypeEnum;
-import com.xiaou.notify.mapper.NotificationMapper;
 import com.xiaou.notify.utils.NotificationUtils;
 import com.xiaou.utils.LoginHelper;
-import com.xiaou.websocket.utils.WebSocketUtils;
+import com.xiaou.utils.RedisUtils;
 import jakarta.annotation.Resource;
+import org.redisson.api.RAtomicLong;
+import org.redisson.api.RSet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +36,7 @@ import java.util.List;
 @Service
 public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         implements PostService {
+
 
     @Resource
     private PostLikeMapper postLikeMapper;
@@ -129,22 +130,38 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Transactional
     public R<String> toggleLike(Long postId) {
         Long userId = LoginHelper.getCurrentAppUserId();
+        String likeSetKey = "post:like:set:" + postId;
+        String likeCountKey = "post:like:count:" + postId;
 
-        QueryWrapper<PostLike> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId).eq("post_id", postId);
-        PostLike postLike = postLikeMapper.selectOne(queryWrapper);
+        // Redis中存的点赞集合，存userId
+        RSet<Long> likeUserSet = RedisUtils.getClient().getSet(likeSetKey);
+        RAtomicLong likeCount = RedisUtils.getClient().getAtomicLong(likeCountKey);
 
-        if (postLike != null) {
-            postLikeMapper.deleteById(postLike.getId());
+        boolean alreadyLiked = likeUserSet.contains(userId);
+
+        if (alreadyLiked) {
+            // 取消点赞
+            likeUserSet.remove(userId);
+            likeCount.decrementAndGet();
+
+            // 同步数据库：删除点赞记录，点赞数-1
+            postLikeMapper.delete(new QueryWrapper<PostLike>().eq("user_id", userId).eq("post_id", postId));
             baseMapper.decrementLikeCount(postId);
+
             return R.ok("取消点赞成功");
         } else {
-            postLike = new PostLike();
+            // 点赞
+            likeUserSet.add(userId);
+            likeCount.incrementAndGet();
+
+            // 同步数据库：新增点赞记录，点赞数+1
+            PostLike postLike = new PostLike();
             postLike.setUserId(userId);
             postLike.setPostId(postId);
             postLikeMapper.insert(postLike);
             baseMapper.incrementLikeCount(postId);
 
+            // 点赞通知
             Post post = baseMapper.selectById(postId);
             if (post != null) {
                 notificationUtils.sendNotification(
