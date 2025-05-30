@@ -2,6 +2,8 @@ package com.xiaou.exam.domain.vo;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.xiaou.exam.domain.entity.QuestionCategory;
+import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 import java.util.Date;
@@ -11,6 +13,7 @@ import java.util.List;
  * @TableName u_question_category
  */
 @Data
+@AutoMapper(target = QuestionCategory.class)
 public class QuestionCategoryVo {
     /**
      * 分类ID

@@ -7,7 +7,6 @@ import com.xiaou.exam.service.QuestionCategoryService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.xnio.Result;
 
 import java.util.List;
 
