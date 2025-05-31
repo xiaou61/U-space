@@ -392,10 +392,10 @@ CREATE TABLE `u_question_category`
 DROP TABLE IF EXISTS `u_exam_repo`;
 CREATE TABLE `u_exam_repo`
 (
-    `id`          bigint                          NOT NULL AUTO_INCREMENT COMMENT 'id   题库表',
-    `user_id`     bigint                       NOT NULL COMMENT '创建人id',
+    `id`          bigint                           NOT NULL AUTO_INCREMENT COMMENT 'id   题库表',
+    `user_id`     bigint                           NOT NULL COMMENT '创建人id',
     `title`       varchar(255) COLLATE utf8mb4_bin NOT NULL COMMENT '题库标题',
-    `category_id` bigint                                  DEFAULT NULL COMMENT '分类ID',
+    `category_id` bigint                                    DEFAULT NULL COMMENT '分类ID',
     `create_time` datetime                         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `is_deleted`  int(11)                          NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
     `is_exercise` int(11)                          NOT NULL DEFAULT '0' comment '是否可以练习 默认为false',
@@ -405,3 +405,34 @@ CREATE TABLE `u_exam_repo`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_bin
   ROW_FORMAT = DYNAMIC;
+
+
+CREATE TABLE `u_question` (
+                              `id` BIGINT NOT NULL COMMENT '试题ID',
+                              `repo_id` BIGINT NOT NULL COMMENT '所属题库ID',
+                              `category_id` BIGINT NOT NULL COMMENT '分类ID',
+                              `type` TINYINT NOT NULL COMMENT '题目类型：1单选 2多选 3判断 4简答',
+                              `content` TEXT NOT NULL COMMENT '题目内容',
+                              `correct_answer` VARCHAR(1000) NOT NULL COMMENT '正确答案（选择题为A,B,C,D）',
+                              `difficulty` TINYINT DEFAULT 1 COMMENT '难度：1简单 2中等 3困难',
+                              `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              `is_deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除：0未删除 1删除',
+                              PRIMARY KEY (`id`)
+) COMMENT='试题表';
+
+CREATE TABLE `u_question_option` (
+                                     `id` BIGINT NOT NULL COMMENT '选项ID',
+                                     `question_id` BIGINT NOT NULL COMMENT '所属试题ID',
+                                     `option_key` CHAR(1) NOT NULL COMMENT '选项标识（如A/B/C/D）',
+                                     `content` TEXT NOT NULL COMMENT '选项内容',
+                                     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                     `is_deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除：0未删除 1删除',
+                                     PRIMARY KEY (`id`)
+) COMMENT='试题选项表';
+
+ALTER TABLE `u_question_option`
+    ADD COLUMN `image` VARCHAR(500) DEFAULT NULL COMMENT '选项配图地址',
+    ADD COLUMN `sort` INT DEFAULT 0 COMMENT '排序，值越小越靠前';
+
+
+

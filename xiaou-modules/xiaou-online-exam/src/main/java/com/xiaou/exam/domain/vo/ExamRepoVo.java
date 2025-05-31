@@ -41,7 +41,7 @@ public class ExamRepoVo {
     private Integer isExercise;
 
     // 分类ID
-    private Integer categoryId;
+    private Long categoryId;
     // 分类名称
     private String categoryName;
     // 题目数量

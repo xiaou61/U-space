@@ -76,7 +76,19 @@ public class ExamRepoServiceImpl extends ServiceImpl<ExamRepoMapper, ExamRepo>
 
     @Override
     public R<ExamRepoVo> getRepoByCategoryId(Long categoryId) {
-        return null;
+        if (categoryId != null) {
+            LambdaQueryWrapper<ExamRepo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(ExamRepo::getCategoryId, categoryId);
+            ExamRepo examRepo = getOne(queryWrapper);
+            if (examRepo != null) {
+                ExamRepoVo examRepoVo = MapstructUtils.convert(examRepo, ExamRepoVo.class);
+                examRepoVo.setCategoryId(categoryId);
+                examRepoVo.setCategoryName(categoryService.getById(categoryId).getName());
+                //todo设置题目数量
+                return R.ok(examRepoVo);
+            }
+        }
+        return R.fail("分类Id不存在");
     }
 
 }
