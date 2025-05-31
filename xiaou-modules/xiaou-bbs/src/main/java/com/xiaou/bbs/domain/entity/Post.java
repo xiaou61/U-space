@@ -75,11 +75,10 @@ public class Post {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
 
-    /**
-     * 图标地址
+     /**
+     * 图片列表
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<String> imageUrls;
+    private String imageUrls;
 
     private PostCategoryEnum category;
 }

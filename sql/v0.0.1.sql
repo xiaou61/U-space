@@ -436,3 +436,7 @@ ALTER TABLE `u_question_option`
 
 
 
+-- 修改 student_number 字段为统一 collation
+#修复当前课表问题
+ALTER TABLE u_student_user MODIFY student_number VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+ALTER TABLE u_student_info_link MODIFY student_number VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;

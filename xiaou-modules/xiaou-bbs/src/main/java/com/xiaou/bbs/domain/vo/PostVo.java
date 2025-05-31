@@ -18,8 +18,6 @@ import java.util.List;
  * 帖子表Vo
  */
 @Data
-@AutoMapper(target = Post.class)
-
 public class PostVo {
     /**
      * 帖子ID

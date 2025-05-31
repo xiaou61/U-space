@@ -1,15 +1,19 @@
 package com.xiaou.bbs.serivce.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostLike;
 import com.xiaou.bbs.domain.enums.PostCategoryEnum;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
+import com.xiaou.bbs.domain.vo.PostCommentPageVo;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.mapper.PostLikeMapper;
 import com.xiaou.bbs.mapper.PostMapper;
@@ -24,16 +28,21 @@ import com.xiaou.notify.utils.NotificationUtils;
 import com.xiaou.utils.LoginHelper;
 import com.xiaou.utils.RedisUtils;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RSet;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
 @Service
+@Slf4j
 public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         implements PostService {
 
@@ -47,9 +56,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Override
     public R<String> create(PostBo postBo) {
         Long userId = LoginHelper.getCurrentAppUserId();
-        Post post = MapstructUtils.convert(postBo, Post.class);
+        Post post = new Post();
+        BeanUtils.copyProperties(postBo, post);
         post.setUserId(userId);
-        post.setCategory(PostCategoryEnum.valueOfCode(postBo.getCategory()));
+        post.setCategory(PostCategoryEnum.valueOf(postBo.getCategory()));
+        post.setImageUrls(JSON.toJSONString(postBo.getImageUrls()));
         baseMapper.insert(post);
         return R.ok("创建成功");
     }
@@ -60,8 +71,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         if (post == null) {
             return R.fail("帖子不存在");
         }
-        return R.ok(MapstructUtils.convert(post, PostVo.class));
+        PostVo postVo = new PostVo();
+        BeanUtils.copyProperties(post, postVo);
+        postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+        postVo.setCategory(String.valueOf(post.getCategory()));
+        return R.ok(postVo);
     }
+
+
 
     @Override
     public R<String> delete(Long id) {
@@ -81,50 +98,47 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         return R.ok("删除成功");
     }
 
-    @Override
-    public R<String> edit(Long id, PostBo postBo) {
-        //查询是不是自己帖子
-        Long userId = LoginHelper.getCurrentAppUserId();
-        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId);
-        queryWrapper.eq("id", id);
-        Post post = baseMapper.selectOne(queryWrapper);
-        if (post == null) {
-            return R.fail("非法请求");
-        }
-        //编辑帖子
-        post = MapstructUtils.convert(postBo, Post.class);
-        baseMapper.updateById(post);
-        return R.ok("编辑成功");
-    }
 
-    @Override
-    public R<String> banAdmin(Long id) {
-        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("id", id);
-        Post post = baseMapper.selectOne(queryWrapper);
-        //封禁帖子
-        post.setStatus(0);
-        baseMapper.updateById(post);
-        return R.ok("封禁成功");
-    }
+
 
     @Override
     public R<PageRespDto<PostVo>> allPostPage(PageReqDto dto) {
-        //默认按照创建时间来倒叙 这个和前端商量着来
+        // 创建分页对象，设置当前页码和每页大小
         IPage<Post> page = new Page<>();
         page.setCurrent(dto.getPageNum());
         page.setSize(dto.getPageSize());
-        // 添加排序字段（以 create_time 字段为例）
+
+        // 构造查询条件，并应用排序（例如按 create_time）
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
+
+        // 执行分页查询
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
-        //转换为vo
-        List<PostVo> vo = MapstructUtils.convert(postIPage.getRecords(), PostVo.class);
 
+        // 将实体列表转换为 VO 列表
+        List<PostVo> voList = new ArrayList<>();
+        for (Post post : postIPage.getRecords()) {
+            PostVo postVo = new PostVo();
+            // 复制基本属性
+            BeanUtils.copyProperties(post, postVo);
+            // 解析 imageUrls 字段（假设 post.getImageUrls() 返回的是 JSON 数组字符串）
+            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+            // 将 category 转为字符串
+            postVo.setCategory(String.valueOf(post.getCategory()));
+            voList.add(postVo);
+        }
 
-        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
+        // 封装分页响应
+        PageRespDto<PostVo> pageResp = PageRespDto.of(
+                dto.getPageNum(),
+                dto.getPageSize(),
+                postIPage.getTotal(),
+                voList
+        );
+
+        return R.ok(pageResp);
     }
+
 
     @Override
     @Transactional
@@ -192,32 +206,63 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         List<Post> posts = this.list(wrapper);
 
-        return MapstructUtils.convert(posts, PostVo.class);
+        List<PostVo> voList = new ArrayList<>();
+        for (Post post : posts) {
+            PostVo postVo = new PostVo();
+            BeanUtils.copyProperties(post, postVo);
+            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+            postVo.setCategory(String.valueOf(post.getCategory()));
+            voList.add(postVo);
+        }
+
+        return voList;
     }
 
+
+    @Override
     public R<PageRespDto<PostVo>> pageByCategory(CategoryPageReqDto dto) {
+        // 创建分页对象
         IPage<Post> page = new Page<>();
         page.setCurrent(dto.getPageNum());
         page.setSize(dto.getPageSize());
 
+        // 构建查询条件
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
-
         if (StrUtil.isNotBlank(dto.getCategory())) {
             queryWrapper.eq("category", dto.getCategory());
         }
 
-        //根据传入的字段排序
-        queryWrapper.orderBy(StrUtil.isNotBlank(dto.getSortField()),
+        // 排序处理
+        queryWrapper.orderBy(
+                StrUtil.isNotBlank(dto.getSortField()),
                 dto.getDesc(),
                 dto.getSortField()
         );
 
-
+        // 分页查询
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
-        List<PostVo> vo = MapstructUtils.convert(postIPage.getRecords(), PostVo.class);
 
-        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), postIPage.getTotal(), vo));
+        // 转换为 PostVo 列表
+        List<PostVo> voList = new ArrayList<>();
+        for (Post post : postIPage.getRecords()) {
+            PostVo postVo = new PostVo();
+            BeanUtils.copyProperties(post, postVo);
+            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+            postVo.setCategory(String.valueOf(post.getCategory()));
+            voList.add(postVo);
+        }
+
+        // 构建分页响应对象
+        PageRespDto<PostVo> pageResp = PageRespDto.of(
+                dto.getPageNum(),
+                dto.getPageSize(),
+                postIPage.getTotal(),
+                voList
+        );
+
+        return R.ok(pageResp);
     }
+
 
     public Long countNewPostsSince(LocalDateTime lastRefreshTime) {
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();

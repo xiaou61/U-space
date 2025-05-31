@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xiaou.bbs.domain.entity.Post;
 import io.github.linpeilie.annotations.AutoMapper;
+import io.github.linpeilie.annotations.AutoMapping;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -16,7 +17,6 @@ import java.util.List;
  * 帖子表BO
  */
 @Data
-@AutoMapper(target = Post.class)
 public class PostBo {
 
     /**

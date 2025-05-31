@@ -54,13 +54,6 @@ public class PostController {
         return postService.delete(id);
     }
 
-    /**
-     * 编辑帖子
-     */
-    @PutMapping("/edit/{id}")
-    public R<String> edit(@PathVariable Long id, @RequestBody PostBo postBo) {
-        return postService.edit(id, postBo);
-    }
 
     /**
      * 分页查看帖子
@@ -78,18 +71,6 @@ public class PostController {
         return postService.pageByCategory(dto);
     }
 
-
-    /**
-     * 封禁帖子目前只有管理员可以
-     */
-    @DeleteMapping("/admin/ban/{id}")
-    @Log(title = "封禁管理", businessType = BusinessType.OTHER)
-    public R<String> adminDelete(@PathVariable Long id) {
-        if (StpUtil.hasRole("admin")) {
-            return postService.banAdmin(id);
-        }
-        return R.fail("权限不足");
-    }
 
     /**
      * 帖子点赞 传入post_id

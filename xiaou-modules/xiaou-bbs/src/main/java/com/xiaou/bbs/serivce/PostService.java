@@ -22,10 +22,7 @@ public interface PostService extends IService<Post> {
 
     R<String> delete(Long id);
 
-    R<String> edit(Long id, PostBo postBo);
 
-
-    R<String> banAdmin(Long id);
 
     R<PageRespDto<PostVo>> allPostPage(PageReqDto dto);
 

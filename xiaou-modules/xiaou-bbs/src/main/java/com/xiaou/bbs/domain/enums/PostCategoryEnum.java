@@ -17,16 +17,6 @@ public enum PostCategoryEnum {
 
     @EnumValue // MyBatis-Plus 会使用这个值进行存储
     private final String code;
-
     private final String label;
-
-    public static PostCategoryEnum valueOfCode(String code) {
-        for (PostCategoryEnum value : PostCategoryEnum.values()) {
-            if (value.getCode().equals(code)) {
-                return value;
-            }
-        }
-        throw new IllegalArgumentException("无效的分类 code：" + code);
-    }
 
 }
