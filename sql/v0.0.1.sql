@@ -348,7 +348,7 @@ CREATE TABLE u_notification
 ) COMMENT ='用户消息通知表';
 
 ALTER TABLE u_notification
-    ADD COLUMN is_online BOOLEAN DEFAULT FALSE COMMENT '发送通知时用户是否在线';
+    ADD COLUMN is_read BOOLEAN DEFAULT FALSE COMMENT '是否已读';
 
 
 
