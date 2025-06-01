@@ -1,7 +1,6 @@
 package com.xiaou.bbs.controller;
 
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.dto.PostUpdateCountReqDto;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
@@ -11,8 +10,6 @@ import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.log.annotation.Log;
-import com.xiaou.log.enums.BusinessType;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

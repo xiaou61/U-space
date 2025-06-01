@@ -10,5 +10,4 @@ public class PostLikeInfoVo {
     private String content;
     private List<String> imageUrls;
     private String category;
-    private Boolean liked = true;
 }

@@ -275,7 +275,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             vo.setContent(post.getContent());
             vo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
             vo.setCategory(String.valueOf(post.getCategory()));
-            vo.setLiked(true);
             return vo;
         }).collect(Collectors.toList());
 
