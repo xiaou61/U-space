@@ -72,11 +72,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         if (post == null) {
             return R.fail("帖子不存在");
         }
-        PostVo postVo = new PostVo();
-        BeanUtils.copyProperties(post, postVo);
-        postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
-        postVo.setCategory(String.valueOf(post.getCategory()));
-        return R.ok(postVo);
+        return R.ok(buildPostVo(post));
     }
 
 
@@ -280,6 +276,29 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         }
 
         return voList;
+    }
+
+    /**
+     * 构建单个 PostVo，包含用户昵称和头像
+     */
+    private PostVo buildPostVo(Post post) {
+        if (post == null) {
+            return null;
+        }
+
+        PostVo postVo = new PostVo();
+        BeanUtils.copyProperties(post, postVo);
+
+        postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+        postVo.setCategory(String.valueOf(post.getCategory()));
+
+        StudentUser user = userService.getById(post.getUserId());
+        if (user != null) {
+            postVo.setNickname(user.getName());
+            postVo.setAvatarUrl(user.getAvatarUrl());
+        }
+
+        return postVo;
     }
 
 
