@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.xiaou.exam.domain.entity.ExamRepo;
 import io.github.linpeilie.annotations.AutoMapper;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.Date;
@@ -25,7 +26,7 @@ public class ExamRepoBo {
     /**
      * 分类ID
      */
-    @NotBlank(message = "分类ID不能为空")
+    @NotNull(message = "分类ID不能为空")
     private Long categoryId;
 
     /**

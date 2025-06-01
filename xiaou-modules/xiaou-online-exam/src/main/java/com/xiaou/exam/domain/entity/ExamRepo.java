@@ -50,4 +50,6 @@ public class ExamRepo {
      * 是否可以练习 默认为false
      */
     private Integer isExercise;
+
+    private Integer questionCount;
 }

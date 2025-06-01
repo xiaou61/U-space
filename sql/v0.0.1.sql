@@ -378,7 +378,7 @@ CREATE TABLE `u_question_category`
 (
     `id`          bigint                          NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name`        varchar(50) COLLATE utf8mb4_bin NOT NULL COMMENT '分类名称',
-    `parent_id`   int(11)                                  DEFAULT '0' COMMENT '父分类ID，0表示一级分类',
+    `parent_id`   bigint                                DEFAULT '0' COMMENT '父分类ID，0表示一级分类',
     `create_time` datetime                                 DEFAULT NULL COMMENT '创建时间',
     `is_deleted`  int(11)                         NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
     PRIMARY KEY (`id`) USING BTREE
@@ -405,6 +405,8 @@ CREATE TABLE `u_exam_repo`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_bin
   ROW_FORMAT = DYNAMIC;
+ALTER TABLE `u_exam_repo`
+    ADD COLUMN `question_count` int(11) NOT NULL DEFAULT '0' COMMENT '题目数量，默认为0';
 
 
 CREATE TABLE `u_question` (

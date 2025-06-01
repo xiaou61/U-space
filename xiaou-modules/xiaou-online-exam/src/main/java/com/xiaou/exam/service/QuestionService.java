@@ -19,4 +19,6 @@ public interface QuestionService extends IService<Question> {
     R<QuestionVo> get(Long id);
 
     R<List<QuestionVo>> list(Long repoId);
+
+    R<List<Long>> ids(Long repoId);
 }

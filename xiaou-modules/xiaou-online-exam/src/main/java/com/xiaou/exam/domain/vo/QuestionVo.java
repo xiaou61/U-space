@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xiaou.exam.domain.entity.Question;
 import com.xiaou.exam.domain.entity.QuestionOption;
+import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 import java.util.Date;
@@ -16,6 +18,7 @@ import java.util.List;
  * @TableName u_question
  */
 @Data
+@AutoMapper(target = Question.class)
 public class QuestionVo {
     /**
      * 试题ID

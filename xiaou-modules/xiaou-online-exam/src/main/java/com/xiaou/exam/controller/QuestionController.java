@@ -51,4 +51,11 @@ public class QuestionController {
      public R<List<QuestionVo>> list(@PathVariable Long repoId) {
          return questionService.list(repoId);
     }
+    /**
+     * 根据题库id 获取题库下所有的试题id
+     */
+    @GetMapping("/ids/{repoId}")
+     public R<List<Long>> ids(@PathVariable Long repoId) {
+        return questionService.ids(repoId);
+    }
 }

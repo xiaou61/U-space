@@ -2,6 +2,7 @@ package com.xiaou.exam.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
@@ -68,10 +69,15 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
 
         // 保存选项
         if (type == 4) {
+            //todo 目前简答题只有一个答案 后续可以修改
             optionMapper.insert(options.get(0));
         } else {
             optionService.saveBatch(options);
         }
+
+        // 更新题库的试题数量 +1
+        examRepoMapper.incrementQuestionCount(question.getRepoId());
+
 
         return R.ok("添加成功");
     }
@@ -79,11 +85,31 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
     @Override
     @Transactional
     public R<String> deleteQuestions(String ids) {
-        List<Integer> qIdList = Arrays.stream(ids.split(",")).map(Integer::parseInt).collect(java.util.stream.Collectors.toList());
-        // 先删除选项
+        List<Long> qIdList = Arrays.stream(ids.split(","))
+                .map(id -> id.replaceAll("\"", "").trim()) // 去除引号和空格
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
+        // 查询这些题目的 repo_id 列表
+        List<Question> questionList = baseMapper.selectBatchIds(qIdList);
+        if (CollectionUtils.isEmpty(questionList)) {
+            return R.fail("未找到对应的试题");
+        }
+
+        // 统计每个题库下删除题目的数量
+        Map<Long, Long> repoIdToCountMap = questionList.stream()
+                .collect(Collectors.groupingBy(Question::getRepoId, Collectors.counting()));
+
+        // 删除选项
         optionMapper.deleteBatchIds(qIdList);
-        // 再删除试题
+
+        // 删除试题
         baseMapper.deleteBatchIds(qIdList);
+
+        // 更新对应题库的 question_count
+        repoIdToCountMap.forEach((repoId, count) -> {
+            examRepoMapper.decrementQuestionCount(repoId, count.intValue());
+        });
 
         return R.ok("批量删除成功");
     }
@@ -137,6 +163,16 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
             return questionVo;
         }).collect(Collectors.toList());
         return R.ok(result);
+    }
+
+    @Override
+    public R<List<Long>> ids(Long repoId) {
+        List<Long> ids = baseMapper.selectList(
+                new QueryWrapper<Question>()
+                        .eq("repo_id", repoId)
+                        .eq("is_deleted", 0)
+        ).stream().map(Question::getId).collect(Collectors.toList());
+         return R.ok(ids);
     }
 
 }

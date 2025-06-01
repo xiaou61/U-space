@@ -8,6 +8,8 @@ import com.xiaou.exam.domain.entity.ExamRepo;
 import com.xiaou.exam.domain.vo.ExamRepoVo;
 import org.xnio.Result;
 
+import java.util.List;
+
 
 public interface ExamRepoService extends IService<ExamRepo> {
 
@@ -17,5 +19,5 @@ public interface ExamRepoService extends IService<ExamRepo> {
 
     R<String> deleteRepo(Long id);
 
-    R<ExamRepoVo> getRepoByCategoryId(Long categoryId);
+    R<List<ExamRepoVo>> getRepoByCategoryId(Long categoryId);
 }

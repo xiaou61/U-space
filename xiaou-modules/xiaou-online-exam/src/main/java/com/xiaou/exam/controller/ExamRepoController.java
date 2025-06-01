@@ -9,6 +9,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.xnio.Result;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/question/repo")
 @Validated
@@ -41,7 +43,7 @@ public class ExamRepoController {
      * 根据分类ID查询题库
      */
     @GetMapping("/list/{categoryId}")
-    public R<ExamRepoVo> getRepoByCategoryId(@PathVariable Long categoryId) {
+    public R<List<ExamRepoVo> >getRepoByCategoryId(@PathVariable Long categoryId) {
         return examRepoService.getRepoByCategoryId(categoryId);
     }
 }

@@ -1,5 +1,6 @@
 package com.xiaou.exam.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -75,21 +76,26 @@ public class ExamRepoServiceImpl extends ServiceImpl<ExamRepoMapper, ExamRepo>
     }
 
     @Override
-    public R<ExamRepoVo> getRepoByCategoryId(Long categoryId) {
+    public R<List<ExamRepoVo>> getRepoByCategoryId(Long categoryId) {
         if (categoryId != null) {
             LambdaQueryWrapper<ExamRepo> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(ExamRepo::getCategoryId, categoryId);
-            ExamRepo examRepo = getOne(queryWrapper);
-            if (examRepo != null) {
-                ExamRepoVo examRepoVo = MapstructUtils.convert(examRepo, ExamRepoVo.class);
-                examRepoVo.setCategoryId(categoryId);
-                examRepoVo.setCategoryName(categoryService.getById(categoryId).getName());
-                //todo设置题目数量
-                return R.ok(examRepoVo);
+            List<ExamRepo> examRepoList = list(queryWrapper);
+
+            if (CollUtil.isNotEmpty(examRepoList)) {
+                List<ExamRepoVo> voList = examRepoList.stream().map(examRepo -> {
+                    ExamRepoVo vo = MapstructUtils.convert(examRepo, ExamRepoVo.class);
+                    vo.setCategoryId(categoryId);
+                    vo.setCategoryName(categoryService.getById(categoryId).getName());
+                    return vo;
+                }).collect(Collectors.toList());
+
+                return R.ok(voList);
             }
         }
-        return R.fail("分类Id不存在");
+        return R.fail("分类Id不存在或无题库");
     }
+
 
 }
 
