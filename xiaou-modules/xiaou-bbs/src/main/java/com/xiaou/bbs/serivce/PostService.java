@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
+import com.xiaou.bbs.domain.vo.PostLikeInfoVo;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
@@ -38,4 +39,6 @@ public interface PostService extends IService<Post> {
     R<PageRespDto<PostVo>> pageByCategory(CategoryPageReqDto dto);
 
     Long countNewPostsSince(LocalDateTime lastRefreshTime);
+
+    R<List<PostLikeInfoVo>> getCurrentUserLikedPosts();
 }

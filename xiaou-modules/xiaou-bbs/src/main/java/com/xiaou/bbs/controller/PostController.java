@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.dto.PostUpdateCountReqDto;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
+import com.xiaou.bbs.domain.vo.PostLikeInfoVo;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
@@ -104,4 +105,12 @@ public class PostController {
         return R.ok(count);
     }
 
+
+    /**
+     *查询当前用户点赞过的帖子列表
+     */
+    @GetMapping("/liked-posts")
+    public R<List<PostLikeInfoVo>> getLikedPosts() {
+        return postService.getCurrentUserLikedPosts();
+    }
 }

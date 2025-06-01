@@ -11,6 +11,7 @@ import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostLike;
 import com.xiaou.bbs.domain.enums.PostCategoryEnum;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
+import com.xiaou.bbs.domain.vo.PostLikeInfoVo;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.manager.PostLikeManager;
 import com.xiaou.bbs.mapper.PostLikeMapper;
@@ -249,6 +250,36 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         queryWrapper.eq("status", 1);      // 只统计正常帖
         queryWrapper.eq("is_deleted", 0);  // 过滤删除帖
         return baseMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public R<List<PostLikeInfoVo>> getCurrentUserLikedPosts() {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        // 查询该用户点赞的帖子id列表
+        List<Long> likedPostIds = postLikeMapper.selectList(
+                new QueryWrapper<PostLike>().eq("user_id", userId)
+        ).stream().map(PostLike::getPostId).collect(Collectors.toList());
+
+        if (likedPostIds.isEmpty()) {
+            return R.ok(Collections.emptyList());
+        }
+
+        // 批量查询帖子列表
+        List<Post> posts = baseMapper.selectBatchIds(likedPostIds);
+
+        // 转换为 VO
+        List<PostLikeInfoVo> voList = posts.stream().map(post -> {
+            PostLikeInfoVo vo = new PostLikeInfoVo();
+            vo.setPostId(post.getId());
+            vo.setTitle(post.getTitle());
+            vo.setContent(post.getContent());
+            vo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+            vo.setCategory(String.valueOf(post.getCategory()));
+            vo.setLiked(true);
+            return vo;
+        }).collect(Collectors.toList());
+
+        return R.ok(voList);
     }
 
     /**
