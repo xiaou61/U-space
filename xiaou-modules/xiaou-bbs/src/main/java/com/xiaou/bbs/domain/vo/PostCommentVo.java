@@ -43,4 +43,7 @@ public class PostCommentVo {
      * 创建时间
      */
     private Date createTime;
+
+    private String nickname;
+    private String avatarUrl;
 }

@@ -21,15 +21,16 @@ import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.notify.enums.NotificationTypeEnum;
 import com.xiaou.notify.utils.NotificationUtils;
+import com.xiaou.user.domain.entity.StudentUser;
+import com.xiaou.user.service.StudentUserService;
 import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -44,6 +45,9 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
 
     @Resource
     private PostMapper postMapper;  // 查询帖子
+
+    @Resource
+    private StudentUserService userService;
 
     @Override
     @Transactional
@@ -110,20 +114,44 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
                         .orderByAsc("create_time")
         );
 
-        // 转换子评论为 VO 并按 parentId 分组
+        // 1️⃣ 收集所有评论者 userId（父+子）
+        Set<Long> userIds = new HashSet<>();
+        parentComments.forEach(c -> userIds.add(c.getUserId()));
+        childComments.forEach(c -> userIds.add(c.getUserId()));
+
+        // 2️⃣ 批量查询用户信息
+        List<StudentUser> users = userService.listByIds(userIds);
+        Map<Long, StudentUser> userMap = users.stream()
+                .collect(Collectors.toMap(StudentUser::getId, Function.identity()));
+
+        // 3️⃣ 转换子评论为 VO 并填充用户信息，按 parentId 分组
         Map<Long, List<PostCommentVo>> repliesMap = childComments.stream()
                 .map(c -> {
                     PostCommentVo vo = new PostCommentVo();
                     BeanUtils.copyProperties(c, vo);
+
+                    StudentUser user = userMap.get(c.getUserId());
+                    if (user != null) {
+                        vo.setNickname(user.getName());
+                        vo.setAvatarUrl(user.getAvatarUrl());
+                    }
+
                     return vo;
                 })
                 .collect(Collectors.groupingBy(PostCommentVo::getParentId));
 
-        // 转换父评论为 VO 并挂载 replies
+        // 4️⃣ 转换父评论为 VO 并挂载 replies，同时填充用户信息
         List<PostCommentPageVo> voList = parentComments.stream()
                 .map(c -> {
                     PostCommentPageVo vo = new PostCommentPageVo();
                     BeanUtils.copyProperties(c, vo);
+
+                    StudentUser user = userMap.get(c.getUserId());
+                    if (user != null) {
+                        vo.setNickname(user.getName());
+                        vo.setAvatarUrl(user.getAvatarUrl());
+                    }
+
                     vo.setReplies(repliesMap.getOrDefault(c.getId(), Collections.emptyList()));
                     return vo;
                 })

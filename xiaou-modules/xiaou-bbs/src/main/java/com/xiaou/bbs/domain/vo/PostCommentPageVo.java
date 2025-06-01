@@ -47,4 +47,8 @@ public class PostCommentPageVo {
 
     // 嵌套回复
     private List<PostCommentVo> replies;
+
+    private String nickname;
+    private String avatarUrl;
+
 }
