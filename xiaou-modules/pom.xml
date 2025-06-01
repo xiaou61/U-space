@@ -22,6 +22,7 @@
         <module>xiaou-modules-student-life</module>
         <module>xiaou-ai</module>
         <module>xiaou-online-exam</module>
+        <module>xiaou-pay</module>
     </modules>
 
     <properties>

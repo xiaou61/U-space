@@ -102,6 +102,11 @@
             <artifactId>xiaou-online-exam</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-pay</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 
