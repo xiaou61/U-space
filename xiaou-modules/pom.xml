@@ -23,6 +23,7 @@
         <module>xiaou-ai</module>
         <module>xiaou-online-exam</module>
         <module>xiaou-pay</module>
+        <module>xiaou-hot</module>
     </modules>
 
     <properties>
