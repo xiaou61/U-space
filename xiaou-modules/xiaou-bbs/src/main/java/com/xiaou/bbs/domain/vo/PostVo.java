@@ -1,14 +1,5 @@
 package com.xiaou.bbs.domain.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.xiaou.bbs.domain.entity.Post;
-import io.github.linpeilie.annotations.AutoMapper;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.Date;
@@ -73,4 +64,8 @@ public class PostVo {
      * 分类
      */
     private String category;
+
+    // ✅ 新增字段：作者昵称、头像
+    private String nickname;
+    private String avatarUrl;
 }

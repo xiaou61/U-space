@@ -6,14 +6,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.entity.PostLike;
 import com.xiaou.bbs.domain.enums.PostCategoryEnum;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
-import com.xiaou.bbs.domain.vo.PostCommentPageVo;
 import com.xiaou.bbs.domain.vo.PostVo;
 import com.xiaou.bbs.mapper.PostLikeMapper;
 import com.xiaou.bbs.mapper.PostMapper;
@@ -21,10 +18,11 @@ import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.notify.enums.NotificationTypeEnum;
 import com.xiaou.notify.utils.NotificationUtils;
+import com.xiaou.user.domain.entity.StudentUser;
+import com.xiaou.user.service.StudentUserService;
 import com.xiaou.utils.LoginHelper;
 import com.xiaou.utils.RedisUtils;
 import jakarta.annotation.Resource;
@@ -36,9 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -52,6 +50,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Resource
     private NotificationUtils notificationUtils;
+
+    @Resource
+    private StudentUserService userService;
 
     @Override
     public R<String> create(PostBo postBo) {
@@ -103,32 +104,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Override
     public R<PageRespDto<PostVo>> allPostPage(PageReqDto dto) {
-        // 创建分页对象，设置当前页码和每页大小
-        IPage<Post> page = new Page<>();
-        page.setCurrent(dto.getPageNum());
-        page.setSize(dto.getPageSize());
+        IPage<Post> page = new Page<>(dto.getPageNum(), dto.getPageSize());
 
-        // 构造查询条件，并应用排序（例如按 create_time）
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
 
-        // 执行分页查询
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
+        List<PostVo> voList = buildPostVoList(postIPage.getRecords());
 
-        // 将实体列表转换为 VO 列表
-        List<PostVo> voList = new ArrayList<>();
-        for (Post post : postIPage.getRecords()) {
-            PostVo postVo = new PostVo();
-            // 复制基本属性
-            BeanUtils.copyProperties(post, postVo);
-            // 解析 imageUrls 字段（假设 post.getImageUrls() 返回的是 JSON 数组字符串）
-            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
-            // 将 category 转为字符串
-            postVo.setCategory(String.valueOf(post.getCategory()));
-            voList.add(postVo);
-        }
-
-        // 封装分页响应
         PageRespDto<PostVo> pageResp = PageRespDto.of(
                 dto.getPageNum(),
                 dto.getPageSize(),
@@ -205,26 +188,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
                 .like(Post::getContent, keyword);
 
         List<Post> posts = this.list(wrapper);
-
-        List<PostVo> voList = new ArrayList<>();
-        for (Post post : posts) {
-            PostVo postVo = new PostVo();
-            BeanUtils.copyProperties(post, postVo);
-            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
-            postVo.setCategory(String.valueOf(post.getCategory()));
-            voList.add(postVo);
-        }
-
-        return voList;
+        return buildPostVoList(posts);
     }
 
 
     @Override
     public R<PageRespDto<PostVo>> pageByCategory(CategoryPageReqDto dto) {
         // 创建分页对象
-        IPage<Post> page = new Page<>();
-        page.setCurrent(dto.getPageNum());
-        page.setSize(dto.getPageSize());
+        IPage<Post> page = new Page<>(dto.getPageNum(), dto.getPageSize());
 
         // 构建查询条件
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
@@ -232,7 +203,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             queryWrapper.eq("category", dto.getCategory());
         }
 
-        // 排序处理
+        // 排序
         queryWrapper.orderBy(
                 StrUtil.isNotBlank(dto.getSortField()),
                 dto.getDesc(),
@@ -242,17 +213,10 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         // 分页查询
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
 
-        // 转换为 PostVo 列表
-        List<PostVo> voList = new ArrayList<>();
-        for (Post post : postIPage.getRecords()) {
-            PostVo postVo = new PostVo();
-            BeanUtils.copyProperties(post, postVo);
-            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
-            postVo.setCategory(String.valueOf(post.getCategory()));
-            voList.add(postVo);
-        }
+        // ✅ 调用抽取的构建方法
+        List<PostVo> voList = buildPostVoList(postIPage.getRecords());
 
-        // 构建分页响应对象
+        // 构建分页响应
         PageRespDto<PostVo> pageResp = PageRespDto.of(
                 dto.getPageNum(),
                 dto.getPageSize(),
@@ -264,6 +228,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     }
 
 
+
     public Long countNewPostsSince(LocalDateTime lastRefreshTime) {
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         if (lastRefreshTime != null) {
@@ -272,6 +237,49 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         queryWrapper.eq("status", 1);      // 只统计正常帖
         queryWrapper.eq("is_deleted", 0);  // 过滤删除帖
         return baseMapper.selectCount(queryWrapper);
+    }
+
+    /**
+     * 构建 PostVo 列表，填充用户昵称和头像
+     */
+    private List<PostVo> buildPostVoList(List<Post> posts) {
+        if (posts == null || posts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 收集 userId
+        Set<Long> userIds = posts.stream()
+                .map(Post::getUserId)
+                .collect(Collectors.toSet());
+
+        // 查询用户信息
+        List<StudentUser> users = userService.listByIds(userIds);
+        Map<Long, StudentUser> userMap = users.stream()
+                .collect(Collectors.toMap(StudentUser::getId, Function.identity()));
+
+        // 构建 PostVo 列表
+        List<PostVo> voList = new ArrayList<>();
+        for (Post post : posts) {
+            PostVo postVo = new PostVo();
+            BeanUtils.copyProperties(post, postVo);
+
+            // 图片 JSON 解析
+            postVo.setImageUrls(JSON.parseArray(post.getImageUrls(), String.class));
+
+            // 枚举转字符串
+            postVo.setCategory(String.valueOf(post.getCategory()));
+
+            // 设置昵称 & 头像
+            StudentUser user = userMap.get(post.getUserId());
+            if (user != null) {
+                postVo.setNickname(user.getName());
+                postVo.setAvatarUrl(user.getAvatarUrl());
+            }
+
+            voList.add(postVo);
+        }
+
+        return voList;
     }
 
 
