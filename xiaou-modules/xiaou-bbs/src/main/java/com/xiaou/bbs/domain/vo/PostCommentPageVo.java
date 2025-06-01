@@ -51,4 +51,8 @@ public class PostCommentPageVo {
     private String nickname;
     private String avatarUrl;
 
+    /**
+     * 当前用户是否点赞
+     */
+    private Boolean liked = false;
 }

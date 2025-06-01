@@ -146,13 +146,15 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
 
     @Override
     public R<PageRespDto<PostCommentPageVo>> pageById(PageReqDto dto, Long postId) {
-        // 1. 分页查询【指定帖子的】一级评论（parent_id = 0 AND post_id = :postId）
+        Long currentUserId = LoginHelper.getCurrentAppUserId();
+
+        // 1. 分页查询一级评论
         IPage<PostComment> page = new Page<>(dto.getPageNum(), dto.getPageSize());
         QueryWrapper<PostComment> queryWrapper = new QueryWrapper<>();
         queryWrapper
                 .eq("parent_id", 0)
                 .eq("is_deleted", 0)
-                .eq("post_id", postId);           // ← 加上 postId 过滤
+                .eq("post_id", postId);
         QueryWrapperUtil.applySorting(queryWrapper, dto, List.of(dto.getSortField()));
         IPage<PostComment> commentPage = baseMapper.selectPage(page, queryWrapper);
 
@@ -161,8 +163,89 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
             return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), 0, Collections.emptyList()));
         }
 
-        // 继续通用组装逻辑
-        return assembleCommentPageVo(dto, commentPage, parentComments);
+        // 2. 组装 VO，包含点赞状态
+        return assembleCommentPageVoWithLikeStatus(dto, commentPage, parentComments, currentUserId);
+    }
+
+    private R<PageRespDto<PostCommentPageVo>> assembleCommentPageVoWithLikeStatus(PageReqDto dto,
+                                                                                  IPage<PostComment> commentPage,
+                                                                                  List<PostComment> parentComments,
+                                                                                  Long currentUserId) {
+        // 收集一级评论ID
+        List<Long> parentCommentIds = parentComments.stream()
+                .map(PostComment::getId)
+                .collect(Collectors.toList());
+
+        // 查询子评论
+        List<PostComment> childComments = baseMapper.selectList(
+                new QueryWrapper<PostComment>()
+                        .in("parent_id", parentCommentIds)
+                        .eq("is_deleted", 0)
+                        .orderByAsc("create_time")
+        );
+
+        // 收集所有评论ID（父+子）
+        Set<Long> allCommentIds = new HashSet<>();
+        parentComments.forEach(c -> allCommentIds.add(c.getId()));
+        childComments.forEach(c -> allCommentIds.add(c.getId()));
+
+        // 查询当前用户点赞的评论ID集合
+        QueryWrapper<PostCommentLike> likeQuery = new QueryWrapper<>();
+        likeQuery.eq("user_id", currentUserId)
+                .in("comment_id", allCommentIds);
+        List<PostCommentLike> likedComments = postCommentLikeMapper.selectList(likeQuery);
+
+        Set<Long> likedCommentIds = likedComments.stream()
+                .map(PostCommentLike::getCommentId)
+                .collect(Collectors.toSet());
+
+        // 查询所有评论者用户ID
+        Set<Long> userIds = new HashSet<>();
+        parentComments.forEach(c -> userIds.add(c.getUserId()));
+        childComments.forEach(c -> userIds.add(c.getUserId()));
+
+        // 批量查询用户信息
+        List<StudentUser> users = userService.listByIds(userIds);
+        Map<Long, StudentUser> userMap = users.stream()
+                .collect(Collectors.toMap(StudentUser::getId, Function.identity()));
+
+        // 组装子评论VO
+        Map<Long, List<PostCommentVo>> repliesMap = childComments.stream()
+                .map(c -> {
+                    PostCommentVo vo = new PostCommentVo();
+                    BeanUtils.copyProperties(c, vo);
+
+                    // 点赞状态
+                    vo.setLiked(likedCommentIds.contains(c.getId()));
+
+                    StudentUser user = userMap.get(c.getUserId());
+                    if (user != null) {
+                        vo.setNickname(user.getName());
+                        vo.setAvatarUrl(user.getAvatarUrl());
+                    }
+                    return vo;
+                })
+                .collect(Collectors.groupingBy(PostCommentVo::getParentId));
+
+        // 组装父评论VO
+        List<PostCommentPageVo> voList = parentComments.stream()
+                .map(c -> {
+                    PostCommentPageVo vo = new PostCommentPageVo();
+                    BeanUtils.copyProperties(c, vo);
+
+                    vo.setLiked(likedCommentIds.contains(c.getId()));
+
+                    StudentUser user = userMap.get(c.getUserId());
+                    if (user != null) {
+                        vo.setNickname(user.getName());
+                        vo.setAvatarUrl(user.getAvatarUrl());
+                    }
+                    vo.setReplies(repliesMap.getOrDefault(c.getId(), Collections.emptyList()));
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        return R.ok(PageRespDto.of(dto.getPageNum(), dto.getPageSize(), commentPage.getTotal(), voList));
     }
 
     /**

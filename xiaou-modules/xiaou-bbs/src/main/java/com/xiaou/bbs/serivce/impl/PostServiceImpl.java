@@ -12,6 +12,7 @@ import com.xiaou.bbs.domain.entity.PostLike;
 import com.xiaou.bbs.domain.enums.PostCategoryEnum;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
 import com.xiaou.bbs.domain.vo.PostVo;
+import com.xiaou.bbs.manager.PostLikeManager;
 import com.xiaou.bbs.mapper.PostLikeMapper;
 import com.xiaou.bbs.mapper.PostMapper;
 import com.xiaou.bbs.serivce.PostService;
@@ -53,6 +54,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     @Resource
     private StudentUserService userService;
+    @Resource
+    private PostLikeManager postLikeManager;
 
     @Override
     public R<String> create(PostBo postBo) {
@@ -107,6 +110,19 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
         List<PostVo> voList = buildPostVoList(postIPage.getRecords());
+
+        Long currentUserId = LoginHelper.getCurrentAppUserId();
+
+        // 取出帖子ID列表
+        List<Long> postIds = voList.stream().map(PostVo::getId).collect(Collectors.toList());
+
+        // 查询当前用户对这些帖子的点赞状态
+        Map<Long, Boolean> likedMap = postLikeManager.getUserLikedStatus(currentUserId, postIds);
+
+        // 填充点赞状态
+        for (PostVo postVo : voList) {
+            postVo.setLiked(likedMap.getOrDefault(postVo.getId(), false));
+        }
 
         PageRespDto<PostVo> pageResp = PageRespDto.of(
                 dto.getPageNum(),

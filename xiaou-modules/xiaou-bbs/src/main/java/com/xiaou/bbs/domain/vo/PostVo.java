@@ -68,4 +68,9 @@ public class PostVo {
     // ✅ 新增字段：作者昵称、头像
     private String nickname;
     private String avatarUrl;
+
+    /**
+     * 当前用户是否点赞
+     */
+    private Boolean liked = false;
 }
