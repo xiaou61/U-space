@@ -41,6 +41,13 @@ public class PostCommentController {
     public R<PageRespDto<PostCommentPageVo>> page(@RequestBody PageReqDto dto) {
         return postCommentService.allPostCommentPage(dto);
     }
+    /**
+     * 根据id分页查看帖子评论
+     */
+     @PostMapping("/pageById/{id}")
+     public R<PageRespDto<PostCommentPageVo>> pageById(@RequestBody PageReqDto dto,@PathVariable Long id) {
+         return postCommentService.pageById(dto,id);
+     }
 
     /**
      * 切换帖子评论的点赞状态

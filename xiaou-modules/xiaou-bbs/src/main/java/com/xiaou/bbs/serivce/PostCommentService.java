@@ -21,4 +21,6 @@ public interface PostCommentService extends IService<PostComment> {
 
 
     R<String> toggleCommentLike(Long commentId);
+
+    R<PageRespDto<PostCommentPageVo>> pageById(PageReqDto dto, Long id);
 }
