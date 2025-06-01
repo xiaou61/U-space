@@ -226,7 +226,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         // 分页查询
         IPage<Post> postIPage = baseMapper.selectPage(page, queryWrapper);
 
-        // ✅ 调用抽取的构建方法
+        // 调用抽取的构建方法
         List<PostVo> voList = buildPostVoList(postIPage.getRecords());
 
         // 构建分页响应

@@ -2,7 +2,6 @@ package com.xiaou.bbs.controller;
 
 import com.xiaou.bbs.domain.bo.PostCommentBo;
 import com.xiaou.bbs.domain.vo.PostCommentPageVo;
-import com.xiaou.bbs.domain.vo.PostCommentVo;
 import com.xiaou.bbs.serivce.PostCommentService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
