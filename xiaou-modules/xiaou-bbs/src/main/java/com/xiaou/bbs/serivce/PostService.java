@@ -41,4 +41,6 @@ public interface PostService extends IService<Post> {
     Long countNewPostsSince(LocalDateTime lastRefreshTime);
 
     R<List<PostLikeInfoVo>> getCurrentUserLikedPosts();
+
+    Long countLiked();
 }

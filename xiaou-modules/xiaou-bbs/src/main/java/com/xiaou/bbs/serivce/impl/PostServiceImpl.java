@@ -80,7 +80,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     }
 
 
-
     @Override
     public R<String> delete(Long id) {
         //查询是不是自己的帖子
@@ -98,8 +97,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
         return R.ok("删除成功");
     }
-
-
 
 
     @Override
@@ -241,7 +238,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     }
 
 
-
     public Long countNewPostsSince(LocalDateTime lastRefreshTime) {
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
         if (lastRefreshTime != null) {
@@ -279,6 +275,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         }).collect(Collectors.toList());
 
         return R.ok(voList);
+    }
+
+    @Override
+    public Long countLiked() {
+        return postLikeMapper.selectCount(new QueryWrapper<PostLike>().eq("user_id", LoginHelper.getCurrentAppUserId()));
     }
 
     /**

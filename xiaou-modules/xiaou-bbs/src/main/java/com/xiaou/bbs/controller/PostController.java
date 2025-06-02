@@ -1,15 +1,19 @@
 package com.xiaou.bbs.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xiaou.bbs.domain.bo.PostBo;
 import com.xiaou.bbs.domain.dto.PostUpdateCountReqDto;
+import com.xiaou.bbs.domain.entity.Post;
 import com.xiaou.bbs.domain.page.CategoryPageReqDto;
 import com.xiaou.bbs.domain.vo.PostLikeInfoVo;
 import com.xiaou.bbs.domain.vo.PostVo;
+import com.xiaou.bbs.manager.PostLikeManager;
 import com.xiaou.bbs.serivce.PostService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +27,7 @@ public class PostController {
 
     @Resource
     private PostService postService;
+
 
 
     /**
@@ -104,10 +109,25 @@ public class PostController {
 
 
     /**
-     *查询当前用户点赞过的帖子列表
+     * 查询当前用户点赞过的帖子列表
      */
     @GetMapping("/liked-posts")
     public R<List<PostLikeInfoVo>> getLikedPosts() {
         return postService.getCurrentUserLikedPosts();
+    }
+
+    /**
+     * 个人帖子总数
+     */
+    @GetMapping("/count")
+    public R<Long> count() {
+        return R.ok(postService.count(new QueryWrapper<Post>().eq("user_id",  LoginHelper.getCurrentAppUserId())));
+    }
+    /**
+     * 个人点赞帖子总数
+     */
+    @GetMapping("/count-liked")
+     public R<Long> countLiked() {
+        return R.ok(postService.countLiked());
     }
 }

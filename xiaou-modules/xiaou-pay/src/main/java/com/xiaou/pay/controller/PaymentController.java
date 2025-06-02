@@ -39,8 +39,7 @@ public class PaymentController {
             params.put("pid", "1436");  // 固定
             params.put("type", "alipay");  // 固定
             params.put("out_trade_no", dto.getOut_trade_no());
-            params.put("notify_url", "http://localhost:8080/uapi/pay/notify");  // 固定
-            params.put("return_url", "http://localhost:8080/uapi/pay/return");  // 固定
+            params.put("notify_url", "http://localhost:8080/uapi/pay/notify");  // 服务器异步通知
             params.put("name", dto.getName());
             params.put("money", dto.getMoney());
             params.put("clientip", dto.getClientip());
@@ -102,7 +101,6 @@ public class PaymentController {
         // 验签
         String calculatedSign = SignUtils.generateSign(params, MERCHANT_KEY);
         if (receivedSign.equals(calculatedSign) && "TRADE_SUCCESS".equals(tradeStatus)) {
-            String orderNo = params.get("out_trade_no");
             String payAmount = params.get("money");
             UserCurrency userCurrency = new UserCurrency();
             userCurrency.setUserId(LoginHelper.getCurrentAppUserId());
