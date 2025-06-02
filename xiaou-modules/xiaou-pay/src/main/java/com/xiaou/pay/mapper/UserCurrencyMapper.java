@@ -3,6 +3,7 @@ package com.xiaou.pay.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.xiaou.pay.domain.UserCurrency;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author Lenovo
@@ -10,6 +11,7 @@ import com.xiaou.pay.domain.UserCurrency;
 * @createDate 2025-06-02 11:05:29
 * @Entity generator.domain.UserCurrency
 */
+@Mapper
 public interface UserCurrencyMapper extends BaseMapper<UserCurrency> {
 
 }
