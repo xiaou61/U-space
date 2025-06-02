@@ -16,6 +16,7 @@ import com.xiaou.user.domain.entity.StudentUser;
 import com.xiaou.user.domain.vo.StudentUserVo;
 import com.xiaou.user.mapper.StudentUserMapper;
 import com.xiaou.user.service.StudentUserService;
+import com.xiaou.utils.LoginHelper;
 import com.xiaou.utils.RedisUtils;
 import org.springframework.data.repository.cdi.Eager;
 import org.springframework.stereotype.Service;
@@ -71,9 +72,13 @@ public class StudentUserServiceImpl extends ServiceImpl<StudentUserMapper, Stude
     }
 
     @Override
-    public R<String> resetPassword(String password) {
+    public R<String> resetPassword(String password, String oldPassword) {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        StudentUser studentUser = baseMapper.selectById(userId);
+        if (!PasswordUtil.getEncryptPassword(oldPassword).equals(studentUser.getPassword())) {
+            return R.fail("旧密码错误");
+        }
         String encryptPassword = PasswordUtil.getEncryptPassword(password);
-        StudentUser studentUser = baseMapper.selectById(StpUtil.getLoginIdAsLong());
         studentUser.setPassword(encryptPassword);
         baseMapper.updateById(studentUser);
         return R.ok("密码修改成功");

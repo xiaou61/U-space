@@ -50,8 +50,8 @@ public class StudentUserController {
      * 用户修改密码
      */
     @PostMapping("/reset/password")
-    public R<String> resetPassword(@RequestParam String password) {
-        return studentUserService.resetPassword(password);
+    public R<String> resetPassword(@RequestParam String password,String oldPassword) {
+        return studentUserService.resetPassword(password,oldPassword);
     }
 
     /**

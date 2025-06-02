@@ -20,7 +20,7 @@ public interface StudentUserService extends IService<StudentUser> {
 
     R<String> uploadAvatar(String avatar);
 
-    R<String> resetPassword(String password);
+    R<String> resetPassword(String password,String oldPassword);
 
     R<String> bindEmail(String email,String code);
 
