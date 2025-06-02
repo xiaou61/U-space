@@ -6,6 +6,7 @@ import lombok.Data;
 
 /**
  * 学生用户表
+ *
  * @TableName u_student_user
  */
 @Data
@@ -32,6 +33,8 @@ public class StudentUserVo {
      * 头像
      */
     private String avatarUrl;
+
+    private String email;
 
 
 }
