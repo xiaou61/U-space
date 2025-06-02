@@ -462,3 +462,10 @@ create table if not exists u_hot_post
     isDelete       tinyint       default 0                 not null comment '是否删除',
     index idx_postId (sort)
 ) comment '热点表' collate = utf8mb4_unicode_ci;
+
+#货币
+CREATE TABLE `u_user_currency` (
+                               id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+                               user_id BIGINT NOT NULL COMMENT '用户ID',
+                               amount BIGINT NOT NULL DEFAULT 0 COMMENT '货币数量（整数）'
+);

@@ -1,12 +1,18 @@
 package com.xiaou.pay.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.xiaou.common.domain.R;
 import com.xiaou.pay.domain.PayRequestDTO;
+import com.xiaou.pay.domain.UserCurrency;
+import com.xiaou.pay.mapper.UserCurrencyMapper;
 import com.xiaou.pay.utils.SignUtils;
+import com.xiaou.utils.LoginHelper;
+import jakarta.annotation.Resource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -23,6 +29,8 @@ public class PaymentController {
 
     private static final String PAY_URL = "https://e.heiyu.cc/mapi.php";
     private static final String MERCHANT_KEY = "v9wPbx9Wx85CD7ckA48mZAG4zUfs19J5";
+    @Resource
+    private UserCurrencyMapper userCurrencyMapper;
 
     @PostMapping("/request")
     public ResponseEntity<?> payRequest(@RequestBody PayRequestDTO dto) {
@@ -96,17 +104,29 @@ public class PaymentController {
         if (receivedSign.equals(calculatedSign) && "TRADE_SUCCESS".equals(tradeStatus)) {
             String orderNo = params.get("out_trade_no");
             String payAmount = params.get("money");
-
-            // ✅ TODO：在这里处理你的业务逻辑，比如：
-
-            System.out.println("✅ 支付成功！订单号：" + orderNo + "，金额：" + payAmount);
-
+            UserCurrency userCurrency = new UserCurrency();
+            userCurrency.setUserId(LoginHelper.getCurrentAppUserId());
+            userCurrency.setAmount(Long.parseLong(payAmount));
+            userCurrencyMapper.insert(userCurrency);
             // 必须返回 success 表示已接收成功
             return ResponseEntity.ok("success");
         } else {
             System.out.println("❌ 支付验证失败或交易未成功！");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("sign error");
         }
+    }
+
+    /**
+     * 获得当前货币
+     */
+    @GetMapping("/currency")
+    public R<Long> getCurrency() {
+        Long userId = LoginHelper.getCurrentAppUserId();
+        UserCurrency userCurrency = userCurrencyMapper.selectOne(new QueryWrapper<UserCurrency>().eq("user_id", userId));
+        if (userCurrency == null) {
+            return R.ok(0L);
+        }
+        return R.ok(userCurrency.getAmount());
     }
 
 }
