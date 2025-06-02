@@ -48,6 +48,12 @@
             <version>${revision}</version>
         </dependency>
 
+        <!--springboot v3.x.x jdk17+-->
+        <dependency>
+            <groupId>cn.langpy</groupId>
+            <artifactId>ko-time</artifactId>
+            <version>3.0.2</version>
+        </dependency>
 
 
 <!--        业务模块类-->

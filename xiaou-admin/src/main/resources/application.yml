@@ -47,3 +47,11 @@ websocket:
   path: /websocket
   # 设置访问源地址
   allowedOrigins: '*'
+
+#http://localhost:8080/uapi/koTime
+ko-time:
+  pointcut: execution(public * com.xiaou..*.*(..)) #切记，是两个点.
+  saver: redis
+  pre fix: ko-time
+
+
