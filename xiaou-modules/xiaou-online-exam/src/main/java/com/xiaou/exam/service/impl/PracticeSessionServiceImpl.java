@@ -252,21 +252,7 @@ public class PracticeSessionServiceImpl extends ServiceImpl<PracticeSessionMappe
         );
 
         // 3. 转换成 PracticeSessionVo 列表
-        List<PracticeSessionVo> voList = sessions.stream().map(session -> {
-            PracticeSessionVo vo = new PracticeSessionVo();
-            vo.setSessionId(session.getId());
-            vo.setUserId(session.getUserId());
-            vo.setRepoId(session.getRepoId());
-            vo.setQuestionCount(session.getQuestionCount());
-            vo.setCorrectCount(session.getCorrectCount());
-            vo.setWrongCount(session.getWrongCount());
-            vo.setStartTime(session.getStartTime());
-            vo.setEndTime(session.getEndTime());
-            vo.setCurrentIndex(session.getCurrentIndex());
-            // 这里根据需要添加更多字段
-            return vo;
-        }).toList();
-
+        List<PracticeSessionVo> voList = MapstructUtils.convert(sessions, PracticeSessionVo.class);
         // 4. 返回结果
         return R.ok(voList);
     }
