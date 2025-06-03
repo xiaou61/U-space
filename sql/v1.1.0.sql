@@ -469,3 +469,26 @@ CREATE TABLE `u_user_currency` (
                                user_id BIGINT NOT NULL COMMENT '用户ID',
                                amount BIGINT NOT NULL DEFAULT 0 COMMENT '货币数量（整数）'
 );
+
+
+
+#v1.1.0添加功能
+CREATE TABLE `u_practice_session` (
+                                      `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                      `user_id` BIGINT NOT NULL COMMENT '用户ID',
+                                      `repo_id` BIGINT NOT NULL COMMENT '题库ID',
+                                      `question_count` INT NOT NULL COMMENT '本次练习题目数',
+                                      `correct_count` INT DEFAULT 0 COMMENT '正确数量',
+                                      `wrong_count` INT DEFAULT 0 COMMENT '错误数量',
+                                      `start_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
+                                      `end_time` DATETIME DEFAULT NULL COMMENT '结束时间',
+                                      PRIMARY KEY (`id`)
+) COMMENT='用户练习会话表';
+CREATE TABLE `u_practice_question_record` (
+                                              `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                              `session_id` BIGINT NOT NULL COMMENT '练习会话ID',
+                                              `question_id` BIGINT NOT NULL COMMENT '题目ID',
+                                              `user_answer` VARCHAR(1000) NOT NULL COMMENT '用户答案',
+                                              `is_correct` TINYINT NOT NULL DEFAULT 0 COMMENT '是否正确',
+                                              PRIMARY KEY (`id`)
+) COMMENT='用户练习题目作答记录';
