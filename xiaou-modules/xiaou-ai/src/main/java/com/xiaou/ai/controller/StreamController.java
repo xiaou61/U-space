@@ -24,6 +24,7 @@ import java.util.Map;
 @RestController
 @Slf4j
 @RequestMapping("/ai/deepseek/stream")
+@CrossOrigin("*")
 public class StreamController {
 
 

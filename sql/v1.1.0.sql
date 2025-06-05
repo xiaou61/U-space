@@ -492,3 +492,39 @@ CREATE TABLE `u_practice_question_record` (
                                               `is_correct` TINYINT NOT NULL DEFAULT 0 COMMENT '是否正确',
                                               PRIMARY KEY (`id`)
 ) COMMENT='用户练习题目作答记录';
+
+
+#投票功能
+CREATE TABLE `u_vote` (
+                      id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '投票ID',
+                      title VARCHAR(255) NOT NULL COMMENT '投票标题',
+                      description TEXT COMMENT '投票描述',
+                      is_multiple BOOLEAN DEFAULT FALSE COMMENT '是否多选',
+                      is_anonymous BOOLEAN DEFAULT FALSE COMMENT '是否匿名投票',
+                      max_choices INT DEFAULT 1 COMMENT '最多可选项数量（仅在多选时生效）',
+                      start_time DATETIME COMMENT '开始时间',
+                      end_time DATETIME COMMENT '结束时间',
+                      creator_id BIGINT NOT NULL COMMENT '创建者用户ID',
+                      status TINYINT DEFAULT 1 COMMENT '状态（1启用，0关闭）',
+                      create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                      update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+CREATE TABLE `u_vote_option` (
+                             id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '选项ID',
+                             vote_id BIGINT NOT NULL COMMENT '所属投票ID',
+                             content VARCHAR(255) NOT NULL COMMENT '选项内容',
+                             vote_count INT DEFAULT 0 COMMENT '投票数（可选，实际可由统计得出）',
+                             create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                             FOREIGN KEY (vote_id) REFERENCES u_vote(id) ON DELETE CASCADE
+);
+
+CREATE TABLE `u_vote_record` (
+                             id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '记录ID',
+                             vote_id BIGINT NOT NULL COMMENT '投票ID',
+                             user_id BIGINT NOT NULL COMMENT '投票用户ID',
+                             option_id BIGINT NOT NULL COMMENT '选中的选项ID',
+                             vote_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                             FOREIGN KEY (vote_id) REFERENCES u_vote(id) ON DELETE CASCADE,
+                             FOREIGN KEY (option_id) REFERENCES u_vote_option(id) ON DELETE CASCADE,
+                             UNIQUE KEY uniq_vote_user_option (vote_id, user_id, option_id)
+);
