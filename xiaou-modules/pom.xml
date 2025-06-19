@@ -25,6 +25,7 @@
         <module>xiaou-pay</module>
         <module>xiaou-hot</module>
         <module>xiaou-user-tools</module>
+        <module>xiaou-modules-grade</module>
     </modules>
 
     <properties>

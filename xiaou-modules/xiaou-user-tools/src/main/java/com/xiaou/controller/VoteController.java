@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+@Deprecated
+//todo 投票功能，咱不开发
 @RestController
 @RequestMapping("/user/votes")
 @Validated
@@ -21,4 +22,5 @@ public class VoteController {
         Long voteId = voteService.createVote(request);
         return R.ok(voteId);
     }
+
 }
