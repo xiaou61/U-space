@@ -4,6 +4,9 @@ import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.xiaou.domain.UserRoles;
+import com.xiaou.mapper.UserRolesMapper;
+import com.xiaou.service.UserRolesService;
 import jakarta.annotation.Resource;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
@@ -11,7 +14,8 @@ import org.slf4j.LoggerFactory;
 
 @NoArgsConstructor
 public class LoginHelper {
-    private static final Logger log = LoggerFactory.getLogger(LoginHelper.class);
+    @Resource
+    private static UserRolesMapper userRolesMapper;
 
 
     /**
@@ -35,4 +39,10 @@ public class LoginHelper {
     }
 
 
+    public static void addUserRole(Long id, String teacher) {
+        UserRoles userRoles = new UserRoles();
+        userRoles.setRole(teacher);
+        userRoles.setId(id);
+        userRolesMapper.insert(userRoles);
+    }
 }

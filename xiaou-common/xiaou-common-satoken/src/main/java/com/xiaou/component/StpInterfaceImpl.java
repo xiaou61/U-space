@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 自定义权限加载接口实现类
@@ -30,19 +31,24 @@ public class StpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
+        // 将 loginId 转换为 Long，防止超出 Integer 范围
+        Long userId = Long.parseLong(loginId.toString());
 
-        List<UserRoles> roleIds = userRolesService.list(new LambdaQueryWrapper<UserRoles>()
-                .eq(UserRoles::getId, Integer.parseInt(loginId.toString())));
-        List<String> list = new ArrayList<>();
-        if (!(roleIds.size() > 0)) {
-            // 用户没有分配角色
+        // 查询该用户的所有角色记录
+        List<UserRoles> userRoles = userRolesService.list(
+                new LambdaQueryWrapper<UserRoles>().eq(UserRoles::getId, userId)
+        );
+
+        // 若无角色，返回 null（也可以考虑返回空集合）
+        if (userRoles.isEmpty()) {
             return null;
         }
-        roleIds.forEach(roleId -> {
-            UserRoles byId = userRolesService.getById(roleId.getId());
-            list.add(byId.getRole());
-        });
-        return list;
+
+        // 提取角色名列表并返回
+        return userRoles.stream()
+                .map(UserRoles::getRole)
+                .collect(Collectors.toList());
     }
+
 
 }

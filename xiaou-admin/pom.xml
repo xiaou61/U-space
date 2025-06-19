@@ -123,6 +123,11 @@
             <artifactId>xiaou-user-tools</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-grade</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 
