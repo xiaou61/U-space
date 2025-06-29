@@ -17,4 +17,9 @@ public interface GlobalConstants {
      */
     String RATE_LIMIT_KEY = GLOBAL_REDIS_KEY + "rate_limit:";
 
+    /**
+     * 0
+     */
+    Integer ZERO = 0;
+
 }

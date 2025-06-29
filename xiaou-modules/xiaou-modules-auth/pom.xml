@@ -34,6 +34,15 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-excel</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mq</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mail</artifactId>
+        </dependency>
 
     </dependencies>
 

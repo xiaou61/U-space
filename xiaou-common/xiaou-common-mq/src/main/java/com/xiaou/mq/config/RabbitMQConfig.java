@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String EXCHANGE = "xiaou.user.direct";
-    public static final String QUEUE = "xiaou.user.queue";
-    public static final String ROUTING_KEY = "xiaou.user.key";
+    public static final String EXCHANGE = "xiaou.direct";
+    public static final String QUEUE = "xiaou.email.queue";
+    public static final String ROUTING_KEY = "xiaou.email.key";
 
     @Bean
     public DirectExchange userDirectExchange() {

@@ -1,6 +1,7 @@
 package com.xiaou.satoken.utils;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xiaou.satoken.entity.UserRoles;
 import com.xiaou.satoken.mapper.UserRolesMapper;
 import jakarta.annotation.Resource;
@@ -27,6 +28,17 @@ public class LoginHelper {
         userRoles.setId(id);
         userRoles.setRole(role);
         userRolesMapper.insert(userRoles);
+    }
+
+    /**
+     * 为用户删除角色
+     */
+    public void deleteUserRole(String id, String role) {
+        //查找id跟role
+        QueryWrapper<UserRoles> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        queryWrapper.eq("role", role);
+        userRolesMapper.delete(queryWrapper);
     }
 
     /**

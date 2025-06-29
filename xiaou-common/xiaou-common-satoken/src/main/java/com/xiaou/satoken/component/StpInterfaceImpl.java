@@ -31,8 +31,7 @@ public class StpInterfaceImpl implements StpInterface {
      */
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
-        // 将 loginId 转换为 Long，防止超出 Integer 范围
-        Long userId = Long.parseLong(loginId.toString());
+        String userId = loginId.toString();
 
         // 查询该用户的所有角色记录
         List<UserRoles> userRoles = userRolesService.list(

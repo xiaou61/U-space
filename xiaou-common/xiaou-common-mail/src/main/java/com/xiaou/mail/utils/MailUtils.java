@@ -57,12 +57,11 @@ public class MailUtils {
      * @param to      收件人
      * @param subject 标题
      * @param content 正文
-     * @param files   附件列表
      * @return message-id
      * @since 3.2.0
      */
-    public static String sendText(String to, String subject, String content, File... files) {
-        return send(to, subject, content, false, files);
+    public static String sendText(String to, String subject, String content) {
+        return send(to, subject, content, false);
     }
 
     /**
@@ -125,6 +124,7 @@ public class MailUtils {
     public static String sendText(Collection<String> tos, String subject, String content, File... files) {
         return send(tos, subject, content, false, files);
     }
+
 
     /**
      * 使用配置文件中设置的账户发送HTML邮件，发送给多人
