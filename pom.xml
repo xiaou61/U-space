@@ -8,6 +8,10 @@
     <artifactId>U-Space-2.X</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
+    <modules>
+        <module>xiaou-common</module>
+        <module>xiaou-starter</module>
+    </modules>
 
     <properties>
         <revision>2.0.0</revision>
@@ -117,7 +121,22 @@
                 <artifactId>lock4j-redisson-spring-boot-starter</artifactId>
                 <version>${lock4j.version}</version>
             </dependency>
+
+
+            <!-- common 的依赖配置-->
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+
         </dependencies>
+
+
+
 
 
 

@@ -1,0 +1,9 @@
+# 开发环境配置
+server:
+  # 服务器的HTTP端口，默认为8080
+  port: 8080
+spring:
+  profiles:
+    active: dev
+  application:
+    name: U-Space-2.X
