@@ -18,6 +18,7 @@
         <module>xiaou-common-web</module>
         <module>xiaou-common-redis</module>
         <module>xiaou-common-satoken</module>
+        <module>xiaou-common-excel</module>
     </modules>
 
     <properties>

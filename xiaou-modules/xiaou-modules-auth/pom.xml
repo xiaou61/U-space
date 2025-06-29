@@ -30,6 +30,10 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-mybatis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-excel</artifactId>
+        </dependency>
 
     </dependencies>
 

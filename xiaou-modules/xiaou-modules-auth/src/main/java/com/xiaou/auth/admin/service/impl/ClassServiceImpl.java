@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.admin.domain.entity.ClassEntity;
+import com.xiaou.auth.admin.domain.excel.ClassEntityExcel;
 import com.xiaou.auth.admin.domain.req.ClassReq;
 import com.xiaou.auth.admin.domain.resp.ClassResp;
 import com.xiaou.auth.admin.mapper.ClassMapper;
@@ -18,6 +19,7 @@ import com.xiaou.common.utils.QueryWrapperUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
@@ -60,6 +62,26 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
                 classEntityIPage.getSize(),
                 classEntityIPage.getTotal(),
                 MapstructUtils.convert(classEntityIPage.getRecords(), ClassResp.class)));
+    }
+
+    @Override
+    public void saveBatchFromExcel(List<ClassEntityExcel> list) {
+        List<ClassEntity> entity = MapstructUtils.convert(list, ClassEntity.class);
+        this.saveBatch(entity);
+    }
+
+    @Override
+    public List<ClassEntityExcel> getExcelData() {
+        List<ClassEntity> entityList = this.list(); // 查询所有班级
+        return entityList.stream().map(item -> {
+            ClassEntityExcel excel = new ClassEntityExcel();
+            excel.setClassName(item.getClassName());
+            excel.setGrade(item.getGrade());
+            excel.setMajor(item.getMajor());
+            excel.setClassTeacher(item.getClassTeacher());
+            excel.setStudentCount(item.getStudentCount());
+            return excel;
+        }).collect(Collectors.toList());
     }
 }
 
