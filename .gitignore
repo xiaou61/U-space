@@ -41,4 +41,4 @@ build/
 /.idea/
 
 
-application-sec.yml
+!**/src/main/resources/application-sec.yml
