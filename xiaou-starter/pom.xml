@@ -48,6 +48,11 @@
             <artifactId>xiaou-modules-auth</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mq</artifactId>
+
+        </dependency>
 
     </dependencies>
     <build>

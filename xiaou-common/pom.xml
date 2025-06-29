@@ -20,6 +20,7 @@
         <module>xiaou-common-satoken</module>
         <module>xiaou-common-excel</module>
         <module>xiaou-common-mail</module>
+        <module>xiaou-common-mq</module>
     </modules>
 
     <properties>

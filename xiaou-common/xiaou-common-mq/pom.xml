@@ -9,20 +9,17 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-common-mail</artifactId>
+    <artifactId>xiaou-common-mq</artifactId>
+
 
     <dependencies>
         <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.angus</groupId>
-            <artifactId>jakarta.mail</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 

@@ -7,7 +7,7 @@ server:
 spring:
   config:
     #这里里面放着一些私密的不能开源的配置
-    import: "ooptional:application-sec.yml"
+    import: "optional:application-sec.yml"
   profiles:
     active: dev
   application:

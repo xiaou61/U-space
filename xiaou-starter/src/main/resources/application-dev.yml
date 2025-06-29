@@ -10,3 +10,10 @@ spring:
         singleServerConfig:
           address: redis://localhost:6379 # Redis 连接地址，前缀为 redis://
           timeout: 3000
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
