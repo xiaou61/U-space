@@ -10,4 +10,9 @@ spring:
         singleServerConfig:
           address: redis://localhost:6379 # Redis 连接地址，前缀为 redis://
           timeout: 3000
-
+#satoken单独连接redis
+sa-token:
+  alone-redis:
+    database: 6
+    host: 127.0.0.1
+    port: 6379

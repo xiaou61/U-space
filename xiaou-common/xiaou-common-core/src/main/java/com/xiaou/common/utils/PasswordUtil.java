@@ -8,7 +8,7 @@ import org.springframework.util.DigestUtils;
 public class PasswordUtil {
 
     // 盐值常量
-    private static final String SALT = "uspace";
+    private static final String SALT = "uspace2.0";
 
     /**
      * 获取加密后的密码
@@ -21,5 +21,9 @@ public class PasswordUtil {
             throw new IllegalArgumentException("密码不能为空");
         }
         return DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
+    }
+
+    public static void main(String[] args) {
+        System.out.println(getEncryptPassword("123456"));
     }
 }
