@@ -72,7 +72,7 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
 
     @Override
     public List<ClassEntityExcel> getExcelData() {
-        List<ClassEntity> entityList = this.list(); // 查询所有班级
+        List<ClassEntity> entityList = this.list();
         return entityList.stream().map(item -> {
             ClassEntityExcel excel = new ClassEntityExcel();
             excel.setClassName(item.getClassName());

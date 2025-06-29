@@ -2,12 +2,15 @@ package com.xiaou.auth.admin.domain.excel;
 
 
 import cn.idev.excel.annotation.ExcelProperty;
+import com.xiaou.auth.admin.domain.entity.ClassEntity;
+import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 /**
  * 班级 Excel 导入导出模型
  */
 @Data
+@AutoMapper(target = ClassEntity.class)
 public class ClassEntityExcel {
 
     @ExcelProperty("班级名称")

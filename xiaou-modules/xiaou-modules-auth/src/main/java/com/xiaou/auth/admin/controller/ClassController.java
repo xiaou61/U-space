@@ -77,7 +77,7 @@ public class ClassController {
      */
     @GetMapping("/export")
     public void exportExcel(HttpServletResponse response) {
-        List<ClassEntityExcel> dataList = classService.getExcelData(); // 请在 service 中封装转换
+        List<ClassEntityExcel> dataList = classService.getExcelData();
         ExcelUtils.write(response, dataList, ClassEntityExcel.class, "班级信息", "班级表");
     }
 
