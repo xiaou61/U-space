@@ -14,11 +14,17 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.common.utils.StringUtils;
+import com.xiaou.satoken.utils.LoginHelper;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, AdminUser>
     implements AdminUserService {
+    @Resource
+    private LoginHelper loginHelper;
 
     @Override
     public R<SaResult> login(AdminUserReq req) {
@@ -39,6 +45,19 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, AdminUser
         //都成功的话使用sa-token进行登录
         StpUtil.login(adminUser.getId());
         return R.ok(SaResult.data(StpUtil.getTokenInfo()));
+    }
+
+    @Override
+    public R<String> updatePassword(String oldPassword, String newPassword) {
+        AdminUser adminUser = this.getById(loginHelper.getCurrentAppUserId());
+        if (!StringUtils.equals(PasswordUtil.getEncryptPassword(oldPassword), adminUser.getPassword())) {
+            return R.fail("旧密码错误");
+        }
+        adminUser.setPassword(PasswordUtil.getEncryptPassword(newPassword));
+        baseMapper.updateById(adminUser);
+        //删除当前登录用户
+        loginHelper.removeCurrentAppUser();
+        return R.ok("修改密码成功");
     }
 }
 

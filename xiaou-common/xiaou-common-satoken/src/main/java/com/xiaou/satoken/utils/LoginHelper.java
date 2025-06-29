@@ -1,34 +1,38 @@
 package com.xiaou.satoken.utils;
 
 import cn.dev33.satoken.stp.StpUtil;
-
 import com.xiaou.satoken.entity.UserRoles;
 import com.xiaou.satoken.mapper.UserRolesMapper;
 import jakarta.annotation.Resource;
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
-@NoArgsConstructor
+@Component
 public class LoginHelper {
+
     @Resource
-    private static UserRolesMapper userRolesMapper;
+    private UserRolesMapper userRolesMapper;
 
     /**
-     * 获得当前用户id
+     * 获取当前登录用户ID
      */
-    public static Long getCurrentAppUserId() {
-        return StpUtil.getLoginIdAsLong();
+    public String getCurrentAppUserId() {
+        return StpUtil.getLoginIdAsString();
     }
 
+    /**
+     * 为用户添加角色
+     */
+    public void addUserRole(String id, String role) {
+        UserRoles userRoles = new UserRoles();
+        userRoles.setId(id);
+        userRoles.setRole(role);
+        userRolesMapper.insert(userRoles);
+    }
 
     /**
-     * 为用户添加权限
-     * @param id
-     * @param teacher
+     * 注销当前用户
      */
-    public static void addUserRole(Long id, String teacher) {
-        UserRoles userRoles = new UserRoles();
-        userRoles.setRole(teacher);
-        userRoles.setId(id);
-        userRolesMapper.insert(userRoles);
+    public void removeCurrentAppUser() {
+        StpUtil.logout();
     }
 }

@@ -10,4 +10,6 @@ import com.xiaou.common.domain.R;
 public interface AdminUserService extends IService<AdminUser> {
 
     R<SaResult> login(AdminUserReq req);
+
+    R<String> updatePassword(String oldPassword, String newPassword);
 }

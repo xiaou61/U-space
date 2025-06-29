@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class AuthController {
     @Resource
+    private LoginHelper loginHelper;
+    @Resource
     private AdminUserService baseService;
     /**
      * 管理员登录
@@ -32,7 +34,7 @@ public class AuthController {
      */
     @GetMapping("/info")
     public R<AdminUser> getInfo(){
-        Long userId = LoginHelper.getCurrentAppUserId();
+        String userId = loginHelper.getCurrentAppUserId();
         return R.ok(baseService.getById(userId));
     }
     /**
@@ -40,7 +42,21 @@ public class AuthController {
      */
     @GetMapping("/logout")
     public R<String> logout(){
-        StpUtil.logout(LoginHelper.getCurrentAppUserId());
+        StpUtil.logout(loginHelper.getCurrentAppUserId());
         return R.ok("注销成功");
+    }
+    /**
+     * 获得当前登录用户属于什么角色
+     */
+    @GetMapping("/role")
+    public R<String> getRole(){
+        return R.ok(StpUtil.getRoleList().toString());
+    }
+    /**
+     * 修改密码
+     */
+    @PostMapping("/updatePassword")
+    public R<String> updatePassword(@RequestParam String oldPassword, @RequestParam String newPassword){
+        return baseService.updatePassword(oldPassword, newPassword);
     }
 }

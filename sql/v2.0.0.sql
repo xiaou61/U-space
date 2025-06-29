@@ -26,3 +26,16 @@ CREATE TABLE `u_class` (
                            PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='班级信息表';
 
+CREATE TABLE `u_teacher` (
+                           `id` VARCHAR(32) NOT NULL COMMENT '主键UUID，32位无连字符',
+                           `employee_no` CHAR(8) NOT NULL COMMENT '教职工编号（8位数字字符串）',
+                           `name` VARCHAR(100) NOT NULL COMMENT '教师姓名',
+                           `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
+                           `password` VARCHAR(64) NOT NULL COMMENT '密码，默认手机号后6位',
+                           `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+                           PRIMARY KEY (`id`),
+                           UNIQUE KEY `uniq_employee_no` (`employee_no`),
+                           UNIQUE KEY `uniq_phone` (`phone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='教师表';
+
