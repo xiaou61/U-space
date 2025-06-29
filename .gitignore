@@ -39,3 +39,6 @@ build/
 
 .idea
 /.idea/
+
+
+application-sec.yml
