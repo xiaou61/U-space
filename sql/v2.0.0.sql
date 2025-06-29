@@ -39,3 +39,18 @@ CREATE TABLE `u_teacher` (
                            UNIQUE KEY `uniq_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='教师表';
 
+CREATE TABLE `u_student` (
+                           `id` VARCHAR(32) NOT NULL COMMENT '学生ID，主键UUID（无连字符）',
+                           `student_no` CHAR(10) NOT NULL COMMENT '学号（唯一编号）',
+                           `name` VARCHAR(100) NOT NULL COMMENT '学生姓名',
+                           `class_id` VARCHAR(32) NOT NULL COMMENT '班级ID，关联class表主键',
+                           `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+                           PRIMARY KEY (`id`),
+                           UNIQUE KEY `uniq_student_no` (`student_no`),
+                           KEY `idx_class_id` (`class_id`),
+                           CONSTRAINT `fk_student_class` FOREIGN KEY (`class_id`) REFERENCES `u_class` (`id`)
+                               ON UPDATE CASCADE
+                               ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生表';
+
