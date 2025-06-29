@@ -19,6 +19,8 @@
     <file url="file://$PROJECT_DIR$/xiaou-common/xiaou-common-web/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-modules/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-modules/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-modules/xiaou-modules-auth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-modules/xiaou-modules-auth/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-starter/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-starter/src/main/resources" charset="UTF-8" />
   </component>

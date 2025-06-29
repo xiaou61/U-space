@@ -2,6 +2,8 @@
 server:
   # 服务器的HTTP端口，默认为8080
   port: 8080
+  servlet:
+    context-path: /uapi
 spring:
   profiles:
     active: dev
