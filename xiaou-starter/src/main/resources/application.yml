@@ -9,3 +9,7 @@ spring:
     active: dev
   application:
     name: U-Space-2.X
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB

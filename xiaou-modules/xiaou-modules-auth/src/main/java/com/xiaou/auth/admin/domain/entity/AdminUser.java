@@ -17,7 +17,7 @@ public class AdminUser {
      * 主键ID
      */
     @TableId(type = IdType.ASSIGN_UUID)
-    private Long id;
+    private String id;
 
     /**
      * 用户名

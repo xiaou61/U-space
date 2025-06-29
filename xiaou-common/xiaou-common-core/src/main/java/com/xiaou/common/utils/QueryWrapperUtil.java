@@ -10,13 +10,18 @@ public class QueryWrapperUtil {
 
     /**
      * 给 QueryWrapper 添加排序（布尔控制升降序）
+     * 若字段为空，则默认使用 "created_at"
      */
     public static <T> void applySorting(QueryWrapper<T> wrapper, PageReqDto dto, List<String> validFields) {
         String field = dto.getSortField();
         Boolean desc = dto.getDesc();
 
-        if (StrUtil.isNotBlank(field) && validFields.contains(field)) {
-            wrapper.orderBy(true, desc == null || !desc, field); // true：是否添加排序，false：升序
+        // 如果字段为空或非法，则使用默认字段 "created_at"
+        if (StrUtil.isBlank(field) || !validFields.contains(field)) {
+            field = "created_at";
         }
+
+        wrapper.orderBy(true, desc == null || !desc, field);
     }
+
 }

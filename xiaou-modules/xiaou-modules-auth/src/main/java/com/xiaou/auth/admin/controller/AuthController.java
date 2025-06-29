@@ -11,6 +11,9 @@ import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 管理员登录管理
+ */
 @RestController
 @RequestMapping("/admin/auth")
 @Validated
