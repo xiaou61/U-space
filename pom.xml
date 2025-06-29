@@ -29,7 +29,7 @@
         <redis.version>3.3.2</redis.version>
         <jackson.version>2.18.3</jackson.version>
         <fastjson2.version>2.0.53</fastjson2.version>
-        <satoken.version>1.43.0</satoken.version>
+        <satoken.version>1.44.0</satoken.version>
         <redisson.version>3.45.1</redisson.version>
         <lock4j.version>2.2.7</lock4j.version>
         <mapstruct-plus.version>1.4.6</mapstruct-plus.version>
@@ -114,6 +114,11 @@
                 <artifactId>spring-boot-starter-data-redis</artifactId>
                 <version>${redis.version}</version>
             </dependency>
+            <!-- Redis 依赖 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+            </dependency>
 
 
 
@@ -136,12 +141,6 @@
                 <version>${satoken.version}</version>
             </dependency>
 
-            <!-- Sa-Token插件：权限缓存与业务缓存分离 -->
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-alone-redis</artifactId>
-                <version>${satoken.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>
                 <artifactId>fastjson2</artifactId>

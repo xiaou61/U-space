@@ -38,6 +38,16 @@
             <artifactId>xiaou-common-redis</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-satoken</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-auth</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
     </dependencies>
     <build>
