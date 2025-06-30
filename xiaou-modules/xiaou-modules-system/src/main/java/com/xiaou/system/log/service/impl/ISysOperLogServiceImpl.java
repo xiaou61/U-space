@@ -7,16 +7,20 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
 
 import com.xiaou.log.event.OperLogEvent;
 import com.xiaou.system.log.domain.bo.SysOperLogBo;
 import com.xiaou.system.log.domain.entity.SysOperLog;
+import com.xiaou.system.log.domain.excel.SysOperLogExcelEntity;
 import com.xiaou.system.log.domain.vo.SysOperLogVo;
 import com.xiaou.system.log.mapper.SysOperLogMapper;
 import com.xiaou.system.log.service.ISysOperLogService;
 import jakarta.annotation.Resource;
 import lombok.NoArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
@@ -29,6 +33,7 @@ import java.util.List;
 @NoArgsConstructor
 public class ISysOperLogServiceImpl implements ISysOperLogService {
 
+    private static final Logger log = LoggerFactory.getLogger(ISysOperLogServiceImpl.class);
     @Resource
     private SysOperLogMapper baseMapper;
 
@@ -79,6 +84,14 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
         BeanUtils.copyProperties(bo, operLog);
         operLog.setOperTime(new Date());
         baseMapper.insert(operLog);
+    }
+
+    @Override
+    public List<SysOperLogExcelEntity> getExcelData() {
+        List<SysOperLog> entityList = baseMapper.selectList(null);
+        List<SysOperLogExcelEntity> convert = MapstructUtils.convert(entityList, SysOperLogExcelEntity.class);
+        log.info("convert:{}", convert);
+        return convert;
     }
 
 }

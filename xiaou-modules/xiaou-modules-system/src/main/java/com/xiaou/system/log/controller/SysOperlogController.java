@@ -4,14 +4,19 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 
+import com.xiaou.excel.util.ExcelUtils;
+import com.xiaou.system.log.domain.excel.SysOperLogExcelEntity;
 import com.xiaou.system.log.domain.vo.SysOperLogVo;
 import com.xiaou.system.log.service.ISysOperLogService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 
 /**
@@ -28,6 +33,16 @@ public class SysOperlogController {
     @PostMapping("/list")
     public R<PageRespDto<SysOperLogVo>> list(@RequestBody PageReqDto req) {
         return operLogService.selectPageOperLogList(req);
+    }
+
+    /**
+     * 导出 Excel
+     */
+    //todo 可以指定日期导出
+    @PostMapping("/export")
+    public void exportExcel(HttpServletResponse response) {
+        List<SysOperLogExcelEntity> dataList = operLogService.getExcelData();
+        ExcelUtils.write(response, dataList, SysOperLogExcelEntity.class, "日志信息", "日志表");
     }
 
 }

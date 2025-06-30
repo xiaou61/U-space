@@ -21,14 +21,16 @@ import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.xiaou.satoken.constant.RoleConstant.TEACHER;
 
 @Service
+@Slf4j
 public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher>
-    implements TeacherService {
+        implements TeacherService {
 
     @Resource
     private AdminUserMapper adminUserMapper;
@@ -53,10 +55,26 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher>
     }
 
     @Override
+    @Transactional
     public R<String> delete(String id) {
+        // 先查
+        Teacher teacher = baseMapper.selectById(id);
+
+        // 防止 teacher 为 null
+        if (teacher == null) {
+            return R.fail("教师信息不存在，无法删除");
+        }
+
+        // 删除教师
         baseMapper.deleteById(id);
+
+        // 删除教师账号与权限
+        loginHelper.deleteUserRole(id, TEACHER);
+        adminUserMapper.delete(new QueryWrapper<AdminUser>().eq("username", teacher.getEmployeeNo()));
+
         return R.ok("删除成功");
     }
+
 
     @Override
     public R<PageRespDto<TeacherResp>> pageTeacher(PageReqDto req) {
