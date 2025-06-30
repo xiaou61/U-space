@@ -22,4 +22,5 @@ public interface GlobalConstants {
      */
     Integer ZERO = 0;
 
+    Integer ONE = 1;
 }

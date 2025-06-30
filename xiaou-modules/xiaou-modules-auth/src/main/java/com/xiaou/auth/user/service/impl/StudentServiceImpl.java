@@ -4,10 +4,12 @@ package com.xiaou.auth.user.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.admin.domain.entity.ClassEntity;
+import com.xiaou.auth.admin.domain.resp.StudentInfoPageResp;
 import com.xiaou.auth.admin.mapper.ClassMapper;
-import com.xiaou.auth.admin.service.ClassService;
 import com.xiaou.auth.user.constant.UserConstant;
 import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.domain.mq.StudentMsgMQ;
@@ -19,18 +21,21 @@ import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.auth.user.service.StudentService;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.page.PageReqDto;
+import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.common.utils.StringUtils;
-import com.xiaou.mq.config.RabbitMQConfig;
 import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import static com.xiaou.auth.user.constant.UserConstant.STATUS;
 
 @Service
 public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
@@ -93,6 +98,44 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
         //查询所有的班级
         List<ClassEntity> classList = classmapper.selectList(null);
         return R.ok(MapstructUtils.convert(classList, StudentLoginClassResp.class));
+    }
+
+    @Override
+    public R<PageRespDto<StudentInfoPageResp>> pageAll(PageReqDto req) {
+        IPage<Student> page = new Page<>(req.getPageNum(), req.getPageSize());
+        QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
+        IPage<Student> studentIPage = baseMapper.selectPage(page, queryWrapper);
+        List<StudentInfoPageResp> convert = MapstructUtils.convert(studentIPage.getRecords(), StudentInfoPageResp.class);
+        convert.forEach(studentInfoPageResp -> studentInfoPageResp.setName(classmapper.selectById(studentInfoPageResp.getClassId()).getClassName()));
+        return R.ok(PageRespDto.of(studentIPage.getCurrent(),
+                studentIPage.getSize(),
+                studentIPage.getTotal(),
+                convert
+                ));
+    }
+
+    @Override
+    public R<List<StudentInfoPageResp>> pageUnAudited() {
+        //查看全部status为0的
+        QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(STATUS, GlobalConstants.ZERO);
+        //查询全部并且返回
+        List<StudentInfoPageResp> convert = MapstructUtils.convert(baseMapper.selectList(queryWrapper), StudentInfoPageResp.class);
+        //查询name
+        convert.forEach(studentInfoPageResp -> studentInfoPageResp.setName(classmapper.selectById(studentInfoPageResp.getClassId()).getClassName()));
+        return R.ok(convert);
+    }
+
+    @Override
+    public R<String> audit(String id) {
+        Student student = baseMapper.selectById(id);
+        if (student == null) {
+            return R.fail("用户不存在");
+        }
+        student.setStatus(GlobalConstants.ONE);
+        baseMapper.updateById(student);
+        //TODO 给学生发送信息提醒
+        return R.ok("成功");
     }
 }
 

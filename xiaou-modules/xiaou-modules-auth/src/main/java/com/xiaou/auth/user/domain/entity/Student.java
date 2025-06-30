@@ -1,5 +1,6 @@
 package com.xiaou.auth.user.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -18,7 +19,7 @@ public class Student {
     /**
      * 学生ID，主键UUID（无连字符）
      */
-    @TableId
+    @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 
     /**
