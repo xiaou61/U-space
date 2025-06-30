@@ -13,6 +13,7 @@ public class LoginHelper {
     @Resource
     private UserRolesMapper userRolesMapper;
 
+
     /**
      * 获取当前登录用户ID
      */
@@ -47,4 +48,5 @@ public class LoginHelper {
     public void removeCurrentAppUser() {
         StpUtil.logout();
     }
+
 }

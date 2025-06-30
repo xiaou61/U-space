@@ -6,6 +6,8 @@ import com.xiaou.auth.user.service.StudentService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.log.annotation.Log;
+import com.xiaou.log.enums.BusinessType;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +41,7 @@ public class StudentController {
     /**
      * 审核学生
      */
+    @Log(title = "学生管理", businessType = BusinessType.UPDATE)
     @PostMapping("/audit")
     public R<String> audit(@RequestParam String id){
         return studentService.audit(id);

@@ -51,7 +51,11 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-mq</artifactId>
-
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-system</artifactId>
+            <version>${revision}</version>
         </dependency>
 
     </dependencies>

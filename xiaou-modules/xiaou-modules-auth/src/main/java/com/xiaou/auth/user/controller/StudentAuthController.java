@@ -1,9 +1,6 @@
 package com.xiaou.auth.user.controller;
 
 import cn.dev33.satoken.util.SaResult;
-import com.xiaou.auth.admin.domain.entity.ClassEntity;
-import com.xiaou.auth.admin.domain.resp.ClassResp;
-import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.domain.req.StudentLoginReq;
 import com.xiaou.auth.user.domain.req.StudentRegisterReq;
 import com.xiaou.auth.user.domain.resp.StudentInfoResp;
@@ -15,7 +12,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/student/auth")

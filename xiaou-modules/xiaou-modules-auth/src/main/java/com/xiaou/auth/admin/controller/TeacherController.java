@@ -8,6 +8,8 @@ import com.xiaou.auth.admin.service.TeacherService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.log.annotation.Log;
+import com.xiaou.log.enums.BusinessType;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ public class TeacherController {
     /**
      * 添加教师
      */
+    @Log(title = "教师管理", businessType = BusinessType.INSERT)
     @PostMapping("/add")
     public R<String> add(@RequestBody TeacherReq req) {
         return teacherService.add(req);
@@ -28,6 +31,7 @@ public class TeacherController {
     /**
      * 删除教师
      */
+    @Log(title = "教师管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/delete")
     public R<String> delete(@RequestParam String id) {
         return teacherService.delete(id);

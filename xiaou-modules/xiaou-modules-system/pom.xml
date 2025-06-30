@@ -9,8 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-modules-auth</artifactId>
-
+    <artifactId>xiaou-modules-system</artifactId>
 
     <dependencies>
         <dependency>
@@ -23,31 +22,14 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-satoken</artifactId>
+            <artifactId>xiaou-common-log</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-mybatis</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-excel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-mq</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-mail</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-log</artifactId>
-        </dependency>
-
     </dependencies>
+
+
 
 </project>

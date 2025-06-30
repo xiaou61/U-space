@@ -6,6 +6,8 @@ import com.xiaou.auth.admin.domain.entity.AdminUser;
 import com.xiaou.auth.admin.domain.req.AdminUserReq;
 import com.xiaou.auth.admin.service.AdminUserService;
 import com.xiaou.common.domain.R;
+import com.xiaou.log.annotation.Log;
+import com.xiaou.log.enums.BusinessType;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +27,8 @@ public class AuthController {
     /**
      * 管理员登录
      */
+
+    @Log(title = "登录", businessType = BusinessType.LOGIN)
     @PostMapping("/login")
     public R<SaResult> login(@RequestBody AdminUserReq req) {
         return baseService.login(req);
@@ -40,6 +44,7 @@ public class AuthController {
     /**
      * 管理员注销
      */
+    @Log(title = "注销", businessType = BusinessType.LOGOUT)
     @GetMapping("/logout")
     public R<String> logout(){
         StpUtil.logout(loginHelper.getCurrentAppUserId());
@@ -55,6 +60,7 @@ public class AuthController {
     /**
      * 修改密码
      */
+    @Log(title = "修改密码", businessType = BusinessType.UPDATE)
     @PostMapping("/updatePassword")
     public R<String> updatePassword(@RequestParam String oldPassword, @RequestParam String newPassword){
         return baseService.updatePassword(oldPassword, newPassword);

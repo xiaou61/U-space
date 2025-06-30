@@ -5,15 +5,20 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.xiaou</groupId>
-        <artifactId>U-Space-2.X</artifactId>
+        <artifactId>xiaou-common</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-modules</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>xiaou-modules-auth</module>
-        <module>xiaou-modules-system</module>
-    </modules>
+    <artifactId>xiaou-common-log</artifactId>
 
+<dependencies>
+    <dependency>
+        <groupId>com.xiaou</groupId>
+        <artifactId>xiaou-common-core</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.xiaou</groupId>
+        <artifactId>xiaou-common-satoken</artifactId>
+    </dependency>
+</dependencies>
 </project>

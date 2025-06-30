@@ -21,6 +21,7 @@
         <module>xiaou-common-excel</module>
         <module>xiaou-common-mail</module>
         <module>xiaou-common-mq</module>
+        <module>xiaou-common-log</module>
     </modules>
 
     <properties>
