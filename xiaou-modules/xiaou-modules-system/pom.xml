@@ -32,6 +32,14 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-excel</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-ratelimiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-upload</artifactId>
+        </dependency>
     </dependencies>
 
 

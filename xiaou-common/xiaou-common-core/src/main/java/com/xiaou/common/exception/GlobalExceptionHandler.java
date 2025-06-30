@@ -21,9 +21,10 @@ public class GlobalExceptionHandler {
         log.error(e.getMessage());
         return R.fail(e.getMessage());
     }
+
     @ExceptionHandler(NotLoginException.class)
     public R<?> NotLoginExceptionHandler(NotLoginException e) {
         log.error(e.getMessage());
-        return R.fail(NOT_LOGIN_ERROR);
+        return R.fail(NOT_LOGIN_ERROR.getCode(), "未登录");
     }
 }

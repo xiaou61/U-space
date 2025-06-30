@@ -157,6 +157,12 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.dromara.x-file-storage</groupId>
+                <artifactId>x-file-storage-spring</artifactId>
+                <version>${x-file.version}</version>
+            </dependency>
+
 
         </dependencies>
 

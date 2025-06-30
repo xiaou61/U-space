@@ -22,6 +22,8 @@
         <module>xiaou-common-mail</module>
         <module>xiaou-common-mq</module>
         <module>xiaou-common-log</module>
+        <module>xiaou-common-ratelimiter</module>
+        <module>xiaou-common-upload</module>
     </modules>
 
     <properties>

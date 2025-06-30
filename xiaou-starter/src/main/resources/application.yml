@@ -16,3 +16,8 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
+sa-token:
+  # token 有效期（单位：秒），默认30天，-1代表永不过期
+  timeout: 2592000
+  # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
+  active-timeout: -1
