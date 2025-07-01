@@ -7,6 +7,8 @@ import com.xiaou.satoken.mapper.UserRolesMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class LoginHelper {
 
@@ -49,4 +51,13 @@ public class LoginHelper {
         StpUtil.logout();
     }
 
+    /**
+     * 根据id批量获得用户权限
+     * @param allOnlineUserIds
+     */
+    public void getUserRoleByIds(List<String> allOnlineUserIds) {
+        QueryWrapper<UserRoles> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("id", allOnlineUserIds);
+        userRolesMapper.selectList(queryWrapper);
+    }
 }
