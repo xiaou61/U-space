@@ -5,7 +5,6 @@ package com.xiaou.web.config;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.stp.StpUtil;
-import com.xiaou.online.manager.OnlineUserManager;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -28,8 +27,6 @@ public class ApiPrefixConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor(handle -> {
                     StpUtil.checkLogin();
-                    String userId = StpUtil.getLoginIdAsString();
-                    OnlineUserManager.markOnline(userId); // 自动续命
                 }))
                 .addPathPatterns("/**")
                 .excludePathPatterns("/admin/auth/login", "/student/auth/login");

@@ -25,6 +25,7 @@
         <module>xiaou-common-ratelimiter</module>
         <module>xiaou-common-upload</module>
         <module>xiaou-common-online</module>
+        <module>xiaou-common-sse</module>
     </modules>
 
     <properties>

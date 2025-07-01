@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+@Deprecated
 public class OnlineUserManager {
 
     private static final String ONLINE_KEY_PREFIX = "online:user:";
