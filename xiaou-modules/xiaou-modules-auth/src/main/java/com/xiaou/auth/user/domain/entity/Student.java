@@ -61,4 +61,8 @@ public class Student {
      * 状态
      */
     private Integer status;
+    /**
+     * 头像
+     */
+    private String avatar;
 }

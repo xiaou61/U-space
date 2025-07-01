@@ -47,7 +47,15 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-log</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-upload</artifactId>
+        </dependency>
 
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-ratelimiter</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

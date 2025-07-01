@@ -61,6 +61,8 @@ CREATE TABLE `u_student` (
 ALTER TABLE `u_student`
     ADD COLUMN `status` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '状态：0-等待审核中，1-审核成功';
 
+ALTER TABLE `u_student`
+    ADD COLUMN `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像地址，支持URL';
 
 
 

@@ -21,6 +21,7 @@ import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.auth.user.service.StudentService;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.exception.ServiceException;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
@@ -28,9 +29,12 @@ import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.common.utils.StringUtils;
 import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.satoken.utils.LoginHelper;
+import com.xiaou.upload.utils.FilesUtils;
 import jakarta.annotation.Resource;
+import org.dromara.x.file.storage.core.FileInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -47,6 +51,8 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
     private LoginHelper loginHelper;
     @Resource
     private ClassMapper classmapper;
+    @Resource
+    private FilesUtils filesUtils;
 
     @Override
     public R<String> register(StudentRegisterReq req) {
@@ -90,6 +96,9 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
         String currentAppUserId = loginHelper.getCurrentAppUserId();
         Student student = baseMapper.selectById(currentAppUserId);
         StudentInfoResp convert = MapstructUtils.convert(student, StudentInfoResp.class);
+        //填充班级名称
+        //todo 这里可以优化
+        convert.setClassName(classmapper.selectById(convert.getClassId()).getClassName());
         return R.ok(convert);
     }
 
@@ -111,7 +120,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
                 studentIPage.getSize(),
                 studentIPage.getTotal(),
                 convert
-                ));
+        ));
     }
 
     @Override
@@ -136,6 +145,38 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
         baseMapper.updateById(student);
         //TODO 给学生发送信息提醒
         return R.ok("成功");
+    }
+
+    @Override
+    public R<String> updateAvatar(String avatar) {
+        //获得当前登录对象
+        String currentAppUserId = loginHelper.getCurrentAppUserId();
+        Student student = baseMapper.selectById(currentAppUserId);
+        student.setAvatar(avatar);
+        baseMapper.updateById(student);
+        return R.ok("更换头像成功");
+    }
+
+    @Override
+    public R<String> updatePassword(String oldPassword, String newPassword) {
+        Student student = baseMapper.selectById(loginHelper.getCurrentAppUserId());
+        if (!StringUtils.equals(PasswordUtil.getEncryptPassword(oldPassword), student.getPassword())) {
+            return R.fail("旧密码错误");
+        }
+        student.setPassword(PasswordUtil.getEncryptPassword(newPassword));
+        baseMapper.updateById(student);
+        return R.ok("修改密码成功");
+    }
+
+    @Override
+    public R<String> uploadAvatar(MultipartFile file) {
+        try {
+            //todo 后续会添加头像审核功能
+            FileInfo fileInfo = filesUtils.uploadFile(file);
+            return R.ok("上传成功",fileInfo.getUrl());
+        } catch (Exception e) {
+            throw new ServiceException("头像上传失败");
+        }
     }
 }
 

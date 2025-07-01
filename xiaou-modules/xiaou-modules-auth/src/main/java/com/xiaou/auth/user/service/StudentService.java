@@ -12,6 +12,7 @@ import com.xiaou.auth.user.domain.resp.StudentLoginClassResp;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -31,4 +32,10 @@ public interface StudentService extends IService<Student> {
     R<List<StudentInfoPageResp>> pageUnAudited();
 
     R<String> audit(String id);
+
+    R<String> updateAvatar(String avatar);
+
+    R<String> updatePassword(String oldPassword, String newPassword);
+
+    R<String> uploadAvatar(MultipartFile file);
 }
