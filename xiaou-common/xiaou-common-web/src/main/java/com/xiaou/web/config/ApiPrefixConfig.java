@@ -32,7 +32,7 @@ public class ApiPrefixConfig implements WebMvcConfigurer {
                     OnlineUserManager.markOnline(userId); // 自动续命
                 }))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/admin/auth", "/student/auth");
+                .excludePathPatterns("/admin/auth/login", "/student/auth/login");
     }
 
 
