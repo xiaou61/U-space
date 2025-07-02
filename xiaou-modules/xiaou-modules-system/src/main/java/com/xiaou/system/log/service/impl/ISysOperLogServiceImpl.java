@@ -90,7 +90,6 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
     public List<SysOperLogExcelEntity> getExcelData() {
         List<SysOperLog> entityList = baseMapper.selectList(null);
         List<SysOperLogExcelEntity> convert = MapstructUtils.convert(entityList, SysOperLogExcelEntity.class);
-        log.info("convert:{}", convert);
         return convert;
     }
 
