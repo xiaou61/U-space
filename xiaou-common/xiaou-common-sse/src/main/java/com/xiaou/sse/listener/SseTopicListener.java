@@ -44,7 +44,7 @@ public class SseTopicListener implements ApplicationRunner, Ordered {
                     rabbitMQUtils.sendNoticeMessage(message);
                 });
             } else {
-                //这个群发是群发给在线用户的消息 如果不在线目前不考虑群发
+                //群发极群发所有用户
                 sseEmitterManager.sendMessageAll(message.getMessage(),message.getType());
                 //调用mq进行存储
                 log.info("SSE主题订阅群发消息 message={} type={}", message.getMessage(), message.getType());

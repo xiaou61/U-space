@@ -26,4 +26,5 @@ public interface GlobalConstants {
 
     String ALL="All";
     String NOKNOWN = "NOKNOWN";
+    String USER_ONLINE_KEY = GLOBAL_REDIS_KEY+"user_online:";
 }

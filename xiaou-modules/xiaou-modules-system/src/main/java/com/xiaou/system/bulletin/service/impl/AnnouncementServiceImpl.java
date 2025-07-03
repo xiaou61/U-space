@@ -23,13 +23,17 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     @Override
     public R<String> add(AnnouncementReq req) {
         baseMapper.insert(MapstructUtils.convert(req, Announcement.class));
-        //这里发送sse消息给所有用户
+
         SseMessageDto sseMessageDto = new SseMessageDto();
         sseMessageDto.setMessage(req.getContent());
         sseMessageDto.setType(ANNOUNCEMENT);
+
+        // 群发给所有用户
         SseMessageUtils.publishAll(sseMessageDto);
+
         return R.ok("添加成功");
     }
+
 }
 
 

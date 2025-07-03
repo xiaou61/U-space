@@ -1,6 +1,7 @@
 package com.xiaou.sse.core;
 
 import cn.hutool.core.map.MapUtil;
+import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.redis.utils.RedisUtils;
 import com.xiaou.sse.dto.SseMessageDto;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,6 +143,7 @@ public class SseEmitterManager {
         broadcastMessage.setMessage(sseMessageDto.getMessage());
         broadcastMessage.setType(sseMessageDto.getType());
 
+
         RedisUtils.publish(SSE_TOPIC, broadcastMessage, consumer -> {
             log.info("SSE发送主题订阅消息topic:{} message:{} type:{}", SSE_TOPIC, sseMessageDto.getMessage(), sseMessageDto.getType());
         });
@@ -176,7 +179,9 @@ public class SseEmitterManager {
 
 
     public void sendMessageAll(String message, String type) {
-        for (String userId : USER_TOKEN_EMITTERS.keySet()) {
+        //要获取所有用户不管在线不在线
+        List<String> userIds = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+        for (String userId : userIds) {
             sendMessage(userId, message,type);
         }
     }

@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaIgnore;
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
+import com.xiaou.redis.utils.RedisUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.sse.core.SseEmitterManager;
 import com.xiaou.sse.dto.SseMessageDto;
@@ -12,6 +13,8 @@ import com.xiaou.sse.manager.SseMessageManager;
 import com.xiaou.sse.mapper.UserNotifyMessageMapper;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
@@ -32,6 +35,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SseController implements DisposableBean {
 
+    private static final Logger log = LoggerFactory.getLogger(SseController.class);
     @Resource
     private LoginHelper loginHelper;
 
@@ -50,10 +54,15 @@ public class SseController implements DisposableBean {
         String userId = loginHelper.getCurrentAppUserId();
         // 建立连接
         SseEmitter emitter = sseEmitterManager.connect(userId, tokenValue);
-        // 推送自己消息
+        // 拉取未读
         sseMessageManager.pullAndPushUnreadMessages(userId);
-        //推送公共消息
-        sseMessageManager.pullAndPushUnreadMessages("All");
+
+        List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+        //如果id不再缓存中
+        if (!cacheList.contains(userId)){
+            RedisUtils.addCacheList(GlobalConstants.USER_ONLINE_KEY,userId);
+            log.info("用户{}上线",userId);
+        }
         return emitter;
     }
 
