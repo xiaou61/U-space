@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EmailConsumer {
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE)
+    @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE)
     public void handleEmailMessage(StudentMsgMQ msg) {
         log.info("接收到邮件消息: " + msg);
         // TODO: 调用邮件发送服务发送邮件 发送到指定导员那里 如果没有指定导员，那么默认发送到管理员邮箱

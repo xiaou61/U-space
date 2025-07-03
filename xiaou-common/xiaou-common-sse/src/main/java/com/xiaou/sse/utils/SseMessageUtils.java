@@ -32,11 +32,11 @@ public class SseMessageUtils {
      * @param userId  要发送消息的用户id
      * @param message 要发送的消息内容
      */
-    public static void sendMessage(String userId, String message) {
+    public static void sendMessage(String userId, String message,String type) {
         if (!isEnable()) {
             return;
         }
-        MANAGER.sendMessage(userId, message);
+        MANAGER.sendMessage(userId, message,type);
     }
 
     /**
@@ -44,11 +44,11 @@ public class SseMessageUtils {
      *
      * @param message 要发送的消息内容
      */
-    public static void sendMessage(String message) {
+    public static void sendMessage(String message, String type) {
         if (!isEnable()) {
             return;
         }
-        MANAGER.sendMessage(message);
+        MANAGER.sendMessageAll(message,type);
     }
 
     /**
@@ -68,7 +68,7 @@ public class SseMessageUtils {
      *
      * @param message 要发布的消息内容
      */
-    public static void publishAll(String message) {
+    public static void publishAll(SseMessageDto message) {
         if (!isEnable()) {
             return;
         }

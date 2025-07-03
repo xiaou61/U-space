@@ -126,3 +126,26 @@ CREATE TABLE `u_file_detail`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8
   ROW_FORMAT = DYNAMIC COMMENT ='文件记录表';
+
+
+CREATE TABLE `sys_announcement` (
+                                    `id` VARCHAR(32) NOT NULL COMMENT '公告ID，UUID主键（无连字符）',
+                                    `content` TEXT NOT NULL COMMENT '公告内容',
+                                    `publish_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '公告发布时间（默认当前时间）',
+                                    `need_popup` TINYINT(1) DEFAULT 0 COMMENT '是否需要弹框提醒（0否，1是）',
+                                    `is_deleted` TINYINT(1) DEFAULT 0 COMMENT '是否逻辑删除（0否，1是）',
+                                    PRIMARY KEY (`id`)
+) COMMENT='系统公告表';
+
+
+
+CREATE TABLE `u_user_notify_message` (
+                                     id           VARCHAR(32) PRIMARY KEY COMMENT '消息ID，UUID主键（无连字符）',
+                                     user_id      VARCHAR(32) DEFAULT NULL COMMENT '接收者用户ID，为All表示广播公告',
+                                     content      TEXT COMMENT '消息内容',
+                                     type         VARCHAR(30) NOT NULL COMMENT '消息类型（如：system、like、comment）',
+                                     scope        VARCHAR(10) NOT NULL COMMENT '作用范围：system=公告，private=个人',
+                                     is_push      TINYINT DEFAULT 0 COMMENT '是否通过了SSE推送：0否，1是',
+                                     create_time  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                     update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT='用户通知消息表';

@@ -24,4 +24,7 @@ public class SseMessageDto implements Serializable {
      * 需要发送的消息
      */
     private String message;
+
+    private String type;              // 消息类型，如 notice / like / comment
+
 }

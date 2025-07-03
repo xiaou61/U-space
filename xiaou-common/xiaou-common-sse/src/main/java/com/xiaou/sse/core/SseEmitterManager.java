@@ -99,13 +99,13 @@ public class SseEmitterManager {
      * @param userId  要发送消息的用户id
      * @param message 要发送的消息内容
      */
-    public void sendMessage(String userId, String message) {
+    public void sendMessage(String userId, String message,String type) {
         Map<String, SseEmitter> emitters = USER_TOKEN_EMITTERS.get(userId);
         if (MapUtil.isNotEmpty(emitters)) {
             for (Map.Entry<String, SseEmitter> entry : emitters.entrySet()) {
                 try {
                     entry.getValue().send(SseEmitter.event()
-                            .name("message")
+                            .name(type)
                             .data(message));
                 } catch (Exception e) {
                     emitters.remove(entry.getKey());
@@ -116,16 +116,6 @@ public class SseEmitterManager {
         }
     }
 
-    /**
-     * 本机全用户会话发送消息
-     *
-     * @param message 要发送的消息内容
-     */
-    public void sendMessage(String message) {
-        for (String userId : USER_TOKEN_EMITTERS.keySet()) {
-            sendMessage(userId, message);
-        }
-    }
 
     /**
      * 发布SSE订阅消息
@@ -136,22 +126,23 @@ public class SseEmitterManager {
         SseMessageDto broadcastMessage = new SseMessageDto();
         broadcastMessage.setMessage(sseMessageDto.getMessage());
         broadcastMessage.setUserIds(sseMessageDto.getUserIds());
+        broadcastMessage.setType(sseMessageDto.getType());
         RedisUtils.publish(SSE_TOPIC, broadcastMessage, consumer -> {
-            log.info("SSE发送主题订阅消息topic:{} session keys:{} message:{}",
-                    SSE_TOPIC, sseMessageDto.getUserIds(), sseMessageDto.getMessage());
+            log.info("SSE发送主题订阅消息topic:{} session keys:{} message:{},type:{}",
+                    SSE_TOPIC, sseMessageDto.getUserIds(), sseMessageDto.getMessage(), sseMessageDto.getType());
         });
     }
 
     /**
      * 向所有的用户发布订阅的消息(群发)
-     *
-     * @param message 要发布的消息内容
      */
-    public void publishAll(String message) {
+    public void publishAll(SseMessageDto sseMessageDto) {
         SseMessageDto broadcastMessage = new SseMessageDto();
-        broadcastMessage.setMessage(message);
+        broadcastMessage.setMessage(sseMessageDto.getMessage());
+        broadcastMessage.setType(sseMessageDto.getType());
+
         RedisUtils.publish(SSE_TOPIC, broadcastMessage, consumer -> {
-            log.info("SSE发送主题订阅消息topic:{} message:{}", SSE_TOPIC, message);
+            log.info("SSE发送主题订阅消息topic:{} message:{} type:{}", SSE_TOPIC, sseMessageDto.getMessage(), sseMessageDto.getType());
         });
     }
 
@@ -177,5 +168,16 @@ public class SseEmitterManager {
     // 如果你想要所有在线用户列表
     public Set<String> getOnlineUserIds() {
         return USER_TOKEN_EMITTERS.keySet();
+    }
+    //查看指定用户是否在线
+    public boolean isUserOnline(String userId) {
+        return USER_TOKEN_EMITTERS.containsKey(userId);
+    }
+
+
+    public void sendMessageAll(String message, String type) {
+        for (String userId : USER_TOKEN_EMITTERS.keySet()) {
+            sendMessage(userId, message,type);
+        }
     }
 }

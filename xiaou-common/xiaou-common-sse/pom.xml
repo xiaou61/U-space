@@ -25,5 +25,13 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-satoken</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-online</artifactId>
+        </dependency>
     </dependencies>
 </project>

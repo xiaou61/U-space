@@ -23,4 +23,7 @@ public interface GlobalConstants {
     Integer ZERO = 0;
 
     Integer ONE = 1;
+
+    String ALL="All";
+    String NOKNOWN = "NOKNOWN";
 }
