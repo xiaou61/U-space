@@ -36,15 +36,6 @@ public class NoticeConsumer {
         log.info("接收到MQ消息: " + msg.getMessage()+msg.getType());
         //如果userids为null 那么需要保存所有的
         if (msg.getUserIds() == null){
-//            UserNotifyMessage userNotifyMessage = new UserNotifyMessage();
-//            userNotifyMessage.setUserId(GlobalConstants.ALL);
-//            userNotifyMessage.setContent(msg.getMessage());
-//
-//            //默认都设置为0
-//            userNotifyMessage.setIsPush(GlobalConstants.ZERO);
-//            userNotifyMessage.setType(msg.getType());
-//            userNotifyMessageMapper.insert(userNotifyMessage);
-            //todo ddd
             List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
             if (cacheList != null){
                 for (String userId : cacheList) {

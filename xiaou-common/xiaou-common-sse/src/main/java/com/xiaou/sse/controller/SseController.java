@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaIgnore;
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
+import com.xiaou.common.exception.ServiceException;
 import com.xiaou.redis.utils.RedisUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.sse.core.SseEmitterManager;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * SSE 控制器
@@ -59,6 +61,7 @@ public class SseController implements DisposableBean {
 
         List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
         //如果id不再缓存中
+        //todo 定期要跟数据库进行同步
         if (!cacheList.contains(userId)){
             RedisUtils.addCacheList(GlobalConstants.USER_ONLINE_KEY,userId);
             log.info("用户{}上线",userId);

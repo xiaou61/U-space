@@ -36,15 +36,12 @@ public class SseTopicListener implements ApplicationRunner, Ordered {
             // 如果key不为空就按照key发消息 如果为空就群发
             if (CollUtil.isNotEmpty(message.getUserIds())) {
                 message.getUserIds().forEach(key -> {
-                    //判断用户是否在线，在线发送，不在线的话进行存储到数据库
-                    if (!sseEmitterManager.isUserOnline(key)) {
-                        sseEmitterManager.sendMessage(key, message.getMessage(),message.getType());
-                    }
+                    sseEmitterManager.sendMessage(key, message.getMessage(),message.getType());
                     //调用mq进行存储
                     rabbitMQUtils.sendNoticeMessage(message);
                 });
             } else {
-                //群发极群发所有用户
+                //群发所有用户
                 sseEmitterManager.sendMessageAll(message.getMessage(),message.getType());
                 //调用mq进行存储
                 log.info("SSE主题订阅群发消息 message={} type={}", message.getMessage(), message.getType());
