@@ -19,5 +19,8 @@ public class RabbitMQUtils {
     public void sendNoticeMessage(Object message) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE , RabbitMQConfig.NOTICE_ROUTING_KEY, message);
     }
+    public void sendLogMessage(Object message) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE , RabbitMQConfig.LOG_ROUTING_KEY, message);
+    }
 
 }

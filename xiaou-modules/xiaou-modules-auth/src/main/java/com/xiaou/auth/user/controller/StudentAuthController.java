@@ -10,6 +10,9 @@ import com.xiaou.auth.user.service.StudentService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.log.annotation.Log;
+import com.xiaou.log.enums.BusinessType;
+import com.xiaou.log.enums.OperatorType;
 import com.xiaou.ratelimiter.annotation.RateLimiter;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
@@ -29,6 +32,7 @@ public class StudentAuthController {
     /**
      * 学生注册
      */
+
     @PostMapping("/register")
     public R<String> register(@RequestBody StudentRegisterReq req) {
         return studentService.register(req);
@@ -37,6 +41,7 @@ public class StudentAuthController {
     /**
      * 学生登录
      */
+    @Log(title = "登录", businessType = BusinessType.LOGIN, operatorType = OperatorType.MOBILE)
     @PostMapping("/login")
     public R<SaResult> login(@RequestBody StudentLoginReq req) {
         return studentService.login(req);
@@ -55,6 +60,7 @@ public class StudentAuthController {
     /**
      * 上传头像
      */
+    @Log(title = "上传头像", businessType = BusinessType.UPDATE, operatorType = OperatorType.MOBILE)
     @RateLimiter(key = "uploadAvatar", count = 5)
     @PostMapping("/uoloadavatar")
     public R<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
@@ -64,6 +70,7 @@ public class StudentAuthController {
     /**
      * 修改头像
      */
+    @Log(title = "修改头像", businessType = BusinessType.UPDATE, operatorType = OperatorType.MOBILE)
     @PostMapping("/avatar")
     public R<String> updateAvatar(@RequestParam String avatar) {
         return studentService.updateAvatar(avatar);
@@ -72,6 +79,7 @@ public class StudentAuthController {
     /**
      * 修改密码
      */
+    @Log(title = "修改密码", businessType = BusinessType.UPDATE, operatorType = OperatorType.MOBILE)
     @RateLimiter(key = "updatePassword", count = 5)
     @PostMapping("/password")
     public R<String> updatePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
@@ -86,4 +94,16 @@ public class StudentAuthController {
         return studentService.listAll();
     }
 
+    /**
+     * 登出
+     */
+    @PostMapping("/logout")
+    public R<String> logout() {
+        return studentService.logout();
+    }
+    @Log(title = "测试接口123", businessType = BusinessType.UPDATE, operatorType = OperatorType.MOBILE)
+    @GetMapping
+    public R<String> test() {
+        return R.ok("测试成功");
+    }
 }

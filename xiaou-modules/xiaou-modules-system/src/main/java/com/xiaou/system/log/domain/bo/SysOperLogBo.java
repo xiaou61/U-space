@@ -1,5 +1,7 @@
 package com.xiaou.system.log.domain.bo;
 
+import com.xiaou.log.event.OperLogEvent;
+import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 import java.util.Date;
@@ -7,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
+@AutoMapper(target = OperLogEvent.class)
 public class SysOperLogBo {
 
     /**

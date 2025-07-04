@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 /**
@@ -154,7 +155,7 @@ public class LogAspect {
      * @throws Exception 异常
      */
     private void setRequestValue(JoinPoint joinPoint, OperLogEvent operLog, String[] excludeParamNames) throws Exception {
-        Map<String, String> paramsMap = ServletUtils.getParamMap(ServletUtils.getRequest());
+        Map<String, String> paramsMap = ServletUtils.getParamMap(Objects.requireNonNull(ServletUtils.getRequest()));
         String requestMethod = operLog.getRequestMethod();
         if (MapUtil.isEmpty(paramsMap) && StringUtils.equalsAny(requestMethod, HttpMethod.PUT.name(), HttpMethod.POST.name(), HttpMethod.DELETE.name())) {
             String params = argsArrayToString(joinPoint.getArgs(), excludeParamNames);

@@ -38,4 +38,6 @@ public interface StudentService extends IService<Student> {
     R<String> updatePassword(String oldPassword, String newPassword);
 
     R<String> uploadAvatar(MultipartFile file);
+
+    R<String> logout();
 }

@@ -7,6 +7,7 @@ import com.xiaou.system.log.domain.bo.SysOperLogBo;
 import com.xiaou.system.log.domain.excel.SysOperLogExcelEntity;
 import com.xiaou.system.log.domain.vo.SysOperLogVo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -15,5 +16,6 @@ public interface ISysOperLogService {
 
     void insertOperlog(SysOperLogBo bo);
 
-    List<SysOperLogExcelEntity> getExcelData();
+
+    List<SysOperLogExcelEntity> getExcelData(LocalDateTime beginTime, LocalDateTime endTime);
 }

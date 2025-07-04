@@ -178,6 +178,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
             throw new ServiceException("头像上传失败");
         }
     }
+
+    @Override
+    public R<String> logout() {
+        StpUtil.logout(loginHelper.getCurrentAppUserId());
+        return R.ok("注销成功");
+    }
 }
 
 

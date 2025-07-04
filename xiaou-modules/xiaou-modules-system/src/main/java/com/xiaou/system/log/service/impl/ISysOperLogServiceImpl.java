@@ -1,8 +1,10 @@
 package com.xiaou.system.log.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
@@ -11,6 +13,7 @@ import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
 
 import com.xiaou.log.event.OperLogEvent;
+import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.system.log.domain.bo.SysOperLogBo;
 import com.xiaou.system.log.domain.entity.SysOperLog;
 import com.xiaou.system.log.domain.excel.SysOperLogExcelEntity;
@@ -22,10 +25,12 @@ import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -36,6 +41,8 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
     private static final Logger log = LoggerFactory.getLogger(ISysOperLogServiceImpl.class);
     @Resource
     private SysOperLogMapper baseMapper;
+    @Autowired
+    private RabbitMQUtils rabbitMQUtils;
 
     /**
      * 操作日志记录
@@ -45,11 +52,12 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
     @Async
     @EventListener
     public void recordOper(OperLogEvent operLogEvent) {
-        SysOperLogBo operLog = new SysOperLogBo();
-        BeanUtils.copyProperties(operLogEvent, operLog);
+        SysOperLogBo convert = MapstructUtils.convert(operLogEvent, SysOperLogBo.class);
         // 远程查询操作地点
-        operLog.setOperLocation("河北省秦皇岛市");
-        insertOperlog(operLog);
+        //todo 代做
+        convert.setOperLocation("河北省秦皇岛市");
+        //发布MQ
+        rabbitMQUtils.sendLogMessage(convert);
     }
 
     @Override
@@ -75,22 +83,26 @@ public class ISysOperLogServiceImpl implements ISysOperLogService {
 
     /**
      * 新增操作日志
-     *
+     *废弃
      * @param bo 操作日志对象
      */
     @Override
     public void insertOperlog(SysOperLogBo bo) {
-        SysOperLog operLog = new SysOperLog();
-        BeanUtils.copyProperties(bo, operLog);
-        operLog.setOperTime(new Date());
-        baseMapper.insert(operLog);
+        return;
     }
 
     @Override
-    public List<SysOperLogExcelEntity> getExcelData() {
-        List<SysOperLog> entityList = baseMapper.selectList(null);
-        List<SysOperLogExcelEntity> convert = MapstructUtils.convert(entityList, SysOperLogExcelEntity.class);
-        return convert;
+    public List<SysOperLogExcelEntity> getExcelData(LocalDateTime beginTime, LocalDateTime endTime) {
+        LambdaQueryWrapper<SysOperLog> queryWrapper = Wrappers.lambdaQuery();
+
+        // 添加时间范围条件
+        queryWrapper
+                .ge(beginTime != null, SysOperLog::getOperTime, beginTime)
+                .le(endTime != null, SysOperLog::getOperTime, endTime);
+
+        List<SysOperLog> entityList = baseMapper.selectList(queryWrapper);
+        return MapstructUtils.convert(entityList, SysOperLogExcelEntity.class);
     }
+
 
 }

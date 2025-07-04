@@ -5,6 +5,7 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 
 import com.xiaou.excel.util.ExcelUtils;
+import com.xiaou.system.log.domain.dto.OperLogExportReqDto;
 import com.xiaou.system.log.domain.excel.SysOperLogExcelEntity;
 import com.xiaou.system.log.domain.vo.SysOperLogVo;
 import com.xiaou.system.log.service.ISysOperLogService;
@@ -38,11 +39,11 @@ public class SysOperlogController {
     /**
      * 导出 Excel
      */
-    //todo 可以指定日期导出
     @PostMapping("/export")
-    public void exportExcel(HttpServletResponse response) {
-        List<SysOperLogExcelEntity> dataList = operLogService.getExcelData();
+    public void exportExcel(@RequestBody OperLogExportReqDto dto, HttpServletResponse response) {
+        List<SysOperLogExcelEntity> dataList = operLogService.getExcelData(dto.getBeginTime(), dto.getEndTime());
         ExcelUtils.write(response, dataList, SysOperLogExcelEntity.class, "日志信息", "日志表");
     }
+
 
 }
