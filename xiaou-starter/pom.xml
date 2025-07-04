@@ -61,6 +61,11 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-sse</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-study</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
     </dependencies>
     <build>

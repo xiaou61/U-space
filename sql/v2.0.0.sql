@@ -149,3 +149,25 @@ CREATE TABLE `u_user_notify_message` (
                                      create_time  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                      update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) COMMENT='用户通知消息表';
+
+
+
+CREATE TABLE `u_group` (
+                           `id` VARCHAR(32) NOT NULL COMMENT '群组ID，UUID',
+                           `name` VARCHAR(100) NOT NULL COMMENT '群组名称',
+                           `description` TEXT DEFAULT NULL COMMENT '群组描述',
+                           `creator_id` VARCHAR(32) NOT NULL COMMENT '创建人ID（老师）',
+                           `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                           PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组表';
+
+CREATE TABLE `u_group_member` (
+                                  `id` VARCHAR(32) NOT NULL COMMENT '主键UUID',
+                                  `group_id` VARCHAR(32) NOT NULL COMMENT '群组ID',
+                                  `user_id` VARCHAR(32) NOT NULL COMMENT '用户ID（学生ID）',
+                                  `joined_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+                                  PRIMARY KEY (`id`),
+                                  UNIQUE KEY `uniq_group_user` (`group_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组成员表';
+

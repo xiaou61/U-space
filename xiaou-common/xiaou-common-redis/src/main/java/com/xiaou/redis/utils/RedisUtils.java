@@ -1,5 +1,6 @@
 package com.xiaou.redis.utils;
 
+import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.utils.SpringUtils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -341,6 +343,25 @@ public class RedisUtils {
     }
 
     /**
+     * 缓存Set并设置过期时间
+     *
+     * @param key      缓存键值
+     * @param dataSet  缓存的数据
+     * @param timeout  过期时间
+     * @param timeUnit 时间单位（例如：TimeUnit.MINUTES）
+     * @return 是否设置成功
+     */
+    public static <T> boolean setCacheSet(final String key, final Set<T> dataSet, long timeout, TimeUnit timeUnit) {
+        RSet<T> rSet = CLIENT.getSet(key);
+        boolean result = rSet.addAll(dataSet);
+        if (result) {
+            rSet.expire(timeout, timeUnit);
+        }
+        return result;
+    }
+
+
+    /**
      * 追加缓存Set数据
      *
      * @param key  缓存的键值
@@ -533,29 +554,31 @@ public class RedisUtils {
 
     /**
      * 获得缓存的基本对象列表(全局匹配忽略租户 自行拼接租户id)
-     * <P>
+     * <p>
      * limit-设置扫描的限制数量(默认为0,查询全部)
      * pattern-设置键的匹配模式(默认为null)
      * chunkSize-设置每次扫描的块大小(默认为0,本方法设置为1000)
      * type-设置键的类型(默认为null,查询全部类型)
      * </P>
-     * @see KeysScanOptions
+     *
      * @param pattern 字符串前缀
      * @return 对象列表
+     * @see KeysScanOptions
      */
     public static Collection<String> keys(final String pattern) {
-        return  keys(KeysScanOptions.defaults().pattern(pattern).chunkSize(1000));
+        return keys(KeysScanOptions.defaults().pattern(pattern).chunkSize(1000));
     }
 
     /**
      * 通过扫描参数获取缓存的基本对象列表
+     *
      * @param keysScanOptions 扫描参数
-     * <P>
-     * limit-设置扫描的限制数量(默认为0,查询全部)
-     * pattern-设置键的匹配模式(默认为null)
-     * chunkSize-设置每次扫描的块大小(默认为0)
-     * type-设置键的类型(默认为null,查询全部类型)
-     * </P>
+     *                        <p>
+     *                        limit-设置扫描的限制数量(默认为0,查询全部)
+     *                        pattern-设置键的匹配模式(默认为null)
+     *                        chunkSize-设置每次扫描的块大小(默认为0)
+     *                        type-设置键的类型(默认为null,查询全部类型)
+     *                        </P>
      * @see KeysScanOptions
      */
     public static Collection<String> keys(final KeysScanOptions keysScanOptions) {
@@ -581,4 +604,17 @@ public class RedisUtils {
         RKeys rKeys = CLIENT.getKeys();
         return rKeys.countExists(key) > 0;
     }
+
+    /**
+     * 如果 key 不存在，则设置并返回 true；否则返回 false（可用于唯一性）
+     */
+    public static boolean setIfAbsent(String key, String value, long timeout, TimeUnit unit) {
+        return CLIENT.getBucket(key).trySet(value, timeout, unit);
+    }
+
+    public static String getGroupIdByGeneratedId(String id) {
+        String key = GlobalConstants.GROUPCHECK_KEY + id;
+        return (String) CLIENT.getBucket(key).get();
+    }
+
 }
