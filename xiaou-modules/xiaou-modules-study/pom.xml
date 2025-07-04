@@ -20,5 +20,9 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-ratelimiter</artifactId>
+        </dependency>
     </dependencies>
 </project>

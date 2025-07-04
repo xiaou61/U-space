@@ -1,6 +1,7 @@
 package com.xiaou.study.group.student.controller;
 
 import com.xiaou.common.domain.R;
+import com.xiaou.ratelimiter.annotation.RateLimiter;
 import com.xiaou.study.group.student.domain.resp.GroupResp;
 import com.xiaou.study.group.teacher.serivce.GroupMemberService;
 import jakarta.annotation.Resource;
@@ -18,13 +19,16 @@ import java.util.List;
 public class GroupController {
     @Resource
     private GroupMemberService groupMemberService;
+
     /**
      * 加入一个群组
      */
+    @RateLimiter(key = "joinGroup", time = 60, count = 5)
     @PostMapping("/join")
     public R<String> join(@RequestParam String id) {
         return groupMemberService.join(id);
     }
+
     /**
      * 查看自己所在的群组
      */

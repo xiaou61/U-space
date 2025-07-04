@@ -40,6 +40,11 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (groupId == null) {
             return R.fail("群组不存在");
         }
+        //不能重复加入
+        GroupMember groupMembers = groupMemberMapper.selectOne(new QueryWrapper<GroupMember>().eq("user_id", loginHelper.getCurrentAppUserId()).eq("group_id", groupId));
+        if (groupMembers != null) {
+            return R.fail("你已经加入过这个群组");
+        }
         //否则的话这个群组就一定存在
         GroupMember groupMember = new GroupMember();
         groupMember.setGroupId(groupId);
