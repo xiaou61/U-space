@@ -25,9 +25,7 @@ public class ApiPrefixConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SaInterceptor(handle -> {
-                    StpUtil.checkLogin();
-                }))
+        registry.addInterceptor(new SaInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns("/admin/auth/login", "/student/auth/login");
     }

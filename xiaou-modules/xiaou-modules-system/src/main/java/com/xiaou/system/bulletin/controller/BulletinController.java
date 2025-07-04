@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/bulletin")
 @Validated
@@ -30,5 +33,21 @@ public class BulletinController {
     @PostMapping("/add")
     public R<String> add(@RequestBody AnnouncementReq req) {
         return announcementService.add(req);
+    }
+    /**
+     * 查看所有公告
+     */
+    @PostMapping("/list")
+    public R<List<Announcement>> list() {
+        return announcementService.listAll();
+    }
+    /**
+     * 删除公告
+     */
+    @SaCheckRole(RoleConstant.ADMIN)
+    @Log(title = "删除公告", businessType = BusinessType.DELETE)
+    @PostMapping("/delete")
+    public R<String> delete(@RequestBody List<String> ids) {
+        return announcementService.removeByIds(ids) ? R.ok("删除成功") : R.fail("删除失败");
     }
 }
