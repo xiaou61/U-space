@@ -171,3 +171,42 @@ CREATE TABLE `u_group_member` (
                                   UNIQUE KEY `uniq_group_user` (`group_id`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组成员表';
 
+
+
+CREATE TABLE `u_signin` (
+                            `id` VARCHAR(32) NOT NULL COMMENT '签到任务ID，UUID',
+                            `group_id` VARCHAR(32) NOT NULL COMMENT '群组ID，关联u_group表',
+                            `creator_id` VARCHAR(32) NOT NULL COMMENT '发起人ID（教师ID）',
+                            `type` TINYINT(1) NOT NULL COMMENT '签到类型：0=普通，1=密码，2=位置',
+                            `password` VARCHAR(10) DEFAULT NULL COMMENT '签到密码（仅限密码签到）',
+                            `latitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '纬度（位置签到用）',
+                            `longitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '经度（位置签到用）',
+                            `location_radius` INT DEFAULT NULL COMMENT '允许的签到范围（单位：米）',
+                            `end_time` DATETIME DEFAULT NULL COMMENT '签到截止时间',
+                            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+                            PRIMARY KEY (`id`),
+                            KEY `idx_group_id` (`group_id`),
+                            KEY `idx_creator_id` (`creator_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组签到任务表';
+
+CREATE TABLE `u_signin_record` (
+                                   `id` VARCHAR(32) NOT NULL COMMENT '签到记录ID，UUID',
+                                   `signin_id` VARCHAR(32) NOT NULL COMMENT '签到任务ID，关联u_signin表',
+                                   `student_id` VARCHAR(32) NOT NULL COMMENT '签到人ID，关联u_student表',
+                                   `type` TINYINT(1) NOT NULL COMMENT '签到类型：0=普通，1=密码，2=位置',
+                                   `signin_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '签到时间',
+                                   `is_late` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否迟到：0-未迟到，1-迟到',
+                                   `password` VARCHAR(255) DEFAULT NULL COMMENT '签到棉麻',
+                                   `latitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '签到纬度，仅位置签到时使用',
+                                   `longitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '签到经度，仅位置签到时使用',
+                                   `status` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '签到状态：0-无效，1-有效',
+                                   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+                                   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+                                   PRIMARY KEY (`id`),
+                                   UNIQUE KEY `uniq_signin_user` (`signin_id`, `student_id`),
+                                   KEY `idx_signin_id` (`signin_id`),
+                                   KEY `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='签到记录表';
+
+
