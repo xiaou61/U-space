@@ -16,13 +16,15 @@ import java.util.Date;
 @AutoMapper(target = Signin.class)
 public class SigninResp {
 
+    private String id;
+
     /**
      * 群组ID，关联u_group表
      */
     private String groupId;
 
     /**
-     * 签到类型：0=普通，1=密码，2=位置
+     * 签到类型：0=普通，1=密码
      */
     private Integer type;
 

@@ -7,7 +7,6 @@ import com.xiaou.study.group.teacher.domain.entity.Signin;
 import com.xiaou.study.group.teacher.domain.req.SigninRecordReq;
 import com.xiaou.study.group.teacher.domain.req.SigninReq;
 import com.xiaou.study.group.teacher.mapper.SigninMapper;
-import com.xiaou.study.group.teacher.serivce.SigninService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 

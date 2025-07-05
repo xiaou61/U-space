@@ -1,26 +1,30 @@
-package com.xiaou.study.group.teacher.serivce.impl;
+package com.xiaou.study.group.teacher.service.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.redis.utils.RedisUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.study.group.teacher.domain.entity.Group;
+import com.xiaou.study.group.teacher.domain.entity.GroupMember;
 import com.xiaou.study.group.teacher.domain.req.GroupReq;
+import com.xiaou.study.group.teacher.domain.resp.GroupMemberResp;
 import com.xiaou.study.group.teacher.mapper.GroupMapper;
-import com.xiaou.study.group.teacher.serivce.GroupService;
+import com.xiaou.study.group.teacher.mapper.GroupMemberMapper;
+import com.xiaou.study.group.teacher.service.GroupService;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
@@ -30,6 +34,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
     private GroupMapper groupMapper;
     @Resource
     private LoginHelper loginHelper;
+
+    @Resource
+    private StudentMapper studentMapper;
+
+    @Resource
+    private GroupMemberMapper groupMemberMapper;
 
     @Override
     public R<String> add(GroupReq req) {
@@ -77,6 +87,35 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
 
         return R.ok(id);
     }
+
+    @Override
+    public R<List<GroupMemberResp>> member(String groupId) {
+        // 查出所有 groupMember 记录
+        List<GroupMember> groupMembers = groupMemberMapper.selectList(
+                new QueryWrapper<GroupMember>().eq("group_id", groupId)
+        );
+
+        // 拿出所有 userId
+        List<String> userIds = groupMembers.stream()
+                .map(GroupMember::getUserId)
+                .toList();
+
+        // 查出所有 student，并构建 userId -> userName 映射
+        Map<String, String> userIdNameMap = studentMapper.selectBatchIds(userIds).stream()
+                .collect(Collectors.toMap(Student::getId, Student::getName));
+
+        // 映射为响应对象并填充 userName
+        List<GroupMemberResp> result = groupMembers.stream()
+                .map(member -> {
+                    GroupMemberResp resp = MapstructUtils.convert(member, GroupMemberResp.class);
+                    resp.setUserName(userIdNameMap.get(member.getUserId()));
+                    return resp;
+                })
+                .toList();
+
+        return R.ok(result);
+    }
+
 }
 
 

@@ -1,7 +1,6 @@
-package com.xiaou.study.group.teacher.serivce.impl;
+package com.xiaou.study.group.teacher.service.impl;
 
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.domain.R;
@@ -13,8 +12,7 @@ import com.xiaou.study.group.teacher.domain.entity.Group;
 import com.xiaou.study.group.teacher.domain.entity.GroupMember;
 import com.xiaou.study.group.teacher.mapper.GroupMapper;
 import com.xiaou.study.group.teacher.mapper.GroupMemberMapper;
-import com.xiaou.study.group.teacher.serivce.GroupMemberService;
-import com.xiaou.study.group.teacher.serivce.GroupService;
+import com.xiaou.study.group.teacher.service.GroupMemberService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 

@@ -4,8 +4,10 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import com.xiaou.common.domain.R;
 import com.xiaou.satoken.constant.RoleConstant;
 import com.xiaou.study.group.teacher.domain.entity.Group;
+import com.xiaou.study.group.teacher.domain.entity.GroupMember;
 import com.xiaou.study.group.teacher.domain.req.GroupReq;
-import com.xiaou.study.group.teacher.serivce.GroupService;
+import com.xiaou.study.group.teacher.domain.resp.GroupMemberResp;
+import com.xiaou.study.group.teacher.service.GroupService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -54,4 +56,12 @@ public class GroupAdminController {
         return groupService.generateId(groupId);
     }
 
+    /**
+     * 查看群组成员
+     */
+    @PostMapping("/member")
+    @SaCheckRole(RoleConstant.TEACHER)
+    public R<List<GroupMemberResp>> member(@RequestParam String groupId) {
+        return groupService.member(groupId);
+    }
 }

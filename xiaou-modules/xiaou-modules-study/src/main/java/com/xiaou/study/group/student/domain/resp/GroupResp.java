@@ -7,6 +7,8 @@ import lombok.Data;
 @Data
 @AutoMapper(target = Group.class)
 public class GroupResp {
+
+    private String id;
     /**
      * 群组名称
      */

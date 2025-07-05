@@ -6,28 +6,34 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.satoken.constant.RoleConstant;
 import com.xiaou.study.group.teacher.domain.req.SigninReq;
+import com.xiaou.study.group.teacher.domain.resp.SigninRecordResp;
 import com.xiaou.study.group.teacher.domain.resp.SigninResp;
-import com.xiaou.study.group.teacher.serivce.SigninService;
+import com.xiaou.study.group.teacher.service.SigninService;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/teacher/signin")
 @Validated
 public class SigninAdminController {
+
+
     @Resource
     private SigninService signinService;
+
+
 
     /**
      * 新建一个签到
      */
     @SaCheckRole(RoleConstant.TEACHER)
     @PostMapping("/add")
-    private R<String> add(@RequestBody SigninReq req) {
+    public R<String> add(@RequestBody SigninReq req) {
         return signinService.add(req);
     }
     /**
@@ -35,7 +41,15 @@ public class SigninAdminController {
      */
     @PostMapping("/list")
     @SaCheckRole(RoleConstant.TEACHER)
-    private R<PageRespDto<SigninResp>> list(@RequestBody PageReqDto req) {
+    public R<PageRespDto<SigninResp>> list(@RequestBody PageReqDto req) {
         return signinService.PageList(req);
+    }
+    /**
+     * 查看自己发布的签到的详细信息
+     */
+    @PostMapping("/detail")
+    @SaCheckRole(RoleConstant.TEACHER)
+    public R<List<SigninRecordResp>> detail(@RequestParam String id) {
+        return signinService.detail(id);
     }
 }

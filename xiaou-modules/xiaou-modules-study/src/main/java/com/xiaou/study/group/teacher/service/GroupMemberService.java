@@ -1,4 +1,4 @@
-package com.xiaou.study.group.teacher.serivce;
+package com.xiaou.study.group.teacher.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;

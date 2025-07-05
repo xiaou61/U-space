@@ -1,4 +1,4 @@
-package com.xiaou.study.group.teacher.serivce.impl;
+package com.xiaou.study.group.teacher.service.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -12,7 +12,7 @@ import com.xiaou.study.group.teacher.domain.resp.SigninResp;
 import com.xiaou.study.group.teacher.handler.SigninHandler;
 import com.xiaou.study.group.teacher.mapper.SigninMapper;
 import com.xiaou.study.group.teacher.mapper.SigninRecordMapper;
-import com.xiaou.study.group.teacher.serivce.SigninRecordService;
+import com.xiaou.study.group.teacher.service.SigninRecordService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,12 @@ public class SigninRecordServiceImpl extends ServiceImpl<SigninRecordMapper, Sig
     private List<SigninHandler> signinHandlers;
     @Override
     public R<SigninRecord> add(SigninRecordReq req) {
+        //首先判断是否签到了
+        SigninRecord convert = MapstructUtils.convert(req, SigninRecord.class);
+        SigninRecord one = this.getOne(new QueryWrapper<>(convert));
+        if (one != null) {
+            return R.warn("已经签到过了");
+        }
         //首先判断是什么签到
         for (SigninHandler handler : signinHandlers) {
             if (handler.support(req.getType())) {
@@ -44,7 +50,7 @@ public class SigninRecordServiceImpl extends ServiceImpl<SigninRecordMapper, Sig
     public R<List<SigninResp>> listMy(String groupId) {
         //根据groupId查询
         QueryWrapper<Signin> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("groupId", groupId);
+        queryWrapper.eq("group_id", groupId);
         List<Signin> signins = signinMapper.selectList(queryWrapper);
         if (signins != null && !signins.isEmpty()) {
             List<SigninResp> convert = MapstructUtils.convert(signins, SigninResp.class);

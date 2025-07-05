@@ -3,7 +3,7 @@ package com.xiaou.study.group.student.controller;
 import com.xiaou.common.domain.R;
 import com.xiaou.ratelimiter.annotation.RateLimiter;
 import com.xiaou.study.group.student.domain.resp.GroupResp;
-import com.xiaou.study.group.teacher.serivce.GroupMemberService;
+import com.xiaou.study.group.teacher.service.GroupMemberService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;

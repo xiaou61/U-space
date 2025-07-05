@@ -1,11 +1,10 @@
 package com.xiaou.study.group.student.controller;
 
 import com.xiaou.common.domain.R;
-import com.xiaou.study.group.teacher.domain.entity.Signin;
 import com.xiaou.study.group.teacher.domain.entity.SigninRecord;
 import com.xiaou.study.group.teacher.domain.req.SigninRecordReq;
 import com.xiaou.study.group.teacher.domain.resp.SigninResp;
-import com.xiaou.study.group.teacher.serivce.SigninRecordService;
+import com.xiaou.study.group.teacher.service.SigninRecordService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
