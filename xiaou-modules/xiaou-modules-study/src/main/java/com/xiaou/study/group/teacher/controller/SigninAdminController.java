@@ -9,9 +9,7 @@ import com.xiaou.study.group.teacher.domain.req.SigninReq;
 import com.xiaou.study.group.teacher.domain.resp.SigninRecordResp;
 import com.xiaou.study.group.teacher.domain.resp.SigninResp;
 import com.xiaou.study.group.teacher.service.SigninService;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 

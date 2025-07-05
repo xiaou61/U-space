@@ -210,3 +210,31 @@ CREATE TABLE `u_signin_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='签到记录表';
 
 
+
+CREATE TABLE `u_homework` (
+                              `id` VARCHAR(32) PRIMARY KEY COMMENT '作业ID，主键，UUID格式',
+                              `teacher_id` VARCHAR(32) NOT NULL COMMENT '发布作业的老师ID，关联教师表',
+                              `group_id` VARCHAR(32) NOT NULL COMMENT '所属群组ID，关联群组表',
+                              `title` VARCHAR(255) NOT NULL COMMENT '作业标题',
+                              `description` TEXT COMMENT '作业描述，内容说明',
+                              `deadline` DATETIME COMMENT '作业截止提交时间',
+                              `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+                              `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间'
+) COMMENT='作业表，存储老师发布的作业信息';
+
+
+CREATE TABLE `u_homework_submission` (
+                                         `id` VARCHAR(32) PRIMARY KEY COMMENT '提交ID，主键，UUID格式',
+                                         `homework_id` VARCHAR(32) NOT NULL COMMENT '关联的作业ID，外键，关联u_homework表',
+                                         `student_id` VARCHAR(32) NOT NULL COMMENT '提交作业的学生ID，关联学生表',
+                                         `content` TEXT COMMENT '学生提交的文本内容',
+                                         `attachment_urls` JSON COMMENT '附件地址的JSON数组，存储多个附件链接',
+                                         `submit_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间，默认当前时间',
+                                         `status` VARCHAR(20) DEFAULT 'submitted' COMMENT '提交状态，如submitted(已提交), graded(已评分)等',
+                                         `grade` DECIMAL(5,2) COMMENT '评分，最多5位，2位小数',
+                                         `feedback` TEXT COMMENT '老师对作业的反馈意见',
+                                         `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+                                         `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+                                         CONSTRAINT `fk_homework_submission_homework` FOREIGN KEY (`homework_id`) REFERENCES `u_homework`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                                         UNIQUE KEY `unique_homework_student` (`homework_id`, `student_id`)
+) COMMENT='作业提交表，存储学生提交的作业内容及附件等信息';

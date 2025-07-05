@@ -25,3 +25,5 @@ sa-token:
 sse:
   enabled: true
   path: /resource/sse
+mybatis-plus:
+  type-handlers-package: com.xiaou.mybatis.handler
