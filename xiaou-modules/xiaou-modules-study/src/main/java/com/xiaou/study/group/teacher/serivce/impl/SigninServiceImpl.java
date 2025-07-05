@@ -15,6 +15,7 @@ import com.xiaou.study.group.teacher.domain.entity.Signin;
 import com.xiaou.study.group.teacher.domain.req.SigninReq;
 import com.xiaou.study.group.teacher.domain.resp.SigninResp;
 import com.xiaou.study.group.teacher.handler.SigninHandler;
+import com.xiaou.study.group.teacher.mapper.GroupMapper;
 import com.xiaou.study.group.teacher.mapper.SigninMapper;
 import com.xiaou.study.group.teacher.serivce.SigninService;
 import jakarta.annotation.Resource;
@@ -31,6 +32,8 @@ public class SigninServiceImpl extends ServiceImpl<SigninMapper, Signin>
     private List<SigninHandler> signinHandlers;
     @Autowired
     private LoginHelper loginHelper;
+    @Resource
+    private GroupMapper groupMapper;
 
     @Override
     public R<String> add(SigninReq req) {
@@ -53,6 +56,8 @@ public class SigninServiceImpl extends ServiceImpl<SigninMapper, Signin>
         queryWrapper.eq("creator_id",loginHelper.getCurrentAppUserId());
         IPage<Signin> signinIPage = baseMapper.selectPage(iPage, queryWrapper);
         List<SigninResp> signinResp = MapstructUtils.convert(signinIPage.getRecords(), SigninResp.class);
+        //添加群组名称
+        signinResp.forEach(item -> item.setGroupName(groupMapper.selectById(item.getGroupId()).getName()));
         return R.ok(PageRespDto.of(req.getPageNum(),req.getPageSize(),signinIPage.getTotal(),signinResp));
     }
 
