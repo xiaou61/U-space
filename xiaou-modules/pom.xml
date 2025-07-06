@@ -15,6 +15,7 @@
         <module>xiaou-modules-auth</module>
         <module>xiaou-modules-system</module>
         <module>xiaou-modules-study</module>
+        <module>xiaou-modules-ai</module>
     </modules>
 
 </project>

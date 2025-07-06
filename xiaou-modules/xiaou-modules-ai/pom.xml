@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.xiaou</groupId>
+        <artifactId>xiaou-modules</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>xiaou-modules-ai</artifactId>
+
+   <dependencies>
+       <dependency>
+           <groupId>com.xiaou</groupId>
+           <artifactId>xiaou-common-core</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>com.xiaou</groupId>
+           <artifactId>xiaou-common-web</artifactId>
+       </dependency>
+
+
+
+       <!-- 阿里云百练、灵积大模型服务 -->
+       <dependency>
+           <groupId>com.alibaba</groupId>
+           <artifactId>dashscope-sdk-java</artifactId>
+           <version>2.19.1</version>
+           <exclusions>
+               <!-- 排除自带的 slf4j-simple，避免与 logback 冲突 -->
+               <exclusion>
+                   <groupId>org.slf4j</groupId>
+                   <artifactId>slf4j-simple</artifactId>
+               </exclusion>
+           </exclusions>
+       </dependency>
+       <!-- Spring AI Alibaba -->
+       <dependency>
+           <groupId>com.alibaba.cloud.ai</groupId>
+           <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+       </dependency>
+
+       <dependency>
+           <groupId>org.springframework.ai</groupId>
+           <artifactId>spring-ai-markdown-document-reader</artifactId>
+       </dependency>
+       <!-- 手动整合 PGVector 向量存储 -->
+       <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-starter-jdbc</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.postgresql</groupId>
+           <artifactId>postgresql</artifactId>
+           <scope>runtime</scope>
+       </dependency>
+       <dependency>
+           <groupId>org.springframework.ai</groupId>
+           <artifactId>spring-ai-pgvector-store</artifactId>
+       </dependency>
+       <!-- Spring AI MCP Client -->
+       <dependency>
+           <groupId>org.springframework.ai</groupId>
+           <artifactId>spring-ai-advisors-vector-store</artifactId>
+       </dependency>
+       <!-- LangChain4J DashScope -->
+       <dependency>
+           <groupId>dev.langchain4j</groupId>
+           <artifactId>langchain4j-community-dashscope</artifactId>
+           <version>1.0.0-beta2</version>
+       </dependency>
+       <!-- 支持结构化输出 -->
+       <dependency>
+           <groupId>com.github.victools</groupId>
+           <artifactId>jsonschema-generator</artifactId>
+           <version>4.38.0</version>
+       </dependency>
+       <!-- 支持文件会话记忆持久化的序列化 -->
+       <dependency>
+           <groupId>com.esotericsoftware</groupId>
+           <artifactId>kryo</artifactId>
+           <version>5.6.2</version>
+       </dependency>
+       <!-- PDF 生成库 -->
+       <!-- https://mvnrepository.com/artifact/com.itextpdf/itext-core -->
+       <dependency>
+           <groupId>com.itextpdf</groupId>
+           <artifactId>itext-core</artifactId>
+           <version>9.1.0</version>
+           <type>pom</type>
+       </dependency>
+       <dependency>
+           <groupId>com.itextpdf</groupId>
+           <artifactId>layout</artifactId>
+           <version>9.1.0</version>
+       </dependency>
+
+       <!-- https://mvnrepository.com/artifact/com.itextpdf/font-asian -->
+       <dependency>
+           <groupId>com.itextpdf</groupId>
+           <artifactId>font-asian</artifactId>
+           <version>9.1.0</version>
+           <scope>test</scope>
+       </dependency>
+       <dependency>
+           <groupId>cn.hutool</groupId>
+           <artifactId>hutool-http</artifactId>
+       </dependency>
+       <!-- jsoup HTML 解析库 -->
+       <dependency>
+           <groupId>org.jsoup</groupId>
+           <artifactId>jsoup</artifactId>
+           <version>1.19.1</version>
+       </dependency>
+       <dependency>
+           <groupId>cn.hutool</groupId>
+           <artifactId>hutool-json</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>com.xiaou</groupId>
+           <artifactId>xiaou-common-ratelimiter</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>com.xiaou</groupId>
+           <artifactId>xiaou-common-mq</artifactId>
+       </dependency>
+   </dependencies>
+
+
+</project>

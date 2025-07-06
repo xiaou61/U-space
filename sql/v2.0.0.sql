@@ -238,3 +238,19 @@ CREATE TABLE `u_homework_submission` (
                                          CONSTRAINT `fk_homework_submission_homework` FOREIGN KEY (`homework_id`) REFERENCES `u_homework`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                                          UNIQUE KEY `unique_homework_student` (`homework_id`, `student_id`)
 ) COMMENT='作业提交表，存储学生提交的作业内容及附件等信息';
+
+
+
+CREATE TABLE `u_chat_message` (
+                                  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+
+                                  user_id VARCHAR(32) NOT NULL COMMENT '用户ID',
+                                  user_content TEXT NOT NULL COMMENT '用户提问内容',
+                                  ai_content TEXT COMMENT 'AI回复内容',
+
+                                  enable_rag BOOLEAN DEFAULT FALSE COMMENT '是否启用RAG',
+                                  enable_tools BOOLEAN DEFAULT FALSE COMMENT '是否启用工具',
+
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) COMMENT='用户对话记录表';
+

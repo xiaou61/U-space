@@ -67,6 +67,14 @@
             <version>${revision}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-ai</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+
+
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

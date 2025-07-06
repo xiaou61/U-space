@@ -26,6 +26,10 @@ public class RabbitMQConfig {
     // === 日志配置 ===
     public static final String LOG_QUEUE = "xiaou.log.queue";
     public static final String LOG_ROUTING_KEY = "xiaou.log.key";
+
+    // === AI对话存储配置 ===
+    public static final String AICHAT_QUEUE = "xiaou.ai.chat.queue";
+    public static final String AICHAT_ROUTING_KEY = "xiaou.ai.chat.key";
     // ======== 基础配置 ========
 
     /**
@@ -63,17 +67,31 @@ public class RabbitMQConfig {
                 .to(directExchange)
                 .with(NOTICE_ROUTING_KEY);
     }
+
     // ======== Log 配置 ========
     @Bean
     public Queue logQueue() {
         return new Queue(LOG_QUEUE);
     }
+
     @Bean
     public Binding logBinding(Queue logQueue, DirectExchange directExchange) {
         return BindingBuilder.bind(logQueue)
                 .to(directExchange)
                 .with(LOG_ROUTING_KEY);
     }
+    // =========AIChat对话信息存储 配置=========
+    @Bean
+    public Queue aiChatQueue() {
+        return new Queue(AICHAT_QUEUE);
+    }
+    @Bean
+    public Binding aiChatBinding(Queue aiChatQueue, DirectExchange directExchange) {
+        return BindingBuilder.bind(aiChatQueue)
+                .to(directExchange)
+                .with(AICHAT_ROUTING_KEY);
+    }
+
 
     // ======== 消息序列化配置 ========
 

@@ -13,14 +13,19 @@ public class RabbitMQUtils {
     private RabbitTemplate rabbitTemplate;
 
     public void sendEmailMessage(Object message) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE , RabbitMQConfig.EMAIL_ROUTING_KEY, message);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, message);
     }
 
     public void sendNoticeMessage(Object message) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE , RabbitMQConfig.NOTICE_ROUTING_KEY, message);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.NOTICE_ROUTING_KEY, message);
     }
+
     public void sendLogMessage(Object message) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE , RabbitMQConfig.LOG_ROUTING_KEY, message);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.LOG_ROUTING_KEY, message);
+    }
+
+    public void sendAichatMessage(Object message) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.AICHAT_ROUTING_KEY, message);
     }
 
 }
