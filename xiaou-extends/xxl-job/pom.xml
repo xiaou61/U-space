@@ -1,0 +1,165 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.xuxueli</groupId>
+	<artifactId>xxl-job</artifactId>
+	<version>3.1.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>com.xiaou</groupId>
+		<artifactId>xiaou-extends</artifactId>
+		<version>2.1.0-SNAPSHOT</version>
+	</parent>
+	<name>${project.artifactId}</name>
+	<description>A distributed task scheduling framework.</description>
+	<url>https://www.xuxueli.com/</url>
+
+
+	<modules>
+		<module>xxl-job-core</module>
+		<module>xxl-job-admin</module>
+		<module>xxl-job-executor-samples</module>
+    </modules>
+
+	<properties>
+		<!-- env -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+		<maven.test.skip>true</maven.test.skip>
+		<!-- plugin -->
+		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+		<maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+		<central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
+		<!-- base -->
+		<slf4j-api.version>2.0.17</slf4j-api.version>
+		<junit-jupiter.version>5.13.1</junit-jupiter.version>
+		<jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
+		<!-- net -->
+		<netty.version>4.2.2.Final</netty.version>
+		<gson.version>2.13.1</gson.version>
+		<!-- spring -->
+		<spring-boot.version>3.5.3</spring-boot.version>
+		<spring.version>6.2.8</spring.version>
+		<!-- db -->
+		<mybatis-spring-boot-starter.version>3.0.4</mybatis-spring-boot-starter.version>
+		<mysql-connector-j.version>9.3.0</mysql-connector-j.version>
+		<!-- dynamic language -->
+		<groovy.version>4.0.27</groovy.version>
+	</properties>
+
+	<build>
+		<plugins>
+		</plugins>
+	</build>
+
+
+	<licenses>
+		<license>
+			<name>GNU General Public License version 3</name>
+			<url>https://opensource.org/licenses/GPL-3.0</url>
+		</license>
+	</licenses>
+
+	<scm>
+		<tag>master</tag>
+		<url>https://github.com/xuxueli/xxl-job.git</url>
+		<connection>scm:git:https://github.com/xuxueli/xxl-job.git</connection>
+		<developerConnection>scm:git:git@github.com:xuxueli/xxl-job.git</developerConnection>
+	</scm>
+	<developers>
+		<developer>
+			<id>XXL</id>
+			<name>xuxueli</name>
+			<email>931591021@qq.com</email>
+			<url>https://github.com/xuxueli</url>
+		</developer>
+	</developers>
+
+	<profiles>
+
+		<profile>
+			<id>release</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>xxl-job-core</module>
+			</modules>
+			<build>
+				<plugins>
+					<!-- Source -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>${maven-source-plugin.version}</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Javadoc -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>${maven-javadoc-plugin.version}</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+								<configuration>
+									<doclint>none</doclint>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- GPG -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+						<configuration>
+							<useAgent>false</useAgent>
+						</configuration>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+					<!-- maven central -->
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>${central-publishing-maven-plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<publishingServerId>central</publishingServerId>
+							<excludeArtifacts>
+								<artifact>xxl-job-admin</artifact>
+								<artifact>xxl-job-executor-samples</artifact>
+								<artifact>xxl-job-executor-sample-frameless</artifact>
+								<artifact>xxl-job-executor-sample-springboot</artifact>
+								<artifact>xxl-job-executor-sample-springboot-ai</artifact>
+							</excludeArtifacts>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+</project>

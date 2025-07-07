@@ -12,6 +12,7 @@
         <module>xiaou-common</module>
         <module>xiaou-starter</module>
         <module>xiaou-modules</module>
+        <module>xiaou-extends</module>
     </modules>
 
     <properties>
