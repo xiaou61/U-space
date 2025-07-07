@@ -27,3 +27,11 @@ sse:
   path: /resource/sse
 mybatis-plus:
   type-handlers-package: com.xiaou.mybatis.handler
+
+
+xxl:
+  job:
+    admin-addresses: http://localhost:8081/xxl-job-admin
+    app-name: my-app
+    ip: 127.0.0.1
+    access-token: default_token

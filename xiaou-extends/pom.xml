@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>xxl-job</module>
+        <module>xxl-job-spring-boot-starter</module>
     </modules>
 
 

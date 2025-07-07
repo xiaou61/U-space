@@ -6,11 +6,6 @@
 	<version>3.1.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<parent>
-		<groupId>com.xiaou</groupId>
-		<artifactId>xiaou-extends</artifactId>
-		<version>2.1.0-SNAPSHOT</version>
-	</parent>
 	<name>${project.artifactId}</name>
 	<description>A distributed task scheduling framework.</description>
 	<url>https://www.xuxueli.com/</url>
@@ -19,7 +14,6 @@
 	<modules>
 		<module>xxl-job-core</module>
 		<module>xxl-job-admin</module>
-		<module>xxl-job-executor-samples</module>
     </modules>
 
 	<properties>
