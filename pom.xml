@@ -35,6 +35,7 @@
         <mapstruct-plus.version>1.4.6</mapstruct-plus.version>
         <mapstruct-plus.lombok.version>0.2.0</mapstruct-plus.lombok.version>
         <x-file.version>2.1.0</x-file.version>
+        <okhttp.version>4.12.0</okhttp.version>
 
         <!-- 插件版本 -->
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -119,7 +120,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
             </dependency>
-
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
 
 
             <dependency>

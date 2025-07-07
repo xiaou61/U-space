@@ -72,6 +72,11 @@
             <artifactId>xiaou-modules-ai</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-index</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
 
 

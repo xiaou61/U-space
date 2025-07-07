@@ -254,3 +254,42 @@ CREATE TABLE `u_chat_message` (
                                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
 ) COMMENT='用户对话记录表';
 
+
+
+CREATE TABLE `u_group_material` (
+                                id VARCHAR(32) PRIMARY KEY COMMENT '资料ID，主键UUID',
+                                group_id VARCHAR(32) NOT NULL COMMENT '组ID，关联组表',
+                                uploader_id VARCHAR(32) NOT NULL COMMENT '上传人ID，为教师Id',
+                                title VARCHAR(255) NOT NULL COMMENT '资料标题',
+                                description TEXT COMMENT '资料描述',
+                                file_urls JSON COMMENT '资料文件地址，支持多个文件，JSON数组格式',
+                                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+                                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+
+                                FOREIGN KEY (group_id) REFERENCES `u_group`(id)
+) COMMENT='组资料表，存储组上传的各类资料';
+
+
+
+CREATE TABLE `u_school_info` (
+                                 `id` VARCHAR(32) PRIMARY KEY COMMENT '学校ID，主键 UUID',
+                                 `name` VARCHAR(255) NOT NULL COMMENT '学校名称',
+                                 `description` TEXT COMMENT '学校简介',
+                                 `logo_url` VARCHAR(255) COMMENT '学校Logo图片地址',
+                                 `website_url` VARCHAR(255) COMMENT '学校官网链接',
+                                 `address` VARCHAR(255) COMMENT '学校详细地址',
+                                 `latitude` DECIMAL(10, 7) COMMENT '纬度，用于地图跳转',
+                                 `longitude` DECIMAL(10, 7) COMMENT '经度，用于地图跳转',
+                                 `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT='学校信息表，存储学校基本资料和定位信息';
+
+INSERT INTO `u_school_info` (
+    id, name, description, logo_url, website_url, address, latitude, longitude
+) VALUES (
+             'singleton-id', '示例学校', '这是一所示例学校。',
+             'https://example.com/logo.png',
+             'https://www.example.com',
+             '北京市某某区某某路1号',
+             39.9042, 116.4074
+         );
