@@ -35,3 +35,4 @@ xxl:
     app-name: my-app
     ip: 127.0.0.1
     access-token: default_token
+    enabled: false

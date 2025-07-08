@@ -17,6 +17,7 @@
         <module>xiaou-modules-study</module>
         <module>xiaou-modules-ai</module>
         <module>xiaou-modules-index</module>
+        <module>xiaou-modules-bbs</module>
     </modules>
 
 </project>

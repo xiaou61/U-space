@@ -2,6 +2,7 @@ package com.xiaou.job.starter;
 
 import com.xiaou.job.starter.XxlJobProperties;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ public class XxlJobAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "xxl.job", name = "enabled", havingValue = "true", matchIfMissing = true)
     public XxlJobSpringExecutor xxlJobSpringExecutor() {
         XxlJobSpringExecutor executor = new XxlJobSpringExecutor();
         executor.setAdminAddresses(properties.getAdminAddresses());
