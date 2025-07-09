@@ -1,15 +1,18 @@
 package com.xiaou.bbs.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.entity.BbsPost;
+import com.xiaou.bbs.domain.entity.BbsPostLike;
 import com.xiaou.bbs.domain.req.BbsPostReq;
 import com.xiaou.bbs.domain.resp.BbsPostResp;
 import com.xiaou.bbs.domain.resp.BbsStudentInfoResp;
+import com.xiaou.bbs.mapper.BbsPostLikeMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.service.BbsPostService;
 import com.xiaou.common.domain.R;
@@ -42,6 +45,8 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
     private StudentMapper studentMapper;
     @Autowired
     private FilesUtils filesUtils;
+    @Resource
+    private BbsPostLikeMapper bbsPostLikeMapper;
 
     @Override
     public R<String> add(BbsPostReq req) {
@@ -136,14 +141,67 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
     }
 
     @Override
-    public R<String> uploadImage(MultipartFile file) {
+    public R<List<String>> uploadImage(MultipartFile[] file) {
         try {
-            FileInfo fileInfo = filesUtils.uploadFile(file);
-            return R.ok("上传成功", fileInfo.getUrl());
+            List<FileInfo> fileInfos = filesUtils.uploadFiles(file);
+            List<String> urls = fileInfos.stream()
+                    .map(FileInfo::getUrl)
+                    .toList();
+            return R.ok("上传成功", urls);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Override
+    public R<String> viewPost(String id) {
+        BbsPost post = baseMapper.selectById(id);
+        if (post != null) {
+            post.setViewCount(post.getViewCount() + 1);
+            baseMapper.updateById(post);
+            return R.ok("成功");
+        }
+        return R.fail("帖子不存在");
+    }
+
+    @Override
+    public R<String> likePost(String id) {
+        String userId = loginHelper.getCurrentAppUserId();
+
+        QueryWrapper<BbsPostLike> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("post_id", id).eq("user_id", userId);
+
+        // 判断是否已经点赞过
+        boolean hasLiked = bbsPostLikeMapper.selectOne(queryWrapper) != null;
+
+        // 点赞数更新部分，只更新 like_count 字段，避免全字段更新引发 JSON 字段异常
+        UpdateWrapper<BbsPost> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", id);
+
+        if (hasLiked) {
+            // 取消点赞：点赞数减一，删除点赞记录
+            // 先获取当前点赞数，防止负数
+            Integer likeCount = baseMapper.selectById(id).getLikeCount();
+            int newCount = (likeCount != null && likeCount > 0) ? likeCount - 1 : 0;
+            updateWrapper.set("like_count", newCount);
+            baseMapper.update(null, updateWrapper);
+
+            bbsPostLikeMapper.delete(queryWrapper);
+            return R.ok("取消点赞成功");
+        } else {
+            // 点赞：点赞数加一，新增点赞记录
+            Integer likeCount = baseMapper.selectById(id).getLikeCount();
+            int newCount = (likeCount != null) ? likeCount + 1 : 1;
+            updateWrapper.set("like_count", newCount);
+            baseMapper.update(null, updateWrapper);
+
+            BbsPostLike like = new BbsPostLike();
+            like.setPostId(id);
+            like.setUserId(userId);
+            bbsPostLikeMapper.insert(like);
+            return R.ok("点赞成功");
+        }
     }
 
 

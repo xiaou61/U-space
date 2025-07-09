@@ -25,5 +25,9 @@ public interface BbsPostService extends IService<BbsPost> {
 
     R<PageRespDto<BbsPostResp>> listPostMy(PageReqDto reqDto);
 
-    R<String> uploadImage(MultipartFile file);
+    R<List<String>> uploadImage(MultipartFile[] file);
+
+    R<String> viewPost(String id);
+
+    R<String> likePost(String id);
 }

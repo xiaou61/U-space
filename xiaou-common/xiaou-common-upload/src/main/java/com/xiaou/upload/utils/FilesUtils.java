@@ -17,6 +17,7 @@ import org.dromara.x.file.storage.core.FileStorageService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -41,6 +42,19 @@ public class FilesUtils {
         FileInfo fileInfo = fileStorageService.of(file)
                 .upload();
         return fileInfo;
+    }
+    /**
+     * 批量上传
+     */
+    public List<FileInfo> uploadFiles(MultipartFile[] files) throws Exception {
+        ArrayList<FileInfo> fileInfos = new ArrayList<>();
+        //遍历
+        for (MultipartFile file : files) {
+            FileInfo fileInfo = fileStorageService.of(file)
+                    .upload();
+            fileInfos.add(fileInfo);
+        }
+        return fileInfos;
     }
 
     /**

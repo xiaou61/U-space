@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xiaou.bbs.domain.entity.BbsPost;
+import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 import java.util.Date;
@@ -15,6 +17,7 @@ import java.util.List;
  * @TableName u_bbs_post
  */
 @Data
+@AutoMapper(target = BbsPost.class)
 public class BbsPostResp {
     /**
      * 帖子ID，UUID

@@ -52,6 +52,7 @@ public class PostController {
     public R<PageRespDto<BbsPostResp>> listAllPost(@RequestBody PageReqDto reqDto) {
         return bbsPostService.listPost(null, reqDto);
     }
+
     /**
      * 查看我发布的帖子
      */
@@ -59,12 +60,28 @@ public class PostController {
     public R<PageRespDto<BbsPostResp>> listMinePost(@RequestBody PageReqDto reqDto) {
         return bbsPostService.listPostMy(reqDto);
     }
+
     /**
      * 上传帖子图片
      */
     @PostMapping("/upload")
-    public R<String> uploadImage(@RequestParam("file") MultipartFile file) {
+    public R<List<String>> uploadImage(@RequestParam("file") MultipartFile[] file) {
         return bbsPostService.uploadImage(file);
     }
+    /**
+     * 帖子浏览功能
+     */
+    @PostMapping("/view")
+    public R<String> viewPost(@RequestParam String id) {
+        return bbsPostService.viewPost(id);
+    }
+    /**
+     * 帖子点赞功能
+     */
+    @PostMapping("/like")
+    public R<String> likePost(@RequestParam String id) {
+        return bbsPostService.likePost(id);
+    }
+
 
 }

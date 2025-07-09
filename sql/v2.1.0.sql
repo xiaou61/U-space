@@ -24,3 +24,44 @@ CREATE TABLE `u_bbs_post` (
                               `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                               FOREIGN KEY (`category_id`) REFERENCES `u_bbs_category`(`id`)
 ) COMMENT='帖子表：记录校园BBS的帖子内容，关联帖子分类';
+
+
+CREATE TABLE `u_bbs_post_like` (
+                                   `id` VARCHAR(32) PRIMARY KEY COMMENT '点赞记录ID，UUID',
+                                   `post_id` VARCHAR(32) NOT NULL COMMENT '帖子ID，关联 u_bbs_post 表',
+                                   `user_id` VARCHAR(32) NOT NULL COMMENT '用户ID，点赞人，关联用户表',
+                                   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+                                   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                   UNIQUE KEY `uniq_post_user` (`post_id`, `user_id`),
+                                   FOREIGN KEY (`post_id`) REFERENCES `u_bbs_post`(`id`) ON DELETE CASCADE,
+                                   INDEX `idx_user_id` (`user_id`)
+) COMMENT='帖子点赞表：记录用户对帖子的点赞/取消点赞行为';
+
+
+CREATE TABLE `u_bbs_comment` (
+                                 `id` VARCHAR(32) PRIMARY KEY COMMENT '评论ID，UUID',
+                                 `post_id` VARCHAR(32) NOT NULL COMMENT '所属帖子ID',
+                                 `user_id` VARCHAR(32) NOT NULL COMMENT '评论发布者用户ID',
+                                 `content` TEXT NOT NULL COMMENT '评论内容，支持 @xxx 格式',
+                                 `parent_id` VARCHAR(32) DEFAULT NULL COMMENT '父评论ID，null 表示一级评论，有值表示回复评论',
+                                 `reply_user_id` VARCHAR(32) DEFAULT NULL COMMENT '被回复的用户ID，用于前端展示 @xxx',
+                                 `like_count` INT DEFAULT 0 COMMENT '点赞数',
+                                 `is_deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除：0正常，1已删除',
+                                 `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+
+                                 INDEX `idx_post_id` (`post_id`),
+                                 INDEX `idx_parent_id` (`parent_id`),
+                                 FOREIGN KEY (`post_id`) REFERENCES `u_bbs_post`(`id`) ON DELETE CASCADE
+) COMMENT='帖子评论表，支持一级评论和对评论的回复（两级结构）';
+
+CREATE TABLE `u_bbs_comment_like` (
+                                      `id` VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+                                      `comment_id` VARCHAR(32) NOT NULL COMMENT '评论ID',
+                                      `user_id` VARCHAR(32) NOT NULL COMMENT '点赞用户ID',
+                                      `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+
+                                      UNIQUE KEY `uk_comment_user` (`comment_id`, `user_id`),
+                                      FOREIGN KEY (`comment_id`) REFERENCES `u_bbs_comment`(`id`) ON DELETE CASCADE
+) COMMENT='评论点赞表，记录用户对评论的点赞行为';
+
