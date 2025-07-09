@@ -25,6 +25,7 @@
         <foreach collection="commentIds" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+        and is_deleted = 0
         GROUP BY comment_id
     </select>
 </mapper>

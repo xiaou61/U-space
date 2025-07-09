@@ -54,7 +54,8 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
         post.setUserId(loginHelper.getCurrentAppUserId());
         baseMapper.insert(post);
         //todo 制作关键词过滤系统 如果有敏感词则不允许发布
-        //todo 帖子除了入库之外，还要进行一个缓存，这个缓存我们目前暂定为一个二级缓存，就是Caffien为1天内过期。，然后Redis为三天内过期。
+        //todo 发送消息推送
+
         return R.ok("添加成功");
     }
 

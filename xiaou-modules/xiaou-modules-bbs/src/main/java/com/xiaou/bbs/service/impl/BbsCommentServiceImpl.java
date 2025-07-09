@@ -64,9 +64,9 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
     public R<String> deleteComment(String id) {
         //判断是否是自己的
         if (loginHelper.getCurrentAppUserId().equals(baseMapper.selectById(id).getUserId())) {
-            baseMapper.deleteById(id);
             //删除帖子的评论数量
-            bbsPostMapper.updateCommentCountById(id, -1);
+            bbsPostMapper.updateCommentCountById(baseMapper.selectById(id).getPostId(), -1);
+            baseMapper.deleteById(id);
             return R.ok("删除成功");
         }
         return R.fail("这个不是你的无法删除");

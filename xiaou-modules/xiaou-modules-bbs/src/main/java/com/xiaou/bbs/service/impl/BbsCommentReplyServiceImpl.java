@@ -11,6 +11,7 @@ import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import com.xiaou.bbs.domain.req.BbsCommentReplyReq;
 import com.xiaou.bbs.domain.resp.BbsCommentReplyResp;
 import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
+import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.service.BbsCommentReplyService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
@@ -19,6 +20,7 @@ import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,20 +33,27 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
     private LoginHelper loginHelper;
     @Resource
     private StudentMapper userMapper;
+    @Resource
+    private BbsPostMapper postMapper;
     @Override
+    @Transactional
     public R<String> replyComment(BbsCommentReplyReq req) {
         //todo 消息通知
         BbsCommentReply convert = MapstructUtils.convert(req, BbsCommentReply.class);
         convert.setUserId(loginHelper.getCurrentAppUserId());
         baseMapper.insert(convert);
+        postMapper.updateCommentCountById(convert.getPostId(), 1);
         return R.ok("回复成功");
     }
 
     @Override
+    @Transactional
     public R<String> deleteReply(String id) {
         //判断是否是自己的回复
         if (loginHelper.getCurrentAppUserId().equals(baseMapper.selectById(id).getUserId())) {
+            postMapper.updateCommentCountById(baseMapper.selectById(id).getPostId(), -1);
             baseMapper.deleteById(id);
+
             return R.ok("删除回复成功");
         }
         return R.fail("这个回复不是你的无法删除");

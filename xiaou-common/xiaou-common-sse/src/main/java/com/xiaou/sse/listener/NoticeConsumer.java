@@ -46,7 +46,6 @@ public class NoticeConsumer {
             // 保存到数据库信息 可能会有多个用户的推送所以要保存多个用户
             for (String userId : msg.getUserIds()){
                 extracted(msg, userId);
-
             }
         }
 
