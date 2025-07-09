@@ -8,30 +8,40 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 /**
- * 帖子一级评论表
- * @TableName u_bbs_comment
+ * 评论回复表（二级评论）
+ * @TableName u_bbs_comment_reply
  */
-@TableName(value ="u_bbs_comment")
+@TableName(value ="u_bbs_comment_reply")
 @Data
-public class BbsComment {
+public class BbsCommentReply {
     /**
-     * 评论ID，UUID
+     * 回复ID，UUID
      */
     @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 
     /**
-     * 所属帖子ID
+     * 所属评论ID
+     */
+    private String commentId;
+
+    /**
+     * 所属帖子ID，便于反查
      */
     private String postId;
 
     /**
-     * 评论用户ID
+     * 回复人ID
      */
     private String userId;
 
     /**
-     * 评论内容
+     * 被回复的用户ID（@）
+     */
+    private String replyUserId;
+
+    /**
+     * 回复内容
      */
     private String content;
 

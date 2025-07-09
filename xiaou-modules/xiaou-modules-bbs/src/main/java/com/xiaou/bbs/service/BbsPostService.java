@@ -30,4 +30,6 @@ public interface BbsPostService extends IService<BbsPost> {
     R<String> viewPost(String id);
 
     R<String> likePost(String id);
+
+
 }

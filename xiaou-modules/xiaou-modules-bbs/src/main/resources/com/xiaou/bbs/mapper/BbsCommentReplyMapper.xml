@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.bbs.mapper.BbsCommentReplyMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.bbs.domain.entity.BbsCommentReply">
+            <id property="id" column="id" jdbcType="VARCHAR"/>
+            <result property="commentId" column="comment_id" jdbcType="VARCHAR"/>
+            <result property="postId" column="post_id" jdbcType="VARCHAR"/>
+            <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+            <result property="replyUserId" column="reply_user_id" jdbcType="VARCHAR"/>
+            <result property="content" column="content" jdbcType="VARCHAR"/>
+            <result property="likeCount" column="like_count" jdbcType="INTEGER"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+    <select id="selectReplyCountByCommentIds" resultType="com.xiaou.bbs.domain.dto.CommentReplyCount">
+        SELECT comment_id AS commentId,
+        COUNT(*) AS replyCount
+        FROM u_bbs_comment_reply
+        WHERE comment_id IN
+        <foreach collection="commentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        GROUP BY comment_id
+    </select>
+</mapper>
