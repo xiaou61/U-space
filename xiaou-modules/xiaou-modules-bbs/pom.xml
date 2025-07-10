@@ -34,6 +34,14 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-sensitive</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-sse</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

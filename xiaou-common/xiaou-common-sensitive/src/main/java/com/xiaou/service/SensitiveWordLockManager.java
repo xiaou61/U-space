@@ -153,23 +153,24 @@ public class SensitiveWordLockManager {
         }
     }
 
-    /**
-     * 根据当前缓存的词表构建Trie树，
-     * 并将序列化结果写入Redis，刷新内存Trie
-     */
     private void rebuildTrieAndSave() {
         TrieNode root = buildTrieFromWordMap(wordMap);
         try {
-            // 将TrieNode序列化为JSON字符串
+            // ✅ JSON 序列化
             String json = mapper.writeValueAsString(root);
-            // 使用Redis工具类写入Redis
-            RedisUtils.setCacheObject(REDIS_KEY, json);
+
+            // ✅ 使用 StringCodec 明确存为字符串，防止 JDK 二进制序列化
+            RedisUtils.getClient()
+                    .getBucket(REDIS_KEY, org.redisson.client.codec.StringCodec.INSTANCE)
+                    .set(json);
         } catch (Exception e) {
             throw new RuntimeException("序列化敏感词 Trie 失败", e);
         }
-        // 同步刷新内存Trie对象，提升匹配性能
+
+        // ✅ 刷新内存中 SensitiveTrie 实例
         this.trie = new SensitiveTrie(root);
     }
+
 
     /**
      * 根据词表构建Trie树结构

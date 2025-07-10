@@ -27,5 +27,8 @@ public class RabbitMQUtils {
     public void sendAichatMessage(Object message) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.AICHAT_ROUTING_KEY, message);
     }
+    public void sendBbsMessage(Object message) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.BBS_ROUTING_KEY, message);
+    }
 
 }

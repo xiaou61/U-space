@@ -30,6 +30,9 @@ public class RabbitMQConfig {
     // === AI对话存储配置 ===
     public static final String AICHAT_QUEUE = "xiaou.ai.chat.queue";
     public static final String AICHAT_ROUTING_KEY = "xiaou.ai.chat.key";
+    // === BBS论坛配置 ===
+    public static final String BBS_QUEUE = "xiaou.bbs.queue";
+    public static final String BBS_ROUTING_KEY = "xiaou.bbs.key";
     // ======== 基础配置 ========
 
     /**
@@ -90,6 +93,17 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(aiChatQueue)
                 .to(directExchange)
                 .with(AICHAT_ROUTING_KEY);
+    }
+    // === BBS论坛配置 ===
+    @Bean
+    public Queue bbsQueue() {
+        return new Queue(BBS_QUEUE);
+    }
+    @Bean
+    public Binding bbsBinding(Queue bbsQueue, DirectExchange directExchange) {
+        return BindingBuilder.bind(bbsQueue)
+                .to(directExchange)
+                .with(BBS_ROUTING_KEY);
     }
 
 

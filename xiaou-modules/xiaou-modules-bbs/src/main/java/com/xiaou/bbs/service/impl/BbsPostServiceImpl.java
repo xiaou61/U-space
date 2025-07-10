@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.constants.NotifyConstants;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsPostLike;
 import com.xiaou.bbs.domain.req.BbsPostReq;
@@ -14,12 +15,14 @@ import com.xiaou.bbs.domain.resp.BbsPostResp;
 import com.xiaou.bbs.domain.resp.BbsStudentInfoResp;
 import com.xiaou.bbs.mapper.BbsPostLikeMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
+import com.xiaou.bbs.mq.BbsUserNotifyMq;
 import com.xiaou.bbs.service.BbsPostService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
+import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.upload.utils.FilesUtils;
 import jakarta.annotation.Resource;
@@ -47,6 +50,8 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
     private FilesUtils filesUtils;
     @Resource
     private BbsPostLikeMapper bbsPostLikeMapper;
+    @Resource
+    private RabbitMQUtils rabbitMQUtils;
 
     @Override
     public R<String> add(BbsPostReq req) {
@@ -192,7 +197,8 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
             return R.ok("取消点赞成功");
         } else {
             // 点赞：点赞数加一，新增点赞记录
-            Integer likeCount = baseMapper.selectById(id).getLikeCount();
+            BbsPost bbsPost = baseMapper.selectById(id);
+            Integer likeCount = bbsPost.getLikeCount();
             int newCount = (likeCount != null) ? likeCount + 1 : 1;
             updateWrapper.set("like_count", newCount);
             baseMapper.update(null, updateWrapper);
@@ -201,7 +207,21 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
             like.setPostId(id);
             like.setUserId(userId);
             bbsPostLikeMapper.insert(like);
+            //消息通知
+            BbsUserNotifyMq mq = new BbsUserNotifyMq();
+            mq.setReceiverId(bbsPost.getUserId());
+            mq.setType(NotifyConstants.Like);
+            mq.setSenderId(userId);
+            mq.setTargetId(id);
+            rabbitMQUtils.sendBbsMessage(
+                    mq
+            );
+
+
+
             return R.ok("点赞成功");
+
+
         }
     }
 

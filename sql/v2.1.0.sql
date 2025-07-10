@@ -84,3 +84,16 @@ CREATE TABLE `u_bbs_reply_like` (
                                     INDEX (`user_id`)
 ) COMMENT='评论回复点赞表';
 
+
+
+CREATE TABLE `u_bbs_user_notify` (
+                                     `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                     `receiver_id` VARCHAR(32) NOT NULL COMMENT '接收人ID',
+                                     `type` VARCHAR(20) NOT NULL COMMENT '通知类型，如like/comment/reply',
+                                     `target_id` VARCHAR(32) NOT NULL COMMENT '目标ID，如被点赞的帖子ID、评论ID、回复ID',
+                                     `sender_id` VARCHAR(32) NOT NULL COMMENT '发送人ID（谁点赞的）',
+                                     `is_read` TINYINT DEFAULT 0 COMMENT '是否已读 0=未读 1=已读',
+                                     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                     INDEX (`receiver_id`),
+                                     INDEX (`type`)
+) COMMENT='用户BBS论坛通知表';

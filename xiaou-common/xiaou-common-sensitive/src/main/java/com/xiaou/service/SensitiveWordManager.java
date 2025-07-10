@@ -92,12 +92,15 @@ public class SensitiveWordManager {
         TrieNode root = buildTrieFromWordMap(wordMap);
         try {
             String json = mapper.writeValueAsString(root);
-            RedisUtils.setCacheObject(REDIS_KEY, json);
+            RedisUtils.getClient()
+                    .getBucket(REDIS_KEY, org.redisson.client.codec.StringCodec.INSTANCE)
+                    .set(json);  // ✅ 确保存的是字符串
         } catch (Exception e) {
             throw new RuntimeException("序列化敏感词 Trie 失败", e);
         }
         this.trie = new SensitiveTrie(root);
     }
+
 
     private TrieNode buildTrieFromWordMap(Map<String, Integer> words) {
         TrieNode root = new TrieNode();
