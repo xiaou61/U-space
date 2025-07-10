@@ -11,4 +11,6 @@ import com.xiaou.common.page.PageRespDto;
 public interface BbsUserNotifyService extends IService<BbsUserNotify> {
 
     R<PageRespDto<BbsUserNotifyResp>> pageList(PageReqDto dto);
+
+    R<String> read();
 }

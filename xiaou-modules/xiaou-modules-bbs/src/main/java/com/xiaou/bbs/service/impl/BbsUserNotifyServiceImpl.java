@@ -18,7 +18,9 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
+import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -36,6 +38,8 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
     private BbsPostMapper postMapper;
     @Resource
     private StudentMapper studentMapper;
+    @Autowired
+    private LoginHelper loginHelper;
 
     @Override
     public R<PageRespDto<BbsUserNotifyResp>> pageList(PageReqDto dto) {
@@ -44,6 +48,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
         // 1. 查询通知分页数据，按时间倒序
         QueryWrapper<BbsUserNotify> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("created_at");
+        queryWrapper.eq("receiver_id", loginHelper.getCurrentAppUserId());
         IPage<BbsUserNotify> page = bbsUserNotifyMapper.selectPage(iPage, queryWrapper);
 
         List<BbsUserNotifyResp> respList = MapstructUtils.convert(page.getRecords(), BbsUserNotifyResp.class);
@@ -63,7 +68,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
 
         // 2.2 提取所有 type = post_like 的 targetId（即 postId）
         Set<String> postIds = respList.stream()
-                .filter(resp -> "post_like".equals(resp.getType()))
+                .filter(resp -> "like".equals(resp.getType()))
                 .map(BbsUserNotifyResp::getTargetId)
                 .collect(Collectors.toSet());
 
@@ -81,7 +86,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
             }
 
             // 3.2 填充帖子标题（目前只处理 post_like）
-            if ("post_like".equals(resp.getType())) {
+            if ("like".equals(resp.getType())) {
                 BbsPost post = postMap.get(resp.getTargetId());
                 if (post != null) {
                     resp.setPostTitle(post.getTitle());
@@ -90,6 +95,13 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
         }
 
         return R.ok(PageRespDto.of(page.getCurrent(), page.getSize(), page.getTotal(), respList));
+    }
+
+    @Override
+    public R<String> read() {
+        //设置已读
+        baseMapper.updateIsRead(loginHelper.getCurrentAppUserId());
+        return R.ok();
     }
 
 }

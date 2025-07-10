@@ -33,7 +33,7 @@ public class NoticeConsumer {
             msg.setType(GlobalConstants.NOKNOWN);
         }
 
-        log.info("接收到MQ消息: " + msg.getMessage()+msg.getType());
+        log.info("接收到MQ消息: " + msg.getMessage()+msg.getType()+msg.getUserIds().toString());
         //如果userids为null 那么需要保存所有的
         if (msg.getUserIds() == null){
             List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
@@ -43,6 +43,7 @@ public class NoticeConsumer {
                 }
             }
         }else {
+            log.info("到这里啦啦啦啦啦啦");
             // 保存到数据库信息 可能会有多个用户的推送所以要保存多个用户
             for (String userId : msg.getUserIds()){
                 extracted(msg, userId);

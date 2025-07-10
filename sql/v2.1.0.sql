@@ -87,7 +87,7 @@ CREATE TABLE `u_bbs_reply_like` (
 
 
 CREATE TABLE `u_bbs_user_notify` (
-                                     `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                     `id` varchar(32) PRIMARY KEY AUTO_INCREMENT,
                                      `receiver_id` VARCHAR(32) NOT NULL COMMENT '接收人ID',
                                      `type` VARCHAR(20) NOT NULL COMMENT '通知类型，如like/comment/reply',
                                      `target_id` VARCHAR(32) NOT NULL COMMENT '目标ID，如被点赞的帖子ID、评论ID、回复ID',

@@ -35,18 +35,20 @@ public class SseTopicListener implements ApplicationRunner, Ordered {
             log.info("SSE主题订阅收到消息session keys={} message={} type={}", message.getUserIds(), message.getMessage(), message.getType());
             // 如果key不为空就按照key发消息 如果为空就群发
             if (CollUtil.isNotEmpty(message.getUserIds())) {
+                // 定向发送给指定用户
                 message.getUserIds().forEach(key -> {
-                    sseEmitterManager.sendMessage(key, message.getMessage(),message.getType());
-                    //调用mq进行存储
-                    rabbitMQUtils.sendNoticeMessage(message);
+                    sseEmitterManager.sendMessage(key, message.getMessage(), message.getType());
                 });
+                // MQ消息只调用一次，带上所有用户ID
+                rabbitMQUtils.sendNoticeMessage(message);
             } else {
-                //群发所有用户
-                sseEmitterManager.sendMessageAll(message.getMessage(),message.getType());
-                //调用mq进行存储
+                // 群发所有用户
+                sseEmitterManager.sendMessageAll(message.getMessage(), message.getType());
+                // MQ消息只调用一次
                 log.info("SSE主题订阅群发消息 message={} type={}", message.getMessage(), message.getType());
                 rabbitMQUtils.sendNoticeMessage(message);
             }
+
         });
         log.info("初始化SSE主题订阅监听器成功");
     }

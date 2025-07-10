@@ -27,4 +27,13 @@ public class PostUserNotifyController {
     public R<PageRespDto<BbsUserNotifyResp>> PageList(@RequestBody PageReqDto dto){
         return bbsUserNotifyService.pageList(dto);
     }
+    /**
+     * 点击后就代表所有已读
+     */
+    @PostMapping("/read")
+    public R<String> read(){
+        return bbsUserNotifyService.read();
+    }
+
+
 }

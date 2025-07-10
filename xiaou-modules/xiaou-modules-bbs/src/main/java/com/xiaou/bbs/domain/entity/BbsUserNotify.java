@@ -20,7 +20,7 @@ public class BbsUserNotify {
      *
      */
     @TableId(type = IdType.ASSIGN_UUID)
-    private Long id;
+    private String id;
 
     /**
      * 接收人ID
