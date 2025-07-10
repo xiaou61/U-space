@@ -64,3 +64,23 @@ CREATE TABLE `u_bbs_comment_reply` (
                                        INDEX (`post_id`)
 ) COMMENT='评论回复表（二级评论）';
 
+
+
+CREATE TABLE `u_bbs_comment_like` (
+                                      `id` VARCHAR(32) PRIMARY KEY COMMENT '点赞记录ID，UUID',
+                                      `comment_id` VARCHAR(32) NOT NULL COMMENT '被点赞的评论ID',
+                                      `user_id` VARCHAR(32) NOT NULL COMMENT '点赞用户ID',
+                                      `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+                                      UNIQUE KEY (`comment_id`, `user_id`) COMMENT '一个用户对同一评论只能点赞一次',
+                                      INDEX (`user_id`)
+) COMMENT='评论点赞表';
+
+CREATE TABLE `u_bbs_reply_like` (
+                                    `id` VARCHAR(32) PRIMARY KEY COMMENT '点赞记录ID，UUID',
+                                    `reply_id` VARCHAR(32) NOT NULL COMMENT '被点赞的回复ID',
+                                    `user_id` VARCHAR(32) NOT NULL COMMENT '点赞用户ID',
+                                    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+                                    UNIQUE KEY (`reply_id`, `user_id`) COMMENT '一个用户对同一回复只能点赞一次',
+                                    INDEX (`user_id`)
+) COMMENT='评论回复点赞表';
+

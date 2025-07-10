@@ -10,10 +10,12 @@ import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.dto.CommentReplyCount;
 import com.xiaou.bbs.domain.entity.BbsComment;
+import com.xiaou.bbs.domain.entity.BbsCommentLike;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.req.BbsCommentReq;
 import com.xiaou.bbs.domain.resp.BbsCommentResp;
+import com.xiaou.bbs.mapper.BbsCommentLikeMapper;
 import com.xiaou.bbs.mapper.BbsCommentMapper;
 import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
@@ -45,6 +47,10 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
     private BbsCommentReplyMapper replyMapper;
     @Resource
     private BbsPostMapper bbsPostMapper;
+    @Resource
+    private BbsCommentLikeMapper commentLikeMapper;
+    @Resource
+    private BbsCommentMapper commentMapper;
 
     @Override
     @Transactional
@@ -132,6 +138,27 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
         return R.ok(PageRespDto.of(iPage.getCurrent(), iPage.getSize(), iPage.getTotal(), respList));
     }
 
+    @Override
+    public R<String> likeComment(String id) {
+        //帖子评论点赞判断是否已经点过赞
+        QueryWrapper<BbsCommentLike> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("comment_id", id)
+                .eq("user_id", loginHelper.getCurrentAppUserId());
+        if (commentLikeMapper.selectOne(queryWrapper) != null) {
+            //已经点过赞 也就是执行取消点赞的功能
+            commentLikeMapper.delete(queryWrapper);
+            commentMapper.updateLikeCountById(id, -1);
+
+        }
+        //没有点过赞 添加点赞
+        BbsCommentLike like = new BbsCommentLike();
+        like.setCommentId(id);
+        like.setUserId(loginHelper.getCurrentAppUserId());
+        commentLikeMapper.insert(like);
+        commentMapper.updateLikeCountById(id, 1);
+        //todo 消息通知
+        return R.ok("点赞成功");
+    }
 
 
 }

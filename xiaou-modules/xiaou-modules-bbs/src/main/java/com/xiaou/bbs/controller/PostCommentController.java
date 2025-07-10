@@ -63,6 +63,20 @@ public class PostCommentController {
     public R<PageRespDto<BbsCommentReplyResp>> getReplyList(@RequestParam String commentId, @RequestBody PageReqDto dto){
         return commentReplyService.getReplyList(commentId,dto);
     }
+    /**
+     * 帖子评论点赞功能
+     */
+    @PostMapping("/like")
+    public R<String> likeComment(@RequestParam String id){
+        return commentService.likeComment(id);
+    }
+    /**
+     * 帖子回复点赞功能
+     */
+    @PostMapping("/likeReply")
+    public R<String> likeReply(@RequestParam String id){
+        return commentReplyService.likeReply(id);
+    }
 
 
 }

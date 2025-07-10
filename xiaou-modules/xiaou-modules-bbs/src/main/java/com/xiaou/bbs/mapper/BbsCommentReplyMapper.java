@@ -6,6 +6,7 @@ import com.xiaou.bbs.domain.dto.CommentReplyCount;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface BbsCommentReplyMapper extends BaseMapper<BbsCommentReply> {
      */
     List<CommentReplyCount> selectReplyCountByCommentIds(@Param("commentIds") List<String> commentIds);
 
+    @Update("update `u_bbs_comment_reply` set like_count = like_count + #{i} where id = #{id}")
+    void updateLikeCountById(String id, int i);
 }
 
 

@@ -17,4 +17,6 @@ public interface BbsCommentService extends IService<BbsComment> {
     R<String> deleteComment(String id);
 
     R<PageRespDto<BbsCommentResp>> getCommentList(String postId, PageReqDto dto);
+
+    R<String> likeComment(String id);
 }

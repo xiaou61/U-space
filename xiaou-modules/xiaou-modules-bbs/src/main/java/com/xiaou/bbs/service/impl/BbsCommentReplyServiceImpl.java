@@ -8,10 +8,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.Student;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
+import com.xiaou.bbs.domain.entity.BbsReplyLike;
 import com.xiaou.bbs.domain.req.BbsCommentReplyReq;
 import com.xiaou.bbs.domain.resp.BbsCommentReplyResp;
 import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
+import com.xiaou.bbs.mapper.BbsReplyLikeMapper;
 import com.xiaou.bbs.service.BbsCommentReplyService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
@@ -35,6 +37,11 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
     private StudentMapper userMapper;
     @Resource
     private BbsPostMapper postMapper;
+    @Resource
+    private BbsReplyLikeMapper replyLikeMapper;
+    @Resource
+    private BbsCommentReplyMapper commentReplyMapper;
+
     @Override
     @Transactional
     public R<String> replyComment(BbsCommentReplyReq req) {
@@ -121,6 +128,28 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
 
         // 返回分页结果
         return R.ok(PageRespDto.of(iPage.getCurrent(), iPage.getSize(), iPage.getTotal(), respList));
+    }
+
+    @Override
+    public R<String> likeReply(String id) {
+        //帖回复点赞判断是否已经点赞
+        QueryWrapper<BbsReplyLike> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("reply_id", id)
+                .eq("user_id", loginHelper.getCurrentAppUserId());
+        if (replyLikeMapper.selectOne(queryWrapper) != null){
+            //已经点过赞，执行取消点赞
+            replyLikeMapper.delete(queryWrapper);
+            commentReplyMapper.updateLikeCountById(id, -1);
+
+        }
+        //没有点过赞，添加点赞
+        BbsReplyLike like = new BbsReplyLike();
+        like.setReplyId(id);
+        like.setUserId(loginHelper.getCurrentAppUserId());
+        replyLikeMapper.insert(like);
+        commentReplyMapper.updateLikeCountById(id, 1);
+        //todo 添加消息通知
+        return R.ok("点赞成功");
     }
 
 }
