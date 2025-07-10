@@ -26,7 +26,10 @@ import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
+import com.xiaou.service.SensitiveFilterResult;
+import com.xiaou.service.SensitiveWordManager;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComment>
     implements BbsCommentService {
     @Resource
@@ -51,14 +55,27 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
     private BbsCommentLikeMapper commentLikeMapper;
     @Resource
     private BbsCommentMapper commentMapper;
+    @Resource
+    private SensitiveWordManager sensitiveWordManager;
 
     @Override
     @Transactional
+
     public R<String> addComment(BbsCommentReq req) {
         //添加一个评论
         //todo 发送消息通知
         BbsComment convert = MapstructUtils.convert(req, BbsComment.class);
         convert.setUserId(loginHelper.getCurrentAppUserId());
+        //判断是否有敏感词
+        SensitiveFilterResult filter = sensitiveWordManager.filter(req.getContent());
+        if (!filter.isAllowed()) {
+            return R.warn("包含敏感词不能发送");
+        }
+        //是否需要替换
+        if (filter.getReplacedContent()!=null){
+            log.info("替换内容：{}", filter.getReplacedContent());
+            convert.setContent(filter.getReplacedContent());
+        }
         baseMapper.insert(convert);
         //更新帖子的评论数量
         bbsPostMapper.updateCommentCountById(convert.getPostId(), 1);
