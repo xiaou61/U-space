@@ -12,6 +12,8 @@ public interface BbsPostMapper extends BaseMapper<BbsPost> {
     @Update("update `u_bbs_post` set comment_count = comment_count + #{i} where id = #{postId}")
     void updateCommentCountById(String postId, int i);
 
+    @Update("update `u_bbs_post` set view_count = view_count + #{i} where id = #{id}")
+    void updateViewCountById(String id, int i);
 }
 
 

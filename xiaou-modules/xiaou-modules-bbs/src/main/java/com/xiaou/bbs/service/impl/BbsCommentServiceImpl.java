@@ -148,7 +148,7 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
             //已经点过赞 也就是执行取消点赞的功能
             commentLikeMapper.delete(queryWrapper);
             commentMapper.updateLikeCountById(id, -1);
-
+            return R.ok("取消点赞成功");
         }
         //没有点过赞 添加点赞
         BbsCommentLike like = new BbsCommentLike();

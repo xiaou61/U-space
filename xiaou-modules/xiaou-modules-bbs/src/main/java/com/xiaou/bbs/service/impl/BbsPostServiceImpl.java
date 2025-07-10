@@ -159,8 +159,8 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
     public R<String> viewPost(String id) {
         BbsPost post = baseMapper.selectById(id);
         if (post != null) {
-            post.setViewCount(post.getViewCount() + 1);
-            baseMapper.updateById(post);
+            // 浏览数加一
+            baseMapper.updateViewCountById(id, 1);
             return R.ok("成功");
         }
         return R.fail("帖子不存在");
