@@ -92,6 +92,11 @@
                 <artifactId>xiaou-common-sse</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.xiaou</groupId>
+                <artifactId>xiaou-common-sensitive</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -26,6 +26,7 @@
         <module>xiaou-common-upload</module>
         <module>xiaou-common-online</module>
         <module>xiaou-common-sse</module>
+        <module>xiaou-common-sensitive</module>
     </modules>
 
 
