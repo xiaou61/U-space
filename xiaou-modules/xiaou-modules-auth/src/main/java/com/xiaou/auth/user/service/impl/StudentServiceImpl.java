@@ -19,6 +19,7 @@ import com.xiaou.auth.user.domain.resp.StudentInfoResp;
 import com.xiaou.auth.user.domain.resp.StudentLoginClassResp;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.auth.user.service.StudentService;
+import com.xiaou.auth.user.utils.AliGreenImageScanUtil;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.ServiceException;
@@ -171,9 +172,11 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
     @Override
     public R<String> uploadAvatar(MultipartFile file) {
         try {
-            //todo 后续会添加头像审核功能
+            //这里检测图片是否违规 需要传入一些值 注释打开就可以用
+//            AliGreenImageScanUtil aliGreenImageScanUtil = new AliGreenImageScanUtil();
             FileInfo fileInfo = filesUtils.uploadFile(file);
-            return R.ok("上传成功",fileInfo.getUrl());
+//            aliGreenImageScanUtil.scanImage(fileInfo.getUrl());
+            return R.ok("上传成功", fileInfo.getUrl());
         } catch (Exception e) {
             throw new ServiceException("头像上传失败");
         }

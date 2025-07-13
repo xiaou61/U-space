@@ -13,6 +13,13 @@
 
 
     <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/com.aliyun/imageaudit20191230 -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>imageaudit20191230</artifactId>
+            <version>2.0.6</version>
+        </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-secure</artifactId>

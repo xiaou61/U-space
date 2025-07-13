@@ -3,7 +3,6 @@ package com.xiaou.bbs.job;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.PostRecommendScore;
 import com.xiaou.bbs.mapper.BbsPostMapper;
-import com.xiaou.bbs.mapper.PostRecommendScoreMapper;
 import com.xiaou.bbs.service.PostRecommendScoreService;
 import com.xiaou.redis.utils.RedisUtils;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class PostRecommendJob {
