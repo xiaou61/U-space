@@ -24,6 +24,10 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-secure</artifactId>
+        </dependency>
         <!-- web 容器使用 undertow 性能更强 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

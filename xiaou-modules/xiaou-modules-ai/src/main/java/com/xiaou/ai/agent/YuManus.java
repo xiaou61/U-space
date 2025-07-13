@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * 超级智能体（拥有自主规划能力，可以直接使用）
  */
-@Component
+//@Component
 public class YuManus extends ToolCallAgent {
 
     public YuManus(ToolCallback[] allTools, ChatModel dashscopeChatModel) {

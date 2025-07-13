@@ -1,20 +1,20 @@
 package com.xiaou.auth.user.controller;
 
 import cn.dev33.satoken.util.SaResult;
-import com.xiaou.auth.admin.domain.resp.StudentInfoPageResp;
+import com.alibaba.fastjson2.JSON;
 import com.xiaou.auth.user.domain.req.StudentLoginReq;
 import com.xiaou.auth.user.domain.req.StudentRegisterReq;
 import com.xiaou.auth.user.domain.resp.StudentInfoResp;
 import com.xiaou.auth.user.domain.resp.StudentLoginClassResp;
 import com.xiaou.auth.user.service.StudentService;
 import com.xiaou.common.domain.R;
-import com.xiaou.common.page.PageReqDto;
-import com.xiaou.common.page.PageRespDto;
 import com.xiaou.log.annotation.Log;
 import com.xiaou.log.enums.BusinessType;
 import com.xiaou.log.enums.OperatorType;
 import com.xiaou.ratelimiter.annotation.RateLimiter;
+import com.xiaou.secure.annotation.SecureApi;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +43,10 @@ public class StudentAuthController {
      */
     @Log(title = "登录", businessType = BusinessType.LOGIN, operatorType = OperatorType.MOBILE)
     @PostMapping("/login")
-    public R<SaResult> login(@RequestBody StudentLoginReq req) {
+    @SecureApi
+    public R<SaResult> login(HttpServletRequest request) {
+        String json = (String) request.getAttribute("secureData");
+        StudentLoginReq req = JSON.parseObject(json, StudentLoginReq.class);
         return studentService.login(req);
     }
 

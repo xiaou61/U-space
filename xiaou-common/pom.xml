@@ -27,6 +27,7 @@
         <module>xiaou-common-online</module>
         <module>xiaou-common-sse</module>
         <module>xiaou-common-sensitive</module>
+        <module>xiaou-common-secure</module>
     </modules>
 
 

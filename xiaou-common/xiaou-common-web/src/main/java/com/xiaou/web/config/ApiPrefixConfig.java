@@ -4,7 +4,7 @@ package com.xiaou.web.config;
 //import cn.dev33.satoken.stp.StpUtil;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
-import cn.dev33.satoken.stp.StpUtil;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -22,6 +22,7 @@ public class ApiPrefixConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true); // 允许携带凭证
     }
+
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
