@@ -16,6 +16,7 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScoreMapper, PostRecommendScore>
@@ -23,6 +24,7 @@ public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScor
 
     @Resource
     private StudentMapper studentMapper;
+
     @Override
     public double calculateHeatScore(BbsPost post) {
         //就是简单的浏览+评论+点赞
@@ -40,9 +42,37 @@ public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScor
 
     @Override
     public double calculateKeywordScore(BbsPost post) {
-        //todo 等待实现中
+        // 简单版本：关键词权重表
+        //todo 这里可以添加一个维护表 设置一下权重
+        Map<String, Integer> keywordWeightMap = Map.of(
+                "考研", 5,
+                "校园食堂", 3,
+                "篮球", 4,
+                "论文", 2
+        );
 
-        return 0;
+        String content = (post.getTitle() + " " + post.getContent()).toLowerCase();
+
+        double score = 0;
+        for (Map.Entry<String, Integer> entry : keywordWeightMap.entrySet()) {
+            String keyword = entry.getKey().toLowerCase();
+            int weight = entry.getValue();
+            int count = countOccurrences(content, keyword);
+            score += count * weight;
+        }
+
+        return score;
+    }
+
+    // 统计 keyword 在 content 中出现的次数
+    private int countOccurrences(String content, String keyword) {
+        int count = 0;
+        int idx = 0;
+        while ((idx = content.indexOf(keyword, idx)) != -1) {
+            count++;
+            idx += keyword.length();
+        }
+        return count;
     }
 
     @Override

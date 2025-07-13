@@ -32,7 +32,7 @@ public class PostRecommendJob {
             double stayScore = postRecommendScoreService.calculateStayScore(post);
             //计算帖子的关键词分
             double keywordScore = postRecommendScoreService.calculateKeywordScore(post);
-            //最终得分想加
+            //最终得分相加
             double finalScore = heatScore + stayScore + keywordScore;
             //进行入库操作
             PostRecommendScore postRecommendScore = new PostRecommendScore();
