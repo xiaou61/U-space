@@ -1,8 +1,8 @@
-# U-Space 2.X  (v2.0.0)
+# U-Space 2.X  (v2.1.0)
 
 **U-Space 2.X** 是一套基于 Spring Boot 3 的"**智慧校园 +**"实践项目，目标简历一个庞大的智慧校园系统。
 
-项目目前为V2.0.0正式版
+项目目前为V2.1.0正式版
 
 ## 项目部分截图
 
@@ -65,13 +65,14 @@
 
 `xiaou-modules` 作为 **业务层** 目录，按照领域拆分多个微服务/子系统。
 
-| 子模块 | 功能概述 |
-|--------|---------|
+| 子模块                  | 功能概述                                                                  |
+|----------------------|-----------------------------------------------------------------------|
 | xiaou-modules-system | 后台系统管理：操作日志、公告管理、在线用户、文件上传等运维类功能。依赖 common-log / common-upload 等公共组件。 |
-| xiaou-modules-ai | 智慧校园 AI 助手：集成 DashScope LLM、RAG、工具调用，提供聊天、知识问答、PDF 生成等智能服务。 |
-| xiaou-modules-auth | 认证中心：登录 / 注册 / JWT 或 Sa-Token 鉴权、验证码、人机校验等身份安全功能。 |
-| xiaou-modules-study | 学习管理：课程、作业、分组讨论等教学相关服务。 |
-| xiaou-modules-index | 首页功能编写 |
+| xiaou-modules-ai     | 智慧校园 AI 助手：集成 DashScope LLM、RAG、工具调用，提供聊天、知识问答、PDF 生成等智能服务。           |
+| xiaou-modules-auth   | 认证中心：登录 / 注册 / JWT 或 Sa-Token 鉴权、验证码、人机校验等身份安全功能。                     |
+| xiaou-modules-study  | 学习管理：课程、作业、分组讨论等教学相关服务。                                               |
+| xiaou-modules-index  | 首页功能编写                                                                |
+| xiaou-modules-bbs    | 校园论坛                                                                  |
 
 > 这些子模块均继承 `xiaou-modules/pom.xml` 聚合配置，统一版本号与依赖。
 

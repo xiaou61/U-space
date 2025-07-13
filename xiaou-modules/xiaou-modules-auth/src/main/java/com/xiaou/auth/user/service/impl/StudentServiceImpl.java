@@ -19,7 +19,6 @@ import com.xiaou.auth.user.domain.resp.StudentInfoResp;
 import com.xiaou.auth.user.domain.resp.StudentLoginClassResp;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.auth.user.service.StudentService;
-import com.xiaou.auth.user.utils.AliGreenImageScanUtil;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.ServiceException;
@@ -38,7 +37,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.xiaou.auth.user.constant.UserConstant.STATUS;
 

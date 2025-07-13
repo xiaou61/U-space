@@ -16,7 +16,7 @@
     </modules>
 
     <properties>
-        <revision>2.1.0-SNAPSHOT</revision>
+        <revision>2.1.0</revision>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -115,11 +115,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-redis</artifactId>
                 <version>${redis.version}</version>
-            </dependency>
-            <!-- Redis 依赖 -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
