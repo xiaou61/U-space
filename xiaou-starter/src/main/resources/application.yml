@@ -35,7 +35,7 @@ xxl:
     app-name: my-app
     ip: 127.0.0.1
     access-token: default_token
-    enabled: false
+    enabled: true
 secure:
   aes-key: xiaou-secure-123       # 16/24/32 位
   sign-secret: xiaou-sign-secret    # 用于 HMAC-SHA256

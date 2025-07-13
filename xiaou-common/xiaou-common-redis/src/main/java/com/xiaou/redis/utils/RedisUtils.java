@@ -8,10 +8,7 @@ import org.redisson.api.*;
 import org.redisson.api.options.KeysScanOptions;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -615,6 +612,16 @@ public class RedisUtils {
     public static String getGroupIdByGeneratedId(String id) {
         String key = GlobalConstants.GROUPCHECK_KEY + id;
         return (String) CLIENT.getBucket(key).get();
+    }
+
+    public static void zAdd(String key, String member, double score) {
+        RScoredSortedSet<String> set = CLIENT.getScoredSortedSet(key);
+        set.add(score, member); // 注意顺序是 (score, value)
+        set.expire(Duration.ofDays(1));
+    }
+    public static List<String> zTop(String key, int topN) {
+        RScoredSortedSet<String> set = CLIENT.getScoredSortedSet(key);
+        return new ArrayList<>(set.valueRangeReversed(0, topN - 1));
     }
 
 }

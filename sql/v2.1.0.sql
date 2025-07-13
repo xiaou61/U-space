@@ -97,3 +97,14 @@ CREATE TABLE `u_bbs_user_notify` (
                                      INDEX (`receiver_id`),
                                      INDEX (`type`)
 ) COMMENT='用户BBS论坛通知表';
+
+CREATE TABLE `u_post_recommend_score` (
+                                          id            varchar(32) PRIMARY KEY,
+                                          `post_id` VARCHAR(32) NOT NULL COMMENT '帖子ID',
+                                          heat_score    DOUBLE NOT NULL DEFAULT 0 COMMENT '热度分',
+                                          stay_score    DOUBLE NOT NULL DEFAULT 0 COMMENT '停留时长分',
+                                          keyword_score DOUBLE NOT NULL DEFAULT 0 COMMENT '关键词匹配分',
+                                          final_score   DOUBLE NOT NULL DEFAULT 0 COMMENT '最终推荐得分',
+                                          update_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                          INDEX idx_score (final_score DESC)
+) COMMENT='帖子推荐得分表';

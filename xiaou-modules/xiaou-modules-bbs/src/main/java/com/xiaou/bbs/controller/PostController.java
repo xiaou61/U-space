@@ -3,9 +3,11 @@ package com.xiaou.bbs.controller;
 import com.xiaou.bbs.domain.req.BbsPostReq;
 import com.xiaou.bbs.domain.resp.BbsPostResp;
 import com.xiaou.bbs.service.BbsPostService;
+import com.xiaou.bbs.service.PostRecommendScoreService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.redis.utils.RedisUtils;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ public class PostController {
 
     @Resource
     private BbsPostService bbsPostService;
+    @Resource
+    private PostRecommendScoreService postRecommendScoreService;
 
     /**
      * 新增帖子
@@ -82,6 +86,14 @@ public class PostController {
     public R<String> likePost(@RequestParam String id) {
         return bbsPostService.likePost(id);
     }
+    /**
+     * 推荐帖子从redis获取
+     */
+    @GetMapping("/recommend")
+    public R<List<BbsPostResp>> recommendPost() {
+        return postRecommendScoreService.recommendPost();
+    }
+
 
 
 }
