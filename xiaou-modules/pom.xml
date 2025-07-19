@@ -18,6 +18,7 @@
         <module>xiaou-modules-ai</module>
         <module>xiaou-modules-index</module>
         <module>xiaou-modules-bbs</module>
+        <module>xiaou-modules-room</module>
     </modules>
 
 </project>

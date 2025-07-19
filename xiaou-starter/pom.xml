@@ -95,6 +95,11 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-secure</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-room</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

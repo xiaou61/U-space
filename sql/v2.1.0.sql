@@ -108,3 +108,6 @@ CREATE TABLE `u_post_recommend_score` (
                                           update_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                           INDEX idx_score (final_score DESC)
 ) COMMENT='帖子推荐得分表';
+
+
+
