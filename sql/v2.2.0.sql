@@ -75,3 +75,24 @@ CREATE TABLE `u_dorm_register` (
     -- 唯一约束：身份证号码唯一（防止重复身份）
                                    UNIQUE KEY uk_id_card (id_card)
 ) COMMENT='宿舍信息登记表';
+
+
+
+
+CREATE TABLE `u_course` (
+                          `id` varchar(32) NOT NULL AUTO_INCREMENT COMMENT '课程ID',
+                          `course_code` VARCHAR(64) NOT NULL COMMENT '课程编号',
+                          `course_name` VARCHAR(255) NOT NULL COMMENT '课程名称',
+                          `teacher_name` VARCHAR(100) DEFAULT NULL COMMENT '授课教师姓名',
+                          `capacity` INT NOT NULL DEFAULT 50 COMMENT '课程容量',
+                          `selected_count` INT NOT NULL DEFAULT 0 COMMENT '已选人数',
+                          `credit` DECIMAL(3,1) DEFAULT 1.0 COMMENT '学分',
+                          `start_time` DATETIME DEFAULT NULL COMMENT '课程开始时间',
+                          `end_time` DATETIME DEFAULT NULL COMMENT '课程结束时间',
+                          `classroom` VARCHAR(100) DEFAULT NULL COMMENT '上课教室',
+                          `period` VARCHAR(50) DEFAULT NULL COMMENT '上课描述',
+                          `description` VARCHAR(512) COMMENT '课程描述',
+                          `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                          PRIMARY KEY (`id`),
+                          UNIQUE KEY `uk_course_code` (`course_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程表';

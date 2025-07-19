@@ -19,6 +19,7 @@
         <module>xiaou-modules-index</module>
         <module>xiaou-modules-bbs</module>
         <module>xiaou-modules-room</module>
+        <module>xiaou-modules-subject</module>
     </modules>
 
 </project>
