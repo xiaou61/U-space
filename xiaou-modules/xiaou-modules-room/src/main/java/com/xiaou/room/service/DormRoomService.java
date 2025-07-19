@@ -8,6 +8,7 @@ import com.xiaou.room.domain.req.DormRoomReq;
 import com.xiaou.room.domain.resp.DormBedResp;
 import com.xiaou.room.domain.resp.DormBuildingResp;
 import com.xiaou.room.domain.resp.DormRoomResp;
+import com.xiaou.room.domain.resp.ListMyResp;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -21,4 +22,6 @@ public interface DormRoomService extends IService<DormRoom> {
     R<List<DormRoomResp>> listRoom(String buildingId);
 
     List<DormRoomResp> listDormRoomByBuildingIds(List<String> collect);
+
+    R<List<ListMyResp>> listMy();
 }

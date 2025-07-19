@@ -2,6 +2,7 @@ package com.xiaou.room.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.xiaou.room.domain.entity.DormBed;
 import com.xiaou.room.domain.entity.DormRoom;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,6 +22,11 @@ public interface DormRoomMapper extends BaseMapper<DormRoom> {
 
     List<DormRoom> seletRoomByIds(@Param("ids") List<String> ids);
 
+
+    @Select("select * from u_dorm_room where id=#{id}")
+    List<Object> listBed(String id);
+
+    List<DormBed> listBedByRoomIds(List<String> roomIds);
 }
 
 

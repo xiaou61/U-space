@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.List;
 @Data
+@Deprecated
 public class DormAllResp {
 
     private List<DormBuildingResp> dormBuildings;

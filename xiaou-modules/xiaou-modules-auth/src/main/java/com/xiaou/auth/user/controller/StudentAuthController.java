@@ -49,6 +49,13 @@ public class StudentAuthController {
         StudentLoginReq req = JSON.parseObject(json, StudentLoginReq.class);
         return studentService.login(req);
     }
+    /**
+     * 学生登录不需要验证版本 测试用的
+     */
+    @PostMapping("/loginNoVerify")
+    public R<SaResult> loginNoVerify(@RequestBody StudentLoginReq req) {
+        return studentService.login(req);
+    }
 
     /**
      * 查看本人信息

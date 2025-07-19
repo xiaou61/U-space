@@ -12,5 +12,12 @@
             #{id}
         </foreach>
     </select>
+    <select id="listBedByRoomIds" resultType="com.xiaou.room.domain.entity.DormBed">
+        SELECT * FROM u_dorm_bed
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </select>
 
 </mapper>

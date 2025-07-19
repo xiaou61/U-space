@@ -2,7 +2,9 @@ package com.xiaou.room.controller;
 
 import com.xiaou.common.domain.R;
 import com.xiaou.room.domain.req.DormRegisterReq;
+import com.xiaou.room.domain.resp.ListMyResp;
 import com.xiaou.room.service.DormRegisterService;
+import com.xiaou.room.service.DormRoomService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,12 +12,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/dorm")
 @Validated
 public class DormController {
     @Resource
     private DormRegisterService dormRegisterService;
+
+
+    @Resource
+    private DormRoomService dormRoomService;
     /**
      * 判断用户是否需要输入信息
      * false为不需要 true为需要
@@ -33,11 +41,11 @@ public class DormController {
     }
 
     /**
-     * 列出自己可选择的宿舍信息 聚合 这里要根据id获取性别然后返回的是自己的性别
+     * 列出自己可选择的宿舍信息 聚合 这里要根据id获取性别然后返回的是自己的性别 room跟bed一个集合
      */
     @GetMapping("/list")
-    public R<String> list() {
-        return null;
+    public R<List<ListMyResp>> list() {
+        return dormRoomService.listMy();
     }
 
 
