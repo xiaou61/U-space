@@ -12,4 +12,6 @@ public interface DormRegisterService extends IService<DormRegister> {
     R<Boolean> isNeedInputInfo();
 
     R<String> inputInfo(DormRegisterReq req);
+
+    R<String> grab(String roomId, String bedId);
 }

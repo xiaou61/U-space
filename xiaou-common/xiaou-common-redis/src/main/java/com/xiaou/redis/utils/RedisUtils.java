@@ -1,9 +1,11 @@
 package com.xiaou.redis.utils;
 
+import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.utils.SpringUtils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.redisson.RedissonLock;
 import org.redisson.api.*;
 import org.redisson.api.options.KeysScanOptions;
 
@@ -25,6 +27,59 @@ import java.util.stream.Stream;
 public class RedisUtils {
 
     private static final RedissonClient CLIENT = SpringUtils.getBean(RedissonClient.class);
+
+
+
+
+    /**
+     * 加锁（默认30秒自动释放）
+     */
+    public static RLock lock(String key) {
+        RLock lock = CLIENT.getLock(key);
+        lock.lock(30, TimeUnit.SECONDS);
+        return lock;
+    }
+
+    /**
+     * 加锁（自定义过期时间）
+     */
+    public static RLock lock(String key, long leaseTime, TimeUnit unit) {
+        RLock lock = CLIENT.getLock(key);
+        lock.lock(leaseTime, unit);
+        return lock;
+    }
+
+    /**
+     * 尝试获取锁（带超时）
+     */
+    public static boolean tryLock(String key, long waitTime, long leaseTime, TimeUnit unit) {
+        RLock lock = CLIENT.getLock(key);
+        try {
+            return lock.tryLock(waitTime, leaseTime, unit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 解锁
+     */
+    public static void unlock(String key) {
+        RLock lock = CLIENT.getLock(key);
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 解锁（推荐使用加锁时返回的 RLock 对象）
+     */
+    public static void unlock(RLock lock) {
+        if (!ObjectUtils.isEmpty(lock) && lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
 
     /**
      * 限流

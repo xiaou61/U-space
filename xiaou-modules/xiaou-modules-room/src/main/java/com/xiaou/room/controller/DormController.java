@@ -7,10 +7,7 @@ import com.xiaou.room.service.DormRegisterService;
 import com.xiaou.room.service.DormRoomService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,7 +33,7 @@ public class DormController {
      * 输入信息
      */
     @PostMapping("/inputInfo")
-    public R<String> inputInfo(@Validated DormRegisterReq req) {
+    public R<String> inputInfo(@RequestBody DormRegisterReq req) {
         return dormRegisterService.inputInfo(req);
     }
 
@@ -49,6 +46,14 @@ public class DormController {
     }
 
 
+    /**
+     * 抢宿舍按钮 具体某个床铺
+     * id为床铺id
+     */
+    @PostMapping("/grab")
+    public R<String> grab(@RequestParam String roomId,@RequestParam String bedId) {
+        return dormRegisterService.grab(roomId,bedId);
+    }
 
 
 }
