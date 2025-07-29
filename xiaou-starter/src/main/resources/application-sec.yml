@@ -1,0 +1,62 @@
+--- # mail 邮件发送
+mail:
+  enabled: true
+  host: smtp.qq.com
+  port: 465
+  # 是否需要用户名密码验证
+  auth: true
+  # 发送方，遵循RFC-822标准
+  from: 2756304842@qq.com
+  # 用户名（注意：如果使用foxmail邮箱，此处user为qq号）
+  user: 2756304842@qq.com
+  # 密码（注意，某些邮箱需要为SMTP服务单独设置密码，详情查看相关帮助）
+  pass: dwqylupnrpomdhch
+  # 使用 STARTTLS安全连接，STARTTLS是对纯文本通信协议的扩展。
+  starttlsEnable: true
+  # 使用SSL安全连接1
+  sslEnable: true
+  # SMTP超时时长，单位毫秒，缺省值不超时
+  timeout: 0
+  # Socket连接超时值，单位毫秒，缺省值不超时
+  connectionTimeout: 0
+
+dromara:
+  x-file-storage:
+    default-platform: tencent-cos-1
+    tencent-cos:
+      - platform: tencent-cos-1
+        enable-storage: true
+        secret-id: AKIDc6arwqcDaliUzNbdU8b3NcfYFl7GI9sS
+        secret-key: QhlkfQ0Nb2qX6jEamqkQwRkq36wZyBD5
+        region: ap-chengdu
+        bucket-name: 11-1305448902
+        domain: https://11-1305448902.cos.ap-chengdu.myqcloud.com/
+        base-path: upload/
+
+spring:
+  ai:
+    dashscope:
+      # 需要替换为你自己的 key
+      api-key: sk-297ee2c5c0a04a1e96997c79dea4dfe6
+      chat:
+        options:
+          model: qwen-plus
+# 临时注释掉，便于大家开发调试和部署（实际需要启动 MCP 服务）
+#    mcp:
+#      client:
+#        sse:
+#          connections:
+#            server1:
+#              url: http://localhost:8127
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
+# 临时注释掉，便于大家开发调试和部署（实际需要启动 PgVector 数据库）
+#    vectorstore:
+#      pgvector:
+#        index-type: HNSW
+#        dimensions: 1536
+#        distance-type: COSINE_DISTANCE
+#        max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+search-api:
+  # 需要替换为你自己的 key
+  api-key: xxx

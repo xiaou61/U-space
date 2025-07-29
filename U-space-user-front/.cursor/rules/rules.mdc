@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+这个项目是一个移动端的项目，所以说你要做到一个响应式的效果。就是pc跟手机端都可以看的很正常的。
+
+我后端的返回类为{
+    "code": 200,
+    "msg": "操作成功",
+    "data": {
+        "id": "1",
+        "username": "admin",
+        "password": "3070177a832f5d1e393bc90bdb7f0de8"
+    }
+
+
+}类似这样的结果。

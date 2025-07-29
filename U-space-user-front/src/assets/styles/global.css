@@ -1,0 +1,31 @@
+html {
+  /* Base REM size */
+  font-size: 16px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1200px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  background-color: #f5f6f7;
+  color: #333;
+}
+
+/* Utility classes */
+.w-100 {
+  width: 100% !important;
+}
+.text-center {
+  text-align: center !important;
+} 
