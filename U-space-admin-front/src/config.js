@@ -1,0 +1,1 @@
+export const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || '3924bd8f0d2da60a0c2621fbef06b424' // 在 .env.* 文件或命令行中设置 VITE_AMAP_KEY 
