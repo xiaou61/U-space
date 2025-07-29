@@ -23,13 +23,10 @@ import java.util.stream.Stream;
  * @version 3.1.0 新增
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@SuppressWarnings(value = {"unchecked", "rawtypes"})
+@SuppressWarnings(value = { "unchecked", "rawtypes" })
 public class RedisUtils {
 
     private static final RedissonClient CLIENT = SpringUtils.getBean(RedissonClient.class);
-
-
-
 
     /**
      * 加锁（默认30秒自动释放）
@@ -412,7 +409,6 @@ public class RedisUtils {
         return result;
     }
 
-
     /**
      * 追加缓存Set数据
      *
@@ -674,6 +670,7 @@ public class RedisUtils {
         set.add(score, member); // 注意顺序是 (score, value)
         set.expire(Duration.ofDays(1));
     }
+
     public static List<String> zTop(String key, int topN) {
         RScoredSortedSet<String> set = CLIENT.getScoredSortedSet(key);
         return new ArrayList<>(set.valueRangeReversed(0, topN - 1));

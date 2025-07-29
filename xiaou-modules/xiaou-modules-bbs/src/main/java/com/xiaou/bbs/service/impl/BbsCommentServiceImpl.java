@@ -2,17 +2,14 @@ package com.xiaou.bbs.service.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.dto.CommentReplyCount;
 import com.xiaou.bbs.domain.entity.BbsComment;
 import com.xiaou.bbs.domain.entity.BbsCommentLike;
-import com.xiaou.bbs.domain.entity.BbsCommentReply;
-import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.req.BbsCommentReq;
 import com.xiaou.bbs.domain.resp.BbsCommentResp;
 import com.xiaou.bbs.mapper.BbsCommentLikeMapper;
@@ -20,7 +17,6 @@ import com.xiaou.bbs.mapper.BbsCommentMapper;
 import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.service.BbsCommentService;
-import com.xiaou.bbs.service.BbsPostService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
@@ -115,9 +111,9 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
                 .collect(Collectors.toSet());
 
         // 批量查询用户信息
-        Map<String, Student> userMap = userIds.isEmpty() ? Map.of() :
+        Map<String, StudentEntity> userMap = userIds.isEmpty() ? Map.of() :
                 userMapper.selectBatchIds(userIds).stream()
-                        .collect(Collectors.toMap(Student::getId, s -> s));
+                        .collect(Collectors.toMap(StudentEntity::getId, s -> s));
 
         // 批量查询每条评论的回复数
         List<String> commentIds = commentList.stream()
@@ -140,10 +136,10 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
         List<BbsCommentResp> respList = commentList.stream().map(comment -> {
             BbsCommentResp resp = MapstructUtils.convert(comment, BbsCommentResp.class);
 
-            Student student = userMap.get(comment.getUserId());
-            if (student != null) {
-                resp.setName(student.getName());
-                resp.setAvatar(student.getAvatar());
+            StudentEntity studentEntity = userMap.get(comment.getUserId());
+            if (studentEntity != null) {
+                resp.setName(studentEntity.getName());
+                resp.setAvatar(studentEntity.getAvatar());
             }
 
             resp.setIsMine(currentUserId.equals(comment.getUserId()));

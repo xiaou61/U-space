@@ -27,8 +27,16 @@ public class RabbitMQUtils {
     public void sendAichatMessage(Object message) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.AICHAT_ROUTING_KEY, message);
     }
+
     public void sendBbsMessage(Object message) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.BBS_ROUTING_KEY, message);
     }
 
+    /**
+     * 发送抢课消息到队列
+     */
+    public void sendCourseGrabMessage(Object message) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.XIAOU_DIRECT_EXCHANGE, RabbitMQConfig.COURSE_GRAB_ROUTING_KEY,
+                message);
+    }
 }

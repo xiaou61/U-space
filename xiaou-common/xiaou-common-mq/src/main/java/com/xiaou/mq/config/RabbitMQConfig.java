@@ -30,9 +30,15 @@ public class RabbitMQConfig {
     // === AI对话存储配置 ===
     public static final String AICHAT_QUEUE = "xiaou.ai.chat.queue";
     public static final String AICHAT_ROUTING_KEY = "xiaou.ai.chat.key";
+    
     // === BBS论坛配置 ===
     public static final String BBS_QUEUE = "xiaou.bbs.queue";
     public static final String BBS_ROUTING_KEY = "xiaou.bbs.key";
+    
+    // === 抢课配置 ===
+    public static final String COURSE_GRAB_QUEUE = "xiaou.course.grab.queue";
+    public static final String COURSE_GRAB_ROUTING_KEY = "xiaou.course.grab.key";
+    
     // ======== 基础配置 ========
 
     /**
@@ -106,6 +112,18 @@ public class RabbitMQConfig {
                 .with(BBS_ROUTING_KEY);
     }
 
+    // === 抢课配置 ===
+    @Bean
+    public Queue courseGrabQueue() {
+        return new Queue(COURSE_GRAB_QUEUE);
+    }
+    
+    @Bean
+    public Binding courseGrabBinding(Queue courseGrabQueue, DirectExchange directExchange) {
+        return BindingBuilder.bind(courseGrabQueue)
+                .to(directExchange)
+                .with(COURSE_GRAB_ROUTING_KEY);
+    }
 
     // ======== 消息序列化配置 ========
 

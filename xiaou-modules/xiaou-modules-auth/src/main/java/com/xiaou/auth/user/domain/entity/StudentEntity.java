@@ -15,7 +15,7 @@ import lombok.Data;
  */
 @TableName(value = "u_student")
 @Data
-public class Student {
+public class StudentEntity {
     /**
      * 学生ID，主键UUID（无连字符）
      */

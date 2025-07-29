@@ -33,7 +33,7 @@
 public class DemoController {
 
     @SecureApi                // 👉 生效！
-    @PostMapping("/student/save")
+    @PostMapping("/studentEntity/save")
     public R<Void> saveStudent(HttpServletRequest request) {
         String json = (String) request.getAttribute("secureData"); // 解密后明文
         StudentDTO dto = JSON.parseObject(json, StudentDTO.class);
@@ -124,7 +124,7 @@ export default service;
 import request from '@/utils/request';
 
 export function saveStudent(dto) {
-  return request.post('/student/save', dto);
+  return request.post('/studentEntity/save', dto);
 }
 ```
 > 后端在切面里自动解密并注入到 `request.getAttribute("secureData")`。

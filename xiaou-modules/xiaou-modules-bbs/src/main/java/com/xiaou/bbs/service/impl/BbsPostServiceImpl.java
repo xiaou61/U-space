@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.constants.NotifyConstants;
 import com.xiaou.bbs.domain.entity.BbsPost;
@@ -108,10 +108,10 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
 
         // ✅ 2. 批量查询 student 信息
         if (!userIds.isEmpty()) {
-            List<Student> students = studentMapper.selectBatchIds(userIds);
-            Map<String, BbsStudentInfoResp> userMap = students.stream()
+            List<StudentEntity> studentEntities = studentMapper.selectBatchIds(userIds);
+            Map<String, BbsStudentInfoResp> userMap = studentEntities.stream()
                     .collect(Collectors.toMap(
-                            Student::getId,
+                            StudentEntity::getId,
                             s -> MapstructUtils.convert(s, BbsStudentInfoResp.class)
                     ));
 

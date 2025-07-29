@@ -16,7 +16,6 @@ import java.util.Date;
  * @TableName u_course
  */
 @Data
-@AutoMapper(target = Course.class)
 public class CourseReq {
     /**
      * 课程编号

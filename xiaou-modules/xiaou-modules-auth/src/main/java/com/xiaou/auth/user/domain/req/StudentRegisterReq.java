@@ -1,6 +1,6 @@
 package com.xiaou.auth.user.domain.req;
 
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import lombok.Data;
  * @TableName u_student
  */
 @Data
-@AutoMapper(target = Student.class)
+@AutoMapper(target = StudentEntity.class)
 public class StudentRegisterReq {
 
     /**

@@ -4,7 +4,7 @@ package com.xiaou.auth.user.service;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xiaou.auth.admin.domain.resp.StudentInfoPageResp;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.domain.req.StudentLoginReq;
 import com.xiaou.auth.user.domain.req.StudentRegisterReq;
 import com.xiaou.auth.user.domain.resp.StudentInfoResp;
@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-public interface StudentService extends IService<Student> {
+public interface StudentService extends IService<StudentEntity> {
 
     R<String> register(StudentRegisterReq req);
 

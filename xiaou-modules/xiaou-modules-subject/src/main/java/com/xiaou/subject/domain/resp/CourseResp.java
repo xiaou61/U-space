@@ -1,10 +1,8 @@
 package com.xiaou.subject.domain.resp;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xiaou.subject.domain.entity.Course;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
-
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -53,13 +51,11 @@ public class CourseResp {
     /**
      * 课程开始时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date startTime;
 
     /**
      * 课程结束时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
     /**
@@ -80,7 +76,6 @@ public class CourseResp {
     /**
      * 创建时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
 
 }

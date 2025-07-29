@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsUserNotify;
@@ -17,7 +17,6 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
-import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,8 +62,8 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
                 .map(BbsUserNotifyResp::getSenderId)
                 .collect(Collectors.toSet());
 
-        Map<String, Student> senderMap = studentMapper.selectBatchIds(senderIds)
-                .stream().collect(Collectors.toMap(Student::getId, s -> s));
+        Map<String, StudentEntity> senderMap = studentMapper.selectBatchIds(senderIds)
+                .stream().collect(Collectors.toMap(StudentEntity::getId, s -> s));
 
         // 2.2 提取所有 type = post_like 的 targetId（即 postId）
         Set<String> postIds = respList.stream()
@@ -79,7 +78,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
         // 3. 数据填充：昵称、头像、帖子标题
         for (BbsUserNotifyResp resp : respList) {
             // 3.1 设置发送者昵称和头像
-            Student sender = senderMap.get(resp.getSenderId());
+            StudentEntity sender = senderMap.get(resp.getSenderId());
             if (sender != null) {
                 resp.setSenderName(sender.getName());
                 resp.setSenderAvatar(sender.getAvatar());

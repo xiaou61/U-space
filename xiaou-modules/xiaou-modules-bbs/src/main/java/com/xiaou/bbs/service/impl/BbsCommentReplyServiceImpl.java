@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import com.xiaou.bbs.domain.entity.BbsReplyLike;
@@ -90,11 +90,11 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
         }
 
         // 批量查询所有用户信息
-        Map<String, Student> userMap;
+        Map<String, StudentEntity> userMap;
         if (!userIds.isEmpty()) {
-            List<Student> students = userMapper.selectBatchIds(userIds);
-            userMap = students.stream()
-                    .collect(Collectors.toMap(Student::getId, s -> s));
+            List<StudentEntity> studentEntities = userMapper.selectBatchIds(userIds);
+            userMap = studentEntities.stream()
+                    .collect(Collectors.toMap(StudentEntity::getId, s -> s));
         } else {
             userMap = new HashMap<>();
         }
@@ -110,14 +110,14 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
             resp.setIsMine(currentUserId.equals(reply.getUserId()));
 
             // 回复人的信息
-            Student replyUser = userMap.get(reply.getUserId());
+            StudentEntity replyUser = userMap.get(reply.getUserId());
             if (replyUser != null) {
                 resp.setReplyUserName(replyUser.getName());
                 resp.setReplyUserAvatar(replyUser.getAvatar());
             }
 
             // 被回复人的信息
-            Student replyToUser = userMap.get(reply.getReplyUserId());
+            StudentEntity replyToUser = userMap.get(reply.getReplyUserId());
             if (replyToUser != null) {
                 resp.setReplyToUserName(replyToUser.getName());
                 resp.setReplyToUserAvatar(replyToUser.getAvatar());

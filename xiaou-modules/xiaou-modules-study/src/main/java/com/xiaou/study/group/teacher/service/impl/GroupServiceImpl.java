@@ -3,7 +3,7 @@ package com.xiaou.study.group.teacher.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.mapper.StudentMapper;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
@@ -102,7 +102,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
 
         // 查出所有 student，并构建 userId -> userName 映射
         Map<String, String> userIdNameMap = studentMapper.selectBatchIds(userIds).stream()
-                .collect(Collectors.toMap(Student::getId, Student::getName));
+                .collect(Collectors.toMap(StudentEntity::getId, StudentEntity::getName));
 
         // 映射为响应对象并填充 userName
         List<GroupMemberResp> result = groupMembers.stream()

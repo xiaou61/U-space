@@ -1,11 +1,11 @@
 package com.xiaou.bbs.domain.resp;
 
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = Student.class)
+@AutoMapper(target = StudentEntity.class)
 public class BbsStudentInfoResp {
 
 

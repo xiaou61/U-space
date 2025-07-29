@@ -11,7 +11,7 @@ import com.xiaou.auth.admin.domain.entity.ClassEntity;
 import com.xiaou.auth.admin.domain.resp.StudentInfoPageResp;
 import com.xiaou.auth.admin.mapper.ClassMapper;
 import com.xiaou.auth.user.constant.UserConstant;
-import com.xiaou.auth.user.domain.entity.Student;
+import com.xiaou.auth.user.domain.entity.StudentEntity;
 import com.xiaou.auth.user.domain.mq.StudentMsgMQ;
 import com.xiaou.auth.user.domain.req.StudentLoginReq;
 import com.xiaou.auth.user.domain.req.StudentRegisterReq;
@@ -38,10 +38,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-import static com.xiaou.auth.user.constant.UserConstant.STATUS;
+
 
 @Service
-public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
+public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity>
         implements StudentService {
 
     @Resource
@@ -55,12 +55,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
 
     @Override
     public R<String> register(StudentRegisterReq req) {
-        Student student = MapstructUtils.convert(req, Student.class);
-        student.setPassword(PasswordUtil.getEncryptPassword(student.getPassword()));
-        baseMapper.insert(student);
+        StudentEntity studentEntity = MapstructUtils.convert(req, StudentEntity.class);
+        studentEntity.setPassword(PasswordUtil.getEncryptPassword(studentEntity.getPassword()));
+        baseMapper.insert(studentEntity);
         //发送MQ消息给管理员 这个为当前用户所在班级的导员
         StudentMsgMQ studentMsgMQ = new StudentMsgMQ();
-        StudentMsgMQ mq = MapstructUtils.convert(student, studentMsgMQ);
+        StudentMsgMQ mq = MapstructUtils.convert(studentEntity, studentMsgMQ);
         rabbitMQUtils.sendEmailMessage(mq);
         return R.ok("注册成功");
 
@@ -68,11 +68,11 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
 
     @Override
     public R<SaResult> login(StudentLoginReq req) {
-        Student student = MapstructUtils.convert(req, Student.class);
-        QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
+        StudentEntity studentEntity = MapstructUtils.convert(req, StudentEntity.class);
+        QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
         //看看学号是否存在
-        queryWrapper.eq(UserConstant.STUDENT_NO, student.getStudentNo());
-        Student one = this.getOne(queryWrapper);
+        queryWrapper.eq(UserConstant.STUDENT_NO, studentEntity.getStudentNo());
+        StudentEntity one = this.getOne(queryWrapper);
         if (one == null) {
             return R.fail("用户不存在");
         }
@@ -81,7 +81,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
             return R.fail("用户暂未被管理员审核成功");
         }
         //校验密码
-        String password = PasswordUtil.getEncryptPassword(student.getPassword());
+        String password = PasswordUtil.getEncryptPassword(studentEntity.getPassword());
         if (!StringUtils.equals(password, one.getPassword())) {
             return R.fail("密码错误");
         }
@@ -93,8 +93,8 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
     @Override
     public R<StudentInfoResp> getInfo() {
         String currentAppUserId = loginHelper.getCurrentAppUserId();
-        Student student = baseMapper.selectById(currentAppUserId);
-        StudentInfoResp convert = MapstructUtils.convert(student, StudentInfoResp.class);
+        StudentEntity studentEntity = baseMapper.selectById(currentAppUserId);
+        StudentInfoResp convert = MapstructUtils.convert(studentEntity, StudentInfoResp.class);
         //填充班级名称
         //todo 这里可以优化
         convert.setClassName(classmapper.selectById(convert.getClassId()).getClassName());
@@ -110,9 +110,9 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
 
     @Override
     public R<PageRespDto<StudentInfoPageResp>> pageAll(PageReqDto req) {
-        IPage<Student> page = new Page<>(req.getPageNum(), req.getPageSize());
-        QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
-        IPage<Student> studentIPage = baseMapper.selectPage(page, queryWrapper);
+        IPage<StudentEntity> page = new Page<>(req.getPageNum(), req.getPageSize());
+        QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
+        IPage<StudentEntity> studentIPage = baseMapper.selectPage(page, queryWrapper);
         List<StudentInfoPageResp> convert = MapstructUtils.convert(studentIPage.getRecords(), StudentInfoPageResp.class);
         convert.forEach(studentInfoPageResp -> studentInfoPageResp.setName(classmapper.selectById(studentInfoPageResp.getClassId()).getClassName()));
         return R.ok(PageRespDto.of(studentIPage.getCurrent(),
@@ -125,8 +125,8 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
     @Override
     public R<List<StudentInfoPageResp>> pageUnAudited() {
         //查看全部status为0的
-        QueryWrapper<Student> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(STATUS, GlobalConstants.ZERO);
+        QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(UserConstant.STATUS, GlobalConstants.ZERO);
         //查询全部并且返回
         List<StudentInfoPageResp> convert = MapstructUtils.convert(baseMapper.selectList(queryWrapper), StudentInfoPageResp.class);
         //查询name
@@ -136,12 +136,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
 
     @Override
     public R<String> audit(String id) {
-        Student student = baseMapper.selectById(id);
-        if (student == null) {
+        StudentEntity studentEntity = baseMapper.selectById(id);
+        if (studentEntity == null) {
             return R.fail("用户不存在");
         }
-        student.setStatus(GlobalConstants.ONE);
-        baseMapper.updateById(student);
+        studentEntity.setStatus(GlobalConstants.ONE);
+        baseMapper.updateById(studentEntity);
         //TODO 给学生发送信息提醒
         return R.ok("成功");
     }
@@ -150,20 +150,20 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student>
     public R<String> updateAvatar(String avatar) {
         //获得当前登录对象
         String currentAppUserId = loginHelper.getCurrentAppUserId();
-        Student student = baseMapper.selectById(currentAppUserId);
-        student.setAvatar(avatar);
-        baseMapper.updateById(student);
+        StudentEntity studentEntity = baseMapper.selectById(currentAppUserId);
+        studentEntity.setAvatar(avatar);
+        baseMapper.updateById(studentEntity);
         return R.ok("更换头像成功");
     }
 
     @Override
     public R<String> updatePassword(String oldPassword, String newPassword) {
-        Student student = baseMapper.selectById(loginHelper.getCurrentAppUserId());
-        if (!StringUtils.equals(PasswordUtil.getEncryptPassword(oldPassword), student.getPassword())) {
+        StudentEntity studentEntity = baseMapper.selectById(loginHelper.getCurrentAppUserId());
+        if (!StringUtils.equals(PasswordUtil.getEncryptPassword(oldPassword), studentEntity.getPassword())) {
             return R.fail("旧密码错误");
         }
-        student.setPassword(PasswordUtil.getEncryptPassword(newPassword));
-        baseMapper.updateById(student);
+        studentEntity.setPassword(PasswordUtil.getEncryptPassword(newPassword));
+        baseMapper.updateById(studentEntity);
         return R.ok("修改密码成功");
     }
 
