@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
-    implements ClassService {
+        implements ClassService {
 
 
     @Override
@@ -82,6 +82,13 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
             excel.setStudentCount(item.getStudentCount());
             return excel;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ClassEntity> search(String name) {
+        QueryWrapper<ClassEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("class_name", name);
+        return baseMapper.selectList(queryWrapper);
     }
 }
 

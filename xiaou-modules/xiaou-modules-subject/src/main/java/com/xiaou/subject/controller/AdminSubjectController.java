@@ -43,4 +43,11 @@ public class AdminSubjectController {
     public R<PageRespDto<CourseResp>> list(@RequestBody PageReqDto dto){
         return courseService.listSubject(dto);
     }
+    /**
+     * 添加课程与班级关联
+     */
+    @PostMapping("/add-class-course")
+    public R<String> addClassCourse(@RequestParam String courseId, @RequestParam String classId) {
+        return courseService.addClassCourse(courseId,classId);
+    }
 }

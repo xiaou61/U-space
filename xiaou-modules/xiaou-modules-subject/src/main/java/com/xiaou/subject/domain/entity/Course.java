@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -12,9 +13,10 @@ import lombok.Data;
 
 /**
  * 课程表
+ *
  * @TableName u_course
  */
-@TableName(value ="u_course")
+@TableName(value = "u_course")
 @Data
 public class Course {
     /**
@@ -85,4 +87,9 @@ public class Course {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
+
+    /**
+     * 1为必修课 2为选修课
+     */
+    private Integer type;
 }

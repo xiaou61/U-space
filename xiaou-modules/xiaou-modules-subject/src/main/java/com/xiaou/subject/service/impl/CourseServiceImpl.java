@@ -9,16 +9,22 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
+import com.xiaou.subject.domain.entity.ClassCourse;
 import com.xiaou.subject.domain.entity.Course;
 import com.xiaou.subject.domain.req.CourseReq;
 import com.xiaou.subject.domain.resp.CourseResp;
+import com.xiaou.subject.mapper.ClassCourseMapper;
 import com.xiaou.subject.mapper.CourseMapper;
 import com.xiaou.subject.service.CourseService;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
     implements CourseService {
+
+    @Resource
+    private ClassCourseMapper classCourseMapper;
 
     @Override
     public R<String> create(CourseReq courseReq) {
@@ -50,6 +56,15 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
                 page.getSize(),
                 page.getTotal(),
                 MapstructUtils.convert(page.getRecords(), CourseResp.class)));
+    }
+
+    @Override
+    public R<String> addClassCourse(String courseId, String classId) {
+        ClassCourse classCourse = new ClassCourse();
+        classCourse.setClassId(classId);
+        classCourse.setCourseId(courseId);
+        classCourseMapper.insert(classCourse);
+        return R.ok("添加成功");
     }
 }
 

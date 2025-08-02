@@ -2,7 +2,8 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
-import { pageCourse, createCourse, updateCourse, deleteCourse } from '../api/course'
+import { pageCourse, createCourse, updateCourse, deleteCourse, addClassCourse } from '../api/course'
+import { searchClass } from '../api/class'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -48,13 +49,14 @@ const form = reactive({
   endTime: null,
   classroom: '',
   period: '',
-  description: ''
+  description: '',
+  type: 1  // 默认为必修课
 })
 
 const openAdd = () => {
   isEdit.value = false
   currentId.value = null
-  Object.assign(form, { courseCode: '', courseName: '', teacherName: '', capacity: 0, credit: 0, startTime: null, endTime: null, classroom: '', period: '', description: '' })
+  Object.assign(form, { courseCode: '', courseName: '', teacherName: '', capacity: 0, credit: 0, startTime: null, endTime: null, classroom: '', period: '', description: '', type: 1 })
   dialogVisible.value = true
 }
 
@@ -96,6 +98,59 @@ const handleDelete = (row) => {
     })
     .catch(() => {})
 }
+
+// 关联班级相关
+const classDialogVisible = ref(false)
+const currentCourseId = ref(null)
+const currentCourseName = ref('')
+const classSearchKeyword = ref('')
+const classList = ref([])
+const classLoading = ref(false)
+const selectedClassId = ref('')
+
+// 打开关联班级弹窗
+const openClassDialog = (row) => {
+  currentCourseId.value = row.id
+  currentCourseName.value = row.courseName
+  classSearchKeyword.value = ''
+  classList.value = []
+  selectedClassId.value = ''
+  classDialogVisible.value = true
+}
+
+// 搜索班级
+const handleClassSearch = async () => {
+  if (!classSearchKeyword.value.trim()) {
+    classList.value = []
+    return
+  }
+  
+  classLoading.value = true
+  try {
+    const res = await searchClass(classSearchKeyword.value.trim())
+    classList.value = res.data || []
+  } catch (e) {
+    ElMessage.error('搜索班级失败')
+  } finally {
+    classLoading.value = false
+  }
+}
+
+// 确认关联班级
+const confirmAddClass = async () => {
+  if (!selectedClassId.value) {
+    ElMessage.warning('请选择要关联的班级')
+    return
+  }
+  
+  try {
+    await addClassCourse(currentCourseId.value, selectedClassId.value)
+    ElMessage.success('关联班级成功')
+    classDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('关联班级失败')
+  }
+}
 </script>
 
 <template>
@@ -106,6 +161,13 @@ const handleDelete = (row) => {
     <el-table :data="tableData" border style="width:100%" v-loading="loading" @sort-change="handleSortChange">
       <el-table-column prop="courseCode" label="课程编号" sortable="custom"/>
       <el-table-column prop="courseName" label="课程名称" sortable="custom"/>
+      <el-table-column prop="type" label="课程类型" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.type === 1 ? 'danger' : 'success'">
+            {{ row.type === 1 ? '必修课' : '选修课' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="teacherName" label="授课教师"/>
       <el-table-column prop="capacity" label="容量" sortable="custom"/>
       <el-table-column prop="selectedCount" label="已选人数" sortable="custom"/>
@@ -115,9 +177,10 @@ const handleDelete = (row) => {
       <el-table-column prop="classroom" label="教室" />
       <el-table-column prop="period" label="课时" />
       <el-table-column prop="description" label="描述" />
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+          <el-button type="success" size="small" @click="openClassDialog(row)">关联班级</el-button>
           <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -140,6 +203,12 @@ const handleDelete = (row) => {
       <el-form :model="form" label-width="100px">
         <el-form-item label="课程编号"><el-input v-model="form.courseCode"/></el-form-item>
         <el-form-item label="课程名称"><el-input v-model="form.courseName"/></el-form-item>
+        <el-form-item label="课程类型">
+          <el-select v-model="form.type" placeholder="请选择课程类型">
+            <el-option label="必修课" :value="1"/>
+            <el-option label="选修课" :value="2"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="授课教师"><el-input v-model="form.teacherName"/></el-form-item>
         <el-form-item label="容量"><el-input-number v-model="form.capacity" :min="0"/></el-form-item>
         <el-form-item label="学分"><el-input-number v-model="form.credit" :min="0" :step="0.5"/></el-form-item>
@@ -152,6 +221,48 @@ const handleDelete = (row) => {
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submitForm">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 关联班级弹窗 -->
+    <el-dialog title="关联班级" v-model="classDialogVisible" width="500px">
+      <div style="margin-bottom: 20px;">
+        <p><strong>课程名称：</strong>{{ currentCourseName }}</p>
+      </div>
+      
+      <el-form label-width="100px">
+        <el-form-item label="搜索班级">
+          <el-input 
+            v-model="classSearchKeyword" 
+            placeholder="请输入班级名称进行搜索"
+            @input="handleClassSearch"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="选择班级" v-if="classList.length > 0">
+          <el-select v-model="selectedClassId" placeholder="请选择班级" style="width: 100%">
+            <el-option 
+              v-for="item in classList" 
+              :key="item.id" 
+              :label="`${item.className} - ${item.grade}年级`" 
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        
+        <div v-if="classLoading" style="text-align: center; padding: 20px;">
+          <el-loading />
+        </div>
+        
+        <div v-if="classSearchKeyword && classList.length === 0 && !classLoading" style="text-align: center; color: #999; padding: 20px;">
+          暂无找到相关班级
+        </div>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="classDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAddClass" :disabled="!selectedClassId">确定关联</el-button>
       </template>
     </el-dialog>
   </div>

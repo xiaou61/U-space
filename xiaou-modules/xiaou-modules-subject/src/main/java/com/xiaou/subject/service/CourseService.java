@@ -18,4 +18,6 @@ public interface CourseService extends IService<Course> {
     R<String> deleteSubject(String id);
 
     R<PageRespDto<CourseResp>> listSubject(PageReqDto dto);
+
+    R<String> addClassCourse(String courseId, String classId);
 }
