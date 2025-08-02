@@ -8,6 +8,7 @@ import com.xiaou.auth.admin.service.ClassService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
+import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.excel.util.ExcelUtils;
 import com.xiaou.log.annotation.Log;
 import com.xiaou.log.enums.BusinessType;
@@ -103,5 +104,14 @@ public class ClassController {
         ExcelUtils.write(response, emptyList, ClassEntityExcel.class, "班级导入模板", "导入模板");
     }
 
+    /**
+     * 根据名称搜索班级
+     */
+    @GetMapping("/search")
+    public R<List<ClassResp>> search(@RequestParam String name) {
+        List<ClassEntity> list = classService.search(name);
+        List<ClassResp> convert = MapstructUtils.convert(list, ClassResp.class);
+        return R.ok(convert);
+    }
 
 }

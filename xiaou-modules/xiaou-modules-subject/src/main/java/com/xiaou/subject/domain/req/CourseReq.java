@@ -74,4 +74,9 @@ public class CourseReq {
      */
     private String description;
 
+    /**
+     * 1为必修课 2为选修课
+     */
+    private Integer type;
+
 }

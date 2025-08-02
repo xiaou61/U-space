@@ -31,4 +31,6 @@ public interface ClassService extends IService<ClassEntity> {
     void saveBatchFromExcel(List<ClassEntityExcel> dataList);
 
     List<ClassEntityExcel> getExcelData();
+
+    List<ClassEntity> search(String name);
 }
