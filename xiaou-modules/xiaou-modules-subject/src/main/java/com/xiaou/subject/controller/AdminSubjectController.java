@@ -9,6 +9,8 @@ import com.xiaou.subject.service.CourseService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/admin/subject")
 public class AdminSubjectController {
@@ -49,5 +51,12 @@ public class AdminSubjectController {
     @PostMapping("/add-class-course")
     public R<String> addClassCourse(@RequestParam String courseId, @RequestParam String classId) {
         return courseService.addClassCourse(courseId,classId);
+    }
+    /**
+     * 查看已经关联的班级
+     */
+    @GetMapping("/list-class")
+    public R<List<String>> listClass(@RequestParam String courseId) {
+        return courseService.listClass(courseId);
     }
 }

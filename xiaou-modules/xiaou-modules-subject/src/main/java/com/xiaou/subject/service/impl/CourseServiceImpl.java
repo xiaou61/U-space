@@ -1,6 +1,7 @@
 package com.xiaou.subject.service.impl;
 
 
+import cn.hutool.http.HttpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -17,11 +18,14 @@ import com.xiaou.subject.mapper.ClassCourseMapper;
 import com.xiaou.subject.mapper.CourseMapper;
 import com.xiaou.subject.service.CourseService;
 import jakarta.annotation.Resource;
+import org.springframework.amqp.support.converter.ClassMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
-    implements CourseService {
+        implements CourseService {
 
     @Resource
     private ClassCourseMapper classCourseMapper;
@@ -65,6 +69,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
         classCourse.setCourseId(courseId);
         classCourseMapper.insert(classCourse);
         return R.ok("添加成功");
+    }
+
+    @Override
+    public R<List<String>> listClass(String courseId) {
+        QueryWrapper<ClassCourse> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("course_id", courseId);
+        List<ClassCourse> classCourses = classCourseMapper.selectList(queryWrapper);
+        //根据班级id 批量查询班级姓名
+        List<String> classIds = classCourses.stream().map(ClassCourse::getClassId).toList();
+        return R.ok(classIds);
     }
 }
 
