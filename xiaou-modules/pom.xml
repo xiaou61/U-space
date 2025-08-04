@@ -20,6 +20,7 @@
         <module>xiaou-modules-bbs</module>
         <module>xiaou-modules-room</module>
         <module>xiaou-modules-subject</module>
+        <module>xiaou-modules-word</module>
     </modules>
 
 </project>

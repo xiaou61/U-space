@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUnauditedStudents, auditStudent } from '../api/studentEntity'
+import { getUnauditedStudents, auditStudent } from '../api/student'
 
 const loading = ref(false)
 const tableData = ref([])

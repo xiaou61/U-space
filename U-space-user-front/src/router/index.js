@@ -14,6 +14,7 @@ const GroupDetail = () => import('../views/GroupDetail.vue')
 const AIAssistant = () => import('../views/AIAssistant.vue')
 const Forum = () => import('../views/Forum.vue')
 const PostDetail = () => import('../views/PostDetail.vue')
+const WordLearning = () => import('../views/WordLearning.vue')
 
 const routes = [
   {
@@ -86,6 +87,12 @@ const routes = [
     path: '/ai-assistant',
     name: 'AIAssistant',
     component: AIAssistant,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/word-learning',
+    name: 'WordLearning',
+    component: WordLearning,
     meta: { requiresAuth: true },
   },
   {

@@ -20,10 +20,10 @@
           </template>
           <el-menu-item index="/class">班级管理</el-menu-item>
           <el-menu-item index="/teacher">教师管理</el-menu-item>
-          <el-sub-menu index="/studentEntity">
+          <el-sub-menu index="/student">
             <template #title>学生信息管理</template>
-            <el-menu-item index="/studentEntity/unaudited">未审批学生</el-menu-item>
-            <el-menu-item index="/studentEntity/all">全部学生</el-menu-item>
+            <el-menu-item index="/student/unaudited">未审批学生</el-menu-item>
+            <el-menu-item index="/student/all">全部学生</el-menu-item>
           </el-sub-menu>
         </el-sub-menu>
         <el-sub-menu index="/system" v-if="isAdmin">
@@ -75,6 +75,10 @@
         <el-menu-item index="/ai" v-if="isAdmin">
           <el-icon><Notebook /></el-icon>
           <span>AI对话管理</span>
+        </el-menu-item>
+        <el-menu-item index="/word" v-if="isAdmin">
+          <el-icon><Notebook /></el-icon>
+          <span>单词管理</span>
         </el-menu-item>
         <el-menu-item index="/bbs-category" v-if="isBbsAdmin">校园论坛分类管理</el-menu-item>
         <el-menu-item index="/bbs-sensitive" v-if="isBbsAdmin">校园论坛敏感词</el-menu-item>

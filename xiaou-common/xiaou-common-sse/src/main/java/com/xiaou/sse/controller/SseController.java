@@ -59,12 +59,24 @@ public class SseController implements DisposableBean {
         // 拉取未读
         sseMessageManager.pullAndPushUnreadMessages(userId);
 
-        List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
-        //如果id不再缓存中
-        //todo 定期要跟数据库进行同步
-        if (!cacheList.contains(userId)){
-            RedisUtils.addCacheList(GlobalConstants.USER_ONLINE_KEY,userId);
-            log.info("用户{}上线",userId);
+        try {
+            List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+            //如果id不再缓存中
+            //todo 定期要跟数据库进行同步
+            if (!cacheList.contains(userId)){
+                RedisUtils.addCacheList(GlobalConstants.USER_ONLINE_KEY,userId);
+                log.info("用户{}上线",userId);
+            }
+        } catch (Exception e) {
+            // 处理Redis反序列化异常，重新初始化在线用户列表
+            log.warn("Redis在线用户列表数据损坏，重新初始化: {}", e.getMessage());
+            try {
+                RedisUtils.deleteObject(GlobalConstants.USER_ONLINE_KEY);
+                RedisUtils.addCacheList(GlobalConstants.USER_ONLINE_KEY, userId);
+                log.info("用户{}上线(重新初始化后)", userId);
+            } catch (Exception ex) {
+                log.error("重新初始化在线用户列表失败", ex);
+            }
         }
         return emitter;
     }

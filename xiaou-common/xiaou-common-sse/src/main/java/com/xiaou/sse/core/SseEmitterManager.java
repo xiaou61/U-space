@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -180,7 +181,13 @@ public class SseEmitterManager {
 
     public void sendMessageAll(String message, String type) {
         //要获取所有用户不管在线不在线
-        List<String> userIds = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+        List<String> userIds;
+        try {
+            userIds = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+        } catch (Exception e) {
+            log.warn("Redis在线用户列表读取失败，使用空列表: {}", e.getMessage());
+            userIds = new ArrayList<>();
+        }
         for (String userId : userIds) {
             sendMessage(userId, message,type);
         }

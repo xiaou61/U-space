@@ -8,12 +8,16 @@
       <el-icon class="icon"><ChatLineSquare /></el-icon>
       <span>AI 助手</span>
     </el-card>
+    <el-card class="feature-card" @click="goWordLearning" shadow="hover">
+      <el-icon class="icon"><Document /></el-icon>
+      <span>单词学习</span>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { Reading, ChatLineSquare } from '@element-plus/icons-vue'
+import { Reading, ChatLineSquare, Document } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const goMyClasses = () => {
@@ -21,6 +25,9 @@ const goMyClasses = () => {
 }
 const goAI = () => {
   router.push('/ai-assistant')
+}
+const goWordLearning = () => {
+  router.push('/word-learning')
 }
 </script>
 
@@ -54,6 +61,9 @@ const goAI = () => {
 }
 .feature-card:nth-child(2) {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.feature-card:nth-child(3) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 .icon {
   font-size: 2.4rem;

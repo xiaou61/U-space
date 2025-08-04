@@ -13,6 +13,7 @@ import java.util.Date;
 
 /**
  * 课程表
+ * 
  * @TableName u_course
  */
 @Data

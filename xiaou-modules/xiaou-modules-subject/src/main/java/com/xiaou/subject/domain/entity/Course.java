@@ -9,7 +9,9 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 课程表
@@ -18,6 +20,8 @@ import lombok.Data;
  */
 @TableName(value = "u_course")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Course {
     /**
      * 课程ID
