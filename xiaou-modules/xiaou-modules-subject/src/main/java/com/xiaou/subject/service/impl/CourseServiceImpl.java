@@ -1,6 +1,7 @@
 package com.xiaou.subject.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,7 +9,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.subject.domain.entity.ClassCourse;
 import com.xiaou.subject.domain.entity.Course;
 import com.xiaou.subject.domain.req.CourseReq;
@@ -17,26 +17,31 @@ import com.xiaou.subject.mapper.ClassCourseMapper;
 import com.xiaou.subject.mapper.CourseMapper;
 import com.xiaou.subject.service.CourseService;
 import jakarta.annotation.Resource;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
-    implements CourseService {
+        implements CourseService {
 
     @Resource
     private ClassCourseMapper classCourseMapper;
 
     @Override
     public R<String> create(CourseReq courseReq) {
-        Course convert = MapstructUtils.convert(courseReq, Course.class);
-        baseMapper.insert(convert);
+        Course course = new Course();
+        BeanUtils.copyProperties(courseReq, course);
+        baseMapper.insert(course);
         return R.ok("添加成功");
     }
 
     @Override
     public R<String> updateSubject(String id, CourseReq courseReq) {
-        Course convert = MapstructUtils.convert(courseReq, Course.class);
-        baseMapper.updateById(convert);
+        Course course = new Course();
+        BeanUtils.copyProperties(courseReq, course);
+        baseMapper.updateById(course);
         return R.ok("修改成功");
     }
 
@@ -52,10 +57,13 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
         QueryWrapper<Course> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
         IPage<Course> page = baseMapper.selectPage(iPage, queryWrapper);
+        List<Course> records = page.getRecords();
+        //转换实体类
+        List<CourseResp> courseResps = BeanUtil.copyToList(records, CourseResp.class);
         return R.ok(PageRespDto.of(page.getCurrent(),
                 page.getSize(),
                 page.getTotal(),
-                MapstructUtils.convert(page.getRecords(), CourseResp.class)));
+                courseResps));
     }
 
     @Override
@@ -65,6 +73,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course>
         classCourse.setCourseId(courseId);
         classCourseMapper.insert(classCourse);
         return R.ok("添加成功");
+    }
+
+    @Override
+    public R<List<String>> listClass(String courseId) {
+        QueryWrapper<ClassCourse> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("course_id", courseId);
+        List<ClassCourse> classCourses = classCourseMapper.selectList(queryWrapper);
+        //根据班级id 批量查询班级姓名
+        List<String> classIds = classCourses.stream().map(ClassCourse::getClassId).toList();
+        return R.ok(classIds);
     }
 }
 

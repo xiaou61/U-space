@@ -9,6 +9,8 @@ import com.xiaou.subject.domain.entity.Course;
 import com.xiaou.subject.domain.req.CourseReq;
 import com.xiaou.subject.domain.resp.CourseResp;
 
+import java.util.List;
+
 public interface CourseService extends IService<Course> {
 
     R<String> create(CourseReq courseReq);
@@ -20,4 +22,6 @@ public interface CourseService extends IService<Course> {
     R<PageRespDto<CourseResp>> listSubject(PageReqDto dto);
 
     R<String> addClassCourse(String courseId, String classId);
+
+    R<List<String>> listClass(String courseId);
 }

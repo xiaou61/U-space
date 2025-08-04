@@ -113,5 +113,15 @@ public class ClassController {
         List<ClassResp> convert = MapstructUtils.convert(list, ClassResp.class);
         return R.ok(convert);
     }
+    /**
+     * 根据id批量查询班级
+     */
+    @GetMapping("/list")
+    public R<List<ClassResp>> list(@RequestParam List<String> ids) {
+        List<ClassEntity> list = classService.listByIds(ids);
+        List<ClassResp> convert = MapstructUtils.convert(list, ClassResp.class);
+        return R.ok(convert);
+    }
+
 
 }

@@ -6,8 +6,6 @@ import com.xiaou.common.domain.R;
 import com.xiaou.room.domain.entity.DormBed;
 import com.xiaou.room.domain.req.DormBedReq;
 import com.xiaou.room.domain.resp.DormBedResp;
-import com.xiaou.room.domain.resp.DormBuildingResp;
-import com.xiaou.room.domain.resp.DormRoomResp;
 
 import java.util.List;
 

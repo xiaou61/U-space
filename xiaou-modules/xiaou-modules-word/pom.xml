@@ -9,7 +9,8 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>xiaou-modules-subject</artifactId>
+    <artifactId>xiaou-modules-word</artifactId>
+
 
     <dependencies>
         <dependency>
@@ -22,11 +23,7 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-mq</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-http</artifactId>
+            <artifactId>xiaou-common-excel</artifactId>
         </dependency>
     </dependencies>
 

@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { pageStudent } from '../api/studentEntity'
+import { pageStudent } from '../api/student'
 
 const loading = ref(false)
 const tableData = ref([])

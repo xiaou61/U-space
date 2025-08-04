@@ -1,8 +1,6 @@
 package com.xiaou.subject.domain.resp;
 
 import com.xiaou.subject.domain.entity.Course;
-import com.xiaou.subject.domain.entity.StudentCourse;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 import java.util.Date;
@@ -11,7 +9,6 @@ import java.util.Date;
  * 学生选课记录响应类
  */
 @Data
-@AutoMapper(target = StudentCourse.class)
 public class StudentCourseResp {
     /**
      * 记录ID

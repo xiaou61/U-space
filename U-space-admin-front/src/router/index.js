@@ -84,6 +84,11 @@ const routes = [
         component: () => import('../views/AiChatList.vue')
       },
       {
+        path: 'word',
+        name: 'WordManagement',
+        component: () => import('../views/WordList.vue')
+      },
+      {
         path: 'material',
         name: 'MaterialManagement',
         component: () => import('../views/MaterialList.vue')

@@ -1,6 +1,7 @@
 package com.xiaou.index.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
@@ -28,7 +29,7 @@ public class SchoolInfoServiceImpl extends ServiceImpl<SchoolInfoMapper, SchoolI
     @Override
     public R<SchoolInfoResp> info() {
         SchoolInfo schoolInfo = baseMapper.selectById(GlobalConstants.ONE);
-        SchoolInfoResp convert = MapstructUtils.convert(schoolInfo, SchoolInfoResp.class);
+        SchoolInfoResp convert = BeanUtil.copyProperties(schoolInfo, SchoolInfoResp.class);
         return R.ok(convert);
     }
 }

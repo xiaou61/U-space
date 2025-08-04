@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xiaou.satoken.entity.UserRoles;
 import com.xiaou.satoken.service.UserRolesService;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 @Component    // 保证此类被 SpringBoot 扫描，完成 Sa-Token 的自定义权限验证扩展
 public class StpInterfaceImpl implements StpInterface {
 
-    @Resource
+    @Autowired
     private UserRolesService userRolesService;
 
     @Override

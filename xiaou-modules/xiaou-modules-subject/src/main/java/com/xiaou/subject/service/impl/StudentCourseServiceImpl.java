@@ -1,13 +1,9 @@
 package com.xiaou.subject.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
-import com.xiaou.common.page.PageReqDto;
-import com.xiaou.common.page.PageRespDto;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.redis.utils.RedisUtils;
@@ -16,7 +12,6 @@ import com.xiaou.subject.domain.entity.Course;
 import com.xiaou.subject.domain.entity.StudentCourse;
 import com.xiaou.subject.domain.mq.CourseGrabMq;
 import com.xiaou.subject.domain.req.CourseGrabReq;
-import com.xiaou.subject.domain.resp.CourseResp;
 import com.xiaou.subject.domain.resp.StudentCourseResp;
 import com.xiaou.subject.mapper.CourseMapper;
 import com.xiaou.subject.mapper.StudentCourseMapper;
@@ -28,7 +23,6 @@ import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -213,12 +207,12 @@ public class StudentCourseServiceImpl extends ServiceImpl<StudentCourseMapper, S
 
         List<StudentCourse> studentCourses = this.list(queryWrapper);
 
-        List<StudentCourseResp> convert = MapstructUtils.convert(studentCourses, StudentCourseResp.class);
-        for (StudentCourseResp course : convert) {
+        List<StudentCourseResp> studentCourseResps = BeanUtil.copyToList(studentCourses, StudentCourseResp.class);
+        for (StudentCourseResp course : studentCourseResps) {
             Course courseInfo = courseMapper.selectById(course.getCourseId());
             course.setCourseInfo(courseInfo);
         }
-        return R.ok(convert);
+        return R.ok(studentCourseResps);
     }
 
 

@@ -1,8 +1,7 @@
 package com.xiaou.subject.domain.resp;
 
-import com.xiaou.subject.domain.entity.Course;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -11,11 +10,7 @@ import java.util.Date;
  * @TableName u_course
  */
 @Data
-@AutoMapper(target = Course.class)
 public class CourseResp {
-    /**
-     * 课程ID
-     */
     private String id;
 
     /**
@@ -77,5 +72,7 @@ public class CourseResp {
      * 创建时间
      */
     private Date createTime;
+
+    private Integer type;
 
 }

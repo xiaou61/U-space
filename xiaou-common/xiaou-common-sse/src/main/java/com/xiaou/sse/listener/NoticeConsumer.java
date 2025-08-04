@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -36,7 +37,13 @@ public class NoticeConsumer {
         log.info("接收到MQ消息: " + msg.getMessage()+msg.getType()+msg.getUserIds().toString());
         //如果userids为null 那么需要保存所有的
         if (msg.getUserIds() == null){
-            List<String> cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+            List<String> cacheList;
+        try {
+            cacheList = RedisUtils.getCacheList(GlobalConstants.USER_ONLINE_KEY);
+        } catch (Exception e) {
+            log.warn("Redis在线用户列表读取失败，使用空列表: {}", e.getMessage());
+            cacheList = new ArrayList<>();
+        }
             if (cacheList != null){
                 for (String userId : cacheList) {
                     extracted(msg, userId);
