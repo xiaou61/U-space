@@ -3,6 +3,7 @@ package com.xiaou.auth.user.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -68,7 +69,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
 
     @Override
     public R<SaResult> login(StudentLoginReq req) {
-        StudentEntity studentEntity = MapstructUtils.convert(req, StudentEntity.class);
+        StudentEntity studentEntity = BeanUtil.copyProperties(req, StudentEntity.class);
         QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
         //看看学号是否存在
         queryWrapper.eq(UserConstant.STUDENT_NO, studentEntity.getStudentNo());
@@ -94,7 +95,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
     public R<StudentInfoResp> getInfo() {
         String currentAppUserId = loginHelper.getCurrentAppUserId();
         StudentEntity studentEntity = baseMapper.selectById(currentAppUserId);
-        StudentInfoResp convert = MapstructUtils.convert(studentEntity, StudentInfoResp.class);
+        StudentInfoResp convert = BeanUtil.copyProperties(studentEntity, StudentInfoResp.class);
         //填充班级名称
         //todo 这里可以优化
         convert.setClassName(classmapper.selectById(convert.getClassId()).getClassName());

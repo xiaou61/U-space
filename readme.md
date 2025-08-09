@@ -1,14 +1,16 @@
-# U-Space 2.X  (v2.2.0)
+# U-Space 2.X  (v2.3.0)
 
 **U-Space 2.X** 是一套基于 Spring Boot 3 的"**智慧校园 +**"实践项目，目标简历一个庞大的智慧校园系统。
 
-项目目前为V2.2.0正式版
+项目目前为V2.3.0正式版
 
 ## 项目部分截图
 
 管理端
 
-![image-20250713171327463](https://11-1305448902.cos.ap-chengdu.myqcloud.com/img/202507131713770.png)
+![image-20250809093035801](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090930074.png)
+
+![](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090930976.png)
 
 教师端：
 
@@ -18,15 +20,15 @@
 
 
 
-![image-20250713171537392](https://11-1305448902.cos.ap-chengdu.myqcloud.com/img/202507131715680.png)
+![image-20250809093514134](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090935636.png)
 
-![image-20250713171551695](https://11-1305448902.cos.ap-chengdu.myqcloud.com/img/202507131715851.png)
-
-![image-20250713171601494](https://11-1305448902.cos.ap-chengdu.myqcloud.com/img/202507131716606.png)
-
-![image-20250713171612582](https://11-1305448902.cos.ap-chengdu.myqcloud.com/img/202507131716698.png)
+![image-20250809093522830](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090935138.png)
 
 
+
+![image-20250809093531206](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090935411.png)
+
+![image-20250809093538731](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202508090935875.png)
 
 
 
