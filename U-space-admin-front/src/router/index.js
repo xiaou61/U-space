@@ -89,6 +89,11 @@ const routes = [
         component: () => import('../views/WordList.vue')
       },
       {
+        path: 'video',
+        name: 'VideoManagement',
+        component: () => import('../views/VideoList.vue')
+      },
+      {
         path: 'material',
         name: 'MaterialManagement',
         component: () => import('../views/MaterialList.vue')
