@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.auth.admin.mapper.SysRolePermissionMapper">
+
+    <!-- 根据角色ID删除角色权限关联 -->
+    <delete id="deleteByRoleId">
+        DELETE FROM sys_role_permission 
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 根据权限ID删除角色权限关联 -->
+    <delete id="deleteByPermissionId">
+        DELETE FROM sys_role_permission 
+        WHERE permission_id = #{permissionId}
+    </delete>
+
+    <!-- 批量插入角色权限关联 -->
+    <insert id="batchInsert">
+        INSERT INTO sys_role_permission (id, role_id, permission_id, created_at)
+        VALUES
+        <foreach collection="rolePermissions" item="item" separator=",">
+            (#{item.id}, #{item.roleId}, #{item.permissionId}, #{item.createdAt})
+        </foreach>
+    </insert>
+
+    <!-- 根据角色ID查询权限ID列表 -->
+    <select id="selectPermissionIdsByRoleId" resultType="java.lang.String">
+        SELECT permission_id FROM sys_role_permission 
+        WHERE role_id = #{roleId}
+    </select>
+
+</mapper> 

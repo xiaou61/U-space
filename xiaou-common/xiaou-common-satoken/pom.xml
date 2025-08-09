@@ -47,6 +47,13 @@
             <artifactId>xiaou-common-mybatis</artifactId>
         </dependency>
 
+
+        <!-- Spring JDBC for JdbcTemplate -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>

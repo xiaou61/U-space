@@ -109,6 +109,21 @@ const routes = [
         component: () => import('../views/BbsAdmin.vue')
       },
       {
+        path: 'role-permission',
+        name: 'RolePermissionManagement',
+        component: () => import('../views/RolePermissionManagement.vue')
+      },
+      {
+        path: 'admin-user',
+        name: 'AdminUserManagement',
+        component: () => import('../views/AdminUserManagement.vue')
+      },
+      {
+        path: 'menu-management',
+        name: 'MenuManagement',
+        component: () => import('../views/MenuManagement.vue')
+      },
+      {
         path: 'bbs-category',
         name: 'BbsCategoryManagement',
         component: () => import('../views/BbsCategory.vue')
