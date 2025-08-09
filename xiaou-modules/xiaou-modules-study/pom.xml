@@ -22,6 +22,14 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-satoken</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-ratelimiter</artifactId>
         </dependency>
         <dependency>

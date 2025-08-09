@@ -80,6 +80,10 @@
           <el-icon><Notebook /></el-icon>
           <span>单词管理</span>
         </el-menu-item>
+        <el-menu-item index="/video" v-if="isAdmin">
+          <el-icon><VideoCamera /></el-icon>
+          <span>入学必看视频管理</span>
+        </el-menu-item>
         <el-menu-item index="/bbs-category" v-if="isBbsAdmin">校园论坛分类管理</el-menu-item>
         <el-menu-item index="/bbs-sensitive" v-if="isBbsAdmin">校园论坛敏感词</el-menu-item>
       </el-menu>
@@ -126,7 +130,7 @@ import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getInfo, logout as logoutApi, updatePassword, getRole } from '../api/auth'
 import { ElMessage } from 'element-plus'
-import { House, Notebook, User, Moon } from '@element-plus/icons-vue'
+import { House, Notebook, User, Moon, VideoCamera } from '@element-plus/icons-vue'
 import { toggleTheme } from '../utils/theme'
 
 const router = useRouter()

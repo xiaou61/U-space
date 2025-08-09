@@ -96,6 +96,19 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/video-watch',
+    name: 'VideoWatch',
+    component: () => import('../views/VideoWatch.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/video-player/:id',
+    name: 'VideoPlayer',
+    component: () => import('../views/VideoPlayer.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
     path: '/forum',
     name: 'Forum',
     component: Forum,

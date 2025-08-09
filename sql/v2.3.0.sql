@@ -37,3 +37,30 @@ CREATE TABLE `u_user_word_record` (
                                     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户单词学习记录表';
+
+
+-- 入学必看视频信息表
+CREATE TABLE u_video_info (
+                            id VARCHAR(32) PRIMARY KEY COMMENT '视频ID',
+                            title VARCHAR(255) NOT NULL COMMENT '视频标题',
+                            url VARCHAR(500) NOT NULL COMMENT '视频播放地址',
+                            cover_url VARCHAR(500) DEFAULT NULL COMMENT '封面图地址',
+                            duration INT DEFAULT NULL COMMENT '视频时长（秒）',
+                            description TEXT COMMENT '视频简介',
+                            create_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            update_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入学必看视频信息表';
+
+-- 视频观看记录表
+CREATE TABLE u_video_watch_record (
+                                    id VARCHAR(32) PRIMARY KEY COMMENT '记录ID',
+                                    student_id VARCHAR(32) NOT NULL COMMENT '学生ID',
+                                    video_id VARCHAR(32) NOT NULL COMMENT '视频ID',
+                                    watch_time DATETIME DEFAULT NULL COMMENT '最近一次观看时间',
+                                    watch_progress INT DEFAULT 0 COMMENT '观看进度（秒）',
+                                    is_finished TINYINT(1) DEFAULT 0 COMMENT '是否已完整观看（0=否，1=是）',
+                                    watch_count INT DEFAULT 0 COMMENT '观看次数',
+                                    create_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                    update_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                    CONSTRAINT fk_video_id FOREIGN KEY (video_id) REFERENCES video_info (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='入学必看视频观看记录表';

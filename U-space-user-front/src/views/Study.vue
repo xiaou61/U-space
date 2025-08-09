@@ -12,12 +12,16 @@
       <el-icon class="icon"><Document /></el-icon>
       <span>单词学习</span>
     </el-card>
+    <el-card class="feature-card" @click="goVideoWatch" shadow="hover">
+      <el-icon class="icon"><VideoPlay /></el-icon>
+      <span>必看视频</span>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { Reading, ChatLineSquare, Document } from '@element-plus/icons-vue'
+import { Reading, ChatLineSquare, Document, VideoPlay } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const goMyClasses = () => {
@@ -28,6 +32,9 @@ const goAI = () => {
 }
 const goWordLearning = () => {
   router.push('/word-learning')
+}
+const goVideoWatch = () => {
+  router.push('/video-watch')
 }
 </script>
 
@@ -64,6 +71,9 @@ const goWordLearning = () => {
 }
 .feature-card:nth-child(3) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.feature-card:nth-child(4) {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 .icon {
   font-size: 2.4rem;
