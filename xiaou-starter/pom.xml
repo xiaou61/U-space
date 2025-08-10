@@ -110,6 +110,11 @@
             <artifactId>xiaou-modules-word</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-modules-activity</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

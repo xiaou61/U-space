@@ -21,6 +21,7 @@
         <module>xiaou-modules-room</module>
         <module>xiaou-modules-subject</module>
         <module>xiaou-modules-word</module>
+        <module>xiaou-modules-activity</module>
     </modules>
 
 </project>

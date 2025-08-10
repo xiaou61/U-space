@@ -51,13 +51,4 @@ public class LoginHelper {
         StpUtil.logout();
     }
 
-    /**
-     * 根据id批量获得用户权限
-     * @param allOnlineUserIds
-     */
-    public void getUserRoleByIds(List<String> allOnlineUserIds) {
-        QueryWrapper<UserRoles> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in("id", allOnlineUserIds);
-        userRolesMapper.selectList(queryWrapper);
-    }
 }

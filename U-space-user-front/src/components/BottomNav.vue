@@ -16,7 +16,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, UserFilled, Reading, ChatDotRound, Menu } from '@element-plus/icons-vue'
+import { HomeFilled, UserFilled, Reading, ChatDotRound, Menu, Trophy } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,6 +25,7 @@ const navs = [
   { path: '/', label: '首页', icon: HomeFilled },
   { path: '/study', label: '学习', icon: Reading },
   { path: '/rush-selection', label: '抢选', icon: Menu },
+  { path: '/activities', label: '活动', icon: Trophy },
   { path: '/forum', label: '论坛', icon: ChatDotRound },
   { path: '/profile', label: '我的', icon: UserFilled },
 ]

@@ -134,6 +134,13 @@ const routes = [
         component: () => import('../views/BbsSensitive.vue')
       },
       {
+        path: 'activity',
+        component: BlankRouter,
+        children:[
+          { path: 'vote', name:'VoteActivityManagement', component: () => import('../views/VoteActivityManagement.vue') }
+        ]
+      },
+      {
         path: 'dorm',
         component: BlankRouter,
         children:[

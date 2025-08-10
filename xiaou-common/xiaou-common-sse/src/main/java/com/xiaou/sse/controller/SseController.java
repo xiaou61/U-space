@@ -4,14 +4,11 @@ import cn.dev33.satoken.annotation.SaIgnore;
 import cn.dev33.satoken.stp.StpUtil;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
-import com.xiaou.common.exception.ServiceException;
 import com.xiaou.redis.utils.RedisUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.sse.core.SseEmitterManager;
 import com.xiaou.sse.dto.SseMessageDto;
-import com.xiaou.sse.dto.UserNotifyMessage;
 import com.xiaou.sse.manager.SseMessageManager;
-import com.xiaou.sse.mapper.UserNotifyMessageMapper;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -25,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * SSE 控制器
