@@ -9,83 +9,45 @@
         text-color="#cfd3dc"
         active-text-color="#fff"
       >
-        <el-menu-item index="/">
-          <el-icon><House /></el-icon>
-          <span>首页</span>
-        </el-menu-item>
-        <el-sub-menu index="/school" v-if="isAdmin">
-          <template #title>
-            <el-icon><User /></el-icon>
-            <span>学校教学管理</span>
-          </template>
-          <el-menu-item index="/class">班级管理</el-menu-item>
-          <el-menu-item index="/teacher">教师管理</el-menu-item>
-          <el-sub-menu index="/student">
-            <template #title>学生信息管理</template>
-            <el-menu-item index="/student/unaudited">未审批学生</el-menu-item>
-            <el-menu-item index="/student/all">全部学生</el-menu-item>
+        <!-- 动态渲染菜单 -->
+        <template v-for="menu in filteredMenus" :key="menu.key">
+          <!-- 有子菜单的项目 -->
+          <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="`/${menu.key}`">
+            <template #title>
+              <el-icon>
+                <component :is="menu.icon" />
+              </el-icon>
+              <span>{{ menu.title }}</span>
+            </template>
+            
+            <template v-for="subMenu in menu.children" :key="subMenu.key">
+              <!-- 二级子菜单 -->
+              <el-sub-menu v-if="subMenu.children && subMenu.children.length > 0" :index="subMenu.key">
+                <template #title>{{ subMenu.title }}</template>
+                <el-menu-item 
+                  v-for="subSubMenu in subMenu.children" 
+                  :key="subSubMenu.key"
+                  :index="subSubMenu.path"
+                >
+                  {{ subSubMenu.title }}
+                </el-menu-item>
+              </el-sub-menu>
+              
+              <!-- 一级子菜单 -->
+              <el-menu-item v-else :index="subMenu.path">
+                {{ subMenu.title }}
+              </el-menu-item>
+            </template>
           </el-sub-menu>
-        </el-sub-menu>
-        <el-sub-menu index="/system" v-if="isAdmin">
-          <template #title>
-            <el-icon><Notebook /></el-icon>
-            <span>系统设置</span>
-          </template>
-          <el-menu-item index="/operlog">操作日志</el-menu-item>
-          <el-menu-item index="/file">文件管理</el-menu-item>
-          <el-menu-item index="/online">在线用户</el-menu-item>
-          <el-menu-item index="/announcement">公告管理</el-menu-item>
-          <el-menu-item index="/schoolinfo">学校信息管理</el-menu-item>
-          <el-menu-item index="/bbs">BBS管理员</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/dorm" v-if="isAdmin">
-          <template #title>
-            <el-icon><User /></el-icon>
-            <span>宿舍信息</span>
-          </template>
-          <el-menu-item index="/dorm/building">宿舍楼管理</el-menu-item>
-          <el-menu-item index="/dorm/room">宿舍房间管理</el-menu-item>
-          <el-menu-item index="/dorm/bed">床位管理</el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/group" v-if="isTeacher">
-          <el-icon><User /></el-icon>
-          <span>群组管理</span>
-        </el-menu-item>
-        <el-menu-item index="/signin" v-if="isTeacher">
-          <el-icon><Notebook /></el-icon>
-          <span>签到管理</span>
-        </el-menu-item>
-        <el-menu-item index="/homework" v-if="isTeacher">
-          <el-icon><Notebook /></el-icon>
-          <span>作业管理</span>
-        </el-menu-item>
-        <el-menu-item index="/material" v-if="isTeacher">
-          <el-icon><Notebook /></el-icon>
-          <span>资料管理</span>
-        </el-menu-item>
-
-        <el-sub-menu index="/course" v-if="isAdmin">
-          <template #title>
-            <el-icon><Notebook /></el-icon>
-            <span>课程相关</span>
-          </template>
-          <el-menu-item index="/course/management">课程管理</el-menu-item>
-        </el-sub-menu>
-
-        <el-menu-item index="/ai" v-if="isAdmin">
-          <el-icon><Notebook /></el-icon>
-          <span>AI对话管理</span>
-        </el-menu-item>
-        <el-menu-item index="/word" v-if="isAdmin">
-          <el-icon><Notebook /></el-icon>
-          <span>单词管理</span>
-        </el-menu-item>
-        <el-menu-item index="/video" v-if="isAdmin">
-          <el-icon><VideoCamera /></el-icon>
-          <span>入学必看视频管理</span>
-        </el-menu-item>
-        <el-menu-item index="/bbs-category" v-if="isBbsAdmin">校园论坛分类管理</el-menu-item>
-        <el-menu-item index="/bbs-sensitive" v-if="isBbsAdmin">校园论坛敏感词</el-menu-item>
+          
+          <!-- 无子菜单的项目 -->
+          <el-menu-item v-else :index="menu.path">
+            <el-icon>
+              <component :is="menu.icon" />
+            </el-icon>
+            <span>{{ menu.title }}</span>
+          </el-menu-item>
+        </template>
       </el-menu>
     </el-aside>
 
@@ -128,10 +90,11 @@
 <script setup>
 import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getInfo, logout as logoutApi, updatePassword, getRole } from '../api/auth'
+import { getInfo, logout as logoutApi, updatePassword, getRole, getUserPermissions } from '../api/auth'
 import { ElMessage } from 'element-plus'
-import { House, Notebook, User, Moon, VideoCamera } from '@element-plus/icons-vue'
+import { Moon } from '@element-plus/icons-vue'
 import { toggleTheme } from '../utils/theme'
+import { menuConfig, filterMenuByPermissions, getDefaultPermissionsByRole } from '../config/menu'
 
 const router = useRouter()
 const route = useRoute()
@@ -144,23 +107,50 @@ watch(() => route.path, (val) => { activeMenu.value = val })
 const pwdDialog = ref(false)
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
 
+// 用户角色和权限
 const roles = ref([])
-const isAdmin = computed(() => roles.value.includes('admin'))
-const isTeacher = computed(() => roles.value.includes('teacher'))
-const isBbsAdmin = computed(() => roles.value.includes('bbs_admin'))
+const userPermissions = ref([])
+
+// 计算过滤后的菜单
+const filteredMenus = computed(() => {
+  return filterMenuByPermissions(menuConfig, userPermissions.value)
+})
 
 onMounted(async () => {
   try {
+    // 获取用户信息
     const res = await getInfo()
     username.value = res.data.username || res.data.name || '用户'
-  } catch (e) {}
+  } catch (e) {
+    console.error('获取用户信息失败:', e)
+  }
 
   try {
+    // 获取用户角色
     const roleRes = await getRole()
-    // 后端把角色字符串放在 msg 字段
-    const str = roleRes.data || roleRes.msg || ''
-    roles.value = str.replace(/\[|\]/g, '').split(',').map(r => r.trim()).filter(Boolean)
-  } catch (e) {}
+    const roleStr = roleRes.data || roleRes.msg || ''
+    roles.value = roleStr.replace(/\[|\]/g, '').split(',').map(r => r.trim()).filter(Boolean)
+    
+    console.log('用户角色:', roles.value)
+  } catch (e) {
+    console.error('获取用户角色失败:', e)
+    roles.value = []
+  }
+
+  try {
+    // 从后端获取用户实际权限
+    const permRes = await getUserPermissions()
+    userPermissions.value = permRes.data || []
+    
+    console.log('从后端获取的用户权限:', userPermissions.value)
+    console.log('权限过滤前的菜单数量:', menuConfig.length)
+    console.log('权限过滤后的菜单:', filterMenuByPermissions(menuConfig, userPermissions.value))
+  } catch (e) {
+    console.error('获取用户权限失败:', e)
+    // 如果获取权限失败，使用角色默认权限作为fallback
+    userPermissions.value = getDefaultPermissionsByRole(roles.value)
+    console.log('使用默认权限:', userPermissions.value)
+  }
 })
 
 const handleMenuSelect = (index) => {
@@ -170,7 +160,11 @@ const handleMenuSelect = (index) => {
 }
 
 const handleLogout = async () => {
-  try { await logoutApi() } catch (e) {}
+  try { 
+    await logoutApi() 
+  } catch (e) {
+    console.error('退出登录失败:', e)
+  }
   localStorage.removeItem('tokenName')
   localStorage.removeItem('tokenValue')
   ElMessage.success('已退出登录')
@@ -195,7 +189,9 @@ const submitPwd = async () => {
     await updatePassword(pwdForm.oldPassword, pwdForm.newPassword)
     ElMessage.success('密码修改成功，请重新登录')
     handleLogout()
-  } catch (e) {}
+  } catch (e) {
+    console.error('修改密码失败:', e)
+  }
 }
 </script>
 

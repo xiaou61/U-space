@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.auth.admin.mapper.SysUserRoleMapper">
+
+    <!-- 根据用户ID删除用户角色关联 -->
+    <delete id="deleteByUserId">
+        DELETE FROM sys_user_role 
+        WHERE user_id = #{userId} COLLATE utf8mb4_general_ci
+        AND user_type = #{userType}
+    </delete>
+
+    <!-- 根据角色ID删除用户角色关联 -->
+    <delete id="deleteByRoleId">
+        DELETE FROM sys_user_role 
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 批量插入用户角色关联 -->
+    <insert id="batchInsert">
+        INSERT INTO sys_user_role (id, user_id, role_id, user_type, created_at)
+        VALUES
+        <foreach collection="userRoles" item="item" separator=",">
+            (REPLACE(UUID(), '-', ''), #{item.userId}, #{item.roleId}, #{item.userType}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 根据用户ID查询角色ID列表 -->
+    <select id="selectRoleIdsByUserId" resultType="java.lang.String">
+        SELECT role_id FROM sys_user_role 
+        WHERE user_id = #{userId} COLLATE utf8mb4_general_ci
+        AND user_type = #{userType}
+    </select>
+
+    <!-- 查询所有用户及其角色信息 -->
+    <select id="selectAllUserRoles" resultType="com.xiaou.auth.admin.domain.entity.SysUserRole">
+        SELECT * FROM sys_user_role 
+        ORDER BY created_at DESC
+    </select>
+
+</mapper> 

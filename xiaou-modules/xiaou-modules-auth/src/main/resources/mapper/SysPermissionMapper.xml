@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.auth.admin.mapper.SysPermissionMapper">
+
+    <!-- 根据角色ID查询权限列表 -->
+    <select id="selectPermissionsByRoleId" resultType="com.xiaou.auth.admin.domain.entity.SysPermission">
+        SELECT p.* 
+        FROM sys_permission p 
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id 
+        WHERE rp.role_id = #{roleId} 
+        AND p.status = 1
+        ORDER BY p.sort_order ASC
+    </select>
+
+    <!-- 根据用户ID查询用户权限列表 -->
+    <select id="selectPermissionsByUserId" resultType="com.xiaou.auth.admin.domain.entity.SysPermission">
+        SELECT DISTINCT p.* 
+        FROM sys_permission p 
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id 
+        INNER JOIN sys_role r ON rp.role_id = r.id
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id 
+        WHERE ur.user_id = #{userId} COLLATE utf8mb4_general_ci
+        AND ur.user_type = #{userType}
+        AND p.status = 1
+        AND r.status = 1
+        ORDER BY p.sort_order ASC
+    </select>
+
+    <!-- 查询所有启用的权限（用于构建权限树） -->
+    <select id="selectEnabledPermissions" resultType="com.xiaou.auth.admin.domain.entity.SysPermission">
+        SELECT * FROM sys_permission 
+        WHERE status = 1 
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 根据权限代码查询权限 -->
+    <select id="selectByPermissionCode" resultType="com.xiaou.auth.admin.domain.entity.SysPermission">
+        SELECT * FROM sys_permission 
+        WHERE permission_code = #{permissionCode} 
+        AND status = 1
+        LIMIT 1
+    </select>
+
+    <!-- 查询菜单类型的权限列表 -->
+    <select id="selectMenuPermissions" resultType="com.xiaou.auth.admin.domain.entity.SysPermission">
+        SELECT * FROM sys_permission 
+        WHERE permission_type = 'MENU' 
+        AND status = 1 
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 根据用户ID查询权限代码列表 -->
+    <select id="selectPermissionCodesByUserId" resultType="java.lang.String">
+        SELECT DISTINCT p.permission_code
+        FROM sys_permission p 
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id 
+        INNER JOIN sys_role r ON rp.role_id = r.id
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id 
+        WHERE ur.user_id = #{userId} COLLATE utf8mb4_general_ci
+        AND ur.user_type = #{userType}
+        AND p.status = 1
+        AND r.status = 1
+        ORDER BY p.sort_order ASC
+    </select>
+
+</mapper> 
