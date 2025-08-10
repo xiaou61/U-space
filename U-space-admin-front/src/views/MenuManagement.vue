@@ -37,13 +37,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="300">
           <template #default="scope">
             <el-button size="small" @click="editPermission(scope.row)">
@@ -99,26 +92,29 @@
           <el-input v-model="permissionForm.menuPath" placeholder="请输入菜单路径" />
         </el-form-item>
         <el-form-item label="菜单图标" prop="menuIcon" v-if="permissionForm.permissionType === 'MENU'">
-          <el-select v-model="permissionForm.menuIcon" placeholder="请选择图标" style="width: 100%">
-            <el-option label="House" value="House" />
-            <el-option label="User" value="User" />
-            <el-option label="Notebook" value="Notebook" />
-            <el-option label="Setting" value="Setting" />
-            <el-option label="Management" value="Management" />
-            <el-option label="Files" value="Files" />
-            <el-option label="Monitor" value="Monitor" />
-            <el-option label="ChatDotRound" value="ChatDotRound" />
-            <el-option label="VideoCamera" value="VideoCamera" />
+          <el-select 
+            v-model="permissionForm.menuIcon" 
+            placeholder="请选择图标" 
+            style="width: 100%"
+            filterable
+          >
+            <el-option 
+              v-for="icon in iconOptions" 
+              :key="icon.value" 
+              :label="icon.label" 
+              :value="icon.value"
+            >
+              <div style="display: flex; align-items: center;">
+                <el-icon style="margin-right: 8px;">
+                  <component :is="getIconComponent(icon.value)" />
+                </el-icon>
+                <span>{{ icon.label }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="排序号" prop="sortOrder">
           <el-input-number v-model="permissionForm.sortOrder" :min="0" :max="999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="permissionForm.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
-          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -134,7 +130,9 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, House, User, Notebook, Setting, Management, 
-  Files, Monitor, ChatDotRound, VideoCamera 
+  Files, Monitor, ChatDotRound, VideoCamera,
+  Search, Edit, Delete, Check, Close, Star, Bell, 
+  Upload, Download, Picture
 } from '@element-plus/icons-vue'
 import { 
   getPermissionTree, getAllPermissions, addPermission, 
@@ -156,8 +154,7 @@ const permissionForm = reactive({
   permissionType: 'MENU',
   menuPath: '',
   menuIcon: '',
-  sortOrder: 1,
-  status: 1
+  sortOrder: 1
 })
 
 // 表单验证规则
@@ -189,9 +186,35 @@ onMounted(() => {
 
 // 图标组件映射
 const iconComponents = {
-  House, User, Notebook, Setting, Management, 
-  Files, Monitor, ChatDotRound, VideoCamera
+  Plus, House, User, Notebook, Setting, Management, 
+  Files, Monitor, ChatDotRound, VideoCamera,
+  Search, Edit, Delete, Check, Close, Star, Bell, 
+  Upload, Download, Picture
 }
+
+// 图标选项数组
+const iconOptions = [
+  { label: '首页', value: 'House' },
+  { label: '用户', value: 'User' },
+  { label: '笔记本', value: 'Notebook' },
+  { label: '设置', value: 'Setting' },
+  { label: '管理', value: 'Management' },
+  { label: '文件夹', value: 'Files' },
+  { label: '监控', value: 'Monitor' },
+  { label: '聊天', value: 'ChatDotRound' },
+  { label: '视频', value: 'VideoCamera' },
+  { label: '搜索', value: 'Search' },
+  { label: '编辑', value: 'Edit' },
+  { label: '删除', value: 'Delete' },
+  { label: '检查', value: 'Check' },
+  { label: '关闭', value: 'Close' },
+  { label: '星星', value: 'Star' },
+  { label: '铃铛', value: 'Bell' },
+  { label: '上传', value: 'Upload' },
+  { label: '下载', value: 'Download' },
+  { label: '图片', value: 'Picture' },
+  { label: '加号', value: 'Plus' }
+]
 
 // 获取图标组件
 const getIconComponent = (iconName) => {

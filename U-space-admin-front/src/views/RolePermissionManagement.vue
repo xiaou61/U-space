@@ -256,8 +256,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Plus, User, Avatar, ChatDotRound, UserFilled, Setting, Search,
-  House, Notebook, VideoCamera, Management, Files, Monitor, Folder
+  Plus, User, Management, Avatar, UserFilled, Files, Monitor, 
+  Notebook, House, ChatDotRound, VideoCamera, Setting, Search,
+  // 只保留确认存在的基础图标
+  Edit, Delete, Check, Close, Star, Bell, 
+  Upload, Download, Picture
 } from '@element-plus/icons-vue'
 import { 
   getRoleList, addRole, updateRole, deleteRole as deleteRoleAPI,
@@ -598,20 +601,13 @@ const buildPermissionTree = (permissions) => {
 
 // 获取图标组件
 const getIconComponent = (iconName) => {
-  const iconMap = {
-    'User': 'User',
-    'Management': 'Management', 
-    'Avatar': 'Avatar',
-    'UserFilled': 'UserFilled',
-    'Files': 'Files',
-    'Monitor': 'Monitor',
-    'Notebook': 'Notebook',
-    'House': 'House',
-    'ChatDotRound': 'ChatDotRound',
-    'VideoCamera': 'VideoCamera',
-    'Setting': 'Setting'
+  const iconComponents = {
+    Plus, House, User, Notebook, Setting, Management, 
+    Files, Monitor, ChatDotRound, VideoCamera,
+    Avatar, UserFilled, Search, Edit, Delete, Check, Close, Star, Bell, 
+    Upload, Download, Picture
   }
-  return iconMap[iconName] || 'Folder'
+  return iconComponents[iconName] || House
 }
 
 
