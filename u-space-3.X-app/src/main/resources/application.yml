@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: u-space-user-service
+  profiles:
+    active: dev
