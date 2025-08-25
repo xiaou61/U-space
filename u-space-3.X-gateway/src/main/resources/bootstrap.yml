@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: u-space-gateway
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: dev
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: dev
+        group: DEFAULT_GROUP
+        file-extension: yml
+        shared-configs:
+          - dataId: application-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+  profiles:
+    active: dev 

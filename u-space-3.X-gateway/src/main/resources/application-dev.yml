@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启从注册中心动态创建路由的功能
+          lower-case-service-id: true # 使用小写服务名，默认是大写
+      routes:
+        # 用户服务路由
+        - id: u-space-user-service
+          uri: lb://u-space-user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=2 # 去掉前缀 /api/user -> /
+        
+        # 订单服务路由（示例）
+        - id: u-space-order-service
+          uri: lb://u-space-order-service
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=2
+            
+      # 全局CORS配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: DEBUG
+
+# 监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always 

@@ -1,0 +1,127 @@
+version: '3.8'
+# docker-compose -f docker-compose-microservices.yml up -d
+
+services:
+  # Nacos 注册中心和配置中心
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=123456
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
+    volumes:
+      - ./nacos/logs:/home/nacos/logs
+    depends_on:
+      - mysql
+    networks:
+      - microservices-network
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=xfg_frame_archetype
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - microservices-network
+
+  # Redis
+  redis:
+    image: redis:7.0
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - microservices-network
+
+  # API Gateway
+  u-space-gateway:
+    image: u-space/u-space-gateway:1.0-SNAPSHOT
+    container_name: u-space-gateway
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=PRC
+      - SERVER_PORT=8080
+      - SPRING_CLOUD_NACOS_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./logs/gateway:/data/log
+    depends_on:
+      - nacos
+    networks:
+      - microservices-network
+
+  # 用户服务
+  u-space-user-service:
+    image: u-space/u-space-user-service:1.0-SNAPSHOT
+    container_name: u-space-user-service
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    environment:
+      - TZ=PRC
+      - SERVER_PORT=8081
+      - SPRING_CLOUD_NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/xfg_frame_archetype?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+    volumes:
+      - ./logs/user-service:/data/log
+    depends_on:
+      - nacos
+      - mysql
+    networks:
+      - microservices-network
+
+  # 订单服务
+  u-space-order-service:
+    image: u-space/u-space-order-service:1.0-SNAPSHOT
+    container_name: u-space-order-service
+    restart: on-failure
+    ports:
+      - "8082:8082"
+    environment:
+      - TZ=PRC
+      - SERVER_PORT=8082
+      - SPRING_CLOUD_NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/xfg_frame_archetype_order?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+    volumes:
+      - ./logs/order-service:/data/log
+    depends_on:
+      - nacos
+      - mysql
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  nacos-logs: 
