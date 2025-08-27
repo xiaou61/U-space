@@ -1,21 +1,12 @@
 package com.xiaou.room.domain.req;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.xiaou.room.domain.entity.DormBuilding;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
-
-import java.util.Date;
 
 /**
  * 宿舍楼表
  * @TableName u_dorm_building
  */
 @Data
-@AutoMapper(target = DormBuilding.class)
 public class DormBuildingReq {
 
     /**
