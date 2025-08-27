@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.dto.CommentReplyCount;
 import com.xiaou.bbs.domain.entity.BbsComment;
 import com.xiaou.bbs.domain.entity.BbsCommentLike;
@@ -42,7 +42,7 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
     @Resource
     private LoginHelper loginHelper;
     @Resource
-    private StudentMapper userMapper;
+    private UserNameService userNameService;
     @Resource
     private BbsCommentReplyMapper replyMapper;
     @Resource
@@ -111,9 +111,8 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
                 .collect(Collectors.toSet());
 
         // 批量查询用户信息
-        Map<String, StudentEntity> userMap = userIds.isEmpty() ? Map.of() :
-                userMapper.selectBatchIds(userIds).stream()
-                        .collect(Collectors.toMap(StudentEntity::getId, s -> s));
+        Map<String, UserNameService.UserInfo> userMap = userIds.isEmpty() ? Map.of() :
+                userNameService.getUserInfosByIds(userIds.stream().collect(Collectors.toList()));
 
         // 批量查询每条评论的回复数
         List<String> commentIds = commentList.stream()
@@ -136,10 +135,10 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
         List<BbsCommentResp> respList = commentList.stream().map(comment -> {
             BbsCommentResp resp = MapstructUtils.convert(comment, BbsCommentResp.class);
 
-            StudentEntity studentEntity = userMap.get(comment.getUserId());
-            if (studentEntity != null) {
-                resp.setName(studentEntity.getName());
-                resp.setAvatar(studentEntity.getAvatar());
+            UserNameService.UserInfo userInfo = userMap.get(comment.getUserId());
+            if (userInfo != null) {
+                resp.setName(userInfo.getName());
+                resp.setAvatar(userInfo.getAvatar());
             }
 
             resp.setIsMine(currentUserId.equals(comment.getUserId()));

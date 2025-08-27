@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.activity.mapper.ActivityParticipantMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="ActivityParticipantResultMap" type="com.xiaou.activity.domain.entity.ActivityParticipant">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="activityId" column="activity_id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="participateTime" column="participate_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="participantRank" column="participant_rank" jdbcType="INTEGER"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, activity_id, user_id, participate_time, status, participant_rank, remark, create_time, update_time
+    </sql>
+
+    <!-- 插入参与记录 -->
+    <insert id="insert" parameterType="com.xiaou.activity.domain.entity.ActivityParticipant" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO u_activity_participant (
+            activity_id, user_id, participate_time, status, participant_rank, remark, create_time, update_time
+        ) VALUES (
+            #{activityId,jdbcType=BIGINT}, #{userId,jdbcType=VARCHAR}, 
+            #{participateTime,jdbcType=TIMESTAMP}, #{status,jdbcType=TINYINT},
+            #{participantRank,jdbcType=INTEGER}, #{remark,jdbcType=VARCHAR},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 根据活动ID和用户ID查询参与记录 -->
+    <select id="selectByActivityAndUser" resultMap="ActivityParticipantResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT} 
+          AND user_id = #{userId,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 更新参与状态 -->
+    <update id="updateStatus">
+        UPDATE u_activity_participant 
+        SET status = #{status,jdbcType=TINYINT},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 分页查询活动参与者列表 -->
+    <select id="selectParticipantsByActivity" resultMap="ActivityParticipantResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT}
+        ORDER BY participate_time ASC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询活动参与者总数 -->
+    <select id="selectParticipantsCountByActivity" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 查询用户参与的活动列表 -->
+    <select id="selectUserParticipatedActivities" resultMap="ActivityParticipantResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity_participant
+        WHERE user_id = #{userId,jdbcType=VARCHAR}
+        ORDER BY participate_time DESC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询用户参与的活动总数 -->
+    <select id="selectUserParticipatedActivitiesCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_activity_participant
+        WHERE user_id = #{userId,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 获取用户在活动中的排名 -->
+    <select id="getUserRankInActivity" resultType="java.lang.Integer">
+        SELECT participant_rank
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT} 
+          AND user_id = #{userId,jdbcType=VARCHAR}
+          AND status = 0
+    </select>
+
+    <!-- 获取活动参与人数 -->
+    <select id="getParticipantCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT} 
+          AND status = 0
+    </select>
+
+    <!-- 查询活动的成功参与者列表（用于积分发放） -->
+    <select id="selectSuccessfulParticipants" resultMap="ActivityParticipantResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT} 
+          AND status = 0
+        ORDER BY participate_time ASC
+    </select>
+
+</mapper> 

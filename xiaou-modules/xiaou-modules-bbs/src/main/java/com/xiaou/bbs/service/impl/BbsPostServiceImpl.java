@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.constants.NotifyConstants;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsPostLike;
@@ -45,7 +45,7 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
     private LoginHelper loginHelper;
 
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
     @Autowired
     private FilesUtils filesUtils;
     @Resource
@@ -108,16 +108,18 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
 
         // ✅ 2. 批量查询 student 信息
         if (!userIds.isEmpty()) {
-            List<StudentEntity> studentEntities = studentMapper.selectBatchIds(userIds);
-            Map<String, BbsStudentInfoResp> userMap = studentEntities.stream()
-                    .collect(Collectors.toMap(
-                            StudentEntity::getId,
-                            s -> MapstructUtils.convert(s, BbsStudentInfoResp.class)
-                    ));
-
+            Map<String, UserNameService.UserInfo> userInfoMap = userNameService.getUserInfosByIds((List<String>) userIds);
+            
             // ✅ 3. 统一填充 userInfo
             for (BbsPostResp post : convert) {
-                post.setUserInfo(userMap.get(post.getUserId()));
+                UserNameService.UserInfo userInfo = userInfoMap.get(post.getUserId());
+                if (userInfo != null) {
+                    BbsStudentInfoResp bbsUserInfo = new BbsStudentInfoResp();
+                    bbsUserInfo.setId(post.getUserId());
+                    bbsUserInfo.setName(userInfo.getName());
+                    bbsUserInfo.setAvatar(userInfo.getAvatar());
+                    post.setUserInfo(bbsUserInfo);
+                }
             }
         }
 
@@ -138,7 +140,11 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
         IPage<BbsPost> bbsPostIPage = baseMapper.selectPage(page, queryWrapper);
         List<BbsPostResp> convert = MapstructUtils.convert(bbsPostIPage.getRecords(), BbsPostResp.class);
         for (BbsPostResp post : convert) {
-            post.setUserInfo(MapstructUtils.convert(studentMapper.selectById(post.getUserId()), BbsStudentInfoResp.class));
+            BbsStudentInfoResp userInfo = new BbsStudentInfoResp();
+            userInfo.setId(post.getUserId());
+            userInfo.setName(userNameService.getUserNameById(post.getUserId()));
+            userInfo.setAvatar(userNameService.getUserAvatarById(post.getUserId()));
+            post.setUserInfo(userInfo);
         }
         return R.ok(PageRespDto.of(bbsPostIPage.getCurrent(),
                 bbsPostIPage.getSize(),

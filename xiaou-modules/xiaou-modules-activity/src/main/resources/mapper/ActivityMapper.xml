@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.activity.mapper.ActivityMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="ActivityResultMap" type="com.xiaou.activity.domain.entity.Activity">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="coverImage" column="cover_image" jdbcType="VARCHAR"/>
+        <result property="maxParticipants" column="max_participants" jdbcType="INTEGER"/>
+        <result property="currentParticipants" column="current_participants" jdbcType="INTEGER"/>
+        <result property="pointsTypeId" column="points_type_id" jdbcType="BIGINT"/>
+        <result property="pointsAmount" column="points_amount" jdbcType="INTEGER"/>
+        <result property="activityType" column="activity_type" jdbcType="TINYINT"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="rules" column="rules" jdbcType="VARCHAR"/>
+        <result property="createUserId" column="create_user_id" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="pointsGranted" column="points_granted" jdbcType="TINYINT"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, title, description, cover_image, max_participants, current_participants,
+        points_type_id, points_amount, activity_type, status, start_time, end_time,
+        rules, create_user_id, create_time, update_time, points_granted, is_deleted
+    </sql>
+
+    <!-- 插入活动 -->
+    <insert id="insert" parameterType="com.xiaou.activity.domain.entity.Activity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO u_activity (
+            title, description, cover_image, max_participants, current_participants,
+            points_type_id, points_amount, activity_type, status, start_time, end_time,
+            rules, create_user_id, create_time, update_time, points_granted, is_deleted
+        ) VALUES (
+            #{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{coverImage,jdbcType=VARCHAR},
+            #{maxParticipants,jdbcType=INTEGER}, #{currentParticipants,jdbcType=INTEGER},
+            #{pointsTypeId,jdbcType=BIGINT}, #{pointsAmount,jdbcType=INTEGER},
+            #{activityType,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
+            #{startTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP},
+            #{rules,jdbcType=VARCHAR}, #{createUserId,jdbcType=VARCHAR},
+            NOW(), NOW(), 0, 0
+        )
+    </insert>
+
+    <!-- 根据ID查询活动 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="ActivityResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity
+        WHERE id = #{id,jdbcType=BIGINT} AND is_deleted = 0
+    </select>
+
+    <!-- 更新活动 -->
+    <update id="updateById" parameterType="com.xiaou.activity.domain.entity.Activity">
+        UPDATE u_activity
+        <set>
+            <if test="title != null and title != ''">
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="coverImage != null">
+                cover_image = #{coverImage,jdbcType=VARCHAR},
+            </if>
+            <if test="maxParticipants != null">
+                max_participants = #{maxParticipants,jdbcType=INTEGER},
+            </if>
+            <if test="pointsTypeId != null">
+                points_type_id = #{pointsTypeId,jdbcType=BIGINT},
+            </if>
+            <if test="pointsAmount != null">
+                points_amount = #{pointsAmount,jdbcType=INTEGER},
+            </if>
+            <if test="activityType != null">
+                activity_type = #{activityType,jdbcType=TINYINT},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="endTime != null">
+                end_time = #{endTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="rules != null">
+                rules = #{rules,jdbcType=VARCHAR},
+            </if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id,jdbcType=BIGINT} AND is_deleted = 0
+    </update>
+
+    <!-- 删除活动（逻辑删除） -->
+    <update id="deleteById" parameterType="java.lang.Long">
+        UPDATE u_activity 
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 分页查询活动列表 -->
+    <select id="selectPage" resultMap="ActivityResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity
+        WHERE is_deleted = 0
+        ORDER BY create_time DESC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询活动总数 -->
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_activity
+        WHERE is_deleted = 0
+    </select>
+
+    <!-- 查询可参与的活动列表（基于实时时间判断，不依赖status字段） -->
+    <select id="selectAvailableActivities" resultMap="ActivityResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity
+        WHERE is_deleted = 0 
+          AND status NOT IN (3, 4)
+          AND start_time IS NOT NULL
+          AND end_time IS NOT NULL
+          AND start_time &lt;= NOW()
+          AND end_time &gt; NOW()
+          AND current_participants &lt; max_participants
+        ORDER BY start_time ASC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询可参与的活动总数（基于实时时间判断） -->
+    <select id="selectAvailableActivitiesCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_activity
+        WHERE is_deleted = 0 
+          AND status NOT IN (3, 4)
+          AND start_time IS NOT NULL
+          AND end_time IS NOT NULL
+          AND start_time &lt;= NOW()
+          AND end_time &gt; NOW()
+          AND current_participants &lt; max_participants
+    </select>
+
+    <!-- 增加活动参与人数 -->
+    <update id="increaseParticipantCount" parameterType="java.lang.Long">
+        UPDATE u_activity 
+        SET current_participants = current_participants + 1,
+            update_time = NOW()
+        WHERE id = #{activityId,jdbcType=BIGINT} 
+          AND current_participants &lt; max_participants
+    </update>
+
+    <!-- 减少活动参与人数 -->
+    <update id="decreaseParticipantCount" parameterType="java.lang.Long">
+        UPDATE u_activity 
+        SET current_participants = current_participants - 1,
+            update_time = NOW()
+        WHERE id = #{activityId,jdbcType=BIGINT} 
+          AND current_participants &gt; 0
+    </update>
+
+    <!-- 获取活动当前参与人数 -->
+    <select id="getCurrentParticipantCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT current_participants
+        FROM u_activity
+        WHERE id = #{activityId,jdbcType=BIGINT} AND is_deleted = 0
+    </select>
+
+    <!-- 更新活动状态 -->
+    <update id="updateStatus">
+        UPDATE u_activity 
+        SET status = #{status,jdbcType=TINYINT},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT} AND is_deleted = 0
+    </update>
+
+    <!-- 查询已结束但未发放积分的活动列表（基于实时时间判断） -->
+    <select id="selectFinishedActivitiesWithoutPoints" resultMap="ActivityResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity 
+        WHERE is_deleted = 0 
+          AND status NOT IN (3, 4)
+          AND points_granted = 0 
+          AND end_time &lt; NOW()
+          AND end_time IS NOT NULL
+          AND points_amount &gt; 0
+        ORDER BY end_time ASC
+        LIMIT 50
+    </select>
+
+    <!-- 更新活动积分发放状态 -->
+    <update id="updatePointsGranted">
+        UPDATE u_activity 
+        SET points_granted = #{pointsGranted,jdbcType=TINYINT},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT} AND is_deleted = 0
+    </update>
+
+    <!-- 查询需要状态更新的有效活动列表 -->
+    <select id="selectValidActivitiesForStatusUpdate" resultMap="ActivityResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_activity 
+        WHERE is_deleted = 0 
+          AND status NOT IN (3, 4)
+          AND start_time IS NOT NULL 
+          AND end_time IS NOT NULL
+        ORDER BY end_time ASC
+        LIMIT 200
+    </select>
+
+</mapper> 

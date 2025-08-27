@@ -186,6 +186,20 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
         StpUtil.logout(loginHelper.getCurrentAppUserId());
         return R.ok("注销成功");
     }
+
+    @Override
+    public String getStudentNameById(String studentId) {
+        if (studentId == null || studentId.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return baseMapper.selectNameById(studentId);
+        } catch (Exception e) {
+            log.error("查询学生姓名失败，studentId: {}");
+            return null;
+        }
+    }
 }
 
 

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsUserNotify;
 import com.xiaou.bbs.domain.resp.BbsUserNotifyResp;
@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +37,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
     @Resource
     private BbsPostMapper postMapper;
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
     @Autowired
     private LoginHelper loginHelper;
 
@@ -62,8 +63,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
                 .map(BbsUserNotifyResp::getSenderId)
                 .collect(Collectors.toSet());
 
-        Map<String, StudentEntity> senderMap = studentMapper.selectBatchIds(senderIds)
-                .stream().collect(Collectors.toMap(StudentEntity::getId, s -> s));
+        Map<String, UserNameService.UserInfo> senderMap = userNameService.getUserInfosByIds(new ArrayList<>(senderIds));
 
         // 2.2 提取所有 type = post_like 的 targetId（即 postId）
         Set<String> postIds = respList.stream()
@@ -78,7 +78,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
         // 3. 数据填充：昵称、头像、帖子标题
         for (BbsUserNotifyResp resp : respList) {
             // 3.1 设置发送者昵称和头像
-            StudentEntity sender = senderMap.get(resp.getSenderId());
+            UserNameService.UserInfo sender = senderMap.get(resp.getSenderId());
             if (sender != null) {
                 resp.setSenderName(sender.getName());
                 resp.setSenderAvatar(sender.getAvatar());

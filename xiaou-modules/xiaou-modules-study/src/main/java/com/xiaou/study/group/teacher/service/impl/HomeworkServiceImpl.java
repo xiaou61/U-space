@@ -3,7 +3,7 @@ package com.xiaou.study.group.teacher.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.study.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
@@ -35,7 +35,7 @@ public class HomeworkServiceImpl extends ServiceImpl<HomeworkMapper, Homework>
     @Resource
     private HomeworkSubmissionMapper homeworkSubmissionMapper;
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
 
     @Override
     public R<String> add(HomeworkReq req) {
@@ -63,7 +63,8 @@ public class HomeworkServiceImpl extends ServiceImpl<HomeworkMapper, Homework>
         List<HomeworkSubmissionResp> convert = MapstructUtils.convert(homeworkSubmissions, HomeworkSubmissionResp.class);
         //填充name
         for (HomeworkSubmissionResp homeworkSubmissionResp : convert) {
-            homeworkSubmissionResp.setStudentName(studentMapper.selectById(homeworkSubmissionResp.getStudentId()).getName());
+            String studentName = userNameService.getUserNameById(homeworkSubmissionResp.getStudentId());
+            homeworkSubmissionResp.setStudentName(studentName);
         }
         return R.ok(convert);
     }
@@ -84,7 +85,8 @@ public class HomeworkServiceImpl extends ServiceImpl<HomeworkMapper, Homework>
     public R<HomeworkSubmissionResp> homework(String id) {
         HomeworkSubmission homeworkSubmission = homeworkSubmissionMapper.selectById(id);
         HomeworkSubmissionResp convert = MapstructUtils.convert(homeworkSubmission, HomeworkSubmissionResp.class);
-        convert.setStudentName(studentMapper.selectById(convert.getStudentId()).getName());
+        String studentName = userNameService.getUserNameById(convert.getStudentId());
+        convert.setStudentName(studentName);
         return R.ok(convert);
     }
 

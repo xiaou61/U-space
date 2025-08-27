@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.study.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
@@ -40,7 +40,7 @@ public class SigninServiceImpl extends ServiceImpl<SigninMapper, Signin>
     @Resource
     private SigninRecordMapper signinRecordMapper;
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
 
     @Override
     public R<String> add(SigninReq req) {
@@ -75,7 +75,10 @@ public class SigninServiceImpl extends ServiceImpl<SigninMapper, Signin>
         List<SigninRecord> signinRecords = signinRecordMapper.selectList(queryWrapper);
         List<SigninRecordResp> convert = MapstructUtils.convert(signinRecords, SigninRecordResp.class);
         //添加用户名称
-        convert.forEach(item -> item.setStudentName(studentMapper.selectById(item.getStudentId()).getName()));
+        convert.forEach(item -> {
+            String studentName = userNameService.getUserNameById(item.getStudentId());
+            item.setStudentName(studentName);
+        });
         return R.ok(convert);
     }
 

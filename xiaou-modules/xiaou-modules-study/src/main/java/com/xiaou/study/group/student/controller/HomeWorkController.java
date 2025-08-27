@@ -2,17 +2,15 @@ package com.xiaou.study.group.student.controller;
 
 import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.ServiceException;
-import com.xiaou.study.group.teacher.domain.entity.HomeworkSubmission;
-import com.xiaou.study.group.teacher.domain.req.HomeworkReq;
 import com.xiaou.study.group.teacher.domain.req.HomeworkSubmissionReq;
 import com.xiaou.study.group.teacher.domain.resp.HomeworkResp;
 import com.xiaou.study.group.teacher.domain.resp.HomeworkSubmissionGradeResp;
-import com.xiaou.study.group.teacher.domain.resp.HomeworkSubmissionResp;
 import com.xiaou.study.group.teacher.service.HomeworkService;
 import com.xiaou.study.group.teacher.service.HomeworkSubmissionService;
+
 import com.xiaou.upload.utils.FilesUtils;
 import jakarta.annotation.Resource;
-import org.apache.commons.io.FileUtils;
+
 import org.dromara.x.file.storage.core.FileInfo;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

@@ -3,8 +3,7 @@ package com.xiaou.study.group.teacher.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.study.service.UserNameService;
 import com.xiaou.common.constant.GlobalConstants;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
@@ -24,7 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+
 
 @Service
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
@@ -36,7 +35,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
     private LoginHelper loginHelper;
 
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
 
     @Resource
     private GroupMemberMapper groupMemberMapper;
@@ -100,9 +99,8 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group>
                 .map(GroupMember::getUserId)
                 .toList();
 
-        // 查出所有 student，并构建 userId -> userName 映射
-        Map<String, String> userIdNameMap = studentMapper.selectBatchIds(userIds).stream()
-                .collect(Collectors.toMap(StudentEntity::getId, StudentEntity::getName));
+        // 批量获取用户姓名映射
+        Map<String, String> userIdNameMap = userNameService.getUserNamesByIds(userIds);
 
         // 映射为响应对象并填充 userName
         List<GroupMemberResp> result = groupMembers.stream()

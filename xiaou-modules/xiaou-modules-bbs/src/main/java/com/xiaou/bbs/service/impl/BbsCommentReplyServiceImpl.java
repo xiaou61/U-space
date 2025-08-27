@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import com.xiaou.bbs.domain.entity.BbsReplyLike;
 import com.xiaou.bbs.domain.req.BbsCommentReplyReq;
@@ -34,7 +34,7 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
     @Resource
     private LoginHelper loginHelper;
     @Resource
-    private StudentMapper userMapper;
+    private UserNameService userNameService;
     @Resource
     private BbsPostMapper postMapper;
     @Resource
@@ -90,11 +90,9 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
         }
 
         // 批量查询所有用户信息
-        Map<String, StudentEntity> userMap;
+        Map<String, UserNameService.UserInfo> userMap;
         if (!userIds.isEmpty()) {
-            List<StudentEntity> studentEntities = userMapper.selectBatchIds(userIds);
-            userMap = studentEntities.stream()
-                    .collect(Collectors.toMap(StudentEntity::getId, s -> s));
+            userMap = userNameService.getUserInfosByIds(userIds.stream().collect(Collectors.toList()));
         } else {
             userMap = new HashMap<>();
         }
@@ -110,14 +108,14 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
             resp.setIsMine(currentUserId.equals(reply.getUserId()));
 
             // 回复人的信息
-            StudentEntity replyUser = userMap.get(reply.getUserId());
+            UserNameService.UserInfo replyUser = userMap.get(reply.getUserId());
             if (replyUser != null) {
                 resp.setReplyUserName(replyUser.getName());
                 resp.setReplyUserAvatar(replyUser.getAvatar());
             }
 
             // 被回复人的信息
-            StudentEntity replyToUser = userMap.get(reply.getReplyUserId());
+            UserNameService.UserInfo replyToUser = userMap.get(reply.getReplyUserId());
             if (replyToUser != null) {
                 resp.setReplyToUserName(replyToUser.getName());
                 resp.setReplyToUserAvatar(replyToUser.getAvatar());

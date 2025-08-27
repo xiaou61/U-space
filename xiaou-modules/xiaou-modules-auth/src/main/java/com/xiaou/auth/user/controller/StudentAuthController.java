@@ -116,4 +116,17 @@ public class StudentAuthController {
     public R<String> test() {
         return R.ok("测试成功");
     }
+
+    /**
+     * 根据学生ID获取学生姓名（内部API，供其他模块调用）
+     */
+    @GetMapping("/internal/name/{studentId}")
+    public R<String> getStudentNameById(@PathVariable String studentId) {
+        String studentName = studentService.getStudentNameById(studentId);
+        if (studentName != null) {
+            return R.ok(studentName);
+        } else {
+            return R.fail("学生不存在或已被禁用");
+        }
+    }
 }

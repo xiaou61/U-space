@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.activity.mapper.PointsRecordMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="PointsRecordResultMap" type="com.xiaou.activity.domain.entity.PointsRecord">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="activityId" column="activity_id" jdbcType="BIGINT"/>
+        <result property="pointsTypeId" column="points_type_id" jdbcType="BIGINT"/>
+        <result property="pointsAmount" column="points_amount" jdbcType="INTEGER"/>
+        <result property="operationType" column="operation_type" jdbcType="TINYINT"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="grantTime" column="grant_time" jdbcType="TIMESTAMP"/>
+        <result property="failReason" column="fail_reason" jdbcType="VARCHAR"/>
+        <result property="batchNo" column="batch_no" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, activity_id, points_type_id, points_amount, operation_type, status, 
+        grant_time, fail_reason, batch_no, create_time, update_time
+    </sql>
+
+    <!-- 插入积分记录 -->
+    <insert id="insert" parameterType="com.xiaou.activity.domain.entity.PointsRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO u_points_record (
+            user_id, activity_id, points_type_id, points_amount, operation_type, status,
+            grant_time, fail_reason, batch_no, create_time, update_time
+        ) VALUES (
+            #{userId,jdbcType=VARCHAR}, #{activityId,jdbcType=BIGINT},
+            #{pointsTypeId,jdbcType=BIGINT}, #{pointsAmount,jdbcType=INTEGER},
+            #{operationType,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
+            #{grantTime,jdbcType=TIMESTAMP}, #{failReason,jdbcType=VARCHAR},
+            #{batchNo,jdbcType=VARCHAR}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 根据ID查询积分记录 -->
+    <select id="selectById" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <!-- 根据用户ID和活动ID查询积分记录 -->
+    <select id="selectByUserAndActivity" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND activity_id = #{activityId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 分页查询用户积分记录 -->
+    <select id="selectByUserIdPage" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE user_id = #{userId,jdbcType=VARCHAR}
+        ORDER BY create_time DESC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询用户积分记录总数 -->
+    <select id="selectCountByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_points_record
+        WHERE user_id = #{userId,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据活动ID查询积分记录 -->
+    <select id="selectByActivityId" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE activity_id = #{activityId,jdbcType=BIGINT}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据批次号查询积分记录 -->
+    <select id="selectByBatchNo" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE batch_no = #{batchNo,jdbcType=VARCHAR}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新积分发放状态 -->
+    <update id="updateGrantStatus">
+        UPDATE u_points_record 
+        SET status = #{status,jdbcType=TINYINT},
+            grant_time = #{grantTime,jdbcType=TIMESTAMP},
+            fail_reason = #{failReason,jdbcType=VARCHAR},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 批量更新积分发放状态 -->
+    <update id="batchUpdateGrantStatus">
+        UPDATE u_points_record 
+        SET status = #{status,jdbcType=TINYINT},
+            grant_time = #{grantTime,jdbcType=TIMESTAMP},
+            update_time = NOW()
+        WHERE id IN 
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 查询待发放的积分记录 -->
+    <select id="selectPendingRecords" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE status = 0
+        ORDER BY create_time ASC
+        LIMIT 100
+    </select>
+
+        <!-- 查询可撤销的积分记录 -->
+    <select id="selectRevokableRecords" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE activity_id = #{activityId,jdbcType=BIGINT} 
+          AND status = 1
+        ORDER BY grant_time DESC
+    </select>
+
+    <!-- 根据积分类型ID查询相关记录 -->
+    <select id="selectByPointsTypeId" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        WHERE points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+        LIMIT 1
+    </select>
+
+    <!-- 分页查询积分记录 -->
+    <select id="selectPage" resultMap="PointsRecordResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_record
+        ORDER BY create_time DESC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 查询积分记录总数 -->
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM u_points_record
+    </select>
+
+</mapper> 

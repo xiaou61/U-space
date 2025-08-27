@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.activity.mapper.PointsTypeMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="PointsTypeResultMap" type="com.xiaou.activity.domain.entity.PointsType">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="typeName" column="type_name" jdbcType="VARCHAR"/>
+        <result property="typeCode" column="type_code" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="iconUrl" column="icon_url" jdbcType="VARCHAR"/>
+        <result property="isActive" column="is_active" jdbcType="TINYINT"/>
+        <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, type_name, type_code, description, icon_url, is_active, sort_order, create_time, update_time
+    </sql>
+
+    <!-- 插入积分类型 -->
+    <insert id="insert" parameterType="com.xiaou.activity.domain.entity.PointsType" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO u_points_type (
+            type_name, type_code, description, icon_url, is_active, sort_order, create_time, update_time
+        ) VALUES (
+            #{typeName,jdbcType=VARCHAR}, #{typeCode,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR},
+            #{iconUrl,jdbcType=VARCHAR}, #{isActive,jdbcType=TINYINT}, #{sortOrder,jdbcType=INTEGER},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 根据ID查询积分类型 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="PointsTypeResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_type
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <!-- 查询所有积分类型列表 -->
+    <select id="selectAll" resultMap="PointsTypeResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_type
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 查询启用的积分类型列表 -->
+    <select id="selectActiveList" resultMap="PointsTypeResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_type
+        WHERE is_active = 1
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 更新积分类型状态 -->
+    <update id="updateStatus">
+        UPDATE u_points_type 
+        SET is_active = #{status,jdbcType=TINYINT},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 删除积分类型 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM u_points_type
+        WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <!-- 查询所有启用的积分类型（用于积分余额初始化） -->
+    <select id="selectActivePointsTypes" resultMap="PointsTypeResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_points_type
+        WHERE is_active = 1
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+</mapper> 

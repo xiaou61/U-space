@@ -42,3 +42,6 @@ build/
 
 
 !**/src/main/resources/application-sec.yml
+/.cursor/rules/cursor.mdc
+/.U-space-user-front/node_modules/
+/U-space-user-front/node_modules/

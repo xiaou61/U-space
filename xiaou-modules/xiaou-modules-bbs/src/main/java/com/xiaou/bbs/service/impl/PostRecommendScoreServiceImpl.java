@@ -2,7 +2,7 @@ package com.xiaou.bbs.service.impl;
 
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.mapper.StudentMapper;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.PostRecommendScore;
 import com.xiaou.bbs.domain.resp.BbsPostResp;
@@ -23,7 +23,7 @@ public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScor
         implements PostRecommendScoreService {
 
     @Resource
-    private StudentMapper studentMapper;
+    private UserNameService userNameService;
 
     @Override
     public double calculateHeatScore(BbsPost post) {
@@ -84,8 +84,8 @@ public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScor
         for (BbsPostResp post : convert) {
             BbsStudentInfoResp bbsStudentInfoResp = new BbsStudentInfoResp();
             bbsStudentInfoResp.setId(post.getUserId());
-            bbsStudentInfoResp.setName(studentMapper.selectById(post.getUserId()).getName());
-            bbsStudentInfoResp.setAvatar(studentMapper.selectById(post.getUserId()).getAvatar());
+            bbsStudentInfoResp.setName(userNameService.getUserNameById(post.getUserId()));
+            bbsStudentInfoResp.setAvatar(userNameService.getUserAvatarById(post.getUserId()));
             post.setUserInfo(bbsStudentInfoResp);
         }
         return R.ok(convert);

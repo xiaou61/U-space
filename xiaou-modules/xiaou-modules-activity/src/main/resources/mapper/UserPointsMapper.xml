@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.activity.mapper.UserPointsMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="UserPointsResultMap" type="com.xiaou.activity.domain.entity.UserPoints">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="pointsTypeId" column="points_type_id" jdbcType="BIGINT"/>
+        <result property="currentBalance" column="current_balance" jdbcType="INTEGER"/>
+        <result property="totalEarned" column="total_earned" jdbcType="INTEGER"/>
+        <result property="totalSpent" column="total_spent" jdbcType="INTEGER"/>
+        <result property="frozenPoints" column="frozen_points" jdbcType="INTEGER"/>
+        <result property="lastUpdateTime" column="last_update_time" jdbcType="TIMESTAMP"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, points_type_id, current_balance, total_earned, total_spent, frozen_points, last_update_time, create_time
+    </sql>
+
+    <!-- 插入积分记录 -->
+    <insert id="insert" parameterType="com.xiaou.activity.domain.entity.UserPoints" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO u_user_points (
+            user_id, points_type_id, current_balance, total_earned, total_spent, frozen_points, last_update_time, create_time
+        ) VALUES (
+            #{userId,jdbcType=VARCHAR}, #{pointsTypeId,jdbcType=BIGINT},
+            #{currentBalance,jdbcType=INTEGER}, #{totalEarned,jdbcType=INTEGER},
+            #{totalSpent,jdbcType=INTEGER}, #{frozenPoints,jdbcType=INTEGER},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 根据用户ID和积分类型ID查询积分余额 -->
+    <select id="selectByUserAndPointsType" resultMap="UserPointsResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_user_points
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 查询用户所有积分余额 -->
+    <select id="selectByUserId" resultMap="UserPointsResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_user_points
+        WHERE user_id = #{userId,jdbcType=VARCHAR}
+        ORDER BY points_type_id ASC
+    </select>
+
+    <!-- 增加积分余额 -->
+    <update id="addPoints">
+        UPDATE u_user_points 
+        SET current_balance = current_balance + #{amount,jdbcType=INTEGER},
+            total_earned = total_earned + #{amount,jdbcType=INTEGER},
+            last_update_time = NOW()
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+    </update>
+
+    <!-- 扣减积分余额 -->
+    <update id="deductPoints">
+        UPDATE u_user_points 
+        SET current_balance = current_balance - #{amount,jdbcType=INTEGER},
+            total_spent = total_spent + #{amount,jdbcType=INTEGER},
+            last_update_time = NOW()
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+          AND current_balance >= #{amount,jdbcType=INTEGER}
+    </update>
+
+    <!-- 增加冻结积分 -->
+    <update id="addFrozenPoints">
+        UPDATE u_user_points 
+        SET frozen_points = frozen_points + #{amount,jdbcType=INTEGER},
+            last_update_time = NOW()
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+    </update>
+
+    <!-- 减少冻结积分（解冻） -->
+    <update id="reduceFrozenPoints">
+        UPDATE u_user_points 
+        SET frozen_points = frozen_points - #{amount,jdbcType=INTEGER},
+            last_update_time = NOW()
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+          AND frozen_points >= #{amount,jdbcType=INTEGER}
+    </update>
+
+    <!-- 冻结积分转为正式积分 -->
+    <update id="convertFrozenToBalance">
+        UPDATE u_user_points 
+        SET frozen_points = frozen_points - #{amount,jdbcType=INTEGER},
+            current_balance = current_balance + #{amount,jdbcType=INTEGER},
+            total_earned = total_earned + #{amount,jdbcType=INTEGER},
+            last_update_time = NOW()
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+          AND frozen_points >= #{amount,jdbcType=INTEGER}
+    </update>
+
+    <!-- 获取用户指定类型积分余额 -->
+    <select id="getUserPointsBalance" resultType="java.lang.Integer">
+        SELECT IFNULL(current_balance, 0)
+        FROM u_user_points
+        WHERE user_id = #{userId,jdbcType=VARCHAR} 
+          AND points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 根据积分类型ID查询用户积分记录 -->
+    <select id="selectByPointsTypeId" resultMap="UserPointsResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM u_user_points
+        WHERE points_type_id = #{pointsTypeId,jdbcType=BIGINT}
+        LIMIT 1
+    </select>
+
+</mapper> 
