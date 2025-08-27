@@ -1,6 +1,5 @@
 package com.xiaou.job.starter;
 
-import com.xiaou.job.starter.XxlJobProperties;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

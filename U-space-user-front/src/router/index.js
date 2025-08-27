@@ -15,6 +15,8 @@ const AIAssistant = () => import('../views/AIAssistant.vue')
 const Forum = () => import('../views/Forum.vue')
 const PostDetail = () => import('../views/PostDetail.vue')
 const WordLearning = () => import('../views/WordLearning.vue')
+const Activities = () => import('../views/Activities.vue')
+const VoteActivities = () => import('../views/VoteActivities.vue')
 
 const routes = [
   {
@@ -120,6 +122,18 @@ const routes = [
     component: PostDetail,
     meta: { requiresAuth: true },
     props:true,
+  },
+  {
+    path: '/activities',
+    name: 'Activities',
+    component: Activities,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/vote-activities',
+    name: 'VoteActivities',
+    component: VoteActivities,
+    meta: { requiresAuth: true },
   },
 ]
 

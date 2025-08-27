@@ -48,6 +48,10 @@
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-sensitive</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-satoken</artifactId>
+        </dependency>
     </dependencies>
 
 

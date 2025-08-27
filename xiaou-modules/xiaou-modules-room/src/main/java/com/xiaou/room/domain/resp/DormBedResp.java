@@ -8,7 +8,6 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@AutoMapper(target = DormBed.class)
 public class DormBedResp {
     /**
      * 床位编号，如"1号床"

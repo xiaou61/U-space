@@ -35,7 +35,7 @@ public class DormBuildingServiceImpl extends ServiceImpl<DormBuildingMapper, Dor
     private DormBedService dormBedService;
     @Override
     public R<String> add(DormBuildingReq req) {
-        DormBuilding building = MapstructUtils.convert(req, DormBuilding.class);
+        DormBuilding building = BeanUtil.copyProperties(req, DormBuilding.class);
         baseMapper.insert(building);
         return R.ok("添加成功");
     }

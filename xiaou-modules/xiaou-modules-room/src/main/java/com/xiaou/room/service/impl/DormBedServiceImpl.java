@@ -1,14 +1,13 @@
 package com.xiaou.room.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.room.domain.entity.DormBed;
 import com.xiaou.room.domain.req.DormBedReq;
 import com.xiaou.room.domain.resp.DormBedResp;
-import com.xiaou.room.domain.resp.DormBuildingResp;
-import com.xiaou.room.domain.resp.DormRoomResp;
 import com.xiaou.room.mapper.DormBedMapper;
 import com.xiaou.room.service.DormBedService;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ public class DormBedServiceImpl extends ServiceImpl<DormBedMapper, DormBed>
 
     @Override
     public R<String> add(DormBedReq req) {
-        DormBed dormBed = MapstructUtils.convert(req, DormBed.class);
+        DormBed dormBed = BeanUtil.copyProperties(req, DormBed.class);
         baseMapper.insert(dormBed);
         return R.ok("添加成功");
     }
@@ -39,15 +38,15 @@ public class DormBedServiceImpl extends ServiceImpl<DormBedMapper, DormBed>
     @Override
     public R<List<DormBedResp>> listBed(String roomId) {
         List<DormBed> dormBeds = baseMapper.listBed(roomId);
-        List<DormBedResp> convert = MapstructUtils.convert(dormBeds, DormBedResp.class);
-        return R.ok(convert);
+        List<DormBedResp> dormBedResps = BeanUtil.copyToList(dormBeds, DormBedResp.class);
+        return R.ok(dormBedResps);
     }
 
     @Override
     public List<DormBedResp> listDormBedByRoomIds(List<String> collect) {
         List<DormBed> dormBeds = baseMapper.selectBedByRoomIds(collect);
-        List<DormBedResp> convert = MapstructUtils.convert(dormBeds, DormBedResp.class);
-        return convert;
+        List<DormBedResp> dormBedResps = BeanUtil.copyToList(dormBeds, DormBedResp.class);
+        return dormBedResps;
     }
 }
 

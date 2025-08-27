@@ -1,6 +1,7 @@
 import { 
   House, User, Notebook, VideoCamera, 
-  Management, Files, Monitor, ChatDotRound, Avatar, UserFilled 
+  Management, Files, Monitor, ChatDotRound, Avatar, UserFilled,
+  Trophy
 } from '@element-plus/icons-vue'
 
 // 菜单权限配置
@@ -215,6 +216,20 @@ export const menuConfig = [
     icon: ChatDotRound,
     path: '/bbs-sensitive',
     permission: 'bbs_sensitive_management'
+  },
+  {
+    key: 'activity',
+    title: '活动相关',
+    icon: Trophy,
+    permission: 'activity_management',
+    children: [
+      {
+        key: 'vote_activity',
+        title: '投票活动',
+        path: '/activity/vote',
+        permission: 'vote_activity_management'
+      }
+    ]
   }
 ]
 
@@ -255,7 +270,8 @@ export function getDefaultPermissionsByRole(roles) {
       'online_users', 'announcement_management', 'school_info', 
       'bbs_admin_management', 'role_permission_management', 'admin_user_management', 'menu_management',
       'dorm_management', 'dorm_building', 'dorm_room', 'dorm_bed',
-      'course_management', 'ai_management', 'word_management', 'video_management'
+      'course_management', 'ai_management', 'word_management', 'video_management',
+      'activity_management', 'vote_activity_management'
     ],
     'teacher': [
       'group_management', 'signin_management', 'homework_management', 'material_management'
