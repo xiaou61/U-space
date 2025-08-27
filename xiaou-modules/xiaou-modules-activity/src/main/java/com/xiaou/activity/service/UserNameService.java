@@ -11,4 +11,11 @@ public interface UserNameService {
      * @return 用户名称，如果找不到则返回默认格式
      */
     String getUserNameById(String userId);
+
+    /**
+     * 根据用户ID获取用户头像
+     * @param userId 用户ID
+     * @return 用户头像URL
+     */
+    String getUserAvatarById(String userId);
 } 

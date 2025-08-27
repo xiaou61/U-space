@@ -16,6 +16,14 @@ public interface StudentMapper extends BaseMapper<StudentEntity> {
      */
     @Select("SELECT name FROM u_student WHERE id = #{studentId} AND status = 1")
     String selectNameById(String studentId);
+
+    /**
+     * 根据学生ID查询学生头像
+     * @param studentId 学生ID
+     * @return 学生头像URL
+     */
+    @Select("SELECT avatar FROM u_student WHERE id = #{studentId} AND status = 1")
+    String selectAvatarById(String studentId);
 }
 
 

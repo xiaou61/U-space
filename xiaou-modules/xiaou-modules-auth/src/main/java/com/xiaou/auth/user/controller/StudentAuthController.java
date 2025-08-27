@@ -124,9 +124,22 @@ public class StudentAuthController {
     public R<String> getStudentNameById(@PathVariable String studentId) {
         String studentName = studentService.getStudentNameById(studentId);
         if (studentName != null) {
-            return R.ok(studentName);
+            return R.ok("OK",studentName);
         } else {
             return R.fail("学生不存在或已被禁用");
+        }
+    }
+
+    /**
+     * 根据学生ID获取学生头像（内部API，供其他模块调用）
+     */
+    @GetMapping("/internal/avatar/{studentId}")
+    public R<String> getStudentAvatarById(@PathVariable String studentId) {
+        String studentAvatar = studentService.getStudentAvatarById(studentId);
+        if (studentAvatar != null) {
+            return R.ok("OK",studentAvatar);
+        } else {
+            return R.fail("学生不存在或头像未设置");
         }
     }
 }

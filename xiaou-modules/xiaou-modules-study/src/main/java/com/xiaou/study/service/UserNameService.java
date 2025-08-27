@@ -16,6 +16,13 @@ public interface UserNameService {
     String getUserNameById(String userId);
 
     /**
+     * 根据用户ID获取用户头像
+     * @param userId 用户ID
+     * @return 用户头像URL
+     */
+    String getUserAvatarById(String userId);
+
+    /**
      * 批量根据用户ID获取用户名称映射
      * @param userIds 用户ID列表
      * @return 用户ID到姓名的映射

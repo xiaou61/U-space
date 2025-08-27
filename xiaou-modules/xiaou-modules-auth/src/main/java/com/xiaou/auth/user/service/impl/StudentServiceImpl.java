@@ -196,7 +196,19 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
         try {
             return baseMapper.selectNameById(studentId);
         } catch (Exception e) {
-            log.error("查询学生姓名失败，studentId: {}");
+            return null;
+        }
+    }
+
+    @Override
+    public String getStudentAvatarById(String studentId) {
+        if (studentId == null || studentId.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return baseMapper.selectAvatarById(studentId);
+        } catch (Exception e) {
             return null;
         }
     }

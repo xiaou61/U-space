@@ -2,7 +2,6 @@ package com.xiaou.study.group.student.service.impl;
 
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.common.domain.R;
 import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.study.group.student.domain.entity.VideoInfo;
 import com.xiaou.study.group.student.domain.req.VideoInfoReq;
@@ -13,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
+import com.xiaou.common.domain.R;
 @Service
 public class VideoInfoServiceImpl extends ServiceImpl<VideoInfoMapper, VideoInfo>
     implements VideoInfoService {

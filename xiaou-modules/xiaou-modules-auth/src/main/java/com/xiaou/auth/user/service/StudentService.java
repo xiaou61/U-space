@@ -47,4 +47,11 @@ public interface StudentService extends IService<StudentEntity> {
      * @return 学生姓名，如果找不到则返回null
      */
     String getStudentNameById(String studentId);
+
+    /**
+     * 根据学生ID获取学生头像
+     * @param studentId 学生ID
+     * @return 学生头像URL，如果找不到则返回null
+     */
+    String getStudentAvatarById(String studentId);
 }

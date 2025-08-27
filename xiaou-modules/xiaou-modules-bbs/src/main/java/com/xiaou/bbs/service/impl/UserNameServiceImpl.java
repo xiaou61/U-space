@@ -48,7 +48,7 @@ public class UserNameServiceImpl implements UserNameService {
             }
             
             // 2. 缓存未命中，调用auth模块API查询
-            String apiUrl = authServiceUrl + "/user/student/internal/name/" + userId;
+            String apiUrl = authServiceUrl + "/student/auth/internal/name/" + userId;
             @SuppressWarnings("unchecked")
             R<String> response = restTemplate.getForObject(apiUrl, R.class);
             String resultName;
@@ -95,18 +95,30 @@ public class UserNameServiceImpl implements UserNameService {
                 return cachedAvatar;
             }
             
-            // 2. 这里简化处理，实际可以调用具体的头像API
-            // 目前返回默认头像或空字符串
-            String defaultAvatar = "";
+            // 2. 缓存未命中，调用auth模块API查询
+            String apiUrl = authServiceUrl + "/student/auth/internal/avatar/" + userId;
+            @SuppressWarnings("unchecked")
+            R<String> response = restTemplate.getForObject(apiUrl, R.class);
+            String resultAvatar;
+            
+            if (response != null && response.getCode() == 200 && response.getData() != null) {
+                resultAvatar = response.getData().toString();
+                log.debug("从auth模块API查询到用户 {} 的头像: {}", userId, resultAvatar);
+            } else {
+                // 如果查询不到头像，返回空字符串
+                resultAvatar = "";
+                log.debug("未从auth模块找到用户 {} 的头像信息", userId);
+            }
             
             // 3. 更新缓存
             try {
-                RedisUtils.setCacheObject(cacheKey, defaultAvatar, CACHE_DURATION);
+                RedisUtils.setCacheObject(cacheKey, resultAvatar, CACHE_DURATION);
+                log.debug("已缓存用户 {} 的头像: {}", userId, resultAvatar);
             } catch (Exception cacheError) {
                 log.warn("缓存用户 {} 头像失败", userId, cacheError);
             }
             
-            return defaultAvatar;
+            return resultAvatar;
             
         } catch (Exception e) {
             log.warn("查询用户 {} 头像时发生异常", userId, e);

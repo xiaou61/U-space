@@ -40,3 +40,8 @@ secure:
   aes-key: xiaou-secure-123       # 16/24/32 位
   sign-secret: xiaou-sign-secret    # 用于 HMAC-SHA256
   allowed-timestamp-offset: 300     # 允许客户端与服务器时间差，单位秒
+
+logging:
+  level:
+    root: info      # 全局日志级别，默认是 info
+    com.xiaou: debug  # 你自己项目的包名，设置为 debug 就能看到 debug 日志

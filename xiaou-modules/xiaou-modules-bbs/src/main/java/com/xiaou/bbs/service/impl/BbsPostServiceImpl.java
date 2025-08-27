@@ -98,17 +98,16 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
 
         List<BbsPostResp> convert = MapstructUtils.convert(bbsPostIPage.getRecords(), BbsPostResp.class);
 
-        //todo 这里会优化 即当用户打开帖子的时候，会缓存自己的信息到Redis当中，这里可以先去看Redis里面有没有。如果没有的话那么在入库去查找
+
 
         // ✅ 1. 批量提取 userId
-        Set<String> userIds = convert.stream()
+        List<String> userIds = convert.stream()
                 .map(BbsPostResp::getUserId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
+                .collect(Collectors.toList());
         // ✅ 2. 批量查询 student 信息
         if (!userIds.isEmpty()) {
-            Map<String, UserNameService.UserInfo> userInfoMap = userNameService.getUserInfosByIds((List<String>) userIds);
+            Map<String, UserNameService.UserInfo> userInfoMap = userNameService.getUserInfosByIds(userIds);
+
             
             // ✅ 3. 统一填充 userInfo
             for (BbsPostResp post : convert) {

@@ -22,6 +22,6 @@ spring:
 # 模块间服务调用配置
 auth:
   service:
-    url: http://localhost:8080  # auth模块的服务地址，开发环境
+    url: http://localhost:8080/uapi  # auth模块的服务地址，开发环境
 
 

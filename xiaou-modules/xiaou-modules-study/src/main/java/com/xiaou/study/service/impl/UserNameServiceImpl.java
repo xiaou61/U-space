@@ -22,6 +22,7 @@ import java.util.Map;
 public class UserNameServiceImpl implements UserNameService {
 
     private static final String USER_NAME_CACHE_PREFIX = "user:name:";
+    private static final String USER_AVATAR_CACHE_PREFIX = "user:avatar:";
     private static final Duration CACHE_DURATION = Duration.ofMinutes(30); // 缓存30分钟
 
     @Autowired
@@ -47,7 +48,7 @@ public class UserNameServiceImpl implements UserNameService {
             }
             
             // 2. 缓存未命中，调用auth模块API查询
-            String apiUrl = authServiceUrl + "/user/student/internal/name/" + userId;
+            String apiUrl = authServiceUrl + "/student/auth/internal/name/" + userId;
             @SuppressWarnings("unchecked")
             R<String> response = restTemplate.getForObject(apiUrl, R.class);
             String resultName;
@@ -75,6 +76,53 @@ public class UserNameServiceImpl implements UserNameService {
             // API调用出错时，返回默认格式，避免影响主业务流程
             log.warn("调用auth模块API查询用户 {} 姓名时发生异常", userId, e);
             return "用户" + userId.substring(0, Math.min(8, userId.length()));
+        }
+    }
+
+    @Override
+    public String getUserAvatarById(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return "";
+        }
+        
+        String cacheKey = USER_AVATAR_CACHE_PREFIX + userId;
+        
+        try {
+            // 1. 先从缓存获取
+            String cachedAvatar = RedisUtils.getCacheObject(cacheKey);
+            if (cachedAvatar != null) {
+                log.debug("从缓存获取用户 {} 的头像: {}", userId, cachedAvatar);
+                return cachedAvatar;
+            }
+            
+            // 2. 缓存未命中，调用auth模块API查询
+            String apiUrl = authServiceUrl + "/student/auth/internal/avatar/" + userId;
+            @SuppressWarnings("unchecked")
+            R<String> response = restTemplate.getForObject(apiUrl, R.class);
+            String resultAvatar;
+            
+            if (response != null && response.getCode() == 200 && response.getData() != null) {
+                resultAvatar = response.getData().toString();
+                log.debug("从auth模块API查询到用户 {} 的头像: {}", userId, resultAvatar);
+            } else {
+                // 如果查询不到头像，返回空字符串
+                resultAvatar = "";
+                log.debug("未从auth模块找到用户 {} 的头像信息", userId);
+            }
+            
+            // 3. 更新缓存
+            try {
+                RedisUtils.setCacheObject(cacheKey, resultAvatar, CACHE_DURATION);
+                log.debug("已缓存用户 {} 的头像: {}", userId, resultAvatar);
+            } catch (Exception cacheError) {
+                log.warn("缓存用户 {} 头像失败", userId, cacheError);
+            }
+            
+            return resultAvatar;
+            
+        } catch (Exception e) {
+            log.warn("调用auth模块API查询用户 {} 头像时发生异常", userId, e);
+            return "";
         }
     }
 
