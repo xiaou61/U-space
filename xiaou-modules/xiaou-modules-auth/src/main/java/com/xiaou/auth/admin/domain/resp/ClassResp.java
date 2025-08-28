@@ -12,7 +12,6 @@ import java.util.Date;
  * @TableName u_class
  */
 @Data
-@AutoMapper(target = ClassEntity.class)
 public class ClassResp {
 
     private String id;

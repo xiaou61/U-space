@@ -1,22 +1,14 @@
 package com.xiaou.bbs.domain.resp;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.xiaou.bbs.domain.entity.BbsUserNotify;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
+
+import java.util.Date;
 
 /**
  * 用户BBS论坛通知表
  * @TableName u_bbs_user_notify
  */
 @Data
-@AutoMapper(target = BbsUserNotify.class)
 public class BbsUserNotifyResp {
 
     /**

@@ -10,7 +10,6 @@ import lombok.Data;
  * 班级 Excel 导入导出模型
  */
 @Data
-@AutoMapper(target = ClassEntity.class)
 public class ClassEntityExcel {
 
     @ExcelProperty("班级名称")

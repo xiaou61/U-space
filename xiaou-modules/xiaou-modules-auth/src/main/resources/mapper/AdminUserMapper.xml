@@ -3,7 +3,7 @@
 <mapper namespace="com.xiaou.auth.admin.mapper.AdminUserMapper">
 
     <!-- 查询所有管理员用户及其角色信息 -->
-    <select id="selectUsersWithRoles" resultType="java.util.Map">
+    <select id="selectUsersWithRoles" resultType="com.xiaou.auth.admin.domain.resp.AdminUserWithRolesResp">
         SELECT 
             au.id AS id,
             au.username AS username,

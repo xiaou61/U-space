@@ -1,11 +1,8 @@
 package com.xiaou.bbs.mq;
 
-import com.xiaou.bbs.domain.entity.BbsUserNotify;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = BbsUserNotify.class)
 public class BbsUserNotifyMq {
 
     /**

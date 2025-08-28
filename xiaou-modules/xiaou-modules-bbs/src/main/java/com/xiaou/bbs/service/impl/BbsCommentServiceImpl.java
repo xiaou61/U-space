@@ -1,12 +1,11 @@
 package com.xiaou.bbs.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.dto.CommentReplyCount;
 import com.xiaou.bbs.domain.entity.BbsComment;
 import com.xiaou.bbs.domain.entity.BbsCommentLike;
@@ -17,10 +16,10 @@ import com.xiaou.bbs.mapper.BbsCommentMapper;
 import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.service.BbsCommentService;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import com.xiaou.service.SensitiveFilterResult;
 import com.xiaou.service.SensitiveWordManager;
@@ -60,7 +59,7 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
     public R<String> addComment(BbsCommentReq req) {
         //添加一个评论
         //todo 发送消息通知
-        BbsComment convert = MapstructUtils.convert(req, BbsComment.class);
+        BbsComment convert = BeanUtil.copyProperties(req, BbsComment.class);
         convert.setUserId(loginHelper.getCurrentAppUserId());
         //判断是否有敏感词
         SensitiveFilterResult filter = sensitiveWordManager.filter(req.getContent());
@@ -133,7 +132,7 @@ public class BbsCommentServiceImpl extends ServiceImpl<BbsCommentMapper, BbsComm
 
         // 构造返回 DTO
         List<BbsCommentResp> respList = commentList.stream().map(comment -> {
-            BbsCommentResp resp = MapstructUtils.convert(comment, BbsCommentResp.class);
+            BbsCommentResp resp = BeanUtil.copyProperties(comment, BbsCommentResp.class);
 
             UserNameService.UserInfo userInfo = userMap.get(comment.getUserId());
             if (userInfo != null) {

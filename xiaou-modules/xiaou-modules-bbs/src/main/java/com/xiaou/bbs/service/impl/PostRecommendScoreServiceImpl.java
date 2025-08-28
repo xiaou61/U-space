@@ -1,6 +1,7 @@
 package com.xiaou.bbs.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsPost;
@@ -78,7 +79,7 @@ public class PostRecommendScoreServiceImpl extends ServiceImpl<PostRecommendScor
     @Override
     public R<List<BbsPostResp>> recommendPost() {
         List<BbsPost> postResps = RedisUtils.getCacheList("post:detail:");
-        List<BbsPostResp> convert = MapstructUtils.convert(postResps, BbsPostResp.class);
+        List<BbsPostResp> convert = BeanUtil.copyToList(postResps, BbsPostResp.class);
         //填充BbsStudentInfoResp
         //todo 这里需求不大所以这样查询也可以
         for (BbsPostResp post : convert) {

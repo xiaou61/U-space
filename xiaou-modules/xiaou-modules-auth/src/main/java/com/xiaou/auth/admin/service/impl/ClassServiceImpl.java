@@ -1,6 +1,7 @@
 package com.xiaou.auth.admin.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -14,8 +15,6 @@ import com.xiaou.auth.admin.service.ClassService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
-import com.xiaou.common.utils.QueryWrapperUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +27,7 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
 
     @Override
     public R<ClassResp> add(ClassReq req) {
-        ClassEntity clazz = MapstructUtils.convert(req, ClassEntity.class);
+        ClassEntity clazz = BeanUtil.copyProperties(req, ClassEntity.class);
         baseMapper.insert(clazz);
         return R.ok("添加成功");
     }
@@ -47,9 +46,9 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
         if (clazz == null) {
             return R.fail("班级不存在");
         }
-        ClassEntity NewClassEntity = MapstructUtils.convert(req, clazz);
+        ClassEntity NewClassEntity = BeanUtil.copyProperties(req, ClassEntity.class);
         baseMapper.updateById(NewClassEntity);
-        return R.ok(MapstructUtils.convert(NewClassEntity, ClassResp.class));
+        return R.ok(BeanUtil.copyProperties(NewClassEntity, ClassResp.class));
     }
 
     @Override
@@ -61,12 +60,12 @@ public class ClassServiceImpl extends ServiceImpl<ClassMapper, ClassEntity>
         return R.ok(PageRespDto.of(classEntityIPage.getCurrent(),
                 classEntityIPage.getSize(),
                 classEntityIPage.getTotal(),
-                MapstructUtils.convert(classEntityIPage.getRecords(), ClassResp.class)));
+                BeanUtil.copyToList(classEntityIPage.getRecords(), ClassResp.class)));
     }
 
     @Override
     public void saveBatchFromExcel(List<ClassEntityExcel> list) {
-        List<ClassEntity> entity = MapstructUtils.convert(list, ClassEntity.class);
+        List<ClassEntity> entity = BeanUtil.copyToList(list, ClassEntity.class);
         this.saveBatch(entity);
     }
 

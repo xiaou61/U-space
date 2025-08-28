@@ -2,11 +2,11 @@ package com.xiaou.auth.admin.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.xiaou.auth.admin.domain.entity.AdminUser;
+import com.xiaou.auth.admin.domain.resp.AdminUserWithRolesResp;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
-import java.util.Map;
 
 @Mapper
 public interface AdminUserMapper extends BaseMapper<AdminUser> {
@@ -16,7 +16,7 @@ public interface AdminUserMapper extends BaseMapper<AdminUser> {
      * 
      * @return 用户角色信息列表
      */
-    List<Map<String, Object>> selectUsersWithRoles();
+    List<AdminUserWithRolesResp> selectUsersWithRoles();
 
     /**
      * 根据用户ID查询用户角色

@@ -5,7 +5,6 @@ import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = BbsCommentReply.class)
 public class BbsCommentReplyReq {
     /**
      * 所属评论ID

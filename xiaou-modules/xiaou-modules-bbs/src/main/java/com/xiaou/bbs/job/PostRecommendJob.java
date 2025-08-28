@@ -5,7 +5,6 @@ import com.xiaou.bbs.domain.entity.PostRecommendScore;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.service.PostRecommendScoreService;
 import com.xiaou.redis.utils.RedisUtils;
-import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,7 @@ public class PostRecommendJob {
     @Resource
     private PostRecommendScoreService postRecommendScoreService;
 
-    @XxlJob("PostRecommendJob")
+//    @XxlJob("PostRecommendJob")
     public void execute() {
         //提取帖子 近七天的帖子
         List<BbsPost> posts = postMapper.listPostsInLastSevenDays();
@@ -49,7 +48,7 @@ public class PostRecommendJob {
     }
 
     //获取帖子的详细信息根据id 保存到redis
-    @XxlJob("PostDetailJob")
+//    @XxlJob("PostDetailJob")
     public void getPostDetail() {
         List<String> list = RedisUtils.zTop("post:recommend:final_score", 10);
         //根据id查询帖子详细并且放入另外一个缓存

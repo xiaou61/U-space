@@ -1,10 +1,11 @@
 package com.xiaou.auth.admin.controller;
 
-import com.xiaou.auth.admin.domain.entity.SysRole;
 import com.xiaou.auth.admin.domain.entity.SysPermission;
-import com.xiaou.auth.admin.service.SysRoleService;
-import com.xiaou.auth.admin.service.SysPermissionService;
+import com.xiaou.auth.admin.domain.entity.SysRole;
+import com.xiaou.auth.admin.domain.resp.AdminUserWithRolesResp;
 import com.xiaou.auth.admin.mapper.AdminUserMapper;
+import com.xiaou.auth.admin.service.SysPermissionService;
+import com.xiaou.auth.admin.service.SysRoleService;
 import com.xiaou.common.domain.R;
 import com.xiaou.log.annotation.Log;
 import com.xiaou.log.enums.BusinessType;
@@ -15,11 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
-import com.xiaou.auth.admin.mapper.AdminUserMapper;
 
 /**
  * 角色权限管理Controller
@@ -147,19 +145,23 @@ public class RolePermissionController {
      * 获取用户列表及其角色信息
      */
     @GetMapping("/user/with-roles")
-    public R<List<Map<String, Object>>> getUsersWithRoles() {
+    public R<List<AdminUserWithRolesResp>> getUsersWithRoles() {
         try {
             // 从数据库查询管理员用户及其角色信息
-            List<Map<String, Object>> userList = adminUserMapper.selectUsersWithRoles();
+            List<AdminUserWithRolesResp> userList = adminUserMapper.selectUsersWithRoles();
 
             // 处理角色字符串，转换为List格式
-            for (Map<String, Object> user : userList) {
-                String rolesStr = (String) user.get("roles");
-                if (rolesStr != null && !rolesStr.isEmpty()) {
-                    String[] rolesArray = rolesStr.split(",");
-                    user.put("roles", Arrays.asList(rolesArray));
-                } else {
-                    user.put("roles", new ArrayList<>());
+            for (AdminUserWithRolesResp user : userList) {
+                if (user.getRoles() != null && user.getRoles().size() == 1) {
+                    String rolesStr = user.getRoles().get(0);
+                    if (rolesStr != null && !rolesStr.isEmpty()) {
+                        String[] rolesArray = rolesStr.split(",");
+                        user.setRoles(Arrays.asList(rolesArray));
+                    } else {
+                        user.setRoles(new ArrayList<>());
+                    }
+                } else if (user.getRoles() == null) {
+                    user.setRoles(new ArrayList<>());
                 }
             }
 

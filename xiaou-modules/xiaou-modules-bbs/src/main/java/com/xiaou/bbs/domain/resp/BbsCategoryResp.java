@@ -1,11 +1,8 @@
 package com.xiaou.bbs.domain.resp;
 
-import com.xiaou.bbs.domain.entity.BbsCategory;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = BbsCategory.class)
 public class BbsCategoryResp {
 
     private String id;

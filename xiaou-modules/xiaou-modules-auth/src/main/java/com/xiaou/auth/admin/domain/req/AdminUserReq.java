@@ -1,10 +1,5 @@
 package com.xiaou.auth.admin.domain.req;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.xiaou.auth.admin.domain.entity.AdminUser;
-import io.github.linpeilie.annotations.AutoMapper;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -14,7 +9,6 @@ import lombok.Data;
  */
 
 @Data
-@AutoMapper(target = AdminUser.class)
 public class AdminUserReq {
 
     /**

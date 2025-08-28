@@ -25,7 +25,6 @@ import com.xiaou.common.domain.R;
 import com.xiaou.common.exception.ServiceException;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.common.utils.StringUtils;
 import com.xiaou.mq.utils.RabbitMQUtils;
@@ -51,17 +50,17 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
     private LoginHelper loginHelper;
     @Resource
     private ClassMapper classmapper;
-    @Resource
+    @Autowired
     private FilesUtils filesUtils;
 
     @Override
     public R<String> register(StudentRegisterReq req) {
-        StudentEntity studentEntity = MapstructUtils.convert(req, StudentEntity.class);
+        StudentEntity studentEntity = BeanUtil.copyProperties(req, StudentEntity.class);
         studentEntity.setPassword(PasswordUtil.getEncryptPassword(studentEntity.getPassword()));
         baseMapper.insert(studentEntity);
         //发送MQ消息给管理员 这个为当前用户所在班级的导员
-        StudentMsgMQ studentMsgMQ = new StudentMsgMQ();
-        StudentMsgMQ mq = MapstructUtils.convert(studentEntity, studentMsgMQ);
+
+        StudentMsgMQ mq = BeanUtil.copyProperties(studentEntity, StudentMsgMQ.class);
         rabbitMQUtils.sendEmailMessage(mq);
         return R.ok("注册成功");
 
@@ -106,7 +105,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
     public R<List<StudentLoginClassResp>> listAll() {
         //查询所有的班级
         List<ClassEntity> classList = classmapper.selectList(null);
-        return R.ok(MapstructUtils.convert(classList, StudentLoginClassResp.class));
+        return R.ok(BeanUtil.copyToList(classList, StudentLoginClassResp.class));
     }
 
     @Override
@@ -114,7 +113,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
         IPage<StudentEntity> page = new Page<>(req.getPageNum(), req.getPageSize());
         QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
         IPage<StudentEntity> studentIPage = baseMapper.selectPage(page, queryWrapper);
-        List<StudentInfoPageResp> convert = MapstructUtils.convert(studentIPage.getRecords(), StudentInfoPageResp.class);
+        List<StudentInfoPageResp> convert = BeanUtil.copyToList(studentIPage.getRecords(), StudentInfoPageResp.class);
         convert.forEach(studentInfoPageResp -> studentInfoPageResp.setName(classmapper.selectById(studentInfoPageResp.getClassId()).getClassName()));
         return R.ok(PageRespDto.of(studentIPage.getCurrent(),
                 studentIPage.getSize(),
@@ -129,7 +128,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, StudentEntity
         QueryWrapper<StudentEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(UserConstant.STATUS, GlobalConstants.ZERO);
         //查询全部并且返回
-        List<StudentInfoPageResp> convert = MapstructUtils.convert(baseMapper.selectList(queryWrapper), StudentInfoPageResp.class);
+        List<StudentInfoPageResp> convert = BeanUtil.copyToList(baseMapper.selectList(queryWrapper), StudentInfoPageResp.class);
         //查询name
         convert.forEach(studentInfoPageResp -> studentInfoPageResp.setName(classmapper.selectById(studentInfoPageResp.getClassId()).getClassName()));
         return R.ok(convert);

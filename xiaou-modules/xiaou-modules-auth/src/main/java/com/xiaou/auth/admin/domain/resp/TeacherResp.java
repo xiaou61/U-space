@@ -15,7 +15,6 @@ import java.util.Date;
  */
 
 @Data
-@AutoMapper(target = Teacher.class)
 public class TeacherResp {
 
     private String id;

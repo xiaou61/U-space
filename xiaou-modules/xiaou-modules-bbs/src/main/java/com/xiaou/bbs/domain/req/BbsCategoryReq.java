@@ -16,7 +16,6 @@ import java.util.Date;
  * @TableName u_bbs_category
  */
 @Data
-@AutoMapper(target = BbsCategory.class)
 public class BbsCategoryReq {
 
     /**

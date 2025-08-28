@@ -1,12 +1,11 @@
 package com.xiaou.bbs.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.constants.NotifyConstants;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsPostLike;
@@ -17,10 +16,10 @@ import com.xiaou.bbs.mapper.BbsPostLikeMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.mq.BbsUserNotifyMq;
 import com.xiaou.bbs.service.BbsPostService;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.QueryWrapperUtil;
 import com.xiaou.mq.utils.RabbitMQUtils;
 import com.xiaou.satoken.utils.LoginHelper;
@@ -33,8 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -55,7 +52,7 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
 
     @Override
     public R<String> add(BbsPostReq req) {
-        BbsPost post = MapstructUtils.convert(req, BbsPost.class);
+        BbsPost post = BeanUtil.copyProperties(req, BbsPost.class);
         post.setUserId(loginHelper.getCurrentAppUserId());
         baseMapper.insert(post);
         //todo 制作关键词过滤系统 如果有敏感词则不允许发布
@@ -96,7 +93,7 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
 
         IPage<BbsPost> bbsPostIPage = baseMapper.selectPage(page, queryWrapper);
 
-        List<BbsPostResp> convert = MapstructUtils.convert(bbsPostIPage.getRecords(), BbsPostResp.class);
+        List<BbsPostResp> convert = BeanUtil.copyToList(bbsPostIPage.getRecords(), BbsPostResp.class);
 
 
 
@@ -137,7 +134,7 @@ public class BbsPostServiceImpl extends ServiceImpl<BbsPostMapper, BbsPost>
         QueryWrapperUtil.applySorting(queryWrapper, reqDto, List.of("created_at"));
         queryWrapper.eq("user_id", loginHelper.getCurrentAppUserId());
         IPage<BbsPost> bbsPostIPage = baseMapper.selectPage(page, queryWrapper);
-        List<BbsPostResp> convert = MapstructUtils.convert(bbsPostIPage.getRecords(), BbsPostResp.class);
+        List<BbsPostResp> convert = BeanUtil.copyToList(bbsPostIPage.getRecords(), BbsPostResp.class);
         for (BbsPostResp post : convert) {
             BbsStudentInfoResp userInfo = new BbsStudentInfoResp();
             userInfo.setId(post.getUserId());

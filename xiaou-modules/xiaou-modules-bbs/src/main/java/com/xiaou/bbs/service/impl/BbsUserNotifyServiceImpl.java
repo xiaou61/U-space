@@ -1,32 +1,27 @@
 package com.xiaou.bbs.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsPost;
 import com.xiaou.bbs.domain.entity.BbsUserNotify;
 import com.xiaou.bbs.domain.resp.BbsUserNotifyResp;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.mapper.BbsUserNotifyMapper;
 import com.xiaou.bbs.service.BbsUserNotifyService;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,7 +46,7 @@ public class BbsUserNotifyServiceImpl extends ServiceImpl<BbsUserNotifyMapper, B
         queryWrapper.eq("receiver_id", loginHelper.getCurrentAppUserId());
         IPage<BbsUserNotify> page = bbsUserNotifyMapper.selectPage(iPage, queryWrapper);
 
-        List<BbsUserNotifyResp> respList = MapstructUtils.convert(page.getRecords(), BbsUserNotifyResp.class);
+        List<BbsUserNotifyResp> respList = BeanUtil.copyToList(page.getRecords(), BbsUserNotifyResp.class);
 
         if (respList.isEmpty()) {
             return R.ok(PageRespDto.of(page.getCurrent(), page.getSize(), page.getTotal(), respList));

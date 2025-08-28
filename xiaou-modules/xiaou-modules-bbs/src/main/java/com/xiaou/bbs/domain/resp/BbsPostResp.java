@@ -17,7 +17,6 @@ import java.util.List;
  * @TableName u_bbs_post
  */
 @Data
-@AutoMapper(target = BbsPost.class)
 public class BbsPostResp {
     /**
      * 帖子ID，UUID

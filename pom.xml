@@ -25,7 +25,7 @@
         <hutool.version>5.8.35</hutool.version>
         <lombok.version>1.18.36</lombok.version>
         <springdoc.version>2.8.5</springdoc.version>
-        <mybatis-plus.version>3.5.11</mybatis-plus.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <p6spy.version>3.9.1</p6spy.version>
         <redis.version>3.3.2</redis.version>
         <jackson.version>2.18.3</jackson.version>
@@ -80,13 +80,13 @@
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-                <version>${mybatis-plus.version}</version>
+                <version>3.5.11</version>
             </dependency>
 
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
-                <version>${mybatis-plus.version}</version>
+                <version>3.5.11</version>
             </dependency>
 
 

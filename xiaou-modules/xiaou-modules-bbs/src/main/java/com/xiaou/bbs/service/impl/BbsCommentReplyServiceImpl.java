@@ -1,12 +1,11 @@
 package com.xiaou.bbs.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xiaou.auth.user.domain.entity.StudentEntity;
-import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.bbs.domain.entity.BbsCommentReply;
 import com.xiaou.bbs.domain.entity.BbsReplyLike;
 import com.xiaou.bbs.domain.req.BbsCommentReplyReq;
@@ -15,10 +14,10 @@ import com.xiaou.bbs.mapper.BbsCommentReplyMapper;
 import com.xiaou.bbs.mapper.BbsPostMapper;
 import com.xiaou.bbs.mapper.BbsReplyLikeMapper;
 import com.xiaou.bbs.service.BbsCommentReplyService;
+import com.xiaou.bbs.service.UserNameService;
 import com.xiaou.common.domain.R;
 import com.xiaou.common.page.PageReqDto;
 import com.xiaou.common.page.PageRespDto;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.satoken.utils.LoginHelper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -46,7 +45,7 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
     @Transactional
     public R<String> replyComment(BbsCommentReplyReq req) {
         //todo 消息通知
-        BbsCommentReply convert = MapstructUtils.convert(req, BbsCommentReply.class);
+        BbsCommentReply convert = BeanUtil.copyProperties(req, BbsCommentReply.class);
         convert.setUserId(loginHelper.getCurrentAppUserId());
         baseMapper.insert(convert);
         postMapper.updateCommentCountById(convert.getPostId(), 1);
@@ -102,7 +101,7 @@ public class BbsCommentReplyServiceImpl extends ServiceImpl<BbsCommentReplyMappe
 
         // 转换成响应DTO并填充用户信息
         List<BbsCommentReplyResp> respList = replyList.stream().map(reply -> {
-            BbsCommentReplyResp resp = MapstructUtils.convert(reply, BbsCommentReplyResp.class);
+            BbsCommentReplyResp resp = BeanUtil.copyProperties(reply, BbsCommentReplyResp.class);
 
             // 是否是自己发布的回复
             resp.setIsMine(currentUserId.equals(reply.getUserId()));

@@ -9,7 +9,6 @@ import lombok.Data;
  * @TableName u_student
  */
 @Data
-@AutoMapper(target = StudentEntity.class)
 public class StudentRegisterReq {
 
     /**

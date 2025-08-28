@@ -5,7 +5,6 @@ import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = StudentEntity.class)
 public class StudentInfoPageResp {
     private String id;
     private String studentNo;

@@ -15,7 +15,6 @@ import java.util.Date;
  * @TableName u_teacher
  */
 @Data
-@AutoMapper(target = Teacher.class)
 public class TeacherReq {
 
     /**

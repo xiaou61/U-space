@@ -1,11 +1,8 @@
 package com.xiaou.bbs.domain.resp;
 
-import com.xiaou.bbs.domain.entity.BbsCommentReply;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = BbsCommentReply.class)
 public class BbsCommentReplyResp {
 
     private String id;

@@ -27,11 +27,6 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-modules-auth</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-sensitive</artifactId>
         </dependency>
         <dependency>
@@ -44,8 +39,7 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
-            <artifactId>xxl-job-spring-boot-starter</artifactId>
-            <version>${revision}</version>
+            <artifactId>xiaou-common-upload</artifactId>
         </dependency>
     </dependencies>
 

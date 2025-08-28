@@ -21,6 +21,7 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>3.5.11</version>
         </dependency>
 
         <!-- sql性能分析插件 -->

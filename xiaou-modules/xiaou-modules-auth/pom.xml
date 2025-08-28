@@ -13,7 +13,14 @@
 
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/com.aliyun/imageaudit20191230 -->
         <dependency>
             <groupId>com.aliyun</groupId>
@@ -23,11 +30,14 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-secure</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.xiaou</groupId>
+                    <artifactId>xiaou-common-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.xiaou</groupId>
-            <artifactId>xiaou-common-core</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-web</artifactId>
@@ -44,6 +54,12 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-excel</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.xiaou</groupId>
+                    <artifactId>xiaou-common-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
@@ -57,15 +73,33 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-log</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.xiaou</groupId>
+                    <artifactId>xiaou-common-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-upload</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.xiaou</groupId>
+                    <artifactId>xiaou-common-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common-ratelimiter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.xiaou</groupId>
+                    <artifactId>xiaou-common-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>

@@ -2,12 +2,9 @@ package com.xiaou.bbs.domain.resp;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.xiaou.bbs.domain.entity.BbsComment;
-import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 
 @Data
-@AutoMapper(target = BbsComment.class)
 public class BbsCommentResp {
     /**
      * 评论ID，UUID

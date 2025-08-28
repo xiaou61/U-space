@@ -37,17 +37,7 @@
             <artifactId>xiaou-common-ratelimiter</artifactId>
         </dependency>
         
-        <!-- MyBatis 相关依赖 -->
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
-            <version>3.5.13</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis-spring</artifactId>
-            <version>2.1.1</version>
-        </dependency>
+
         
         <!-- Spring 相关依赖 -->
         <dependency>

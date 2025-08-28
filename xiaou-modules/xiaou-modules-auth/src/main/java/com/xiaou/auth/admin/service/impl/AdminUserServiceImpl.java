@@ -2,6 +2,7 @@ package com.xiaou.auth.admin.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaou.auth.admin.constant.AdminUserConstant;
@@ -11,7 +12,6 @@ import com.xiaou.auth.admin.mapper.AdminUserMapper;
 import com.xiaou.auth.admin.mapper.SysUserRoleMapper;
 import com.xiaou.auth.admin.service.AdminUserService;
 import com.xiaou.common.domain.R;
-import com.xiaou.common.utils.MapstructUtils;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.common.utils.StringUtils;
 import com.xiaou.satoken.utils.LoginHelper;
@@ -35,7 +35,7 @@ public class AdminUserServiceImpl extends ServiceImpl<AdminUserMapper, AdminUser
     @Override
     public R<SaResult> login(AdminUserReq req) {
         // 用户登录操作
-        AdminUser user = MapstructUtils.convert(req, AdminUser.class);
+        AdminUser user = BeanUtil.copyProperties(req, AdminUser.class);
         // 判断用户是否存在
         QueryWrapper<AdminUser> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(AdminUserConstant.USERNAME, user.getUsername());
