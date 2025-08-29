@@ -1,6 +1,6 @@
 import { 
   House, User, Notebook, VideoCamera, 
-  Management, Files, Monitor, ChatDotRound, Avatar, UserFilled 
+  Management, Files, Monitor, ChatDotRound, Avatar, UserFilled, Star, Calendar, Coin 
 } from '@element-plus/icons-vue'
 
 // 菜单权限配置
@@ -215,6 +215,26 @@ export const menuConfig = [
     icon: ChatDotRound,
     path: '/bbs-sensitive',
     permission: 'bbs_sensitive_management'
+  },
+  {
+    key: 'activity',
+    title: '活动管理系统',
+    icon: Star,
+    permission: 'activity_system',
+    children: [
+      {
+        key: 'activity_management',
+        title: '活动管理',
+        path: '/activity/management',
+        permission: 'activity_management'
+      },
+      {
+        key: 'points_management',
+        title: '积分管理',
+        path: '/activity/points',
+        permission: 'points_management'
+      }
+    ]
   }
 ]
 
@@ -255,13 +275,20 @@ export function getDefaultPermissionsByRole(roles) {
       'online_users', 'announcement_management', 'school_info', 
       'bbs_admin_management', 'role_permission_management', 'admin_user_management', 'menu_management',
       'dorm_management', 'dorm_building', 'dorm_room', 'dorm_bed',
-      'course_management', 'ai_management', 'word_management', 'video_management'
+      'course_management', 'ai_management', 'word_management', 'video_management',
+      'activity_system', 'activity_management', 'points_management'
     ],
     'teacher': [
       'group_management', 'signin_management', 'homework_management', 'material_management'
     ],
     'bbs_admin': [
       'bbs_category_management', 'bbs_sensitive_management'
+    ],
+    'activity_admin': [
+      'activity_system', 'activity_management', 'points_management'
+    ],
+    'points_admin': [
+      'activity_system', 'points_management'
     ]
   }
   

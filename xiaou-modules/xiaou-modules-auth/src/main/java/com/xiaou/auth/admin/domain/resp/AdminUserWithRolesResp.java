@@ -23,7 +23,7 @@ public class AdminUserWithRolesResp {
     private String username;
     
     /**
-     * 角色列表
+     * 角色列表（逗号分隔的字符串）
      */
-    private List<String> roles;
+    private String roles;
 } 

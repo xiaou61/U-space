@@ -337,7 +337,14 @@ const initializeData = async () => {
   try {
     // 从后端获取用户数据
     const userRes = await getUsersWithRoles()
-    users.value = userRes.data || []
+    const rawUsers = userRes.data || []
+    
+    // 处理角色字符串，转换为数组格式
+    users.value = rawUsers.map(user => ({
+      ...user,
+      roles: user.roles ? user.roles.split(',').map(role => role.trim()).filter(Boolean) : []
+    }))
+    
     filteredUsers.value = [...users.value]
   } catch (error) {
     console.error('获取用户数据失败:', error)

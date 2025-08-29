@@ -150,20 +150,8 @@ public class RolePermissionController {
             // 从数据库查询管理员用户及其角色信息
             List<AdminUserWithRolesResp> userList = adminUserMapper.selectUsersWithRoles();
 
-            // 处理角色字符串，转换为List格式
-            for (AdminUserWithRolesResp user : userList) {
-                if (user.getRoles() != null && user.getRoles().size() == 1) {
-                    String rolesStr = user.getRoles().get(0);
-                    if (rolesStr != null && !rolesStr.isEmpty()) {
-                        String[] rolesArray = rolesStr.split(",");
-                        user.setRoles(Arrays.asList(rolesArray));
-                    } else {
-                        user.setRoles(new ArrayList<>());
-                    }
-                } else if (user.getRoles() == null) {
-                    user.setRoles(new ArrayList<>());
-                }
-            }
+            // 由于roles字段现在是String类型，直接返回即可
+            // 如果需要在前端处理为数组，可以在前端进行字符串分割
 
             return R.ok(userList);
         } catch (Exception e) {

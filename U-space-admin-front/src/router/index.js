@@ -141,6 +141,14 @@ const routes = [
           { path: 'room',     name:'DormRoomManagement',     component: () => import('../views/DormRoom.vue') },
           { path: 'bed',      name:'DormBedManagement',      component: () => import('../views/DormBed.vue') }
         ]
+      },
+      {
+        path: 'activity',
+        component: BlankRouter,
+        children:[
+          { path: 'management', name:'ActivityManagement', component: () => import('../views/ActivityManagement.vue') },
+          { path: 'points', name:'PointsManagement', component: () => import('../views/PointsManagement.vue') }
+        ]
       }
     ]
   },
