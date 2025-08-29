@@ -2,6 +2,7 @@ package com.xiaou.activity.service.impl;
 
 import com.xiaou.activity.domain.entity.PointsType;
 import com.xiaou.activity.domain.req.PointsTypeCreateReq;
+import com.xiaou.activity.domain.req.PointsTypeUpdateReq;
 import com.xiaou.activity.domain.resp.PointsTypeResp;
 import com.xiaou.activity.mapper.PointsRecordMapper;
 import com.xiaou.activity.mapper.PointsTypeMapper;
@@ -50,6 +51,32 @@ public class PointsTypeServiceImpl implements PointsTypeService {
             }
         } catch (Exception e) {
             return R.fail("创建积分类型失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Void> updatePointsType(Long id, PointsTypeUpdateReq req) {
+        try {
+            // 检查积分类型是否存在
+            PointsType pointsType = pointsTypeMapper.selectById(id);
+            if (pointsType == null) {
+                return R.fail("积分类型不存在");
+            }
+
+            // 更新字段
+            BeanUtils.copyProperties(req, pointsType);
+            pointsType.setId(id); // 确保ID不变
+
+            // 更新数据库
+            int result = pointsTypeMapper.updateById(pointsType);
+            if (result > 0) {
+                return R.ok();
+            } else {
+                return R.fail("更新积分类型失败");
+            }
+        } catch (Exception e) {
+            return R.fail("更新积分类型失败：" + e.getMessage());
         }
     }
 

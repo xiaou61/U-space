@@ -39,6 +39,13 @@ public interface PointsTypeMapper {
     List<PointsType> selectActiveList();
 
     /**
+     * 更新积分类型
+     * @param pointsType 积分类型
+     * @return 影响行数
+     */
+    int updateById(PointsType pointsType);
+
+    /**
      * 更新积分类型状态
      * @param id 积分类型ID
      * @param status 状态

@@ -1,6 +1,7 @@
 package com.xiaou.activity.service;
 
 import com.xiaou.activity.domain.req.PointsTypeCreateReq;
+import com.xiaou.activity.domain.req.PointsTypeUpdateReq;
 import com.xiaou.activity.domain.resp.PointsTypeResp;
 import com.xiaou.common.domain.R;
 
@@ -17,6 +18,14 @@ public interface PointsTypeService {
      * @return 操作结果
      */
     R<Long> createPointsType(PointsTypeCreateReq req);
+
+    /**
+     * 更新积分类型
+     * @param id 积分类型ID
+     * @param req 更新请求
+     * @return 操作结果
+     */
+    R<Void> updatePointsType(Long id, PointsTypeUpdateReq req);
 
     /**
      * 更新积分类型状态

@@ -56,6 +56,18 @@
         ORDER BY sort_order ASC, create_time ASC
     </select>
 
+    <!-- 更新积分类型 -->
+    <update id="updateById" parameterType="com.xiaou.activity.domain.entity.PointsType">
+        UPDATE u_points_type 
+        SET type_name = #{typeName,jdbcType=VARCHAR},
+            type_code = #{typeCode,jdbcType=VARCHAR},
+            description = #{description,jdbcType=VARCHAR},
+            icon_url = #{iconUrl,jdbcType=VARCHAR},
+            sort_order = #{sortOrder,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
     <!-- 更新积分类型状态 -->
     <update id="updateStatus">
         UPDATE u_points_type 
