@@ -1,0 +1,28 @@
+{
+  "name": "vue3-user-front",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev2": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.2",
+    "element-plus": "^2.4.4",
+    "@element-plus/icons-vue": "^2.3.1",
+    "nprogress": "^0.2.0",
+    "js-cookie": "^3.0.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.2",
+    "vite": "^5.0.8",
+    "eslint": "^8.55.0",
+    "eslint-plugin-vue": "^9.19.2",
+    "sass": "^1.69.5"
+  }
+} 

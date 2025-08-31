@@ -1,5 +1,6 @@
 package com.xiaou.system.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ public class ChangePasswordRequest {
      * 原密码
      */
     @Schema(description = "原密码", example = "123456")
+
     @NotBlank(message = "原密码不能为空")
     private String oldPassword;
 

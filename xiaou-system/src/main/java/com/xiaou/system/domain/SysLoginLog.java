@@ -1,5 +1,6 @@
 package com.xiaou.system.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -62,5 +63,6 @@ public class SysLoginLog {
     /**
      * 登录时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime loginTime;
 } 

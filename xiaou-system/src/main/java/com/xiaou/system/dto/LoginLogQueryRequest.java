@@ -1,5 +1,6 @@
 package com.xiaou.system.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -41,13 +42,15 @@ public class LoginLogQueryRequest {
     /**
      * 开始时间
      */
-    @Schema(description = "查询开始时间", example = "2024-01-01T00:00:00")
+    @Schema(description = "查询开始时间", example = "2024-01-01 00:00:00")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime startTime;
 
     /**
      * 结束时间
      */
-    @Schema(description = "查询结束时间", example = "2024-01-01T23:59:59")
+    @Schema(description = "查询结束时间", example = "2024-01-01 23:59:59")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime endTime;
 
     /**

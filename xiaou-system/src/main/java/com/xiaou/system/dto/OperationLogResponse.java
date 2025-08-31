@@ -1,5 +1,6 @@
 package com.xiaou.system.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -137,7 +138,8 @@ public class OperationLogResponse {
     /**
      * 操作时间
      */
-    @Schema(description = "操作时间", example = "2024-01-01T10:00:00")
+    @Schema(description = "操作时间", example = "2024-01-01 10:00:00")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime operationTime;
 
     /**

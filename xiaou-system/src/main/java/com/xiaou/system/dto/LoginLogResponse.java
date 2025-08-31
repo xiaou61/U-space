@@ -78,7 +78,8 @@ public class LoginLogResponse {
     /**
      * 登录时间
      */
-    @Schema(description = "登录时间", example = "2024-01-01T10:00:00")
+    @Schema(description = "登录时间", example = "2024-01-01 10:00:00")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime loginTime;
 
     /**

@@ -3737,3 +3737,65 @@ org.springframework.web.servlet.resource.NoResourceFoundException: No static res
 2025-08-31 15:49:46.532 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查邮箱可用性，邮箱: 3153566913@qq.com
 2025-08-31 15:49:53.215 [XNIO-1 task-3] ERROR com.xiaou.common.exception.GlobalExceptionHandler - 请求地址'/api/user/auth/register',参数校验失败'验证码标识不能为空'
 2025-08-31 15:49:53.539 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 0d4f0387dffd4ed88a555211bf3623ce, code: XbVQ
+2025-08-31 15:50:26.554 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 3e89b1b5f21e4a03804414ddcd7ada39, code: Lpa6
+2025-08-31 15:50:28.764 [XNIO-1 task-3] ERROR com.xiaou.common.exception.GlobalExceptionHandler - 请求地址'/api/user/auth/register',参数校验失败'验证码标识不能为空'
+2025-08-31 15:50:29.035 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 965f608b6e4644b5993accbdace34ba7, code: QNoR
+2025-08-31 15:51:14.535 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 2aa87b46ebe244c3a4265b45a140e2f5, code: fyma
+2025-08-31 15:51:48.025 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 0e5333af3431436894d8fa864262d77c, code: X359
+2025-08-31 15:51:51.515 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: a45192f110c54b8483389b6daa9b9011, code: FQ8k
+2025-08-31 15:51:54.964 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 05d1c790d96940c3859ffd893bdce01c, code: qmNE
+2025-08-31 15:52:24.638 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: b211f069d8274a908f63397f7a6d2417, code: rZTI
+2025-08-31 15:52:41.456 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查用户名可用性，用户名: xiaou61
+2025-08-31 15:52:42.864 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查邮箱可用性，邮箱: 3153566913@qq.com
+2025-08-31 15:52:43.091 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查邮箱可用性，邮箱: 3153566913@qq.com
+2025-08-31 15:52:51.179 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: d19384c614884b6b919eff8fdc9beb22, code: QSHB
+2025-08-31 15:52:54.101 [XNIO-1 task-3] ERROR com.xiaou.common.exception.GlobalExceptionHandler - 请求地址'/api/user/auth/register',参数校验失败'确认密码不能为空'
+2025-08-31 15:52:54.357 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 6eb3d79089cb49959ef2c1a885f5c10f, code: 2Tl5
+2025-08-31 15:53:58.507 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: d08f010f3bdc453fb7e82a629c8de516, code: zFxZ
+2025-08-31 15:55:06.183 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 56ffd744e54e4681ac6a9804447e7f85, code: n8f1
+2025-08-31 15:55:11.107 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查用户名可用性，用户名: xiaou61
+2025-08-31 15:55:13.909 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 检查邮箱可用性，邮箱: 3153566913@qq.com
+2025-08-31 15:55:19.690 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 38a155b32aa1446abbba8ac80aad66fa, code: LNaF
+2025-08-31 15:55:20.693 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 13b6d404381f4999b213b6c757d64436, code: dBns
+2025-08-31 15:55:23.696 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 用户注册，用户名: xiaou61
+2025-08-31 15:55:23.697 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 用户注册，用户名: xiaou61, 邮箱: 3153566913@qq.com
+2025-08-31 15:55:23.698 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 验证码验证成功，key: 13b6d404381f4999b213b6c757d64436
+2025-08-31 15:55:23.775 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 用户注册成功，用户ID: 3, 用户名: xiaou61
+2025-08-31 15:55:23.779 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 用户注册成功，用户ID: 3
+2025-08-31 15:55:24.008 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: bf7cc665c950414ab158f0dac69b8627, code: rSTS
+2025-08-31 15:55:32.170 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 用户登录，用户名: xiaou61
+2025-08-31 15:55:32.170 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 验证码验证成功，key: bf7cc665c950414ab158f0dac69b8627
+2025-08-31 15:55:32.255 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 用户登录成功，用户ID: 3, 用户名: xiaou61
+2025-08-31 15:55:32.255 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserAuthController - 用户登录成功，用户名: xiaou61
+2025-08-31 15:55:36.136 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 738ea60abe254fac826660f99af907c4, code: 9St8
+2025-08-31 15:55:36.138 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:55:36.139 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:57:10.507 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:57:10.507 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:57:54.710 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 858b11f70d064fe482b3ee0560cd0ef4, code: JQzk
+2025-08-31 15:57:54.713 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:57:54.715 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:57:56.833 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:57:56.835 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:57:57.147 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 5e9ee7c34ea24146be9097e4e9d335a6, code: nkF9
+2025-08-31 15:57:59.377 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:57:59.379 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:57:59.672 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: dddb211bfc824322bf553c7674872e32, code: bI4D
+2025-08-31 15:58:05.438 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 15:58:05.440 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 15:58:05.747 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 1aa3a710366e43539845131f5f862fe9, code: vzP6
+2025-08-31 16:00:31.551 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 16:00:31.553 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 16:00:31.849 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: f74b5aeccf324e12b98684d2568a9ab5, code: CJ1N
+2025-08-31 16:00:37.814 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 16:00:37.816 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 16:00:38.112 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: ccfdbc610ebd4c22afc6a05e0d9aad03, code: WpyY
+2025-08-31 16:00:44.812 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: b7501a0761b54dd48954c4b12549d52f, code: DZQB
+2025-08-31 16:00:47.157 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 38bb6d94d8f045a78b8844993d041e20, code: 3CMy
+2025-08-31 16:00:48.037 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 891fb5330d0a4df6aa20815a758d7ce6, code: us8M
+2025-08-31 16:00:48.887 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 785f0fd7183a4267a97583067111d7f0, code: 11O6
+2025-08-31 16:00:49.820 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: bf5dfde3eaec4bd59a763ec41a32e7f3, code: 299R
+2025-08-31 16:00:52.487 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 2eaf04204ca149e4809a141c0d0fe0c4, code: 43ug
+2025-08-31 16:00:53.225 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: cf60cf4cbc674620bd317b2b03ca233b, code: nnuZ
+2025-08-31 16:00:53.705 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: d3d61c80fafd4cfa8fa5d00f5e146abd, code: rp6W
+2025-08-31 16:01:12.018 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.CaptchaServiceImpl - 生成验证码成功，key: 255e2cda6536406b8370076666b12816, code: e0KF
