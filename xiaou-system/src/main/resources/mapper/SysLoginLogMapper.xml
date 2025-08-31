@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.system.mapper.SysLoginLogMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.system.domain.SysLoginLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="admin_id" property="adminId" jdbcType="BIGINT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="login_ip" property="loginIp" jdbcType="VARCHAR"/>
+        <result column="login_location" property="loginLocation" jdbcType="VARCHAR"/>
+        <result column="browser" property="browser" jdbcType="VARCHAR"/>
+        <result column="os" property="os" jdbcType="VARCHAR"/>
+        <result column="login_status" property="loginStatus" jdbcType="TINYINT"/>
+        <result column="login_message" property="loginMessage" jdbcType="VARCHAR"/>
+        <result column="login_time" property="loginTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, admin_id, username, login_ip, login_location, browser, os,
+        login_status, login_message, login_time
+    </sql>
+
+    <!-- 根据ID查询登录日志 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_login_log
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询登录日志列表 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_login_log
+        <where>
+            <if test="loginLog.adminId != null">
+                AND admin_id = #{loginLog.adminId}
+            </if>
+            <if test="loginLog.username != null and loginLog.username != ''">
+                AND username LIKE CONCAT('%', #{loginLog.username}, '%')
+            </if>
+            <if test="loginLog.loginIp != null and loginLog.loginIp != ''">
+                AND login_ip = #{loginLog.loginIp}
+            </if>
+            <if test="loginLog.loginStatus != null">
+                AND login_status = #{loginLog.loginStatus}
+            </if>
+            <if test="loginLog.loginLocation != null and loginLog.loginLocation != ''">
+                AND login_location LIKE CONCAT('%', #{loginLog.loginLocation}, '%')
+            </if>
+        </where>
+        ORDER BY login_time DESC
+    </select>
+
+    <!-- 分页查询登录日志列表 -->
+    <select id="selectPageList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_login_log
+        <where>
+            <if test="query.username != null and query.username != ''">
+                AND username LIKE CONCAT('%', #{query.username}, '%')
+            </if>
+            <if test="query.loginIp != null and query.loginIp != ''">
+                AND login_ip = #{query.loginIp}
+            </if>
+            <if test="query.loginStatus != null">
+                AND login_status = #{query.loginStatus}
+            </if>
+            <if test="query.loginLocation != null and query.loginLocation != ''">
+                AND login_location LIKE CONCAT('%', #{query.loginLocation}, '%')
+            </if>
+            <if test="query.startTime != null">
+                AND login_time >= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND login_time &lt;= #{query.endTime}
+            </if>
+        </where>
+        ORDER BY login_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 查询登录日志总数（带条件） -->
+    <select id="selectPageCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_login_log
+        <where>
+            <if test="query.username != null and query.username != ''">
+                AND username LIKE CONCAT('%', #{query.username}, '%')
+            </if>
+            <if test="query.loginIp != null and query.loginIp != ''">
+                AND login_ip = #{query.loginIp}
+            </if>
+            <if test="query.loginStatus != null">
+                AND login_status = #{query.loginStatus}
+            </if>
+            <if test="query.loginLocation != null and query.loginLocation != ''">
+                AND login_location LIKE CONCAT('%', #{query.loginLocation}, '%')
+            </if>
+            <if test="query.startTime != null">
+                AND login_time >= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND login_time &lt;= #{query.endTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询登录日志总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_login_log
+        <where>
+            <if test="loginLog.adminId != null">
+                AND admin_id = #{loginLog.adminId}
+            </if>
+            <if test="loginLog.username != null and loginLog.username != ''">
+                AND username LIKE CONCAT('%', #{loginLog.username}, '%')
+            </if>
+            <if test="loginLog.loginIp != null and loginLog.loginIp != ''">
+                AND login_ip = #{loginLog.loginIp}
+            </if>
+            <if test="loginLog.loginStatus != null">
+                AND login_status = #{loginLog.loginStatus}
+            </if>
+            <if test="loginLog.loginLocation != null and loginLog.loginLocation != ''">
+                AND login_location LIKE CONCAT('%', #{loginLog.loginLocation}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 新增登录日志 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="loginLog.id">
+        INSERT INTO sys_login_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="loginLog.adminId != null">admin_id,</if>
+            <if test="loginLog.username != null">username,</if>
+            <if test="loginLog.loginIp != null">login_ip,</if>
+            <if test="loginLog.loginLocation != null">login_location,</if>
+            <if test="loginLog.browser != null">browser,</if>
+            <if test="loginLog.os != null">os,</if>
+            <if test="loginLog.loginStatus != null">login_status,</if>
+            <if test="loginLog.loginMessage != null">login_message,</if>
+            <if test="loginLog.loginTime != null">login_time,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="loginLog.adminId != null">#{loginLog.adminId},</if>
+            <if test="loginLog.username != null">#{loginLog.username},</if>
+            <if test="loginLog.loginIp != null">#{loginLog.loginIp},</if>
+            <if test="loginLog.loginLocation != null">#{loginLog.loginLocation},</if>
+            <if test="loginLog.browser != null">#{loginLog.browser},</if>
+            <if test="loginLog.os != null">#{loginLog.os},</if>
+            <if test="loginLog.loginStatus != null">#{loginLog.loginStatus},</if>
+            <if test="loginLog.loginMessage != null">#{loginLog.loginMessage},</if>
+            <if test="loginLog.loginTime != null">#{loginLog.loginTime},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据ID删除登录日志 -->
+    <delete id="deleteById">
+        DELETE FROM sys_login_log WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除登录日志 -->
+    <delete id="deleteByIds">
+        DELETE FROM sys_login_log WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 清空登录日志 -->
+    <delete id="truncate">
+        TRUNCATE TABLE sys_login_log
+    </delete>
+
+</mapper> 

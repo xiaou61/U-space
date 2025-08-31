@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.system.mapper.SysRoleMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.system.domain.SysRole">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="role_code" property="roleCode" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="create_by" property="createBy" jdbcType="BIGINT"/>
+        <result column="update_by" property="updateBy" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, role_name, role_code, description, status, sort_order,
+        create_time, update_time, create_by, update_by
+    </sql>
+
+    <!-- 带表别名的字段列表（用于JOIN查询） -->
+    <sql id="Role_Column_List_With_Alias">
+        r.id, r.role_name, r.role_code, r.description, r.status, r.sort_order,
+        r.create_time, r.update_time, r.create_by, r.update_by
+    </sql>
+
+    <!-- 根据ID查询角色 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据角色编码查询角色 -->
+    <select id="selectByRoleCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE role_code = #{roleCode}
+        AND status = 0
+    </select>
+
+    <!-- 查询角色列表 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_role
+        <where>
+            <if test="role.roleName != null and role.roleName != ''">
+                AND role_name LIKE CONCAT('%', #{role.roleName}, '%')
+            </if>
+            <if test="role.roleCode != null and role.roleCode != ''">
+                AND role_code = #{role.roleCode}
+            </if>
+            <if test="role.status != null">
+                AND status = #{role.status}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 查询角色总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_role
+        <where>
+            <if test="role.roleName != null and role.roleName != ''">
+                AND role_name LIKE CONCAT('%', #{role.roleName}, '%')
+            </if>
+            <if test="role.roleCode != null and role.roleCode != ''">
+                AND role_code = #{role.roleCode}
+            </if>
+            <if test="role.status != null">
+                AND status = #{role.status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据管理员ID查询角色列表 -->
+    <select id="selectRolesByAdminId" resultMap="BaseResultMap">
+        SELECT <include refid="Role_Column_List_With_Alias"/>
+        FROM sys_role r
+        INNER JOIN sys_admin_role ar ON r.id = ar.role_id
+        WHERE ar.admin_id = #{adminId}
+        AND r.status = 0
+        ORDER BY r.sort_order ASC
+    </select>
+
+    <!-- 新增角色 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="role.id">
+        INSERT INTO sys_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="role.roleName != null">role_name,</if>
+            <if test="role.roleCode != null">role_code,</if>
+            <if test="role.description != null">description,</if>
+            <if test="role.status != null">status,</if>
+            <if test="role.sortOrder != null">sort_order,</if>
+            <if test="role.createBy != null">create_by,</if>
+            create_time,
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="role.roleName != null">#{role.roleName},</if>
+            <if test="role.roleCode != null">#{role.roleCode},</if>
+            <if test="role.description != null">#{role.description},</if>
+            <if test="role.status != null">#{role.status},</if>
+            <if test="role.sortOrder != null">#{role.sortOrder},</if>
+            <if test="role.createBy != null">#{role.createBy},</if>
+            NOW(),
+        </trim>
+    </insert>
+
+    <!-- 修改角色 -->
+    <update id="update">
+        UPDATE sys_role
+        <set>
+            <if test="role.roleName != null">role_name = #{role.roleName},</if>
+            <if test="role.description != null">description = #{role.description},</if>
+            <if test="role.status != null">status = #{role.status},</if>
+            <if test="role.sortOrder != null">sort_order = #{role.sortOrder},</if>
+            <if test="role.updateBy != null">update_by = #{role.updateBy},</if>
+            update_time = NOW(),
+        </set>
+        WHERE id = #{role.id}
+    </update>
+
+    <!-- 根据ID删除角色 -->
+    <delete id="deleteById">
+        DELETE FROM sys_role WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除角色 -->
+    <delete id="deleteByIds">
+        DELETE FROM sys_role WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新状态 -->
+    <update id="updateStatus">
+        UPDATE sys_role
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 检查角色编码是否存在 -->
+    <select id="checkRoleCodeExists" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sys_role
+        WHERE role_code = #{roleCode}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper> 

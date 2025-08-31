@@ -51,6 +51,8 @@ public class Result<T> implements Serializable {
         return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), null);
     }
 
+
+
     /**
      * 成功响应（有数据）
      */
@@ -71,6 +73,8 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> error() {
         return new Result<>(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMessage(), null);
     }
+
+
 
     /**
      * 失败响应（自定义消息）

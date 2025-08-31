@@ -9,8 +9,9 @@
     <version>0.0.1-test</version>
     <packaging>pom</packaging>
     <modules>
-        <module>xiaou-application</module>
         <module>xiaou-common</module>
+        <module>xiaou-system</module>
+        <module>xiaou-application</module>
     </modules>
 
     <properties>

@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.system.mapper.SysPermissionMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.system.domain.SysPermission">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="permission_name" property="permissionName" jdbcType="VARCHAR"/>
+        <result column="permission_code" property="permissionCode" jdbcType="VARCHAR"/>
+        <result column="permission_type" property="permissionType" jdbcType="TINYINT"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="component" property="component" jdbcType="VARCHAR"/>
+        <result column="icon" property="icon" jdbcType="VARCHAR"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="create_by" property="createBy" jdbcType="BIGINT"/>
+        <result column="update_by" property="updateBy" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, parent_id, permission_name, permission_code, permission_type, path, component,
+        icon, sort_order, status, description, create_time, update_time, create_by, update_by
+    </sql>
+
+    <!-- 带表别名的字段列表（用于JOIN查询） -->
+    <sql id="Permission_Column_List_With_Alias">
+        p.id, p.parent_id, p.permission_name, p.permission_code, p.permission_type, p.path, p.component,
+        p.icon, p.sort_order, p.status, p.description, p.create_time, p.update_time, p.create_by, p.update_by
+    </sql>
+
+    <!-- 根据ID查询权限 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据权限编码查询权限 -->
+    <select id="selectByPermissionCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE permission_code = #{permissionCode}
+        AND status = 0
+    </select>
+
+    <!-- 查询权限列表 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        <where>
+            <if test="permission.permissionName != null and permission.permissionName != ''">
+                AND permission_name LIKE CONCAT('%', #{permission.permissionName}, '%')
+            </if>
+            <if test="permission.permissionCode != null and permission.permissionCode != ''">
+                AND permission_code LIKE CONCAT('%', #{permission.permissionCode}, '%')
+            </if>
+            <if test="permission.permissionType != null">
+                AND permission_type = #{permission.permissionType}
+            </if>
+            <if test="permission.status != null">
+                AND status = #{permission.status}
+            </if>
+            <if test="permission.parentId != null">
+                AND parent_id = #{permission.parentId}
+            </if>
+        </where>
+        ORDER BY parent_id ASC, sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 查询权限总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_permission
+        <where>
+            <if test="permission.permissionName != null and permission.permissionName != ''">
+                AND permission_name LIKE CONCAT('%', #{permission.permissionName}, '%')
+            </if>
+            <if test="permission.permissionCode != null and permission.permissionCode != ''">
+                AND permission_code LIKE CONCAT('%', #{permission.permissionCode}, '%')
+            </if>
+            <if test="permission.permissionType != null">
+                AND permission_type = #{permission.permissionType}
+            </if>
+            <if test="permission.status != null">
+                AND status = #{permission.status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据管理员ID查询权限列表 -->
+    <select id="selectPermissionsByAdminId" resultMap="BaseResultMap">
+        SELECT DISTINCT <include refid="Permission_Column_List_With_Alias"/>
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_admin_role ar ON rp.role_id = ar.role_id
+        WHERE ar.admin_id = #{adminId}
+        AND p.status = 0
+        ORDER BY p.parent_id ASC, p.sort_order ASC
+    </select>
+
+    <!-- 根据角色ID查询权限列表 -->
+    <select id="selectPermissionsByRoleId" resultMap="BaseResultMap">
+        SELECT <include refid="Permission_Column_List_With_Alias"/>
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        WHERE rp.role_id = #{roleId}
+        AND p.status = 0
+        ORDER BY p.parent_id ASC, p.sort_order ASC
+    </select>
+
+    <!-- 查询所有权限树 -->
+    <select id="selectPermissionTree" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE status = 0
+        ORDER BY parent_id ASC, sort_order ASC
+    </select>
+
+    <!-- 根据父ID查询子权限列表 -->
+    <select id="selectByParentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE parent_id = #{parentId}
+        AND status = 0
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 新增权限 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="permission.id">
+        INSERT INTO sys_permission
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="permission.parentId != null">parent_id,</if>
+            <if test="permission.permissionName != null">permission_name,</if>
+            <if test="permission.permissionCode != null">permission_code,</if>
+            <if test="permission.permissionType != null">permission_type,</if>
+            <if test="permission.path != null">path,</if>
+            <if test="permission.component != null">component,</if>
+            <if test="permission.icon != null">icon,</if>
+            <if test="permission.sortOrder != null">sort_order,</if>
+            <if test="permission.status != null">status,</if>
+            <if test="permission.description != null">description,</if>
+            <if test="permission.createBy != null">create_by,</if>
+            create_time,
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="permission.parentId != null">#{permission.parentId},</if>
+            <if test="permission.permissionName != null">#{permission.permissionName},</if>
+            <if test="permission.permissionCode != null">#{permission.permissionCode},</if>
+            <if test="permission.permissionType != null">#{permission.permissionType},</if>
+            <if test="permission.path != null">#{permission.path},</if>
+            <if test="permission.component != null">#{permission.component},</if>
+            <if test="permission.icon != null">#{permission.icon},</if>
+            <if test="permission.sortOrder != null">#{permission.sortOrder},</if>
+            <if test="permission.status != null">#{permission.status},</if>
+            <if test="permission.description != null">#{permission.description},</if>
+            <if test="permission.createBy != null">#{permission.createBy},</if>
+            NOW(),
+        </trim>
+    </insert>
+
+    <!-- 修改权限 -->
+    <update id="update">
+        UPDATE sys_permission
+        <set>
+            <if test="permission.parentId != null">parent_id = #{permission.parentId},</if>
+            <if test="permission.permissionName != null">permission_name = #{permission.permissionName},</if>
+            <if test="permission.permissionType != null">permission_type = #{permission.permissionType},</if>
+            <if test="permission.path != null">path = #{permission.path},</if>
+            <if test="permission.component != null">component = #{permission.component},</if>
+            <if test="permission.icon != null">icon = #{permission.icon},</if>
+            <if test="permission.sortOrder != null">sort_order = #{permission.sortOrder},</if>
+            <if test="permission.status != null">status = #{permission.status},</if>
+            <if test="permission.description != null">description = #{permission.description},</if>
+            <if test="permission.updateBy != null">update_by = #{permission.updateBy},</if>
+            update_time = NOW(),
+        </set>
+        WHERE id = #{permission.id}
+    </update>
+
+    <!-- 根据ID删除权限 -->
+    <delete id="deleteById">
+        DELETE FROM sys_permission WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除权限 -->
+    <delete id="deleteByIds">
+        DELETE FROM sys_permission WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新状态 -->
+    <update id="updateStatus">
+        UPDATE sys_permission
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 检查权限编码是否存在 -->
+    <select id="checkPermissionCodeExists" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sys_permission
+        WHERE permission_code = #{permissionCode}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查是否有子权限 -->
+    <select id="checkHasChildren" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sys_permission
+        WHERE parent_id = #{parentId}
+        AND status = 0
+    </select>
+
+</mapper> 
