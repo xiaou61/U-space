@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.system.mapper.SysOperationLogMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.system.domain.SysOperationLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="operation_id" property="operationId" jdbcType="VARCHAR"/>
+        <result column="module" property="module" jdbcType="VARCHAR"/>
+        <result column="operation_type" property="operationType" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="method" property="method" jdbcType="VARCHAR"/>
+        <result column="request_uri" property="requestUri" jdbcType="VARCHAR"/>
+        <result column="request_method" property="requestMethod" jdbcType="VARCHAR"/>
+        <result column="request_params" property="requestParams" jdbcType="LONGVARCHAR"/>
+        <result column="response_data" property="responseData" jdbcType="LONGVARCHAR"/>
+        <result column="operator_id" property="operatorId" jdbcType="BIGINT"/>
+        <result column="operator_name" property="operatorName" jdbcType="VARCHAR"/>
+        <result column="operator_ip" property="operatorIp" jdbcType="VARCHAR"/>
+        <result column="operation_location" property="operationLocation" jdbcType="VARCHAR"/>
+        <result column="browser" property="browser" jdbcType="VARCHAR"/>
+        <result column="os" property="os" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="error_msg" property="errorMsg" jdbcType="VARCHAR"/>
+        <result column="operation_time" property="operationTime" jdbcType="TIMESTAMP"/>
+        <result column="cost_time" property="costTime" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, operation_id, module, operation_type, description, method, request_uri, request_method,
+        request_params, response_data, operator_id, operator_name, operator_ip, operation_location,
+        browser, os, status, error_msg, operation_time, cost_time
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Query_Where_Clause">
+        <where>
+            <if test="module != null and module != ''">
+                AND module LIKE CONCAT('%', #{module}, '%')
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                AND operator_name LIKE CONCAT('%', #{operatorName}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND operation_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND operation_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 插入操作日志 -->
+    <insert id="insert" parameterType="com.xiaou.system.domain.SysOperationLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_operation_log (
+            operation_id, module, operation_type, description, method, request_uri, request_method,
+            request_params, response_data, operator_id, operator_name, operator_ip, operation_location,
+            browser, os, status, error_msg, operation_time, cost_time
+        ) VALUES (
+            #{operationId}, #{module}, #{operationType}, #{description}, #{method}, #{requestUri}, #{requestMethod},
+            #{requestParams}, #{responseData}, #{operatorId}, #{operatorName}, #{operatorIp}, #{operationLocation},
+            #{browser}, #{os}, #{status}, #{errorMsg}, #{operationTime}, #{costTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_operation_log
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询列表 -->
+    <select id="selectList" parameterType="com.xiaou.system.dto.OperationLogQueryRequest" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_operation_log
+        <include refid="Query_Where_Clause"/>
+        ORDER BY operation_time DESC
+        <if test="pageNum != null and pageSize != null">
+            LIMIT #{pageSize} OFFSET #{pageNum}
+        </if>
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="selectCount" parameterType="com.xiaou.system.dto.OperationLogQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_operation_log
+        <include refid="Query_Where_Clause"/>
+    </select>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM sys_operation_log
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 清空所有 -->
+    <delete id="deleteAll">
+        DELETE FROM sys_operation_log
+    </delete>
+
+    <!-- 根据天数删除 -->
+    <delete id="deleteByTimeRange">
+        DELETE FROM sys_operation_log
+        WHERE operation_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+
+</mapper> 

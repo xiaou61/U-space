@@ -2049,3 +2049,94 @@ Caused by: java.sql.SQLIntegrityConstraintViolationException: Column 'create_tim
 2025-08-31 12:36:26.324 [SpringApplicationShutdownHook] INFO  io.undertow.servlet - Destroying Spring FrameworkServlet 'dispatcherServlet'
 2025-08-31 12:36:26.327 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
 2025-08-31 12:36:26.332 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-08-31 12:36:51.039 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-08-31 12:36:51.114 [main] INFO  com.xiaou.CodeNestApplication - Starting CodeNestApplication using Java 17 with PID 7592 (D:\onenodes\githubprojectstart\Code-Nest\xiaou-application\target\classes started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest)
+2025-08-31 12:36:51.115 [main] INFO  com.xiaou.CodeNestApplication - The following 1 profile is active: "dev"
+2025-08-31 12:36:52.743 [main] WARN  io.undertow.websockets.jsr - UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2025-08-31 12:36:52.755 [main] INFO  io.undertow.servlet - Initializing Spring embedded WebApplicationContext
+2025-08-31 12:36:54.281 [main] INFO  io.undertow - starting server: Undertow - 2.3.18.Final
+2025-08-31 12:36:54.295 [main] INFO  org.xnio - XNIO version 3.8.16.Final
+2025-08-31 12:36:54.302 [main] INFO  org.xnio.nio - XNIO NIO Implementation Version 3.8.16.Final
+2025-08-31 12:36:54.319 [main] INFO  org.jboss.threads - JBoss Threads version 3.5.0.Final
+2025-08-31 12:36:54.373 [main] INFO  com.xiaou.CodeNestApplication - Started CodeNestApplication in 3.962 seconds (process running for 4.546)
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 🎉 Code-Nest 启动成功！
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌐 运行环境:
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 环境: dev
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 端口: 9999
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 路径: /api
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌍 访问地址:
+2025-08-31 12:36:54.375 [main] INFO  com.xiaou.config.StartupApplicationListener - 首页: http://localhost:9999/api
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - API文档: http://localhost:9999/api/swagger-ui.html
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - ✨ Happy Coding! ✨
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 12:36:54.376 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 12:36:54.869 [RMI TCP Connection(3)-198.18.0.1] INFO  io.undertow.servlet - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-08-31 12:36:54.873 [RMI TCP Connection(1)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-08-31 12:36:55.137 [RMI TCP Connection(1)-198.18.0.1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4762231b
+2025-08-31 12:36:55.139 [RMI TCP Connection(1)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-08-31 12:37:02.178 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 🔐 登录请求
+2025-08-31 12:37:02.178 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 用户: admin
+2025-08-31 12:37:02.393 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 🎉 登录成功
+2025-08-31 12:37:02.393 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 用户: admin
+2025-08-31 12:56:42.915 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 🔐 登录请求
+2025-08-31 12:56:42.922 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 用户: admin
+2025-08-31 12:56:43.282 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 🎉 登录成功
+2025-08-31 12:56:43.282 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 用户: admin
+2025-08-31 12:56:51.307 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.TokenServiceImpl - Token删除成功: admin
+2025-08-31 12:56:51.311 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 🚪 用户登出
+2025-08-31 12:56:51.311 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 用户: admin
+2025-08-31 12:56:52.379 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 🔐 登录请求
+2025-08-31 12:56:52.379 [XNIO-1 task-2] INFO  com.xiaou.system.controller.AuthController - 用户: admin
+2025-08-31 12:56:52.458 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 🎉 登录成功
+2025-08-31 12:56:52.458 [XNIO-1 task-2] INFO  com.xiaou.system.service.impl.SysAdminServiceImpl - 用户: admin
+2025-08-31 13:18:17.243 [SpringApplicationShutdownHook] INFO  io.undertow - stopping server: Undertow - 2.3.18.Final
+2025-08-31 13:18:17.263 [SpringApplicationShutdownHook] INFO  io.undertow.servlet - Destroying Spring FrameworkServlet 'dispatcherServlet'
+2025-08-31 13:18:23.966 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-08-31 13:18:24.021 [main] INFO  com.xiaou.CodeNestApplication - Starting CodeNestApplication using Java 17 with PID 11816 (D:\onenodes\githubprojectstart\Code-Nest\xiaou-application\target\classes started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest)
+2025-08-31 13:18:24.022 [main] INFO  com.xiaou.CodeNestApplication - The following 1 profile is active: "dev"
+2025-08-31 13:18:25.601 [main] WARN  io.undertow.websockets.jsr - UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2025-08-31 13:18:25.615 [main] INFO  io.undertow.servlet - Initializing Spring embedded WebApplicationContext
+2025-08-31 13:18:54.547 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-08-31 13:18:54.586 [main] INFO  com.xiaou.CodeNestApplication - Starting CodeNestApplication using Java 17 with PID 31544 (D:\onenodes\githubprojectstart\Code-Nest\xiaou-application\target\classes started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest)
+2025-08-31 13:18:54.586 [main] INFO  com.xiaou.CodeNestApplication - The following 1 profile is active: "dev"
+2025-08-31 13:18:55.804 [main] WARN  io.undertow.websockets.jsr - UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2025-08-31 13:18:55.816 [main] INFO  io.undertow.servlet - Initializing Spring embedded WebApplicationContext
+2025-08-31 13:19:45.685 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-08-31 13:19:45.727 [main] INFO  com.xiaou.CodeNestApplication - Starting CodeNestApplication using Java 17 with PID 26200 (D:\onenodes\githubprojectstart\Code-Nest\xiaou-application\target\classes started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest)
+2025-08-31 13:19:45.727 [main] INFO  com.xiaou.CodeNestApplication - The following 1 profile is active: "dev"
+2025-08-31 13:19:47.058 [main] WARN  io.undertow.websockets.jsr - UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2025-08-31 13:19:47.069 [main] INFO  io.undertow.servlet - Initializing Spring embedded WebApplicationContext
+2025-08-31 13:19:48.953 [main] INFO  io.undertow - starting server: Undertow - 2.3.18.Final
+2025-08-31 13:19:48.959 [main] INFO  org.xnio - XNIO version 3.8.16.Final
+2025-08-31 13:19:48.965 [main] INFO  org.xnio.nio - XNIO NIO Implementation Version 3.8.16.Final
+2025-08-31 13:19:48.984 [main] INFO  org.jboss.threads - JBoss Threads version 3.5.0.Final
+2025-08-31 13:19:49.039 [main] INFO  com.xiaou.CodeNestApplication - Started CodeNestApplication in 3.705 seconds (process running for 4.172)
+2025-08-31 13:19:49.042 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 13:19:49.042 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 13:19:49.042 [main] INFO  com.xiaou.config.StartupApplicationListener - 🎉 Code-Nest 启动成功！
+2025-08-31 13:19:49.042 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌐 运行环境:
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 环境: dev
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 端口: 9999
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 路径: /api
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌍 访问地址:
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 首页: http://localhost:9999/api
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - API文档: http://localhost:9999/api/swagger-ui.html
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - ✨ Happy Coding! ✨
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 13:19:49.043 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 13:19:49.796 [RMI TCP Connection(2)-198.18.0.1] INFO  io.undertow.servlet - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-08-31 13:19:49.802 [RMI TCP Connection(3)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-08-31 13:19:50.136 [RMI TCP Connection(3)-198.18.0.1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@54363e9a
+2025-08-31 13:19:50.139 [RMI TCP Connection(3)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.

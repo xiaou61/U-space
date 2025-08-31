@@ -33,3 +33,4 @@ build/
 ### Mac OS ###
 .DS_Store
 /.idea/
+/vue3-admin-front/node_modules/

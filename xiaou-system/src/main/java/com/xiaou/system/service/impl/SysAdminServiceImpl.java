@@ -9,6 +9,8 @@ import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.domain.SysLoginLog;
 import com.xiaou.system.dto.LoginRequest;
 import com.xiaou.system.dto.LoginResponse;
+import com.xiaou.system.dto.UpdateAdminRequest;
+import com.xiaou.system.dto.ChangePasswordRequest;
 import com.xiaou.system.mapper.SysAdminMapper;
 import com.xiaou.system.mapper.SysLoginLogMapper;
 import com.xiaou.system.mapper.SysPermissionMapper;
@@ -367,5 +369,79 @@ public class SysAdminServiceImpl implements SysAdminService {
         }
 
         return ip;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateCurrentUserInfo(Long currentUserId, UpdateAdminRequest request) {
+        if (currentUserId == null) {
+            throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "用户ID不能为空");
+        }
+
+        SysAdmin currentAdmin = adminMapper.selectById(currentUserId);
+        if (currentAdmin == null) {
+            throw new BusinessException(ResultCode.DATA_NOT_EXIST, "用户不存在");
+        }
+
+        // 检查邮箱是否被其他用户使用
+        if (StrUtil.isNotBlank(request.getEmail()) && 
+            checkEmailExists(request.getEmail(), currentUserId)) {
+            throw new BusinessException(ResultCode.DATA_ALREADY_EXIST, "邮箱已被其他用户使用");
+        }
+
+        // 创建更新对象
+        SysAdmin updateAdmin = new SysAdmin();
+        updateAdmin.setId(currentUserId);
+        updateAdmin.setRealName(request.getRealName());
+        updateAdmin.setEmail(request.getEmail());
+        updateAdmin.setPhone(request.getPhone());
+        updateAdmin.setAvatar(request.getAvatar());
+        updateAdmin.setGender(request.getGender());
+        updateAdmin.setRemark(request.getRemark());
+        updateAdmin.setUpdateTime(LocalDateTime.now());
+        updateAdmin.setUpdateBy(currentUserId);
+
+        log.info("🔄 更新用户信息");
+        log.info("用户ID: {}", currentUserId);
+        log.info("更新内容: {}", request);
+        
+        return adminMapper.update(updateAdmin) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean changeCurrentUserPassword(Long currentUserId, ChangePasswordRequest request) {
+        if (currentUserId == null) {
+            throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "用户ID不能为空");
+        }
+
+        // 验证确认密码
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "新密码与确认密码不一致");
+        }
+
+        SysAdmin currentAdmin = adminMapper.selectById(currentUserId);
+        if (currentAdmin == null) {
+            throw new BusinessException(ResultCode.DATA_NOT_EXIST, "用户不存在");
+        }
+
+        // 验证原密码
+        if (!passwordEncoder.matches(request.getOldPassword(), currentAdmin.getPassword())) {
+            throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "原密码错误");
+        }
+
+        // 新密码不能与原密码相同
+        if (passwordEncoder.matches(request.getNewPassword(), currentAdmin.getPassword())) {
+            throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "新密码不能与原密码相同");
+        }
+
+        // 加密新密码
+        String encryptedPassword = passwordEncoder.encode(request.getNewPassword());
+        
+        log.info("🔐 修改用户密码");
+        log.info("用户ID: {}", currentUserId);
+        log.info("用户名: {}", currentAdmin.getUsername());
+        
+        return adminMapper.updatePassword(currentUserId, encryptedPassword) > 0;
     }
 } 

@@ -18,6 +18,18 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
   
+  # Jackson JSON序列化配置
+  jackson:
+    # 时间格式配置
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    # LocalDateTime序列化配置
+    serialization:
+      write-dates-as-timestamps: false
+    # 反序列化配置
+    deserialization:
+      fail-on-unknown-properties: false
+  
   # Spring Security 全局配置
   security:
     user:

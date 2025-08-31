@@ -3,6 +3,8 @@ package com.xiaou.system.service;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.dto.LoginRequest;
 import com.xiaou.system.dto.LoginResponse;
+import com.xiaou.system.dto.UpdateAdminRequest;
+import com.xiaou.system.dto.ChangePasswordRequest;
 
 import java.util.List;
 
@@ -92,4 +94,14 @@ public interface SysAdminService {
      * 获取管理员的权限列表
      */
     List<String> getAdminPermissions(Long adminId);
+
+    /**
+     * 更新当前用户信息
+     */
+    boolean updateCurrentUserInfo(Long currentUserId, UpdateAdminRequest request);
+
+    /**
+     * 修改当前用户密码
+     */
+    boolean changeCurrentUserPassword(Long currentUserId, ChangePasswordRequest request);
 } 

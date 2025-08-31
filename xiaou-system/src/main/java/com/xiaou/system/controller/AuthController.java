@@ -1,5 +1,6 @@
 package com.xiaou.system.controller;
 
+import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.ResultCode;
 import com.xiaou.system.domain.SysAdmin;
@@ -51,6 +52,7 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "系统内部错误")
     })
     @PostMapping("/login")
+    @Log(module = "用户管理", type = Log.OperationType.OTHER, description = "用户登录", saveResponseData = false)
     public Result<LoginResponse> login(
             @Parameter(description = "登录请求参数", required = true)
             @Valid @RequestBody LoginRequest loginRequest) {
@@ -70,6 +72,7 @@ public class AuthController {
     })
     @SecurityRequirement(name = "Bearer Token")
     @PostMapping("/logout")
+    @Log(module = "用户管理", type = Log.OperationType.OTHER, description = "用户登出")
     public Result<?> logout(
             @Parameter(description = "认证头，格式：Bearer {token}", required = true)
             @RequestHeader("Authorization") String authHeader) {
@@ -244,6 +247,113 @@ public class AuthController {
         } catch (Exception e) {
             log.error("清空登录日志失败", e);
             return Result.error("清空登录日志失败");
+        }
+    }
+
+    /**
+     * 更新个人信息
+     */
+    @Operation(summary = "更新个人信息", description = "更新当前登录用户的个人信息，不包括密码")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "701", description = "Token无效"),
+            @ApiResponse(responseCode = "702", description = "用户信息已过期"),
+            @ApiResponse(responseCode = "409", description = "邮箱已被其他用户使用"),
+            @ApiResponse(responseCode = "500", description = "更新失败")
+    })
+    @SecurityRequirement(name = "Bearer Token")
+    @PutMapping("/profile")
+    @Log(module = "用户管理", type = Log.OperationType.UPDATE, description = "更新个人信息")
+    public Result<?> updateProfile(
+            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
+            @RequestHeader("Authorization") String authHeader,
+            @Parameter(description = "更新个人信息请求", required = true)
+            @Valid @RequestBody UpdateAdminRequest request) {
+        try {
+            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
+            if (token == null) {
+                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
+            }
+            
+            // 从Token中获取用户ID
+            Long userId = jwtTokenUtil.getUserIdFromToken(token);
+            if (userId == null) {
+                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
+            }
+            
+            // 验证用户是否存在
+            SysAdmin admin = tokenService.getAdminFromToken(token);
+            if (admin == null) {
+                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "用户信息已过期，请重新登录");
+            }
+            
+            boolean success = adminService.updateCurrentUserInfo(userId, request);
+            if (success) {
+                log.info("✅ 用户个人信息更新成功");
+                log.info("用户: {}", admin.getUsername());
+                return Result.success("个人信息更新成功");
+            } else {
+                return Result.error("个人信息更新失败");
+            }
+        } catch (Exception e) {
+            log.error("更新个人信息失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 修改密码
+     */
+    @Operation(summary = "修改密码", description = "修改当前登录用户的密码，需要验证原密码")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "密码修改成功"),
+            @ApiResponse(responseCode = "701", description = "Token无效"),
+            @ApiResponse(responseCode = "702", description = "用户信息已过期"),
+            @ApiResponse(responseCode = "400", description = "原密码错误或新密码验证失败"),
+            @ApiResponse(responseCode = "500", description = "密码修改失败")
+    })
+    @SecurityRequirement(name = "Bearer Token")
+    @PutMapping("/password")
+    @Log(module = "用户管理", type = Log.OperationType.UPDATE, description = "修改密码", saveRequestData = false)
+    public Result<?> changePassword(
+            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
+            @RequestHeader("Authorization") String authHeader,
+            @Parameter(description = "修改密码请求", required = true)
+            @Valid @RequestBody ChangePasswordRequest request) {
+        try {
+            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
+            if (token == null) {
+                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
+            }
+            
+            // 从Token中获取用户ID
+            Long userId = jwtTokenUtil.getUserIdFromToken(token);
+            if (userId == null) {
+                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
+            }
+            
+            // 验证用户是否存在
+            SysAdmin admin = tokenService.getAdminFromToken(token);
+            if (admin == null) {
+                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "用户信息已过期，请重新登录");
+            }
+            
+            boolean success = adminService.changeCurrentUserPassword(userId, request);
+            if (success) {
+                log.info("✅ 用户密码修改成功");
+                log.info("用户: {}", admin.getUsername());
+                
+                // 密码修改后，将当前Token加入黑名单，强制重新登录
+                tokenService.addToBlacklist(token);
+                tokenService.deleteToken(token);
+                
+                return Result.success("密码修改成功，请重新登录");
+            } else {
+                return Result.error("密码修改失败");
+            }
+        } catch (Exception e) {
+            log.error("修改密码失败", e);
+            return Result.error(e.getMessage());
         }
     }
 } 
