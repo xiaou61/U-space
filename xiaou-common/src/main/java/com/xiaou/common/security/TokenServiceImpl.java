@@ -56,6 +56,10 @@ public class TokenServiceImpl implements TokenService {
             if (userInfo != null) {
                 log.debug("从Redis获取用户信息成功，UserType: {}", userType);
                 return userInfo;
+            } else {
+                log.debug("Redis中未找到用户信息，Token仍然有效，UserType: {}", userType);
+                // 返回一个标识，表示Token有效但需要重新加载用户信息
+                return "TOKEN_VALID_NEED_RELOAD";
             }
         } catch (Exception e) {
             log.error("从Redis获取用户信息失败", e);
@@ -157,6 +161,7 @@ public class TokenServiceImpl implements TokenService {
 
             // 检查Redis中是否存在对应的用户信息
             String userInfo = getUserFromToken(token, userType);
+            // 如果返回 TOKEN_VALID_NEED_RELOAD 或者有用户信息，都认为Token有效
             return userInfo != null;
         } catch (Exception e) {
             log.error("验证Token失败", e);

@@ -87,3 +87,17 @@ springdoc:
     - group: 'default'
       display-name: 'Code-Nest API'
       paths-to-match: '/**'
+
+# ===== 重要提示：登录状态持久化 =====
+# 为了确保重启后登录状态不失效，建议启用Redis持久化：
+# 
+# 方法1：RDB持久化（推荐）
+# 在redis.conf中添加：
+# save 900 1    # 900秒内至少1个key变化时保存
+# save 300 10   # 300秒内至少10个key变化时保存
+# save 60 10000 # 60秒内至少10000个key变化时保存
+#
+# 方法2：AOF持久化（更安全）
+# 在redis.conf中添加：
+# appendonly yes
+# appendfsync everysec

@@ -1,15 +1,19 @@
 package com.xiaou.system.security;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.xiaou.common.constant.Constants;
 import com.xiaou.common.security.JwtTokenUtil;
 import com.xiaou.common.security.TokenService;
+import com.xiaou.system.domain.SysAdmin;
+import com.xiaou.system.service.SysAdminService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
     private final JwtTokenUtil jwtTokenUtil;
+    @Lazy
+    private final SysAdminService sysAdminService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
@@ -51,23 +57,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String userType = jwtTokenUtil.getUserTypeFromToken(token);
                     
                     if ("admin".equals(userType)) {
-                        String username = tokenService.getUsernameFromToken(token);
+                        // 验证Redis中的管理员信息
+                        String adminInfoJson = tokenService.getUserFromToken(token, "admin");
                         
-                        if (StrUtil.isNotBlank(username)) {
-                            // 创建认证对象
-                            UsernamePasswordAuthenticationToken authentication = 
-                                new UsernamePasswordAuthenticationToken(
-                                    username, 
-                                    null, 
-                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                                );
+                        // 如果需要重新加载管理员信息
+                        if ("TOKEN_VALID_NEED_RELOAD".equals(adminInfoJson)) {
+                            try {
+                                Long adminId = jwtTokenUtil.getUserIdFromToken(token);
+                                if (adminId != null) {
+                                    SysAdmin admin = sysAdminService.getById(adminId);
+                                    if (admin != null && admin.getStatus() == 0) { // 状态正常
+                                        // 重新存储管理员信息到Redis
+                                        adminInfoJson = JSONUtil.toJsonStr(admin);
+                                        tokenService.storeUserInToken(token, adminInfoJson, "admin");
+                                        log.info("管理员信息已重新加载到Redis: {}", admin.getUsername());
+                                    } else {
+                                        log.warn("管理员不存在或状态异常，拒绝认证: adminId={}", adminId);
+                                        adminInfoJson = null;
+                                    }
+                                } else {
+                                    log.warn("Token中无法获取管理员ID");
+                                    adminInfoJson = null;
+                                }
+                            } catch (Exception e) {
+                                log.error("重新加载管理员信息失败", e);
+                                adminInfoJson = null;
+                            }
+                        }
+                        
+                        if (StrUtil.isNotBlank(adminInfoJson) && !"TOKEN_VALID_NEED_RELOAD".equals(adminInfoJson)) {
+                            String username = tokenService.getUsernameFromToken(token);
                             
-                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            
-                            // 设置认证信息到Security上下文
-                            SecurityContextHolder.getContext().setAuthentication(authentication);
-                            
-                            log.debug("管理员JWT认证成功: {}", username);
+                            if (StrUtil.isNotBlank(username)) {
+                                // 创建认证对象
+                                UsernamePasswordAuthenticationToken authentication = 
+                                    new UsernamePasswordAuthenticationToken(
+                                        username, 
+                                        null, 
+                                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                                    );
+                                
+                                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                                
+                                // 设置认证信息到Security上下文
+                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                                
+                                log.debug("管理员JWT认证成功: {}", username);
+                            }
                         }
                     }
                 } else {
@@ -84,7 +120,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // 不处理用户相关路径
-        return path.startsWith("/api/user/") || path.startsWith("/api/captcha/");
+        // 不处理用户相关路径（考虑context-path）
+        return path.startsWith("/user/") || path.startsWith("/captcha/");
     }
 } 
