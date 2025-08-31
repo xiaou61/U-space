@@ -21,6 +21,11 @@
             <span>仪表板</span>
           </el-menu-item>
           
+          <el-menu-item index="/user">
+            <el-icon><Avatar /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -108,6 +113,18 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import { 
+  Odometer, 
+  Document, 
+  UserFilled, 
+  Operation, 
+  User, 
+  Avatar,
+  Expand, 
+  Fold, 
+  CaretBottom, 
+  SwitchButton 
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -156,6 +173,35 @@ const handleUserCommand = async (command) => {
 </script>
 
 <style scoped>
+.layout-container {
+  height: 100vh;
+}
+
+.sidebar {
+  background-color: #001529;
+  transition: width 0.2s;
+}
+
+.logo {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border-bottom: 1px solid #1e3a8a;
+}
+
+.header {
+  background-color: white;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
 .header-left {
   display: flex;
   align-items: center;
@@ -187,5 +233,39 @@ const handleUserCommand = async (command) => {
 
 .sidebar-menu {
   border: none;
+  background-color: #001529;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-menu :deep(.el-menu-item:hover) {
+  background-color: #1890ff !important;
+  color: white;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background-color: #1890ff !important;
+  color: white;
+}
+
+.sidebar-menu :deep(.el-sub-menu__title) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: #1890ff !important;
+  color: white;
+}
+
+.main-content {
+  background-color: #f0f2f5;
+  padding: 0;
+}
+
+.page-container {
+  height: 100%;
+  overflow: auto;
 }
 </style> 

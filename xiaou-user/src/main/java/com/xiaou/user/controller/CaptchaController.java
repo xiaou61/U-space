@@ -15,7 +15,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/captcha")
+@RequestMapping("/captcha")
 @RequiredArgsConstructor
 public class CaptchaController {
 

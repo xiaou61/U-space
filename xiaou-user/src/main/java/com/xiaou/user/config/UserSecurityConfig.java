@@ -31,7 +31,7 @@ public class UserSecurityConfig {
     public SecurityFilterChain userFilterChain(HttpSecurity http) throws Exception {
         http
             // 只处理用户相关路径
-            .securityMatcher("/api/user/**", "/api/captcha/**")
+            .securityMatcher("/user/**", "/captcha/**")
             
             // 禁用CSRF（因为使用JWT）
             .csrf(csrf -> csrf.disable())
@@ -47,12 +47,12 @@ public class UserSecurityConfig {
             // 配置请求授权
             .authorizeHttpRequests(authz -> authz
                 // 用户认证相关接口无需认证
-                .requestMatchers("/api/user/auth/login", "/api/user/auth/register").permitAll()
-                .requestMatchers("/api/user/auth/check-username", "/api/user/auth/check-email").permitAll()
+                .requestMatchers("/user/auth/login", "/user/auth/register").permitAll()
+                .requestMatchers("/user/auth/check-username", "/user/auth/check-email").permitAll()
                 // 验证码接口无需认证
-                .requestMatchers("/api/captcha/**").permitAll()
+                .requestMatchers("/captcha/**").permitAll()
                 // 其他用户接口需要认证
-                .requestMatchers("/api/user/**").authenticated()
+                .requestMatchers("/user/**").authenticated()
             )
             
             // 添加用户JWT过滤器

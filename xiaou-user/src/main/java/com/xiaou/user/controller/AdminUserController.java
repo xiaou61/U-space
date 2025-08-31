@@ -23,7 +23,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/admin/user")
+@RequestMapping("/admin/user")
 @RequiredArgsConstructor
 public class AdminUserController {
 

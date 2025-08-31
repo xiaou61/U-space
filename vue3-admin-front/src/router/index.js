@@ -55,6 +55,15 @@ const routes = [
         ],
       },
       {
+        path: 'user',
+        name: 'UserManagement',
+        component: () => import('@/views/user/index.vue'),
+        meta: {
+          title: '用户管理',
+          icon: 'Avatar',
+        },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/profile/index.vue'),

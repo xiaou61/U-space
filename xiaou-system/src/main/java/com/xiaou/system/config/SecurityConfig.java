@@ -50,7 +50,7 @@ public class SecurityConfig {
             .securityMatcher(request -> {
                 String path = request.getRequestURI();
                 // 不处理用户路径和验证码路径
-                return !path.startsWith("/api/user/") && !path.startsWith("/api/captcha/");
+                return !path.startsWith("/user/") && !path.startsWith("/captcha/");
             })
             
             // 禁用CSRF（因为使用JWT）
@@ -70,7 +70,7 @@ public class SecurityConfig {
             // 配置请求授权
             .authorizeHttpRequests(authz -> authz
                 // 管理员登录接口无需认证
-                .requestMatchers("/api/auth/login", "/auth/login").permitAll()
+                .requestMatchers("/auth/login").permitAll()
                 // 允许Swagger相关接口
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // 允许OpenAPI文档
@@ -82,7 +82,7 @@ public class SecurityConfig {
                 // 允许OPTIONS请求（CORS预检）
                 .requestMatchers("OPTIONS", "/**").permitAll()
                 // 管理员相关接口需要认证
-                .requestMatchers("/api/auth/**", "/auth/**", "/api/admin/**").authenticated()
+                .requestMatchers("/auth/**", "/admin/**", "/log/**").authenticated()
                 // 其他接口根据具体情况处理
                 .anyRequest().authenticated()
             )

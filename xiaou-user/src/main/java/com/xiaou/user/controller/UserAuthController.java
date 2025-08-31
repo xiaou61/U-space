@@ -26,7 +26,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/user/auth")
+@RequestMapping("/user/auth")
 @RequiredArgsConstructor
 public class UserAuthController {
 
