@@ -35,3 +35,4 @@ build/
 /.idea/
 /vue3-admin-front/node_modules/
 /vue3-user-front/node_modules/
+/logs/
