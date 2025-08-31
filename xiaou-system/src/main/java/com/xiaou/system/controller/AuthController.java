@@ -1,14 +1,18 @@
 package com.xiaou.system.controller;
 
 import com.xiaou.common.annotation.Log;
+import com.xiaou.common.annotation.RequireAdmin;
+import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.ResultCode;
+import com.xiaou.common.utils.AdminContextUtil;
+import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.security.JwtTokenUtil;
+import com.xiaou.common.security.TokenService;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.dto.*;
-import com.xiaou.system.security.JwtTokenUtil;
 import com.xiaou.system.service.SysAdminService;
 import com.xiaou.system.service.SysLoginLogService;
-import com.xiaou.system.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,6 +44,8 @@ public class AuthController {
     private final TokenService tokenService;
     private final JwtTokenUtil jwtTokenUtil;
     private final SysLoginLogService loginLogService;
+    private final UserContextUtil userContextUtil;
+    private final AdminContextUtil adminContextUtil;
 
     /**
      * 管理员登录
@@ -80,9 +86,9 @@ public class AuthController {
             String token = jwtTokenUtil.getTokenFromHeader(authHeader);
             if (token != null) {
                 // 将Token加入黑名单
-                tokenService.addToBlacklist(token);
+                tokenService.addToBlacklist(token, "admin");
                 // 从Redis中删除用户信息
-                tokenService.deleteToken(token);
+                tokenService.deleteToken(token, "admin");
                 
                 String username = tokenService.getUsernameFromToken(token);
                 log.info("🚪 用户登出");
@@ -120,7 +126,7 @@ public class AuthController {
                 return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
             }
             
-            String newToken = tokenService.refreshToken(token);
+            String newToken = tokenService.refreshToken(token, "admin");
             if (newToken == null) {
                 return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "Token已过期，请重新登录");
             }
@@ -144,34 +150,24 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "获取失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "获取用户信息需要管理员权限")
     @GetMapping("/info")
-    public Result<LoginResponse.UserInfo> info(
-            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
-            @RequestHeader("Authorization") String authHeader) {
+    public Result<LoginResponse.UserInfo> info() {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
-            }
-            
-            // 从Redis中获取用户信息
-            SysAdmin admin = tokenService.getAdminFromToken(token);
-            if (admin == null) {
-                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "用户信息已过期，请重新登录");
-            }
+            // 通过AOP自动验证管理员权限，直接获取管理员信息
+            UserContextUtil.UserInfo currentUser = adminContextUtil.getCurrentAdmin();
             
             // 构建用户信息响应
             LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
-            userInfo.setId(admin.getId())
-                    .setUsername(admin.getUsername())
-                    .setRealName(admin.getRealName())
-                    .setEmail(admin.getEmail())
-                    .setAvatar(admin.getAvatar())
-                    .setLastLoginTime(admin.getLastLoginTime())
-                    .setRoles(adminService.getAdminRoles(admin.getId()))
-                    .setPermissions(adminService.getAdminPermissions(admin.getId()));
+            userInfo.setId(currentUser.getId())
+                    .setUsername(currentUser.getUsername())
+                    .setRealName(currentUser.getRealName())
+                    .setEmail(currentUser.getEmail())
+                    .setAvatar(currentUser.getAvatar())
+                    .setRoles(adminService.getAdminRoles(currentUser.getId()))
+                    .setPermissions(adminService.getAdminPermissions(currentUser.getId()));
             
-            log.debug("获取用户信息成功: {}", admin.getUsername());
+            log.debug("获取用户信息成功: {}", currentUser.getUsername());
             return Result.success("获取成功", userInfo);
         } catch (Exception e) {
             log.error("获取用户信息失败", e);
@@ -188,6 +184,7 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询登录日志需要管理员权限")
     @GetMapping("/login-logs")
     public Result<PageResult<LoginLogResponse>> getLoginLogs(
             @Parameter(description = "查询参数") LoginLogQueryRequest query) {
@@ -210,6 +207,7 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询登录日志详情需要管理员权限")
     @GetMapping("/login-logs/{id}")
     public Result<LoginLogResponse> getLoginLogById(
             @Parameter(description = "日志ID", required = true)
@@ -235,6 +233,7 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "清空失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "清空登录日志需要管理员权限")
     @DeleteMapping("/login-logs")
     public Result<?> clearLoginLogs() {
         try {
@@ -262,35 +261,20 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "更新失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "更新个人信息需要管理员权限")
     @PutMapping("/profile")
     @Log(module = "用户管理", type = Log.OperationType.UPDATE, description = "更新个人信息")
-    public Result<?> updateProfile(
-            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
-            @RequestHeader("Authorization") String authHeader,
-            @Parameter(description = "更新个人信息请求", required = true)
+    public Result<?> updateProfile(@Parameter(description = "更新个人信息请求", required = true)
             @Valid @RequestBody UpdateAdminRequest request) {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
-            }
+            // 通过AOP自动验证管理员权限，直接获取管理员ID
+            Long adminId = adminContextUtil.getCurrentAdminId();
+            String adminUsername = adminContextUtil.getCurrentAdminUsername();
             
-            // 从Token中获取用户ID
-            Long userId = jwtTokenUtil.getUserIdFromToken(token);
-            if (userId == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
-            }
-            
-            // 验证用户是否存在
-            SysAdmin admin = tokenService.getAdminFromToken(token);
-            if (admin == null) {
-                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "用户信息已过期，请重新登录");
-            }
-            
-            boolean success = adminService.updateCurrentUserInfo(userId, request);
+            boolean success = adminService.updateCurrentUserInfo(adminId, request);
             if (success) {
                 log.info("✅ 用户个人信息更新成功");
-                log.info("用户: {}", admin.getUsername());
+                log.info("用户: {}", adminUsername);
                 return Result.success("个人信息更新成功");
             } else {
                 return Result.error("个人信息更新失败");
@@ -313,40 +297,22 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "密码修改失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "修改密码需要管理员权限")
     @PutMapping("/password")
     @Log(module = "用户管理", type = Log.OperationType.UPDATE, description = "修改密码", saveRequestData = false)
-    public Result<?> changePassword(
-            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
-            @RequestHeader("Authorization") String authHeader,
-            @Parameter(description = "修改密码请求", required = true)
+    public Result<?> changePassword(@Parameter(description = "修改密码请求", required = true)
             @Valid @RequestBody ChangePasswordRequest request) {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
-            }
+            // 通过AOP自动验证管理员权限，直接获取管理员信息
+            Long adminId = adminContextUtil.getCurrentAdminId();
+            String adminUsername = adminContextUtil.getCurrentAdminUsername();
             
-            // 从Token中获取用户ID
-            Long userId = jwtTokenUtil.getUserIdFromToken(token);
-            if (userId == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
-            }
-            
-            // 验证用户是否存在
-            SysAdmin admin = tokenService.getAdminFromToken(token);
-            if (admin == null) {
-                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "用户信息已过期，请重新登录");
-            }
-            
-            boolean success = adminService.changeCurrentUserPassword(userId, request);
+            boolean success = adminService.changeCurrentUserPassword(adminId, request);
             if (success) {
                 log.info("✅ 用户密码修改成功");
-                log.info("用户: {}", admin.getUsername());
+                log.info("用户: {}", adminUsername);
                 
-                // 密码修改后，将当前Token加入黑名单，强制重新登录
-                tokenService.addToBlacklist(token);
-                tokenService.deleteToken(token);
-                
+                // 密码修改后，需要前端重新登录
                 return Result.success("密码修改成功，请重新登录");
             } else {
                 return Result.error("密码修改失败");

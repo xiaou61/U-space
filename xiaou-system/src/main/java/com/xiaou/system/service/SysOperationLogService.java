@@ -3,7 +3,7 @@ package com.xiaou.system.service;
 import com.xiaou.system.domain.SysOperationLog;
 import com.xiaou.system.dto.OperationLogQueryRequest;
 import com.xiaou.system.dto.OperationLogResponse;
-import com.xiaou.system.dto.PageResult;
+import com.xiaou.common.core.domain.PageResult;
 
 import java.util.List;
 

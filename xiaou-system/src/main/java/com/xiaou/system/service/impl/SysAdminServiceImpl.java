@@ -15,9 +15,10 @@ import com.xiaou.system.mapper.SysAdminMapper;
 import com.xiaou.system.mapper.SysLoginLogMapper;
 import com.xiaou.system.mapper.SysPermissionMapper;
 import com.xiaou.system.mapper.SysRoleMapper;
-import com.xiaou.system.security.JwtTokenUtil;
+import com.xiaou.common.security.JwtTokenUtil;
 import com.xiaou.system.service.SysAdminService;
-import com.xiaou.system.service.TokenService;
+import com.xiaou.common.security.TokenService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,6 +49,7 @@ public class SysAdminServiceImpl implements SysAdminService {
     private final JwtTokenUtil jwtTokenUtil;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -116,7 +118,13 @@ public class SysAdminServiceImpl implements SysAdminService {
             admin.setLastLoginTime(LocalDateTime.now());
             admin.setLastLoginIp(ip);
             admin.setLoginCount(loginCount);
-            tokenService.saveToken(admin.getUsername(), accessToken, admin);
+            try {
+                String adminJson = objectMapper.writeValueAsString(admin);
+                tokenService.saveToken(admin.getUsername(), accessToken, adminJson);
+            } catch (Exception e) {
+                log.error("保存管理员Token失败", e);
+                throw new BusinessException(ResultCode.ERROR, "登录失败");
+            }
 
             // 7. 记录登录成功日志
             loginLog.setLoginStatus(0);

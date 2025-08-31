@@ -1,6 +1,8 @@
 package com.xiaou.system.controller;
 
 import com.xiaou.common.annotation.Log;
+import com.xiaou.common.annotation.RequireAdmin;
+import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.ResultCode;
 import com.xiaou.system.dto.*;
@@ -42,6 +44,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询登录日志需要管理员权限")
     @GetMapping("/login")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询登录日志")
     public Result<PageResult<LoginLogResponse>> getLoginLogs(
@@ -65,6 +68,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询登录日志详情需要管理员权限")
     @GetMapping("/login/{id}")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询登录日志详情")
     public Result<LoginLogResponse> getLoginLogById(
@@ -91,6 +95,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "清空失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "清空登录日志需要管理员权限")
     @DeleteMapping("/login")
     @Log(module = "日志管理", type = Log.OperationType.CLEAN, description = "清空登录日志")
     public Result<?> clearLoginLogs() {
@@ -116,6 +121,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询操作日志需要管理员权限")
     @GetMapping("/operation")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询操作日志")
     public Result<PageResult<OperationLogResponse>> getOperationLogs(
@@ -139,6 +145,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "查询失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "查询操作日志详情需要管理员权限")
     @GetMapping("/operation/{id}")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询操作日志详情")
     public Result<OperationLogResponse> getOperationLogById(
@@ -165,6 +172,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "删除失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "批量删除操作日志需要管理员权限")
     @DeleteMapping("/operation")
     @Log(module = "日志管理", type = Log.OperationType.DELETE, description = "批量删除操作日志")
     public Result<?> deleteOperationLogs(
@@ -192,6 +200,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "清空失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "清空操作日志需要管理员权限")
     @DeleteMapping("/operation/all")
     @Log(module = "日志管理", type = Log.OperationType.CLEAN, description = "清空操作日志")
     public Result<?> clearOperationLogs() {
@@ -217,6 +226,7 @@ public class LogController {
             @ApiResponse(responseCode = "500", description = "清理失败")
     })
     @SecurityRequirement(name = "Bearer Token")
+    @RequireAdmin(message = "清理过期操作日志需要管理员权限")
     @DeleteMapping("/operation/clean/{days}")
     @Log(module = "日志管理", type = Log.OperationType.CLEAN, description = "清理过期操作日志")
     public Result<?> cleanOperationLogs(

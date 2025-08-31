@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.system.domain.SysLoginLog;
 import com.xiaou.system.dto.LoginLogQueryRequest;
 import com.xiaou.system.dto.LoginLogResponse;
-import com.xiaou.system.dto.PageResult;
+import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.system.mapper.SysLoginLogMapper;
 import com.xiaou.system.service.SysLoginLogService;
 import lombok.RequiredArgsConstructor;

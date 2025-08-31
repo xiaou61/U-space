@@ -4,8 +4,8 @@ import com.xiaou.system.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -17,15 +17,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 /**
- * Spring Security配置类
+ * 管理员端 Spring Security 配置类
  * 
  * 禁用默认认证，使用自定义JWT认证
+ * 只处理管理员相关路径
  *
  * @author xiaou
  */
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
+@Order(2) // 优先级低于用户配置
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -39,12 +40,19 @@ public class SecurityConfig {
     }
 
     /**
-     * 安全过滤器链配置
-     * 完全禁用默认认证，使用自定义JWT认证
+     * 管理员端安全过滤器链配置
+     * 只处理管理员相关路径
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
         http
+            // 只处理管理员相关路径，排除用户路径
+            .securityMatcher(request -> {
+                String path = request.getRequestURI();
+                // 不处理用户路径和验证码路径
+                return !path.startsWith("/api/user/") && !path.startsWith("/api/captcha/");
+            })
+            
             // 禁用CSRF（因为使用JWT）
             .csrf(csrf -> csrf.disable())
             
@@ -59,9 +67,9 @@ public class SecurityConfig {
             .formLogin(formLogin -> formLogin.disable())
             .logout(logout -> logout.disable())
             
-            // 配置请求授权 - 注意顺序很重要
+            // 配置请求授权
             .authorizeHttpRequests(authz -> authz
-                // 首先允许登录接口无需认证
+                // 管理员登录接口无需认证
                 .requestMatchers("/api/auth/login", "/auth/login").permitAll()
                 // 允许Swagger相关接口
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
@@ -73,11 +81,13 @@ public class SecurityConfig {
                 .requestMatchers("/favicon.ico", "/error").permitAll()
                 // 允许OPTIONS请求（CORS预检）
                 .requestMatchers("OPTIONS", "/**").permitAll()
-                // 其他所有请求都需要认证
+                // 管理员相关接口需要认证
+                .requestMatchers("/api/auth/**", "/auth/**", "/api/admin/**").authenticated()
+                // 其他接口根据具体情况处理
                 .anyRequest().authenticated()
             )
             
-            // 添加JWT过滤器
+            // 添加管理员JWT过滤器
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

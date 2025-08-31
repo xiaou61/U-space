@@ -26,6 +26,13 @@
             <version>${project.version}</version>
         </dependency>
         
+        <!-- 引入user模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-user</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <!-- Mysql驱动包 -->
         <dependency>
             <groupId>com.mysql</groupId>

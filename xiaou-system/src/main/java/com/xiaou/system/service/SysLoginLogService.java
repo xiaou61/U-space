@@ -2,7 +2,7 @@ package com.xiaou.system.service;
 
 import com.xiaou.system.dto.LoginLogQueryRequest;
 import com.xiaou.system.dto.LoginLogResponse;
-import com.xiaou.system.dto.PageResult;
+import com.xiaou.common.core.domain.PageResult;
 
 /**
  * 登录日志服务接口

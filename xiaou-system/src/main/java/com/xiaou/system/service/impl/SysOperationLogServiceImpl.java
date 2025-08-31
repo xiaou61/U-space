@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.system.domain.SysOperationLog;
 import com.xiaou.system.dto.OperationLogQueryRequest;
 import com.xiaou.system.dto.OperationLogResponse;
-import com.xiaou.system.dto.PageResult;
+import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.system.mapper.SysOperationLogMapper;
 import com.xiaou.system.service.SysOperationLogService;
 import lombok.RequiredArgsConstructor;

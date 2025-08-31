@@ -6,11 +6,12 @@ import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import cn.hutool.json.JSONUtil;
 import com.xiaou.common.annotation.Log;
+import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.domain.SysOperationLog;
-import com.xiaou.system.security.JwtTokenUtil;
+import com.xiaou.common.security.JwtTokenUtil;
 import com.xiaou.system.service.SysOperationLogService;
-import com.xiaou.system.service.TokenService;
+import com.xiaou.common.security.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -41,6 +42,7 @@ public class LogAspect {
     private final SysOperationLogService operationLogService;
     private final JwtTokenUtil jwtTokenUtil;
     private final TokenService tokenService;
+    private final UserContextUtil userContextUtil;
 
     /**
      * 切点：标注了@Log注解的方法
@@ -219,17 +221,12 @@ public class LogAspect {
      */
     private void setOperatorInfo(SysOperationLog operationLog, HttpServletRequest request) {
         try {
-            String authHeader = request.getHeader("Authorization");
-            if (StrUtil.isNotBlank(authHeader)) {
-                String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-                if (StrUtil.isNotBlank(token)) {
-                    SysAdmin admin = tokenService.getAdminFromToken(token);
-                    if (admin != null) {
-                        operationLog.setOperatorId(admin.getId());
-                        operationLog.setOperatorName(admin.getUsername());
-                        return;
-                    }
-                }
+            // 使用 UserContextUtil 获取当前用户信息
+            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+            if (currentUser != null) {
+                operationLog.setOperatorId(currentUser.getId());
+                operationLog.setOperatorName(currentUser.getUsername());
+                return;
             }
             
             // 如果无法获取用户信息，使用默认值

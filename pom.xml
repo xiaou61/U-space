@@ -11,6 +11,7 @@
     <modules>
         <module>xiaou-common</module>
         <module>xiaou-system</module>
+        <module>xiaou-user</module>
         <module>xiaou-application</module>
     </modules>
 
@@ -22,6 +23,7 @@
         <spring-boot.version>3.4.4</spring-boot.version>
         <hutool.version>5.8.35</hutool.version>
         <lombok.version>1.18.36</lombok.version>
+        <jjwt.version>0.11.5</jjwt.version>
 
 
 
@@ -53,6 +55,23 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+            
+            <!-- JWT 相关依赖版本管理 -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
