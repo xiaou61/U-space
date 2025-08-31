@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.monitor.mapper.SqlMonitorLogMapper">
+
+    <!-- 插入单条监控日志 -->
+    <insert id="insert" parameterType="com.xiaou.monitor.domain.SqlMonitorLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sql_monitor_log (
+            trace_id, user_id, user_type, username, request_ip, request_uri, http_method,
+            module, method, mapper_method, sql_statement, sql_type, sql_params,
+            execution_time, affected_rows, success, error_message, slow_sql,
+            execute_time, create_time
+        ) VALUES (
+            #{traceId}, #{userId}, #{userType}, #{username},
+            #{requestIp}, #{requestUri}, #{httpMethod},
+            #{module}, #{method}, #{mapperMethod},
+            #{sqlStatement}, #{sqlType}, #{sqlParams},
+            #{executionTime}, #{affectedRows}, #{success},
+            #{errorMessage}, #{slowSql}, #{executeTime}, #{createTime}
+        )
+    </insert>
+
+    <!-- 批量插入监控日志 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO sql_monitor_log (
+            trace_id, user_id, user_type, username, request_ip, request_uri, http_method,
+            module, method, mapper_method, sql_statement, sql_type, sql_params,
+            execution_time, affected_rows, success, error_message, slow_sql,
+            execute_time, create_time
+        ) VALUES
+        <foreach collection="logs" item="log" separator=",">
+            (
+                #{log.traceId}, #{log.userId}, #{log.userType}, #{log.username},
+                #{log.requestIp}, #{log.requestUri}, #{log.httpMethod},
+                #{log.module}, #{log.method}, #{log.mapperMethod},
+                #{log.sqlStatement}, #{log.sqlType}, #{log.sqlParams},
+                #{log.executionTime}, #{log.affectedRows}, #{log.success},
+                #{log.errorMessage}, #{log.slowSql}, #{log.executeTime}, #{log.createTime}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据条件查询监控日志 -->
+    <select id="selectByCondition" resultType="com.xiaou.monitor.domain.SqlMonitorLog">
+        SELECT * FROM sql_monitor_log
+        <where>
+            <if test="request.traceId != null and request.traceId != ''">
+                AND trace_id = #{request.traceId}
+            </if>
+            <if test="request.userId != null">
+                AND user_id = #{request.userId}
+            </if>
+            <if test="request.userType != null and request.userType != ''">
+                AND user_type = #{request.userType}
+            </if>
+            <if test="request.username != null and request.username != ''">
+                AND username LIKE CONCAT('%', #{request.username}, '%')
+            </if>
+            <if test="request.requestUri != null and request.requestUri != ''">
+                AND request_uri LIKE CONCAT('%', #{request.requestUri}, '%')
+            </if>
+            <if test="request.httpMethod != null and request.httpMethod != ''">
+                AND http_method = #{request.httpMethod}
+            </if>
+            <if test="request.module != null and request.module != ''">
+                AND module = #{request.module}
+            </if>
+            <if test="request.sqlType != null and request.sqlType != ''">
+                AND sql_type = #{request.sqlType}
+            </if>
+            <if test="request.slowSqlOnly != null and request.slowSqlOnly">
+                AND slow_sql = true
+            </if>
+            <if test="request.errorOnly != null and request.errorOnly">
+                AND success = false
+            </if>
+            <if test="request.minExecutionTime != null">
+                AND execution_time >= #{request.minExecutionTime}
+            </if>
+            <if test="request.maxExecutionTime != null">
+                AND execution_time &lt;= #{request.maxExecutionTime}
+            </if>
+            <if test="request.startTime != null">
+                AND execute_time >= #{request.startTime}
+            </if>
+            <if test="request.endTime != null">
+                AND execute_time &lt;= #{request.endTime}
+            </if>
+            <if test="request.sqlKeyword != null and request.sqlKeyword != ''">
+                AND sql_statement LIKE CONCAT('%', #{request.sqlKeyword}, '%')
+            </if>
+            <if test="request.mapperKeyword != null and request.mapperKeyword != ''">
+                AND mapper_method LIKE CONCAT('%', #{request.mapperKeyword}, '%')
+            </if>
+        </where>
+        <choose>
+            <when test="request.orderBy != null and request.orderBy != ''">
+                ORDER BY ${request.orderBy}
+                <if test="request.orderDirection != null and request.orderDirection != ''">
+                    ${request.orderDirection}
+                </if>
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据条件统计数量 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(1) FROM sql_monitor_log
+        <where>
+            <if test="request.traceId != null and request.traceId != ''">
+                AND trace_id = #{request.traceId}
+            </if>
+            <if test="request.userId != null">
+                AND user_id = #{request.userId}
+            </if>
+            <if test="request.userType != null and request.userType != ''">
+                AND user_type = #{request.userType}
+            </if>
+            <if test="request.username != null and request.username != ''">
+                AND username LIKE CONCAT('%', #{request.username}, '%')
+            </if>
+            <if test="request.requestUri != null and request.requestUri != ''">
+                AND request_uri LIKE CONCAT('%', #{request.requestUri}, '%')
+            </if>
+            <if test="request.httpMethod != null and request.httpMethod != ''">
+                AND http_method = #{request.httpMethod}
+            </if>
+            <if test="request.module != null and request.module != ''">
+                AND module = #{request.module}
+            </if>
+            <if test="request.sqlType != null and request.sqlType != ''">
+                AND sql_type = #{request.sqlType}
+            </if>
+            <if test="request.slowSqlOnly != null and request.slowSqlOnly">
+                AND slow_sql = true
+            </if>
+            <if test="request.errorOnly != null and request.errorOnly">
+                AND success = false
+            </if>
+            <if test="request.minExecutionTime != null">
+                AND execution_time >= #{request.minExecutionTime}
+            </if>
+            <if test="request.maxExecutionTime != null">
+                AND execution_time &lt;= #{request.maxExecutionTime}
+            </if>
+            <if test="request.startTime != null">
+                AND execute_time >= #{request.startTime}
+            </if>
+            <if test="request.endTime != null">
+                AND execute_time &lt;= #{request.endTime}
+            </if>
+            <if test="request.sqlKeyword != null and request.sqlKeyword != ''">
+                AND sql_statement LIKE CONCAT('%', #{request.sqlKeyword}, '%')
+            </if>
+            <if test="request.mapperKeyword != null and request.mapperKeyword != ''">
+                AND mapper_method LIKE CONCAT('%', #{request.mapperKeyword}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询SQL统计信息 -->
+    <select id="selectStatistics" resultType="com.xiaou.monitor.domain.SqlStatistics">
+        SELECT 
+            SUBSTRING_INDEX(SUBSTRING_INDEX(sql_statement, ' ', 3), ' FROM ', 1) as sqlTemplate,
+            COUNT(*) as executionCount,
+            SUM(execution_time) as totalExecutionTime,
+            AVG(execution_time) as avgExecutionTime,
+            MAX(execution_time) as maxExecutionTime,
+            MIN(execution_time) as minExecutionTime,
+            SUM(CASE WHEN slow_sql = true THEN 1 ELSE 0 END) as slowSqlCount,
+            SUM(CASE WHEN success = false THEN 1 ELSE 0 END) as errorCount,
+            MAX(execute_time) as lastExecuteTime,
+            DATE_FORMAT(execute_time, '%Y-%m-%d') as statisticsDate
+        FROM sql_monitor_log
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND DATE_FORMAT(execute_time, '%Y-%m-%d') >= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND DATE_FORMAT(execute_time, '%Y-%m-%d') &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY sqlTemplate, statisticsDate
+        ORDER BY executionCount DESC, avgExecutionTime DESC
+        LIMIT 100
+    </select>
+
+    <!-- 查询SQL执行频次统计 -->
+    <select id="selectFrequencyStatistics" resultType="com.xiaou.monitor.domain.SqlStatistics">
+        SELECT 
+            mapper_method as sqlTemplate,
+            COUNT(*) as executionCount,
+            SUM(execution_time) as totalExecutionTime,
+            AVG(execution_time) as avgExecutionTime,
+            MAX(execution_time) as maxExecutionTime,
+            MIN(execution_time) as minExecutionTime,
+            SUM(CASE WHEN slow_sql = true THEN 1 ELSE 0 END) as slowSqlCount,
+            SUM(CASE WHEN success = false THEN 1 ELSE 0 END) as errorCount,
+            MAX(execute_time) as lastExecuteTime
+        FROM sql_monitor_log
+        <where>
+            <if test="date != null and date != ''">
+                AND DATE_FORMAT(execute_time, '%Y-%m-%d') = #{date}
+            </if>
+        </where>
+        GROUP BY mapper_method
+        ORDER BY executionCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 删除过期数据 -->
+    <delete id="deleteExpiredData">
+        DELETE FROM sql_monitor_log 
+        WHERE create_time &lt; #{expireTime}
+    </delete>
+
+    <!-- 删除所有数据 -->
+    <delete id="deleteAll">
+        DELETE FROM sql_monitor_log
+    </delete>
+
+</mapper> 

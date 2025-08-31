@@ -5126,3 +5126,77 @@ Caused by: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'TO
 2025-08-31 17:37:22.674 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
 2025-08-31 17:37:32.544 [SpringApplicationShutdownHook] INFO  io.undertow - stopping server: Undertow - 2.3.18.Final
 2025-08-31 17:37:32.551 [SpringApplicationShutdownHook] INFO  io.undertow.servlet - Destroying Spring FrameworkServlet 'dispatcherServlet'
+2025-08-31 17:37:35.254 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-08-31 17:37:35.315 [main] INFO  com.xiaou.CodeNestApplication - Starting CodeNestApplication using Java 17 with PID 2872 (D:\onenodes\githubprojectstart\Code-Nest\xiaou-application\target\classes started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest)
+2025-08-31 17:37:35.316 [main] INFO  com.xiaou.CodeNestApplication - The following 1 profile is active: "dev"
+2025-08-31 17:37:37.067 [main] WARN  io.undertow.websockets.jsr - UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2025-08-31 17:37:37.093 [main] INFO  io.undertow.servlet - Initializing Spring embedded WebApplicationContext
+2025-08-31 17:37:39.367 [main] INFO  io.undertow - starting server: Undertow - 2.3.18.Final
+2025-08-31 17:37:39.374 [main] INFO  org.xnio - XNIO version 3.8.16.Final
+2025-08-31 17:37:39.381 [main] INFO  org.xnio.nio - XNIO NIO Implementation Version 3.8.16.Final
+2025-08-31 17:37:39.402 [main] INFO  org.jboss.threads - JBoss Threads version 3.5.0.Final
+2025-08-31 17:37:39.481 [main] INFO  com.xiaou.CodeNestApplication - Started CodeNestApplication in 4.861 seconds (process running for 5.453)
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 🎉 Code-Nest 启动成功！
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌐 运行环境:
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 环境: dev
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 端口: 9999
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 路径: /api
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 17:37:39.485 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌍 访问地址:
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - 首页: http://localhost:9999/api
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - API文档: http://localhost:9999/api/swagger-ui.html
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - ✨ Happy Coding! ✨
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-08-31 17:37:39.486 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-08-31 17:37:40.098 [RMI TCP Connection(1)-198.18.0.1] INFO  io.undertow.servlet - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-08-31 17:37:40.102 [RMI TCP Connection(2)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-08-31 17:37:40.536 [RMI TCP Connection(2)-198.18.0.1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@480567eb
+2025-08-31 17:37:40.538 [RMI TCP Connection(2)-198.18.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-08-31 17:37:43.223 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 17:37:43.258 [XNIO-1 task-2] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 17:38:00.913 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息
+2025-08-31 17:38:00.913 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=null, pageNum=1, pageSize=1)
+2025-08-31 17:38:00.915 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:38:00.915 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:38:00.949 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表成功，总数: 3
+2025-08-31 17:38:00.949 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=0, pageNum=1, pageSize=1)
+2025-08-31 17:38:00.971 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=1, pageNum=1, pageSize=1)
+2025-08-31 17:38:00.975 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=2, pageNum=1, pageSize=1)
+2025-08-31 17:38:00.978 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息成功
+2025-08-31 17:39:04.534 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息
+2025-08-31 17:39:04.534 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:39:04.534 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:39:04.534 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=null, pageNum=1, pageSize=1)
+2025-08-31 17:39:04.540 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=0, pageNum=1, pageSize=1)
+2025-08-31 17:39:04.541 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表成功，总数: 3
+2025-08-31 17:39:04.543 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=1, pageNum=1, pageSize=1)
+2025-08-31 17:39:04.545 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=2, pageNum=1, pageSize=1)
+2025-08-31 17:39:04.546 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息成功
+2025-08-31 17:44:06.234 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 17:44:06.238 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 17:44:12.987 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息，用户ID: 3
+2025-08-31 17:44:12.990 [XNIO-1 task-3] INFO  com.xiaou.user.controller.UserController - 获取当前用户信息成功，用户ID: 3
+2025-08-31 17:44:15.996 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息
+2025-08-31 17:44:15.996 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=null, pageNum=1, pageSize=1)
+2025-08-31 17:44:15.997 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:44:15.997 [XNIO-1 task-3] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:44:15.999 [XNIO-1 task-3] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表成功，总数: 3
+2025-08-31 17:44:16.000 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=0, pageNum=1, pageSize=1)
+2025-08-31 17:44:16.002 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=1, pageNum=1, pageSize=1)
+2025-08-31 17:44:16.004 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=2, pageNum=1, pageSize=1)
+2025-08-31 17:44:16.006 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息成功
+2025-08-31 17:44:20.463 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:44:20.463 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=, nickname=null, realName=null, email=, phone=null, gender=null, status=null, pageNum=1, pageSize=10)
+2025-08-31 17:44:20.466 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员查询用户列表成功，总数: 3
+2025-08-31 17:44:20.763 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息
+2025-08-31 17:44:20.763 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=null, pageNum=1, pageSize=1)
+2025-08-31 17:44:20.767 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=0, pageNum=1, pageSize=1)
+2025-08-31 17:44:20.770 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=1, pageNum=1, pageSize=1)
+2025-08-31 17:44:20.773 [XNIO-1 task-2] INFO  com.xiaou.user.service.impl.UserInfoServiceImpl - 分页查询用户列表，查询条件: UserQueryRequest(username=null, nickname=null, realName=null, email=null, phone=null, gender=null, status=2, pageNum=1, pageSize=1)
+2025-08-31 17:44:20.777 [XNIO-1 task-2] INFO  com.xiaou.user.controller.AdminUserController - 管理员获取用户统计信息成功

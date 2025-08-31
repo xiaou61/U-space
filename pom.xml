@@ -12,6 +12,7 @@
         <module>xiaou-common</module>
         <module>xiaou-system</module>
         <module>xiaou-user</module>
+        <module>xiaou-monitor</module>
         <module>xiaou-application</module>
     </modules>
 
