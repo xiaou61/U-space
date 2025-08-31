@@ -1,0 +1,18 @@
+# 开发环境配置
+server:
+  # 服务器的HTTP端口，默认为8080
+  port: 8080
+  servlet:
+    context-path: /api
+spring:
+  config:
+    #这里里面放着一些私密的不能开源的配置
+    import: "optional:application-sec.yml"
+  profiles:
+    active: dev
+  application:
+    name: Code-Nest
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
