@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.xiaou</groupId>
         <artifactId>Code-Nest</artifactId>
-        <version>${revision}</version>
+        <version>0.0.1-test</version>
     </parent>
 
     <artifactId>xiaou-application</artifactId>
@@ -12,6 +12,13 @@
     <name>xiaou-application</name>
 
     <dependencies>
+        <!-- 引入common模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <!-- Mysql驱动包 -->
         <dependency>
             <groupId>com.mysql</groupId>
