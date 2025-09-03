@@ -9,20 +9,22 @@
     "lint": "eslint . --ext .vue,.js,.jsx --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
-    "pinia": "^2.1.7",
+    "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.2",
     "element-plus": "^2.4.4",
-    "@element-plus/icons-vue": "^2.3.1",
+    "highlight.js": "^11.11.1",
+    "js-cookie": "^3.0.5",
+    "markdown-it": "^14.1.0",
     "nprogress": "^0.2.0",
-    "js-cookie": "^3.0.5"
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
-    "vite": "^5.0.8",
     "eslint": "^8.55.0",
     "eslint-plugin-vue": "^9.19.2",
-    "sass": "^1.69.5"
+    "sass": "^1.69.5",
+    "vite": "^5.0.8"
   }
-} 
+}

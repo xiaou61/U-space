@@ -64,6 +64,43 @@ const routes = [
         },
       },
       {
+        path: 'interview',
+        name: 'InterviewManagement',
+        meta: {
+          title: '面试题管理',
+          icon: 'Document',
+        },
+        children: [
+          {
+            path: 'categories',
+            name: 'InterviewCategories',
+            component: () => import('@/views/interview/categories/index.vue'),
+            meta: {
+              title: '分类管理',
+              icon: 'FolderOpened',
+            },
+          },
+          {
+            path: 'question-sets',
+            name: 'InterviewQuestionSets',
+            component: () => import('@/views/interview/question-sets/index.vue'),
+            meta: {
+              title: '题单管理',
+              icon: 'Collection',
+            },
+          },
+          {
+            path: 'questions',
+            name: 'InterviewQuestions',
+            component: () => import('@/views/interview/questions/index.vue'),
+            meta: {
+              title: '题目管理',
+              icon: 'Edit',
+            },
+          },
+        ],
+      },
+      {
         path: 'system',
         name: 'SystemManagement',
         meta: {

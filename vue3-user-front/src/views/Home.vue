@@ -7,6 +7,9 @@
           <h2>Code Nest</h2>
         </div>
         <div class="nav-menu">
+          <el-button @click="goToInterview" type="success" :icon="Document">
+            面试题库
+          </el-button>
           <el-button @click="goToProfile" type="primary" :icon="User">
             个人中心
           </el-button>
@@ -37,7 +40,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton } from '@element-plus/icons-vue'
+import { User, SwitchButton, Document } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -52,6 +55,11 @@ const loadUserInfo = async () => {
       console.error('获取用户信息失败:', error)
     }
   }
+}
+
+// 跳转到面试题库
+const goToInterview = () => {
+  router.push('/interview')
 }
 
 // 跳转到个人中心

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewCategoryMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewCategory">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="question_set_count" property="questionSetCount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, name, description, sort_order, question_set_count, status, create_time, update_time
+    </sql>
+
+    <!-- 插入分类 -->
+    <insert id="insert" parameterType="com.xiaou.interview.domain.InterviewCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_category
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">name,</if>
+            <if test="description != null">description,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="questionSetCount != null">question_set_count,</if>
+            <if test="status != null">status,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="description != null">#{description},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="questionSetCount != null">#{questionSetCount},</if>
+            <if test="status != null">#{status},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据ID删除分类 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM interview_category WHERE id = #{id}
+    </delete>
+
+    <!-- 更新分类 -->
+    <update id="updateById" parameterType="com.xiaou.interview.domain.InterviewCategory">
+        UPDATE interview_category
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="questionSetCount != null">question_set_count = #{questionSetCount},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询分类 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_category
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称查询分类 -->
+    <select id="selectByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_category
+        WHERE name = #{name}
+    </select>
+
+    <!-- 查询所有分类 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_category
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据状态查询分类 -->
+    <select id="selectByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_category
+        WHERE status = #{status}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 更新题单数量 -->
+    <update id="updateQuestionSetCount">
+        UPDATE interview_category
+        SET question_set_count = #{count}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 检查分类名称是否存在 -->
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM interview_category
+        WHERE name = #{name}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper> 

@@ -39,6 +39,13 @@
             <artifactId>xiaou-monitor</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- 引入interview模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-interview</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         
         <!-- Mysql驱动包 -->
         <dependency>

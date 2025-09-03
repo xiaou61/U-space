@@ -32,6 +32,42 @@ const routes = [
     }
   },
   {
+    path: '/interview',
+    name: 'Interview',
+    component: () => import('@/views/interview/Index.vue'),
+    meta: {
+      title: '面试题库',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/interview/question-sets/:id',
+    name: 'QuestionSetDetail',
+    component: () => import('@/views/interview/QuestionSetDetail.vue'),
+    meta: {
+      title: '题单详情',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/interview/questions/:setId/:questionId',
+    name: 'QuestionDetail',
+    component: () => import('@/views/interview/QuestionDetail.vue'),
+    meta: {
+      title: '题目学习',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/interview/favorites',
+    name: 'MyFavorites',
+    component: () => import('@/views/interview/Favorites.vue'),
+    meta: {
+      title: '我的收藏',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

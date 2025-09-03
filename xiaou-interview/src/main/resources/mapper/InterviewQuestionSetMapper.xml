@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewQuestionSetMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewQuestionSet">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="type" property="type"/>
+        <result column="visibility" property="visibility"/>
+        <result column="question_count" property="questionCount"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="favorite_count" property="favoriteCount"/>
+        <result column="status" property="status"/>
+        <result column="creator_id" property="creatorId"/>
+        <result column="creator_name" property="creatorName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="category_name" property="categoryName"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, title, description, category_id, type, visibility, question_count, 
+        view_count, favorite_count, status, creator_id, creator_name, create_time, update_time
+    </sql>
+
+    <!-- 插入题单 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_question_set (
+            title, description, category_id, type, visibility, question_count,
+            view_count, favorite_count, status, creator_id, creator_name, create_time, update_time
+        ) VALUES (
+            #{title}, #{description}, #{categoryId}, #{type}, #{visibility}, #{questionCount},
+            #{viewCount}, #{favoriteCount}, #{status}, #{creatorId}, #{creatorName}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID删除题单 -->
+    <delete id="deleteById">
+        DELETE FROM interview_question_set WHERE id = #{id}
+    </delete>
+
+    <!-- 更新题单 -->
+    <update id="updateById">
+        UPDATE interview_question_set
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="visibility != null">visibility = #{visibility},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询题单 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question_set
+        WHERE id = #{id}
+    </select>
+
+    <!-- 分页查询题单列表 -->
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT iqs.*, ic.name as category_name
+        FROM interview_question_set iqs
+        LEFT JOIN interview_category ic ON iqs.category_id = ic.id
+        <where>
+            <if test="request.title != null and request.title != ''">
+                AND iqs.title LIKE CONCAT('%', #{request.title}, '%')
+            </if>
+            <if test="request.categoryId != null">
+                AND iqs.category_id = #{request.categoryId}
+            </if>
+            <if test="request.type != null">
+                AND iqs.type = #{request.type}
+            </if>
+            <if test="request.visibility != null">
+                AND iqs.visibility = #{request.visibility}
+            </if>
+            <if test="request.status != null">
+                AND iqs.status = #{request.status}
+            </if>
+            <if test="request.creatorId != null">
+                AND iqs.creator_id = #{request.creatorId}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (iqs.title LIKE CONCAT('%', #{request.keyword}, '%') 
+                OR iqs.description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY iqs.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询题单总数 -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_question_set iqs
+        <where>
+            <if test="title != null and title != ''">
+                AND iqs.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND iqs.category_id = #{categoryId}
+            </if>
+            <if test="type != null">
+                AND iqs.type = #{type}
+            </if>
+            <if test="visibility != null">
+                AND iqs.visibility = #{visibility}
+            </if>
+            <if test="status != null">
+                AND iqs.status = #{status}
+            </if>
+            <if test="creatorId != null">
+                AND iqs.creator_id = #{creatorId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (iqs.title LIKE CONCAT('%', #{keyword}, '%') 
+                OR iqs.description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户的题单 -->
+    <select id="selectByCreatorId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question_set
+        WHERE creator_id = #{creatorId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新题目数量 -->
+    <update id="updateQuestionCount">
+        UPDATE interview_question_set 
+        SET question_count = #{count}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加浏览次数 -->
+    <update id="increaseViewCount">
+        UPDATE interview_question_set 
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加收藏次数 -->
+    <update id="increaseFavoriteCount">
+        UPDATE interview_question_set 
+        SET favorite_count = favorite_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 减少收藏次数 -->
+    <update id="decreaseFavoriteCount">
+        UPDATE interview_question_set 
+        SET favorite_count = GREATEST(favorite_count - 1, 0)
+        WHERE id = #{id}
+    </update>
+
+    <!-- 检查用户是否有权限访问题单 -->
+    <select id="hasAccessPermission" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM interview_question_set
+        WHERE id = #{id}
+        AND (visibility = 1 OR creator_id = #{userId})
+        AND status = 1
+    </select>
+
+    <!-- 搜索题单 -->
+    <select id="searchQuestionSets" resultMap="BaseResultMap">
+        SELECT iqs.*, ic.name as category_name
+        FROM interview_question_set iqs
+        LEFT JOIN interview_category ic ON iqs.category_id = ic.id
+        WHERE iqs.status = 1
+        AND iqs.visibility = 1
+        AND (iqs.title LIKE CONCAT('%', #{keyword}, '%') 
+        OR iqs.description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY iqs.view_count DESC, iqs.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 搜索题单总数 -->
+    <select id="countSearchQuestionSets" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_question_set iqs
+        WHERE iqs.status = 1
+        AND iqs.visibility = 1
+        AND (iqs.title LIKE CONCAT('%', #{keyword}, '%') 
+        OR iqs.description LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+    <!-- 根据分类ID统计题单数量 -->
+    <select id="countByCategoryId" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_question_set
+        WHERE category_id = #{categoryId}
+    </select>
+
+</mapper> 
