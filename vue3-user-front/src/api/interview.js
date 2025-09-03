@@ -54,6 +54,14 @@ export const interviewApi = {
   searchQuestions(params) {
     return request.get('/interview/question-sets/questions/search', { params })
   },
+
+  // 随机抽题
+  getRandomQuestions(questionSetIds, count) {
+    return request.post('/interview/question-sets/questions/random', {
+      questionSetIds,
+      count
+    })
+  },
   
   // ============ 收藏相关 ============
   

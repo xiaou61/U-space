@@ -84,6 +84,18 @@
         ORDER BY sort_order ASC
     </select>
 
+    <!-- 根据题单ID列表查询题目列表 -->
+    <select id="selectByQuestionSetIds" resultMap="BaseResultMap">
+        SELECT iq.*, iqs.title as question_set_title
+        FROM interview_question iq
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE iq.question_set_id IN
+        <foreach collection="questionSetIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY iq.question_set_id, iq.sort_order ASC
+    </select>
+
     <!-- 分页查询题目列表 -->
     <select id="selectPage" resultMap="BaseResultMap">
         SELECT iq.*, iqs.title as question_set_title

@@ -5,6 +5,7 @@ import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.domain.InterviewQuestionSet;
+import com.xiaou.interview.dto.RandomQuestionRequest;
 import com.xiaou.interview.service.InterviewQuestionService;
 import com.xiaou.interview.service.InterviewQuestionSetService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -137,5 +138,12 @@ public class InterviewQuestionSetPublicController {
             @RequestParam(defaultValue = "10") int size) {
         PageResult<InterviewQuestion> result = questionService.searchQuestions(keyword, page, size);
         return Result.success(result);
+    }
+
+    @Operation(summary = "随机抽题")
+    @PostMapping("/questions/random")
+    public Result<List<InterviewQuestion>> getRandomQuestions(@RequestBody RandomQuestionRequest request) {
+        List<InterviewQuestion> questions = questionService.getRandomQuestions(request);
+        return Result.success(questions);
     }
 } 

@@ -6,6 +6,7 @@ import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.dto.InterviewQuestionQueryRequest;
+import com.xiaou.interview.dto.RandomQuestionRequest;
 import com.xiaou.interview.mapper.InterviewQuestionMapper;
 import com.xiaou.interview.mapper.InterviewQuestionSetMapper;
 import com.xiaou.interview.service.InterviewQuestionService;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 /**
  * 面试题目服务实现类
@@ -194,6 +196,41 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
                 .forEach(this::updateQuestionSetCount);
 
         log.info("批量删除题目成功: count={}", ids.size());
+    }
+
+    @Override
+    public List<InterviewQuestion> getRandomQuestions(RandomQuestionRequest request) {
+        // 验证请求参数
+        if (request == null || request.getQuestionSetIds() == null || request.getQuestionSetIds().isEmpty()) {
+            throw new BusinessException("题单ID列表不能为空");
+        }
+        
+        if (request.getCount() == null || request.getCount() <= 0) {
+            throw new BusinessException("抽题数量必须大于0");
+        }
+
+        // 验证题单是否存在且为公开状态
+        for (Long questionSetId : request.getQuestionSetIds()) {
+            if (questionSetMapper.selectById(questionSetId) == null) {
+                throw new BusinessException("题单不存在: " + questionSetId);
+            }
+        }
+
+        // 获取所有指定题单的题目
+        List<InterviewQuestion> allQuestions = questionMapper.selectByQuestionSetIds(request.getQuestionSetIds());
+        if (allQuestions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 如果请求的数量大于等于总题目数，返回所有题目并打乱顺序
+        if (request.getCount() >= allQuestions.size()) {
+            Collections.shuffle(allQuestions);
+            return allQuestions;
+        }
+
+        // 随机选择指定数量的题目
+        Collections.shuffle(allQuestions, new Random());
+        return allQuestions.subList(0, request.getCount());
     }
 
     /**

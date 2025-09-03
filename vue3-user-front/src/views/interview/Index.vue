@@ -8,6 +8,9 @@
           <p>精选面试题，助力求职成功</p>
         </div>
         <div class="header-right">
+          <el-button type="warning" @click="goToRandomQuestions" :icon="Refresh">
+            随机抽题
+          </el-button>
           <el-button type="primary" @click="goToFavorites" :icon="Star">
             我的收藏
           </el-button>
@@ -73,6 +76,8 @@
       </el-card>
     </div>
 
+
+
     <!-- 题单列表 -->
     <div class="content-section">
       <el-card shadow="never" class="content-card">
@@ -120,20 +125,16 @@
             </div>
             
             <div class="card-footer">
-              <span class="creator">{{ questionSet.creatorName }}</span>
-              <span class="create-time">{{ formatDate(questionSet.createTime) }}</span>
+              <div class="card-author">
+                <span v-if="questionSet.creatorName">创建者：{{ questionSet.creatorName }}</span>
+              </div>
+              <div class="card-date">
+                <span>{{ formatDate(questionSet.createTime) }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 空状态 -->
-        <el-empty 
-          v-if="!loading && questionSetList.length === 0" 
-          description="暂无题单数据"
-          :image-size="120"
-        />
-
-        <!-- 分页 -->
         <div class="pagination-wrapper" v-if="total > 0">
           <el-pagination 
             v-model:current-page="queryParams.page" 
@@ -155,7 +156,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Back, Edit, View, Collection
+  Search, Star, Back, Edit, View, Collection, Refresh
 } from '@element-plus/icons-vue'
 import { useInterviewStore } from '@/stores/interview'
 
@@ -255,49 +256,50 @@ const goBack = () => {
   router.push('/')
 }
 
-// 页面挂载
-onMounted(() => {
-  fetchCategories()
-  fetchQuestionSets()
+// 跳转到随机抽题页面
+const goToRandomQuestions = () => {
+  router.push('/interview/random')
+}
+
+// 初始化
+onMounted(async () => {
+  await fetchCategories()
+  await fetchQuestionSets()
 })
 </script>
 
 <style scoped>
 .interview-index {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background-color: #f5f5f5;
+  padding: 20px;
 }
 
 .header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #e4e7ed;
-  padding: 20px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  margin-bottom: 20px;
 }
 
 .header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
 }
 
 .header-left h2 {
-  margin: 0 0 5px 0;
-  color: #303133;
+  margin: 0 0 8px 0;
   font-size: 28px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .header-left p {
   margin: 0;
-  color: #909399;
-  font-size: 14px;
+  opacity: 0.9;
+  font-size: 16px;
 }
 
 .header-right {
@@ -305,97 +307,59 @@ onMounted(() => {
   gap: 12px;
 }
 
-.category-nav {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+.category-nav, .search-section, .content-section {
+  margin-bottom: 20px;
 }
 
-.category-card {
-  background: rgba(255, 255, 255, 0.9);
+.category-card, .search-card, .content-card {
   border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .category-tabs {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
-}
-
-.search-section {
-  padding: 0 20px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 8px;
 }
 
 .search-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
+  padding: 8px;
 }
 
-.content-section {
-  padding: 0 20px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 
-.content-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: none;
-  min-height: 500px;
-}
 
+/* 题单列表样式 */
 .content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
 }
 
 .total-count {
   color: #909399;
   font-size: 14px;
-  font-weight: normal;
 }
 
 .question-sets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
-  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .question-set-card {
-  background: white;
-  border-radius: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
   padding: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid #e4e7ed;
-  position: relative;
-  overflow: hidden;
-}
-
-.question-set-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #409EFF, #67C23A, #E6A23C);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s;
+  background: white;
 }
 
 .question-set-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-  border-color: #409EFF;
-}
-
-.question-set-card:hover::before {
-  opacity: 1;
+  border-color: #409eff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.15);
 }
 
 .card-header {
@@ -407,40 +371,34 @@ onMounted(() => {
 
 .card-title {
   margin: 0;
-  color: #303133;
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 600;
+  color: #303133;
   line-height: 1.4;
   flex: 1;
-  margin-right: 12px;
 }
 
 .card-badges {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
+  margin-left: 12px;
 }
 
 .card-description {
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.6;
   margin: 0 0 16px 0;
+  color: #606266;
+  line-height: 1.5;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 40px;
 }
 
 .card-stats {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 12px 0;
-  border-top: 1px solid #f0f2f5;
-  border-bottom: 1px solid #f0f2f5;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
 .stat-item {
@@ -448,10 +406,6 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   color: #909399;
-  font-size: 13px;
-}
-
-.stat-item .el-icon {
   font-size: 14px;
 }
 
@@ -459,48 +413,36 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  color: #909399;
   font-size: 12px;
-  color: #C0C4CC;
-}
-
-.creator {
-  font-weight: 500;
 }
 
 .pagination-wrapper {
-  margin-top: 30px;
   display: flex;
   justify-content: center;
+  margin-top: 20px;
 }
 
+/* 响应式设计 */
 @media (max-width: 768px) {
+  .interview-index {
+    padding: 10px;
+  }
+  
   .header-content {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .header-right {
-    align-self: stretch;
-    justify-content: flex-end;
-  }
-  
-  .category-tabs {
-    justify-content: center;
+    gap: 16px;
+    text-align: center;
   }
   
   .question-sets-grid {
     grid-template-columns: 1fr;
   }
   
-  .card-header {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .card-badges {
-    flex-direction: row;
-    align-self: flex-start;
+  .category-tabs {
+    justify-content: center;
   }
 }
 </style> 

@@ -3,6 +3,7 @@ package com.xiaou.interview.service;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.dto.InterviewQuestionQueryRequest;
+import com.xiaou.interview.dto.RandomQuestionRequest;
 
 import java.util.List;
 
@@ -67,4 +68,9 @@ public interface InterviewQuestionService {
      * 批量删除题目
      */
     void batchDeleteQuestions(List<Long> ids);
+
+    /**
+     * 随机抽题
+     */
+    List<InterviewQuestion> getRandomQuestions(RandomQuestionRequest request);
 } 

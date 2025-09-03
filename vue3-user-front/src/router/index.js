@@ -42,6 +42,16 @@ const routes = [
     }
   },
   {
+    path: '/interview/random',
+    name: 'RandomQuestions',
+    component: () => import('@/views/interview/RandomQuestions.vue'),
+    meta: {
+      title: '随机抽题',
+      requiresAuth: true,
+      keepAlive: false // 随机抽题页面不缓存，确保每次都是新的状态
+    }
+  },
+  {
     path: '/interview/question-sets/:id',
     name: 'QuestionSetDetail',
     component: () => import('@/views/interview/QuestionSetDetail.vue'),

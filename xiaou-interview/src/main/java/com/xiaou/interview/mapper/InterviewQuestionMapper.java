@@ -51,6 +51,11 @@ public interface InterviewQuestionMapper {
     List<InterviewQuestion> selectByQuestionSetId(@Param("questionSetId") Long questionSetId);
 
     /**
+     * 根据题单ID列表查询题目列表
+     */
+    List<InterviewQuestion> selectByQuestionSetIds(@Param("questionSetIds") List<Long> questionSetIds);
+
+    /**
      * 分页查询题目列表
      */
     List<InterviewQuestion> selectPage(@Param("request") InterviewQuestionQueryRequest request,
