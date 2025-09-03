@@ -10,9 +10,6 @@
           <el-button @click="goHome" :icon="House">
             返回首页
           </el-button>
-          <el-button @click="handleLogout" :icon="SwitchButton">
-            退出登录
-          </el-button>
         </div>
       </div>
     </div>
@@ -161,7 +158,7 @@ import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { captchaApi } from '@/api/captcha'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { House, SwitchButton } from '@element-plus/icons-vue'
+import { House } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -339,22 +336,7 @@ const goHome = () => {
   router.push('/')
 }
 
-// 退出登录
-const handleLogout = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    userStore.logout()
-    ElMessage.success('退出登录成功')
-    router.push('/login')
-  } catch (error) {
-    // 用户取消
-  }
-}
+
 
 onMounted(() => {
   loadUserInfo()

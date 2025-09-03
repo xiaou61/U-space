@@ -42,10 +42,10 @@ spring:
 jwt:
   # JWT密钥（HS512算法要求至少64字节）
   secret: A0I5+vaOwhnQpPdtIxs0H+lKBa+tU6c8aP+Ppj5msSco0GSvcEo21JYJlAztsFPGiQ/jHRcXzS+asTbcj2LqFA==
-  # 访问令牌过期时间（秒）2小时
-  expiration: 7200
-  # 刷新令牌过期时间（秒）7天
-  refresh-expiration: 604800
+  # 访问令牌过期时间（秒）7天 - 与前端Cookie保持一致
+  expiration: 604800
+  # 刷新令牌过期时间（秒）30天
+  refresh-expiration: 2592000
   # 签发者
   issuer: code-nest
 
