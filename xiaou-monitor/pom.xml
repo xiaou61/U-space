@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.xiaou</groupId>
         <artifactId>Code-Nest</artifactId>
-        <version>0.0.1-test</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>xiaou-monitor</artifactId>
