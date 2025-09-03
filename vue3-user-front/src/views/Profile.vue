@@ -411,10 +411,10 @@ onMounted(() => {
   gap: 16px;
 }
 
-.nav-menu .el-button {
+.nav-menu :deep(.el-button) {
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  color: white !important;
   font-weight: 600;
   padding: 12px 20px;
   border-radius: 12px;
@@ -424,8 +424,15 @@ onMounted(() => {
   &:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* 确保图标和文字都是白色 */
+  .el-icon,
+  span {
+    color: white !important;
   }
 }
 
@@ -637,9 +644,16 @@ onMounted(() => {
     gap: 8px;
   }
   
-  .nav-menu .el-button {
+  .nav-menu :deep(.el-button) {
     padding: 8px 12px;
     font-size: 14px;
+    color: white !important;
+    
+    /* 移动端也确保图标和文字都是白色 */
+    .el-icon,
+    span {
+      color: white !important;
+    }
   }
   
   .main-content {
