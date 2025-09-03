@@ -101,3 +101,51 @@ springdoc:
 # 在redis.conf中添加：
 # appendonly yes
 # appendfsync everysec
+
+# ==================== 监控配置 ====================
+xiaou:
+  monitor:
+    # 是否启用SQL监控 (默认true)
+    enabled: true
+    # 慢SQL阈值(毫秒) (默认1000ms)
+    slow-sql-threshold: 1000
+    # 是否启用异步保存监控日志 (默认true) 
+    async-save: true
+    # 监控数据保留天数 (默认30天)
+    retention-days: 30
+    # 是否启用调试日志 (默认false)
+    debug-enabled: false
+    
+    # 排除监控的mapper包路径
+    exclude-mapper-packages:
+      - com.xiaou.monitor.mapper
+      - com.xiaou.system.mapper.SysLoginLogMapper
+      - com.xiaou.system.mapper.SysOperationLogMapper
+    
+    # 排除监控的请求路径
+    exclude-request-paths:
+      - /monitor/
+      - /auth/login-logs
+      - /logs/
+    
+    # 排除监控的模块名称
+    exclude-modules:
+      - SqlMonitor
+      - LogController
+      - AuthController
+    
+    # 排除监控的方法名后缀
+    exclude-method-suffixes:
+      - selectPage
+      - selectList
+      - selectCount
+      - selectById
+      - selectByIds
+    
+    # 排除监控的mapper关键字
+    exclude-mapper-keywords:
+      - Admin
+      - Log
+      - Monitor
+      - Permission
+      - Role

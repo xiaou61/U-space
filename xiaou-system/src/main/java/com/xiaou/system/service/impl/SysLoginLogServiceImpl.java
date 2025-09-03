@@ -5,6 +5,7 @@ import com.xiaou.system.domain.SysLoginLog;
 import com.xiaou.system.dto.LoginLogQueryRequest;
 import com.xiaou.system.dto.LoginLogResponse;
 import com.xiaou.common.core.domain.PageResult;
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.system.mapper.SysLoginLogMapper;
 import com.xiaou.system.service.SysLoginLogService;
 import lombok.RequiredArgsConstructor;
@@ -28,32 +29,18 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
 
     @Override
     public PageResult<LoginLogResponse> getLoginLogPage(LoginLogQueryRequest query) {
-        // 参数校验和默认值设置
-        if (query.getPageNum() == null || query.getPageNum() < 1) {
-            query.setPageNum(1);
-        }
-        if (query.getPageSize() == null || query.getPageSize() < 1) {
-            query.setPageSize(10);
-        }
-        if (query.getPageSize() > 100) {
-            query.setPageSize(100); // 限制最大页面大小
-        }
-
-        // 计算偏移量
-        int offset = (query.getPageNum() - 1) * query.getPageSize();
-
-        // 查询总数
-        Long total = loginLogMapper.selectPageCount(query);
-
-        // 查询数据
-        List<SysLoginLog> loginLogs = loginLogMapper.selectPageList(query, offset, query.getPageSize());
-
-        // 转换为响应DTO
-        List<LoginLogResponse> responses = loginLogs.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-        return PageResult.of(query.getPageNum(), query.getPageSize(), total, responses);
+        log.debug("分页查询登录日志，查询条件: {}", query);
+        
+        return PageHelper.doPage(
+            query,
+            loginLogMapper::selectPageCount,
+            (request, offset, pageSize) -> {
+                List<SysLoginLog> loginLogs = loginLogMapper.selectPageList(request, offset, pageSize);
+                return loginLogs.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            }
+        );
     }
 
     @Override
@@ -61,8 +48,13 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
         if (id == null) {
             return null;
         }
+        
         SysLoginLog loginLog = loginLogMapper.selectById(id);
-        return loginLog != null ? convertToResponse(loginLog) : null;
+        if (loginLog == null) {
+            return null;
+        }
+        
+        return convertToResponse(loginLog);
     }
 
     @Override
@@ -81,12 +73,7 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
      * 转换为响应DTO
      */
     private LoginLogResponse convertToResponse(SysLoginLog loginLog) {
-        LoginLogResponse response = new LoginLogResponse();
-        BeanUtil.copyProperties(loginLog, response);
-        
-        // 设置登录状态描述
-        response.setLoginStatus(loginLog.getLoginStatus());
-        
+        LoginLogResponse response = BeanUtil.copyProperties(loginLog, LoginLogResponse.class);
         return response;
     }
 } 

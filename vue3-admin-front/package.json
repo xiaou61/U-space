@@ -16,7 +16,8 @@
     "element-plus": "^2.4.4",
     "@element-plus/icons-vue": "^2.3.1",
     "nprogress": "^0.2.0",
-    "js-cookie": "^3.0.5"
+    "js-cookie": "^3.0.5",
+    "echarts": "^5.4.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",

@@ -40,6 +40,23 @@
               <span>操作日志</span>
             </el-menu-item>
           </el-sub-menu>
+          
+          <el-sub-menu index="/system">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </template>
+            <el-sub-menu index="/system/monitor">
+              <template #title>
+                <el-icon><Monitor /></el-icon>
+                <span>系统监控</span>
+              </template>
+              <el-menu-item index="/system/monitor/sql">
+                <el-icon><DataAnalysis /></el-icon>
+                <span>SQL监控</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
       
@@ -123,7 +140,10 @@ import {
   Expand, 
   Fold, 
   CaretBottom, 
-  SwitchButton 
+  SwitchButton,
+  Setting,
+  Monitor,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

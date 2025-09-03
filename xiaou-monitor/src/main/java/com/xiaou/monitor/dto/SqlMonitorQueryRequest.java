@@ -1,5 +1,6 @@
 package com.xiaou.monitor.dto;
 
+import com.xiaou.common.core.domain.PageRequest;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Accessors(chain = true)
-public class SqlMonitorQueryRequest {
+public class SqlMonitorQueryRequest implements PageRequest {
 
     /**
      * 当前页码
@@ -113,4 +114,22 @@ public class SqlMonitorQueryRequest {
      * 排序方向
      */
     private String orderDirection = "DESC";
+    
+    /**
+     * 覆盖接口方法，支持链式调用
+     */
+    @Override
+    public SqlMonitorQueryRequest setPageNum(Integer pageNum) {
+        this.pageNum = pageNum;
+        return this;
+    }
+    
+    /**
+     * 覆盖接口方法，支持链式调用
+     */
+    @Override
+    public SqlMonitorQueryRequest setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
+        return this;
+    }
 } 

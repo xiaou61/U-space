@@ -58,9 +58,10 @@ service.interceptors.response.use(
         return responseData
       }
       
-      // Token相关错误
+      // Token相关错误 - 直接登出，不显示确认框
       if (code === 701 || code === 702) {
-        handleTokenError(message)
+        ElMessage.error(message || '登录已过期，请重新登录')
+        handleLogout()
         return Promise.reject(new Error(message))
       }
       
@@ -69,6 +70,12 @@ service.interceptors.response.use(
         ElMessage.error(message)
         handleLogout()
         return Promise.reject(new Error(message))
+      }
+      
+      // 权限不足
+      if (code === 403) {
+        ElMessage.error(message || '权限不足')
+        return Promise.reject(new Error(message || '权限不足'))
       }
       
       // 其他业务错误
@@ -88,7 +95,8 @@ service.interceptors.response.use(
       
       switch (status) {
         case 401:
-          handleTokenError('登录已过期，请重新登录')
+          ElMessage.error('登录已过期，请重新登录')
+          handleLogout()
           break
         case 403:
           ElMessage.error('权限不足')
@@ -99,11 +107,18 @@ service.interceptors.response.use(
         case 500:
           ElMessage.error('服务器内部错误')
           break
+        case 502:
+        case 503:
+        case 504:
+          ElMessage.error('服务暂时不可用，请稍后重试')
+          break
         default:
           ElMessage.error(data?.message || `请求失败 (${status})`)
       }
     } else if (error.code === 'ECONNABORTED') {
       ElMessage.error('请求超时，请稍后重试')
+    } else if (error.code === 'ERR_NETWORK') {
+      ElMessage.error('网络连接异常，请检查网络')
     } else {
       ElMessage.error('网络连接异常，请检查网络')
     }
@@ -112,22 +127,21 @@ service.interceptors.response.use(
   }
 )
 
-// 处理Token错误
+// 处理Token错误 - 已废弃，直接使用handleLogout
 function handleTokenError(message) {
-  ElMessageBox.alert(message, '提示', {
-    confirmButtonText: '重新登录',
-    type: 'warning',
-    showClose: false,
-  }).then(() => {
-    handleLogout()
-  })
+  ElMessage.error(message || '登录已过期，请重新登录')
+  handleLogout()
 }
 
 // 处理登出
 function handleLogout() {
   const userStore = useUserStore()
   userStore.logout()
-  router.push('/login')
+  
+  // 如果当前不在登录页，则跳转到登录页
+  if (router.currentRoute.value.path !== '/login') {
+    router.push('/login')
+  }
 }
 
 // 封装常用的请求方法

@@ -58,4 +58,14 @@ public interface SqlMonitorService {
      * 清空监控数据
      */
     void clearAllData();
+
+    /**
+     * 处理待处理的监控日志（定时任务）
+     */
+    void processPendingLogs();
+
+    /**
+     * 清理过期数据（定时任务）
+     */
+    void cleanupExpiredData();
 } 

@@ -5,6 +5,7 @@ import com.xiaou.common.utils.AdminContextUtil;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.monitor.context.MonitorContext;
 import com.xiaou.monitor.context.MonitorContextHolder;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -27,6 +28,12 @@ import java.util.UUID;
 @Aspect
 @Component
 public class MonitorAspect {
+
+    @Resource
+    private UserContextUtil userContextUtil;
+
+    @Resource
+    private AdminContextUtil adminContextUtil;
 
     /**
      * 拦截所有Controller的方法
@@ -107,17 +114,17 @@ public class MonitorAspect {
             // 判断是管理员还是普通用户请求
             if (path.startsWith("/user/")) {
                 // 普通用户请求
-                if (UserContextUtil.hasUser()) {
-                    context.setUserId(UserContextUtil.getCurrentUserId())
+                if (userContextUtil.isCurrentUserAdmin()) {
+                    context.setUserId(userContextUtil.getCurrentUserId())
                            .setUserType("user")
-                           .setUsername(UserContextUtil.getCurrentUsername());
+                           .setUsername(userContextUtil.getCurrentUsername());
                 }
             } else {
                 // 管理员请求
-                if (AdminContextUtil.hasAdmin()) {
-                    context.setUserId(AdminContextUtil.getCurrentAdminId())
+                if (adminContextUtil.isCurrentUserAdmin()) {
+                    context.setUserId(adminContextUtil.getCurrentAdminId())
                            .setUserType("admin")
-                           .setUsername(AdminContextUtil.getCurrentAdminUsername());
+                           .setUsername(adminContextUtil.getCurrentAdminUsername());
                 }
             }
         } catch (Exception e) {

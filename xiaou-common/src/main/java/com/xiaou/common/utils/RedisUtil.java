@@ -116,6 +116,27 @@ public class RedisUtil {
     }
 
     /**
+     * 获取缓存并指定返回类型
+     *
+     * @param key 键
+     * @param clazz 返回类型
+     * @return 值
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key, Class<T> clazz) {
+        try {
+            Object value = get(key);
+            if (value == null) {
+                return null;
+            }
+            return (T) value;
+        } catch (Exception e) {
+            log.error("获取缓存失败", e);
+            return null;
+        }
+    }
+
+    /**
      * 普通缓存放入
      *
      * @param key   键
@@ -650,6 +671,21 @@ public class RedisUtil {
         } catch (Exception e) {
             log.error("获取所有key失败", e);
             return null;
+        }
+    }
+
+    /**
+     * 根据模式删除key
+     *
+     * @param pattern 匹配模式
+     * @return 删除的key数量
+     */
+    public long deleteByPattern(String pattern) {
+        try {
+            return redissonClient.getKeys().deleteByPattern(pattern);
+        } catch (Exception e) {
+            log.error("根据模式删除key失败", e);
+            return 0;
         }
     }
 } 

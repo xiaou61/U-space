@@ -32,7 +32,7 @@ public class SqlMonitorController {
     @RequireAdmin
     public Result<PageResult<SqlMonitorLog>> queryLogs(@RequestBody SqlMonitorQueryRequest request) {
         PageResult<SqlMonitorLog> result = sqlMonitorService.queryMonitorLogs(request);
-        return Result.ok(result);
+        return Result.success(result);
     }
 
     @Operation(summary = "查询慢SQL列表")
@@ -40,7 +40,7 @@ public class SqlMonitorController {
     @RequireAdmin
     public Result<PageResult<SqlMonitorLog>> querySlowSql(@RequestBody SqlMonitorQueryRequest request) {
         PageResult<SqlMonitorLog> result = sqlMonitorService.querySlowSqlLogs(request);
-        return Result.ok(result);
+        return Result.success(result);
     }
 
     @Operation(summary = "查询SQL统计信息")
@@ -50,7 +50,7 @@ public class SqlMonitorController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         List<SqlStatistics> result = sqlMonitorService.queryStatistics(startDate, endDate);
-        return Result.ok(result);
+        return Result.success(result);
     }
 
     @Operation(summary = "查询SQL执行频次统计")
@@ -60,7 +60,7 @@ public class SqlMonitorController {
             @RequestParam(required = false) String date,
             @RequestParam(defaultValue = "20") Integer limit) {
         List<SqlStatistics> result = sqlMonitorService.queryFrequencyStatistics(date, limit);
-        return Result.ok(result);
+        return Result.success(result);
     }
 
     @Operation(summary = "查询实时监控数据")
@@ -69,7 +69,7 @@ public class SqlMonitorController {
     public Result<List<SqlMonitorLog>> queryRealtimeData(
             @RequestParam(required = false) String traceId) {
         List<SqlMonitorLog> result = sqlMonitorService.queryRealtimeData(traceId);
-        return Result.ok(result);
+        return Result.success(result);
     }
 
     @Operation(summary = "清理过期数据")
@@ -77,7 +77,7 @@ public class SqlMonitorController {
     @RequireAdmin
     public Result<Void> deleteExpiredData(@RequestParam(defaultValue = "30") Integer retentionDays) {
         sqlMonitorService.deleteExpiredData(retentionDays);
-        return Result.ok();
+        return Result.success();
     }
 
     @Operation(summary = "清空所有监控数据")
@@ -85,6 +85,6 @@ public class SqlMonitorController {
     @RequireAdmin
     public Result<Void> clearAllData() {
         sqlMonitorService.clearAllData();
-        return Result.ok();
+        return Result.success();
     }
 } 

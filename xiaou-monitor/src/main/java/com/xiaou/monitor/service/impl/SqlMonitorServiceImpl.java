@@ -3,6 +3,7 @@ package com.xiaou.monitor.service.impl;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaou.common.core.domain.PageResult;
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.RedisUtil;
 import com.xiaou.monitor.domain.SqlMonitorLog;
 import com.xiaou.monitor.domain.SqlStatistics;
@@ -89,25 +90,13 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
 
     @Override
     public PageResult<SqlMonitorLog> queryMonitorLogs(SqlMonitorQueryRequest request) {
-        try {
-            // 查询总数
-            long total = sqlMonitorLogMapper.countByCondition(request);
-            if (total == 0) {
-                return new PageResult<>(Collections.emptyList(), total, request.getPageNum(), request.getPageSize());
-            }
-            
-            // 计算分页参数
-            int offset = (request.getPageNum() - 1) * request.getPageSize();
-            
-            // 查询数据
-            List<SqlMonitorLog> records = sqlMonitorLogMapper.selectByCondition(request, offset, request.getPageSize());
-            
-            return new PageResult<>(records, total, request.getPageNum(), request.getPageSize());
-            
-        } catch (Exception e) {
-            log.error("查询SQL监控日志失败", e);
-            return new PageResult<>(Collections.emptyList(), 0L, request.getPageNum(), request.getPageSize());
-        }
+        log.debug("查询SQL监控日志，查询条件: {}", request);
+        
+        return PageHelper.doPage(
+            request,
+            sqlMonitorLogMapper::countByCondition,
+            sqlMonitorLogMapper::selectByCondition
+        );
     }
 
     @Override
@@ -145,7 +134,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
             if (StrUtil.isNotBlank(traceId)) {
                 // 根据跟踪ID查询实时数据
                 String cacheKey = REALTIME_KEY + traceId;
-                List<SqlMonitorLog> cachedData = redisUtil.get(cacheKey);
+                @SuppressWarnings("unchecked")
+                List<SqlMonitorLog> cachedData = (List<SqlMonitorLog>) redisUtil.get(cacheKey);
                 if (cachedData != null) {
                     return cachedData;
                 }
@@ -153,7 +143,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
             
             // 从Redis获取最近的实时数据
             String realtimeKey = REALTIME_KEY + "latest";
-            List<SqlMonitorLog> realtimeData = redisUtil.get(realtimeKey);
+            @SuppressWarnings("unchecked")
+            List<SqlMonitorLog> realtimeData = (List<SqlMonitorLog>) redisUtil.get(realtimeKey);
             return realtimeData != null ? realtimeData : Collections.emptyList();
             
         } catch (Exception e) {
@@ -193,7 +184,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
             // 按跟踪ID缓存
             if (StrUtil.isNotBlank(monitorLog.getTraceId())) {
                 String traceKey = REALTIME_KEY + monitorLog.getTraceId();
-                List<SqlMonitorLog> traceLogs = redisUtil.get(traceKey);
+                @SuppressWarnings("unchecked")
+                List<SqlMonitorLog> traceLogs = (List<SqlMonitorLog>) redisUtil.get(traceKey);
                 if (traceLogs == null) {
                     traceLogs = new ArrayList<>();
                 }
@@ -203,7 +195,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
             
             // 缓存最新数据
             String latestKey = REALTIME_KEY + "latest";
-            List<SqlMonitorLog> latestLogs = redisUtil.get(latestKey);
+            @SuppressWarnings("unchecked")
+            List<SqlMonitorLog> latestLogs = (List<SqlMonitorLog>) redisUtil.get(latestKey);
             if (latestLogs == null) {
                 latestLogs = new LinkedList<>();
             }
@@ -232,7 +225,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
             
             // 这里可以实现更复杂的统计逻辑
             // 为了简单起见，暂时只记录基本信息
-            Map<String, Object> stats = redisUtil.get(statsKey);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> stats = (Map<String, Object>) redisUtil.get(statsKey);
             if (stats == null) {
                 stats = new HashMap<>();
             }

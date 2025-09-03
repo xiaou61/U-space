@@ -45,14 +45,7 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
-        
-        <!-- SpringDoc OpenAPI 3.0 (Swagger 3) -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        
+
         <!-- Spring AOP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

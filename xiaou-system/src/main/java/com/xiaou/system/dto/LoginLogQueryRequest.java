@@ -1,6 +1,7 @@
 package com.xiaou.system.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xiaou.common.core.domain.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Schema(description = "登录日志查询参数")
-public class LoginLogQueryRequest {
+public class LoginLogQueryRequest implements PageRequest {
 
     /**
      * 用户名
@@ -64,4 +65,22 @@ public class LoginLogQueryRequest {
      */
     @Schema(description = "每页记录数", example = "10")
     private Integer pageSize = 10;
+    
+    /**
+     * 覆盖接口方法，支持链式调用
+     */
+    @Override
+    public LoginLogQueryRequest setPageNum(Integer pageNum) {
+        this.pageNum = pageNum;
+        return this;
+    }
+    
+    /**
+     * 覆盖接口方法，支持链式调用
+     */
+    @Override
+    public LoginLogQueryRequest setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
+        return this;
+    }
 } 

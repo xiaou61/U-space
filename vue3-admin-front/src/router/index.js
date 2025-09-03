@@ -64,6 +64,35 @@ const routes = [
         },
       },
       {
+        path: 'system',
+        name: 'SystemManagement',
+        meta: {
+          title: '系统管理',
+          icon: 'Setting',
+        },
+        children: [
+          {
+            path: 'monitor',
+            name: 'SystemMonitor',
+            meta: {
+              title: '系统监控',
+              icon: 'Monitor',
+            },
+            children: [
+              {
+                path: 'sql',
+                name: 'SqlMonitor',
+                component: () => import('@/views/system/monitor/SqlMonitor.vue'),
+                meta: {
+                  title: 'SQL监控',
+                  icon: 'DataAnalysis',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/profile/index.vue'),
@@ -103,6 +132,7 @@ router.beforeEach(async (to, from, next) => {
   // 如果访问登录页
   if (to.path === '/login') {
     if (isLoggedIn) {
+      // 已登录用户访问登录页，重定向到首页
       next('/')
     } else {
       next()
@@ -116,12 +146,27 @@ router.beforeEach(async (to, from, next) => {
     return
   }
   
+  // 检查并刷新token（如果需要）
+  try {
+    const tokenValid = await userStore.checkAndRefreshToken()
+    if (!tokenValid) {
+      next('/login')
+      return
+    }
+  } catch (error) {
+    console.error('Token检查失败:', error)
+    next('/login')
+    return
+  }
+  
   // 检查用户信息
   if (!userStore.userInfo) {
     try {
       await userStore.getUserInfo()
     } catch (error) {
       console.error('获取用户信息失败:', error)
+      // 获取用户信息失败，清除token并跳转登录页
+      userStore.clearUserData()
       next('/login')
       return
     }
