@@ -132,21 +132,29 @@ import { ElMessage } from 'element-plus'
 import { 
   Back, View, Hide, Star, ArrowLeft, ArrowRight, Reading, EditPen
 } from '@element-plus/icons-vue'
-import { interviewApi } from '@/api/interview'
 import { renderMarkdown } from '@/utils/markdown'
+import { useInterviewStore } from '@/stores/interview'
 
 const route = useRoute()
 const router = useRouter()
+const interviewStore = useInterviewStore()
 
 // 响应式数据
-const loading = ref(false)
 const favoriteLoading = ref(false)
-const question = ref({})
-const questionSet = ref({})
-const questionList = ref([])
 const showAnswer = ref(false)
-const isFavorited = ref(false)
 const isStudyMode = ref(false) // false: 做题模式, true: 背题模式
+
+// 从store获取数据
+const loading = computed(() => interviewStore.currentQuestionLoading)
+const question = computed(() => interviewStore.currentQuestion)
+const questionSet = computed(() => interviewStore.currentQuestionSet)
+const questionList = computed(() => interviewStore.questions)
+
+// 收藏状态
+const isFavorited = computed(() => {
+  const statusKey = `3-${questionId.value}` // 3表示题目类型
+  return interviewStore.favoriteStatus.get(statusKey) || false
+})
 
 // 路由参数
 const setId = ref(parseInt(route.params.setId))
@@ -181,8 +189,7 @@ const renderedAnswer = computed(() => {
 // 获取题单信息
 const fetchQuestionSet = async () => {
   try {
-    const data = await interviewApi.getQuestionSetById(setId.value)
-    questionSet.value = data || {}
+    await interviewStore.fetchQuestionSetById(setId.value)
   } catch (error) {
     console.error('获取题单信息失败:', error)
   }
@@ -191,8 +198,7 @@ const fetchQuestionSet = async () => {
 // 获取题目列表（用于导航）
 const fetchQuestionList = async () => {
   try {
-    const data = await interviewApi.getQuestionsBySetId(setId.value)
-    questionList.value = data || []
+    await interviewStore.fetchQuestionsBySetId(setId.value)
   } catch (error) {
     console.error('获取题目列表失败:', error)
   }
@@ -200,24 +206,19 @@ const fetchQuestionList = async () => {
 
 // 获取题目详情
 const fetchQuestion = async () => {
-  loading.value = true
   try {
-    const data = await interviewApi.getQuestionById(setId.value, questionId.value)
-    question.value = data || {}
+    await interviewStore.fetchQuestionById(setId.value, questionId.value)
     showAnswer.value = false // 重置答案显示状态
   } catch (error) {
     console.error('获取题目详情失败:', error)
     ElMessage.error('获取题目详情失败')
-  } finally {
-    loading.value = false
   }
 }
 
 // 检查收藏状态
 const checkFavoriteStatus = async () => {
   try {
-    const favorited = await interviewApi.isFavorited(3, questionId.value) // 3表示题目类型
-    isFavorited.value = favorited || false
+    await interviewStore.checkFavoriteStatus(3, questionId.value) // 3表示题目类型
   } catch (error) {
     console.error('检查收藏状态失败:', error)
   }
@@ -228,13 +229,11 @@ const toggleFavorite = async () => {
   favoriteLoading.value = true
   try {
     if (isFavorited.value) {
-      await interviewApi.removeFavorite(3, questionId.value)
+      await interviewStore.removeFavorite(3, questionId.value)
       ElMessage.success('取消收藏成功')
-      isFavorited.value = false
     } else {
-      await interviewApi.addFavorite(3, questionId.value)
+      await interviewStore.addFavorite(3, questionId.value)
       ElMessage.success('收藏成功')
-      isFavorited.value = true
     }
   } catch (error) {
     console.error('收藏操作失败:', error)
@@ -247,7 +246,7 @@ const toggleFavorite = async () => {
 // 上一题
 const goToPrevQuestion = async () => {
   try {
-    const data = await interviewApi.getPrevQuestion(setId.value, questionId.value)
+    const data = await interviewStore.fetchPrevQuestion(setId.value, questionId.value)
     if (data) {
       router.push(`/interview/questions/${setId.value}/${data.id}`)
     } else {
@@ -261,7 +260,7 @@ const goToPrevQuestion = async () => {
 // 下一题
 const goToNextQuestion = async () => {
   try {
-    const data = await interviewApi.getNextQuestion(setId.value, questionId.value)
+    const data = await interviewStore.fetchNextQuestion(setId.value, questionId.value)
     if (data) {
       router.push(`/interview/questions/${setId.value}/${data.id}`)
     } else {

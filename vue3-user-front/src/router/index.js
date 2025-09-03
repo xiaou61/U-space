@@ -37,7 +37,8 @@ const routes = [
     component: () => import('@/views/interview/Index.vue'),
     meta: {
       title: '面试题库',
-      requiresAuth: true
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
     }
   },
   {
@@ -46,7 +47,8 @@ const routes = [
     component: () => import('@/views/interview/QuestionSetDetail.vue'),
     meta: {
       title: '题单详情',
-      requiresAuth: true
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
     }
   },
   {
@@ -55,7 +57,8 @@ const routes = [
     component: () => import('@/views/interview/QuestionDetail.vue'),
     meta: {
       title: '题目学习',
-      requiresAuth: true
+      requiresAuth: true,
+      keepAlive: false // 题目页面不缓存，确保学习进度正确
     }
   },
   {
@@ -64,7 +67,8 @@ const routes = [
     component: () => import('@/views/interview/Favorites.vue'),
     meta: {
       title: '我的收藏',
-      requiresAuth: true
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
     }
   },
   {

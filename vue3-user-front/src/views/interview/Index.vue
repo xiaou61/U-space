@@ -157,17 +157,20 @@ import { ElMessage } from 'element-plus'
 import { 
   Search, Star, Back, Edit, View, Collection
 } from '@element-plus/icons-vue'
-import { interviewApi } from '@/api/interview'
+import { useInterviewStore } from '@/stores/interview'
 
 const router = useRouter()
+const interviewStore = useInterviewStore()
 
 // 响应式数据
-const loading = ref(false)
-const categoryList = ref([])
-const questionSetList = ref([])
 const searchKeyword = ref('')
 const currentCategoryId = ref(null)
-const total = ref(0)
+
+// 从store获取数据
+const loading = computed(() => interviewStore.questionSetsLoading)
+const categoryList = computed(() => interviewStore.categories)
+const questionSetList = computed(() => interviewStore.questionSets)
+const total = computed(() => interviewStore.questionSetsTotal)
 
 // 查询参数
 const queryParams = reactive({
@@ -185,36 +188,27 @@ const formatDate = (dateStr) => {
 // 获取分类列表
 const fetchCategories = async () => {
   try {
-    const data = await interviewApi.getEnabledCategories()
-    categoryList.value = data || []
+    await interviewStore.fetchCategories()
   } catch (error) {
-    console.error('获取分类列表失败:', error)
     ElMessage.error('获取分类列表失败')
   }
 }
 
 // 获取题单列表
 const fetchQuestionSets = async () => {
-  loading.value = true
   try {
     // 如果有搜索关键词，使用搜索接口，否则使用公开题单列表接口
-    let data
     if (queryParams.keyword) {
-      data = await interviewApi.searchQuestionSets(queryParams)
+      await interviewStore.searchQuestionSets(queryParams)
     } else {
-      data = await interviewApi.getPublicQuestionSets({
+      await interviewStore.fetchPublicQuestionSets({
         categoryId: currentCategoryId.value,
         page: queryParams.page,
         size: queryParams.size
       })
     }
-    questionSetList.value = data?.records || []
-    total.value = data?.total || 0
   } catch (error) {
-    console.error('获取题单列表失败:', error)
     ElMessage.error('获取题单列表失败')
-  } finally {
-    loading.value = false
   }
 }
 
