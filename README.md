@@ -363,10 +363,6 @@ server {
 
 本项目基于 [MIT License](LICENSE) 开源协议。
 
----
-
-<div align="center">
-
 **⭐ 如果这个项目对你有帮助，请点个Star支持一下！⭐**
 
 ## 预计新增功能
