@@ -26,6 +26,25 @@
             <span>用户管理</span>
           </el-menu-item>
           
+          <el-sub-menu index="/interview">
+            <template #title>
+              <el-icon><Document /></el-icon>
+              <span>面试题目管理</span>
+            </template>
+            <el-menu-item index="/interview/categories">
+              <el-icon><FolderOpened /></el-icon>
+              <span>分类管理</span>
+            </el-menu-item>
+            <el-menu-item index="/interview/question-sets">
+              <el-icon><Collection /></el-icon>
+              <span>题单管理</span>
+            </el-menu-item>
+            <el-menu-item index="/interview/questions">
+              <el-icon><Edit /></el-icon>
+              <span>题目管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -143,7 +162,10 @@ import {
   SwitchButton,
   Setting,
   Monitor,
-  DataAnalysis
+  DataAnalysis,
+  FolderOpened,
+  Collection,
+  Edit
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

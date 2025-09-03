@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewFavoriteMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewFavorite">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_id" property="targetId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="target_title" property="targetTitle"/>
+        <result column="target_description" property="targetDescription"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, target_type, target_id, create_time
+    </sql>
+
+    <!-- 插入收藏 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_favorite (
+            user_id, target_type, target_id, create_time
+        ) VALUES (
+            #{userId}, #{targetType}, #{targetId}, #{createTime}
+        )
+    </insert>
+
+    <!-- 删除收藏 -->
+    <delete id="delete">
+        DELETE FROM interview_favorite 
+        WHERE user_id = #{userId} 
+        AND target_type = #{targetType} 
+        AND target_id = #{targetId}
+    </delete>
+
+    <!-- 根据用户ID删除收藏 -->
+    <delete id="deleteByUserId">
+        DELETE FROM interview_favorite WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 根据目标删除收藏 -->
+    <delete id="deleteByTarget">
+        DELETE FROM interview_favorite 
+        WHERE target_type = #{targetType} 
+        AND target_id = #{targetId}
+    </delete>
+
+    <!-- 检查是否已收藏 -->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM interview_favorite
+        WHERE user_id = #{userId} 
+        AND target_type = #{targetType} 
+        AND target_id = #{targetId}
+    </select>
+
+    <!-- 查询用户收藏的题单 -->
+    <select id="selectQuestionSetsByUserId" resultMap="BaseResultMap">
+        SELECT f.*, iqs.title as target_title, iqs.description as target_description
+        FROM interview_favorite f
+        LEFT JOIN interview_question_set iqs ON f.target_id = iqs.id
+        WHERE f.user_id = #{userId} 
+        AND f.target_type = 1
+        AND iqs.status = 1
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户收藏的题单数量 -->
+    <select id="countQuestionSetsByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_favorite f
+        LEFT JOIN interview_question_set iqs ON f.target_id = iqs.id
+        WHERE f.user_id = #{userId} 
+        AND f.target_type = 1
+        AND iqs.status = 1
+    </select>
+
+    <!-- 查询用户收藏的题目 -->
+    <select id="selectQuestionsByUserId" resultMap="BaseResultMap">
+        SELECT f.*, iq.title as target_title
+        FROM interview_favorite f
+        LEFT JOIN interview_question iq ON f.target_id = iq.id
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE f.user_id = #{userId} 
+        AND f.target_type = 2
+        AND iqs.status = 1
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户收藏的题目数量 -->
+    <select id="countQuestionsByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_favorite f
+        LEFT JOIN interview_question iq ON f.target_id = iq.id
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE f.user_id = #{userId} 
+        AND f.target_type = 2
+        AND iqs.status = 1
+    </select>
+
+    <!-- 根据目标统计收藏数量 -->
+    <select id="countByTarget" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_favorite
+        WHERE target_type = #{targetType} 
+        AND target_id = #{targetId}
+    </select>
+
+    <!-- 批量删除收藏 -->
+    <delete id="batchDeleteByIds">
+        DELETE FROM interview_favorite
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper> 

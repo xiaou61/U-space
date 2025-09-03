@@ -10,9 +10,6 @@
           <el-button @click="goHome" :icon="House">
             返回首页
           </el-button>
-          <el-button @click="handleLogout" :icon="SwitchButton">
-            退出登录
-          </el-button>
         </div>
       </div>
     </div>
@@ -161,7 +158,7 @@ import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { captchaApi } from '@/api/captcha'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { House, SwitchButton } from '@element-plus/icons-vue'
+import { House } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -339,22 +336,7 @@ const goHome = () => {
   router.push('/')
 }
 
-// 退出登录
-const handleLogout = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    userStore.logout()
-    ElMessage.success('退出登录成功')
-    router.push('/login')
-  } catch (error) {
-    // 用户取消
-  }
-}
+
 
 onMounted(() => {
   loadUserInfo()
@@ -429,10 +411,10 @@ onMounted(() => {
   gap: 16px;
 }
 
-.nav-menu .el-button {
+.nav-menu :deep(.el-button) {
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  color: white !important;
   font-weight: 600;
   padding: 12px 20px;
   border-radius: 12px;
@@ -442,8 +424,15 @@ onMounted(() => {
   &:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* 确保图标和文字都是白色 */
+  .el-icon,
+  span {
+    color: white !important;
   }
 }
 
@@ -655,9 +644,16 @@ onMounted(() => {
     gap: 8px;
   }
   
-  .nav-menu .el-button {
+  .nav-menu :deep(.el-button) {
     padding: 8px 12px;
     font-size: 14px;
+    color: white !important;
+    
+    /* 移动端也确保图标和文字都是白色 */
+    .el-icon,
+    span {
+      color: white !important;
+    }
   }
   
   .main-content {

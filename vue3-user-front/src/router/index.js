@@ -32,6 +32,56 @@ const routes = [
     }
   },
   {
+    path: '/interview',
+    name: 'Interview',
+    component: () => import('@/views/interview/Index.vue'),
+    meta: {
+      title: '面试题库',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/interview/random',
+    name: 'RandomQuestions',
+    component: () => import('@/views/interview/RandomQuestions.vue'),
+    meta: {
+      title: '随机抽题',
+      requiresAuth: true,
+      keepAlive: false // 随机抽题页面不缓存，确保每次都是新的状态
+    }
+  },
+  {
+    path: '/interview/question-sets/:id',
+    name: 'QuestionSetDetail',
+    component: () => import('@/views/interview/QuestionSetDetail.vue'),
+    meta: {
+      title: '题单详情',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/interview/questions/:setId/:questionId',
+    name: 'QuestionDetail',
+    component: () => import('@/views/interview/QuestionDetail.vue'),
+    meta: {
+      title: '题目学习',
+      requiresAuth: true,
+      keepAlive: false // 题目页面不缓存，确保学习进度正确
+    }
+  },
+  {
+    path: '/interview/favorites',
+    name: 'MyFavorites',
+    component: () => import('@/views/interview/Favorites.vue'),
+    meta: {
+      title: '我的收藏',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

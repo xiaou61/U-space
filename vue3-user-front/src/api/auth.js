@@ -11,6 +11,16 @@ export const authApi = {
     return request.post('/user/auth/register', data)
   },
   
+  // 刷新Token
+  refresh() {
+    return request.post('/user/auth/refresh')
+  },
+  
+  // 用户登出
+  logout() {
+    return request.post('/user/auth/logout')
+  },
+  
   // 检查用户名是否可用
   checkUsername(username) {
     return request.get('/user/auth/check-username', { username })

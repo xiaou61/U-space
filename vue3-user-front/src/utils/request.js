@@ -25,6 +25,23 @@ service.interceptors.request.use(
     // 如果有token，添加到请求头
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      
+      // 检查Token是否即将过期（在过期前1天自动刷新）
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const exp = payload.exp * 1000 // 转换为毫秒
+        const now = Date.now()
+        const oneDayInMs = 24 * 60 * 60 * 1000 // 1天的毫秒数
+        
+        // 如果Token在1天内过期，且不是刷新Token的请求，则尝试刷新
+        if (exp - now < oneDayInMs && !config.url.includes('/auth/refresh')) {
+          console.log('Token即将过期，准备自动刷新')
+          // 这里不阻塞当前请求，让刷新在后台进行
+          refreshTokenInBackground()
+        }
+      } catch (error) {
+        console.warn('解析Token过期时间失败:', error)
+      }
     }
     
     return config
@@ -35,6 +52,35 @@ service.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+// 后台刷新Token（防止重复刷新）
+let isRefreshing = false
+let refreshPromise = null
+
+function refreshTokenInBackground() {
+  if (isRefreshing) {
+    return refreshPromise
+  }
+  
+  isRefreshing = true
+  refreshPromise = service.post('/user/auth/refresh')
+    .then(response => {
+      const userStore = useUserStore()
+      userStore.setToken(response.accessToken)
+      console.log('Token自动刷新成功')
+      return response.accessToken
+    })
+    .catch(error => {
+      console.warn('Token自动刷新失败:', error)
+      // 刷新失败时不做处理，让正常的错误处理机制处理
+    })
+    .finally(() => {
+      isRefreshing = false
+      refreshPromise = null
+    })
+  
+  return refreshPromise
+}
 
 // 响应拦截器
 service.interceptors.response.use(

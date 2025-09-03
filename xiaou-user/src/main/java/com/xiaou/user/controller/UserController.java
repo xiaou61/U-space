@@ -10,6 +10,7 @@ import com.xiaou.user.dto.UserChangePasswordRequest;
 import com.xiaou.user.dto.UserInfoResponse;
 import com.xiaou.user.dto.UserUpdateRequest;
 import com.xiaou.user.service.UserInfoService;
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,14 +24,19 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/user")
-@RequiredArgsConstructor
+
 public class UserController {
 
-    private final UserInfoService userInfoService;
-    private final TokenService tokenService;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final ObjectMapper objectMapper;
-    private final UserContextUtil userContextUtil;
+    @Resource
+    private  UserInfoService userInfoService;
+    @Resource
+    private  TokenService tokenService;
+    @Resource
+    private  JwtTokenUtil jwtTokenUtil;
+    @Resource
+    private  ObjectMapper objectMapper;
+    @Resource
+    private UserContextUtil userContextUtil;
 
     /**
      * 获取用户信息

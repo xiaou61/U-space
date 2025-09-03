@@ -18,8 +18,8 @@ import java.util.Arrays;
 /**
  * 管理员端 Spring Security 配置类
  * 
- * 禁用默认认证，使用自定义JWT认证
- * 只处理管理员相关路径
+ * 禁用默认认证，使用JWT解析用户信息
+ * 权限控制完全由@RequireAdmin注解处理
  *
  * @author xiaou
  */
@@ -32,7 +32,7 @@ public class SecurityConfig {
 
     /**
      * 管理员端安全过滤器链配置
-     * 只处理管理员相关路径
+     * JWT解析用户信息，权限控制由@RequireAdmin注解处理
      */
     @Bean
     public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
@@ -72,10 +72,8 @@ public class SecurityConfig {
                 .requestMatchers("/favicon.ico", "/error").permitAll()
                 // 允许OPTIONS请求（CORS预检）
                 .requestMatchers("OPTIONS", "/**").permitAll()
-                // 管理员相关接口需要认证
-                .requestMatchers("/auth/**", "/admin/**", "/log/**").authenticated()
-                // 其他接口根据具体情况处理
-                .anyRequest().authenticated()
+                // 所有其他请求都允许通过，权限控制由@RequireAdmin注解处理
+                .anyRequest().permitAll()
             )
             
             // 添加管理员JWT过滤器

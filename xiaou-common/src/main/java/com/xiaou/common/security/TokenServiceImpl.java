@@ -22,14 +22,15 @@ public class TokenServiceImpl implements TokenService {
 
     private static final String TOKEN_PREFIX = "token:";
     private static final String BLACKLIST_PREFIX = "blacklist:";
-    private static final long TOKEN_EXPIRATION_HOURS = 2; // 2小时
+    private static final long TOKEN_EXPIRATION_DAYS = 7; // 7天 - 与JWT Token保持一致
+    private static final long ADMIN_TOKEN_EXPIRATION_HOURS = 2; // 管理员Token 2小时
     private static final long BLACKLIST_EXPIRATION_HOURS = 24; // 24小时
 
     @Override
     public void storeUserInToken(String token, String userInfo, String userType) {
         try {
             String key = TOKEN_PREFIX + userType + ":" + token;
-            redisUtil.set(key, userInfo, TOKEN_EXPIRATION_HOURS * 3600);
+            redisUtil.set(key, userInfo, TOKEN_EXPIRATION_DAYS * 24 * 3600); // 7天
             log.debug("用户信息已存储到Redis，Token: {}, UserType: {}", token, userType);
         } catch (Exception e) {
             log.error("存储用户信息到Redis失败", e);
@@ -186,8 +187,8 @@ public class TokenServiceImpl implements TokenService {
             String usernameKey = "token:admin:username:" + username;
             String tokenMappingKey = "token:admin:mapping:" + token;
             
-            redisUtil.set(usernameKey, adminInfo, TOKEN_EXPIRATION_HOURS * 3600);
-            redisUtil.set(tokenMappingKey, username, TOKEN_EXPIRATION_HOURS * 3600);
+            redisUtil.set(usernameKey, adminInfo, ADMIN_TOKEN_EXPIRATION_HOURS * 3600);
+            redisUtil.set(tokenMappingKey, username, ADMIN_TOKEN_EXPIRATION_HOURS * 3600);
             
             log.debug("管理员Token保存成功: {}", username);
         } catch (Exception e) {

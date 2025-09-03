@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewQuestionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewQuestion">
+        <id column="id" property="id"/>
+        <result column="question_set_id" property="questionSetId"/>
+        <result column="title" property="title"/>
+        <result column="answer" property="answer"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="favorite_count" property="favoriteCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="question_set_title" property="questionSetTitle"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, question_set_id, title, answer, sort_order, 
+        view_count, favorite_count, create_time, update_time
+    </sql>
+
+    <!-- 插入题目 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_question (
+            question_set_id, title, answer, sort_order,
+            view_count, favorite_count, create_time, update_time
+        ) VALUES (
+            #{questionSetId}, #{title}, #{answer}, #{sortOrder},
+            #{viewCount}, #{favoriteCount}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 批量插入题目 -->
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_question (
+            question_set_id, title, answer, sort_order,
+            view_count, favorite_count, create_time, update_time
+        ) VALUES
+        <foreach collection="questions" item="question" separator=",">
+            (#{question.questionSetId}, #{question.title}, 
+             #{question.answer}, #{question.sortOrder}, #{question.viewCount}, 
+             #{question.favoriteCount}, #{question.createTime}, #{question.updateTime})
+        </foreach>
+    </insert>
+
+    <!-- 根据ID删除题目 -->
+    <delete id="deleteById">
+        DELETE FROM interview_question WHERE id = #{id}
+    </delete>
+
+    <!-- 根据题单ID删除题目 -->
+    <delete id="deleteByQuestionSetId">
+        DELETE FROM interview_question WHERE question_set_id = #{questionSetId}
+    </delete>
+
+    <!-- 更新题目 -->
+    <update id="updateById">
+        UPDATE interview_question
+        <set>
+            <if test="questionSetId != null">question_set_id = #{questionSetId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="answer != null">answer = #{answer},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询题目 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据题单ID查询题目列表 -->
+    <select id="selectByQuestionSetId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE question_set_id = #{questionSetId}
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据题单ID列表查询题目列表 -->
+    <select id="selectByQuestionSetIds" resultMap="BaseResultMap">
+        SELECT iq.*, iqs.title as question_set_title
+        FROM interview_question iq
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE iq.question_set_id IN
+        <foreach collection="questionSetIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY iq.question_set_id, iq.sort_order ASC
+    </select>
+
+    <!-- 分页查询题目列表 -->
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT iq.*, iqs.title as question_set_title
+        FROM interview_question iq
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        <where>
+            <if test="request.questionSetId != null">
+                AND iq.question_set_id = #{request.questionSetId}
+            </if>
+            <if test="request.title != null and request.title != ''">
+                AND iq.title LIKE CONCAT('%', #{request.title}, '%')
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (iq.title LIKE CONCAT('%', #{request.keyword}, '%') 
+                OR iq.answer LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY iq.question_set_id, iq.sort_order
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询题目总数 -->
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_question iq
+        <where>
+            <if test="questionSetId != null">
+                AND iq.question_set_id = #{questionSetId}
+            </if>
+            <if test="title != null and title != ''">
+                AND iq.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (iq.title LIKE CONCAT('%', #{keyword}, '%') 
+                OR iq.answer LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据题单ID统计题目数量 -->
+    <select id="countByQuestionSetId" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_question
+        WHERE question_set_id = #{questionSetId}
+    </select>
+
+    <!-- 获取题单中的下一题 -->
+    <select id="selectNextQuestion" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE question_set_id = #{questionSetId}
+        AND sort_order &gt; #{currentSortOrder}
+        ORDER BY sort_order ASC
+        LIMIT 1
+    </select>
+
+    <!-- 获取题单中的上一题 -->
+    <select id="selectPrevQuestion" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE question_set_id = #{questionSetId}
+        AND sort_order &lt; #{currentSortOrder}
+        ORDER BY sort_order DESC
+        LIMIT 1
+    </select>
+
+    <!-- 增加浏览次数 -->
+    <update id="increaseViewCount">
+        UPDATE interview_question 
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加收藏次数 -->
+    <update id="increaseFavoriteCount">
+        UPDATE interview_question 
+        SET favorite_count = favorite_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 减少收藏次数 -->
+    <update id="decreaseFavoriteCount">
+        UPDATE interview_question 
+        SET favorite_count = GREATEST(favorite_count - 1, 0)
+        WHERE id = #{id}
+    </update>
+
+    <!-- 搜索题目 -->
+    <select id="searchQuestions" resultMap="BaseResultMap">
+        SELECT iq.*, iqs.title as question_set_title
+        FROM interview_question iq
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE iqs.status = 1
+        AND iqs.visibility = 1
+        AND (iq.title LIKE CONCAT('%', #{keyword}, '%') 
+        OR iq.answer LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY iq.view_count DESC, iq.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 搜索题目总数 -->
+    <select id="countSearchQuestions" resultType="long">
+        SELECT COUNT(*)
+        FROM interview_question iq
+        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        WHERE iqs.status = 1
+        AND iqs.visibility = 1
+        AND (iq.title LIKE CONCAT('%', #{keyword}, '%') 
+        OR iq.answer LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+    <!-- 获取题单中的最大排序号 -->
+    <select id="getMaxSortOrderByQuestionSetId" resultType="java.lang.Integer">
+        SELECT MAX(sort_order)
+        FROM interview_question
+        WHERE question_set_id = #{questionSetId}
+    </select>
+
+</mapper> 
