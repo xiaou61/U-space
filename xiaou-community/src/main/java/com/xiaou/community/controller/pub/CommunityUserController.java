@@ -31,8 +31,8 @@ public class CommunityUserController {
      * 我的收藏列表
      */
     @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询我的收藏列表")
-    @GetMapping("/collections")
-    public Result<PageResult<CommunityPostResponse>> getUserCollections(CommunityPostQueryRequest request) {
+    @PostMapping("/collections")
+    public Result<PageResult<CommunityPostResponse>> getUserCollections(@RequestBody CommunityPostQueryRequest request) {
         PageResult<CommunityPostResponse> result = communityPostService.getUserCollections(request);
         return Result.success(result);
     }
@@ -41,8 +41,8 @@ public class CommunityUserController {
      * 我的评论列表
      */
     @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询我的评论列表")
-    @GetMapping("/comments")
-    public Result<PageResult<CommunityCommentResponse>> getUserComments(CommunityCommentQueryRequest request) {
+    @PostMapping("/comments")
+    public Result<PageResult<CommunityCommentResponse>> getUserComments(@RequestBody CommunityCommentQueryRequest request) {
         PageResult<CommunityCommentResponse> result = communityCommentService.getUserComments(request);
         return Result.success(result);
     }
@@ -51,8 +51,8 @@ public class CommunityUserController {
      * 我的发帖列表
      */
     @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询我的发帖列表")
-    @GetMapping("/posts")
-    public Result<PageResult<CommunityPostResponse>> getUserPosts(CommunityPostQueryRequest request) {
+    @PostMapping("/posts")
+    public Result<PageResult<CommunityPostResponse>> getUserPosts(@RequestBody CommunityPostQueryRequest request) {
         PageResult<CommunityPostResponse> result = communityPostService.getUserPosts(request);
         return Result.success(result);
     }

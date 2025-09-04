@@ -28,8 +28,8 @@ public class CommunityCommentAdminController {
      * 评论列表（管理端）
      */
     @RequireAdmin
-    @GetMapping
-    public Result<PageResult<CommunityComment>> getCommentList(AdminCommentQueryRequest request) {
+    @PostMapping("/list")
+    public Result<PageResult<CommunityComment>> getCommentList(@RequestBody AdminCommentQueryRequest request) {
         PageResult<CommunityComment> result = communityCommentService.getAdminCommentList(request);
         return Result.success(result);
     }

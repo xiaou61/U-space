@@ -36,11 +36,9 @@ public interface CommunityUserStatusMapper {
     Long selectAdminUserCount(AdminUserQueryRequest request);
     
     /**
-     * 后台查询用户状态列表
+     * 管理端查询用户列表
      */
-    List<CommunityUserStatus> selectAdminUserList(@Param("request") AdminUserQueryRequest request,
-                                                 @Param("offset") Integer offset,
-                                                 @Param("pageSize") Integer pageSize);
+    List<CommunityUserStatus> selectAdminUserList(@Param("request") AdminUserQueryRequest request);
     
     /**
      * 封禁用户

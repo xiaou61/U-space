@@ -32,8 +32,8 @@ public class AdminCommunityCategoryController {
      */
     @Log(module = "社区分类管理", type = Log.OperationType.SELECT, description = "查询分类列表")
     @RequireAdmin
-    @GetMapping
-    public Result<PageResult<CommunityCategory>> getCategoryList(AdminCategoryQueryRequest request) {
+    @PostMapping("/list")
+    public Result<PageResult<CommunityCategory>> getCategoryList(@RequestBody AdminCategoryQueryRequest request) {
         PageResult<CommunityCategory> result = communityCategoryService.getAdminCategoryList(request);
         return Result.success(result);
     }

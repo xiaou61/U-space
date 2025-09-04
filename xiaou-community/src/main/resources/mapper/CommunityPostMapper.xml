@@ -82,9 +82,10 @@
         </where>
     </select>
 
-    <select id="selectAdminPostList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM community_post
+    <!-- 后台查询帖子列表 -->
+    <select id="selectAdminPostList" parameterType="com.xiaou.community.dto.AdminPostQueryRequest" 
+            resultMap="BaseResultMap">
+        SELECT * FROM community_post
         <where>
             <if test="request.status != null">
                 AND status = #{request.status}
@@ -106,7 +107,6 @@
             </if>
         </where>
         ORDER BY is_top DESC, create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
     <update id="topPost">
@@ -168,32 +168,15 @@
     <select id="selectPostCount" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM community_post
-        <where>
-            AND status = 1
-            <if test="request.category != null and request.category != ''">
-                AND category = #{request.category}
-            </if>
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
-        </where>
+        WHERE status = 1
     </select>
 
     <!-- 前台查询帖子列表 -->
-    <select id="selectPostList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM community_post
-        <where>
-            AND status = 1
-            <if test="request.category != null and request.category != ''">
-                AND category = #{request.category}
-            </if>
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
-        </where>
+    <select id="selectPostList" parameterType="com.xiaou.community.dto.CommunityPostQueryRequest" 
+            resultMap="BaseResultMap">
+        SELECT * FROM community_post
+        WHERE status != 3  <!-- 排除已删除的帖子 -->
         ORDER BY is_top DESC, create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 查询用户收藏帖子总数 -->
@@ -204,26 +187,17 @@
         <where>
             AND c.user_id = #{userId}
             AND p.status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
         </where>
     </select>
 
-    <!-- 查询用户收藏帖子列表 -->
+    <!-- 查询用户收藏的帖子列表 -->
     <select id="selectUserCollectionList" resultMap="BaseResultMap">
-        SELECT p.*, c.create_time as collect_time
+        SELECT p.id, p.title, p.content, p.category, p.author_id, p.author_name, p.view_count, p.like_count, 
+               p.comment_count, p.collect_count, p.is_top, p.top_expire_time, p.status, p.create_time, p.update_time
         FROM community_post p
         INNER JOIN community_post_collect c ON p.id = c.post_id
-        <where>
-            AND c.user_id = #{userId}
-            AND p.status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
-        </where>
+        WHERE c.user_id = #{userId} AND p.status != 3
         ORDER BY c.create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 查询用户发布帖子总数 -->
@@ -233,25 +207,15 @@
         <where>
             AND author_id = #{userId}
             AND status != 3
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
         </where>
     </select>
 
-    <!-- 查询用户发布帖子列表 -->
+    <!-- 查询用户发布的帖子列表 -->
     <select id="selectUserPostList" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM community_post
-        <where>
-            AND author_id = #{userId}
-            AND status != 3
-            <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
-            </if>
-        </where>
+        WHERE author_id = #{userId} AND status != 3  <!-- 排除已删除的帖子 -->
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
 </mapper> 

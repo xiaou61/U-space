@@ -2,7 +2,7 @@ package com.xiaou.community.service.impl;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
-
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.dto.AdminCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryCreateRequest;
@@ -31,30 +31,9 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     
     @Override
     public PageResult<CommunityCategory> getAdminCategoryList(AdminCategoryQueryRequest request) {
-        // 设置默认分页参数
-        if (request.getPageNum() == null || request.getPageNum() < 1) {
-            request.setPageNum(1);
-        }
-        if (request.getPageSize() == null || request.getPageSize() < 1) {
-            request.setPageSize(10);
-        }
-        if (request.getPageSize() > 100) {
-            request.setPageSize(100);
-        }
-        
-        // 查询总数
-        Long total = communityCategoryMapper.selectAdminCategoryCount(request);
-        if (total == null || total <= 0) {
-            return PageResult.of(request.getPageNum(), request.getPageSize(), 0L, Collections.emptyList());
-        }
-        
-        // 计算分页参数
-        int offset = (request.getPageNum() - 1) * request.getPageSize();
-        
-        // 查询分页数据
-        List<CommunityCategory> categories = communityCategoryMapper.selectAdminCategoryList(request, offset, request.getPageSize());
-        
-        return PageResult.of(request.getPageNum(), request.getPageSize(), total, categories);
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            communityCategoryMapper.selectAdminCategoryList(request)
+        );
     }
     
     @Override

@@ -42,10 +42,8 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     
     @Override
     public PageResult<CommunityComment> getAdminCommentList(AdminCommentQueryRequest request) {
-        return PageHelper.doPage(
-            request,
-            communityCommentMapper::selectAdminCommentCount,
-            communityCommentMapper::selectAdminCommentList
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            communityCommentMapper.selectAdminCommentList(request)
         );
     }
     
@@ -82,16 +80,12 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     
     @Override
     public PageResult<CommunityCommentResponse> getPostComments(Long postId, CommunityCommentQueryRequest request) {
-        return PageHelper.doPage(
-            request,
-            req -> communityCommentMapper.selectPostCommentCount(postId, req),
-            (req, offset, pageSize) -> {
-                List<CommunityComment> comments = communityCommentMapper.selectPostCommentList(postId, req, offset, pageSize);
-                return comments.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            }
-        );
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            List<CommunityComment> comments = communityCommentMapper.selectPostCommentList(postId, request);
+            return comments.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        });
     }
     
     @Override
@@ -213,16 +207,12 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(
-            request,
-            req -> communityCommentMapper.selectUserCommentCount(currentUser.getId(), req),
-            (req, offset, pageSize) -> {
-                List<CommunityComment> comments = communityCommentMapper.selectUserCommentList(currentUser.getId(), req, offset, pageSize);
-                return comments.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            }
-        );
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            List<CommunityComment> comments = communityCommentMapper.selectUserCommentList(currentUser.getId(), request);
+            return comments.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        });
     }
     
     /**

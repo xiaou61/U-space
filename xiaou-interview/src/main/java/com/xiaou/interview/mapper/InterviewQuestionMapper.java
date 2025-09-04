@@ -56,11 +56,9 @@ public interface InterviewQuestionMapper {
     List<InterviewQuestion> selectByQuestionSetIds(@Param("questionSetIds") List<Long> questionSetIds);
 
     /**
-     * 分页查询题目列表
+     * 分页查询
      */
-    List<InterviewQuestion> selectPage(@Param("request") InterviewQuestionQueryRequest request,
-                                     @Param("offset") int offset,
-                                     @Param("limit") int limit);
+    List<InterviewQuestion> selectPage(@Param("request") InterviewQuestionQueryRequest request);
 
     /**
      * 查询题目总数
@@ -100,11 +98,9 @@ public interface InterviewQuestionMapper {
     int decreaseFavoriteCount(Long id);
 
     /**
-     * 搜索题目
+     * 搜索问题
      */
-    List<InterviewQuestion> searchQuestions(@Param("keyword") String keyword, 
-                                          @Param("offset") int offset, 
-                                          @Param("limit") int limit);
+    List<InterviewQuestion> searchQuestions(@Param("keyword") String keyword);
 
     /**
      * 搜索题目总数

@@ -65,9 +65,9 @@ public class InterviewQuestionController {
     }
 
     @Operation(summary = "分页查询题目")
-    @GetMapping
+    @PostMapping("/list")
     @RequireAdmin
-    public Result<PageResult<InterviewQuestion>> getQuestions(InterviewQuestionQueryRequest request) {
+    public Result<PageResult<InterviewQuestion>> getQuestions(@RequestBody InterviewQuestionQueryRequest request) {
         PageResult<InterviewQuestion> result = questionService.getQuestions(request);
         return Result.success(result);
     }

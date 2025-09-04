@@ -14,22 +14,12 @@ public class CommunityPostQueryRequest implements PageRequest {
     /**
      * 页码
      */
-    private Integer pageNum;
+    private Integer pageNum = 1;
     
     /**
      * 每页大小
      */
-    private Integer pageSize;
-    
-    /**
-     * 分类筛选
-     */
-    private String category;
-    
-    /**
-     * 关键字搜索
-     */
-    private String keyword;
+    private Integer pageSize = 10;
     
     @Override
     public PageRequest setPageNum(Integer pageNum) {

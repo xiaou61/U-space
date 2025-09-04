@@ -38,8 +38,8 @@ public class CommunityUserAdminController {
      * 用户社区状态列表
      */
     @RequireAdmin
-    @GetMapping
-    public Result<PageResult<CommunityUserStatus>> getUserList(AdminUserQueryRequest request) {
+    @PostMapping("/list")
+    public Result<PageResult<CommunityUserStatus>> getUserList(@RequestBody AdminUserQueryRequest request) {
         PageResult<CommunityUserStatus> result = communityUserStatusService.getAdminUserList(request);
         return Result.success(result);
     }

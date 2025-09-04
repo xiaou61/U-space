@@ -53,9 +53,7 @@ public interface SysLoginLogMapper {
     /**
      * 分页查询登录日志列表
      */
-    List<SysLoginLog> selectPageList(@Param("query") LoginLogQueryRequest query, 
-                                    @Param("offset") Integer offset, 
-                                    @Param("size") Integer size);
+    List<SysLoginLog> selectPageList(@Param("query") LoginLogQueryRequest query);
 
     /**
      * 查询登录日志总数（带条件）

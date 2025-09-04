@@ -153,8 +153,8 @@
 
         <div class="pagination-wrapper" v-if="total > 0">
           <el-pagination 
-            v-model:current-page="queryParams.page" 
-            v-model:page-size="queryParams.size"
+            v-model:current-page="queryParams.pageNum" 
+            v-model:page-size="queryParams.pageSize"
             :page-sizes="[10, 20, 30, 50]"
             :total="total"
             layout="total, sizes, prev, pager, next, jumper"
@@ -191,9 +191,8 @@ const total = ref(0)
 
 // 查询参数
 const queryParams = reactive({
-  keyword: '',
-  page: 1,
-  size: 10
+  pageNum: 1,
+  pageSize: 10
 })
 
 
@@ -229,22 +228,20 @@ const fetchPostList = async () => {
 
 // 搜索
 const handleSearch = () => {
-  queryParams.keyword = searchKeyword.value
-  queryParams.category = searchCategory.value
-  queryParams.page = 1
+  queryParams.pageNum = 1
   fetchPostList()
 }
 
 // 分页大小改变
 const handleSizeChange = (size) => {
-  queryParams.size = size
-  queryParams.page = 1
+  queryParams.pageSize = size
+  queryParams.pageNum = 1
   fetchPostList()
 }
 
 // 当前页改变
 const handleCurrentChange = (page) => {
-  queryParams.page = page
+  queryParams.pageNum = page
   fetchPostList()
 }
 

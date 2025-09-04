@@ -90,20 +90,19 @@
         </where>
     </select>
 
-    <!-- 管理端查询分类列表 -->
+    <!-- 查询分类列表（管理端） -->
     <select id="selectAdminCategoryList" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM community_category
         <where>
-            <if test="request.status != null">
-                AND status = #{request.status}
-            </if>
             <if test="request.keyword != null and request.keyword != ''">
                 AND (name LIKE CONCAT('%', #{request.keyword}, '%') OR description LIKE CONCAT('%', #{request.keyword}, '%'))
             </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
         </where>
         ORDER BY sort_order ASC, create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
 </mapper> 

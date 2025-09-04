@@ -39,9 +39,7 @@ public interface CommunityCommentMapper {
     /**
      * 后台查询评论列表
      */
-    List<CommunityComment> selectAdminCommentList(@Param("request") AdminCommentQueryRequest request,
-                                                 @Param("offset") Integer offset,
-                                                 @Param("pageSize") Integer pageSize);
+    List<CommunityComment> selectAdminCommentList(@Param("request") AdminCommentQueryRequest request);
     
     /**
      * 删除评论
@@ -74,9 +72,7 @@ public interface CommunityCommentMapper {
      * 分页查询帖子的评论列表
      */
     List<CommunityComment> selectPostCommentList(@Param("postId") Long postId, 
-                                                @Param("request") CommunityCommentQueryRequest request,
-                                                @Param("offset") Integer offset,
-                                                @Param("pageSize") Integer pageSize);
+                                                @Param("request") CommunityCommentQueryRequest request);
     
     /**
      * 查询用户的评论总数
@@ -87,7 +83,5 @@ public interface CommunityCommentMapper {
      * 分页查询用户的评论列表
      */
     List<CommunityComment> selectUserCommentList(@Param("userId") Long userId, 
-                                                @Param("request") CommunityCommentQueryRequest request,
-                                                @Param("offset") Integer offset,
-                                                @Param("pageSize") Integer pageSize);
+                                                @Param("request") CommunityCommentQueryRequest request);
 } 

@@ -1,17 +1,17 @@
 package com.xiaou.common.utils;
 
-import com.xiaou.common.core.domain.PageRequest;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageInfo;
 import com.xiaou.common.core.domain.PageResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * 分页工具类
- * 封装分页查询的通用逻辑，消除重复代码
+ * PageHelper 分页插件工具类
+ * 基于 PageHelper 分页插件实现的统一分页工具
  * 
  * @author xiaou
  */
@@ -24,137 +24,119 @@ public class PageHelper {
     
     /**
      * 执行分页查询
-     *
-     * @param pageRequest 分页请求参数
-     * @param countFunction 总数查询函数
-     * @param selectFunction 分页数据查询函数（参数：查询条件，offset，pageSize）
-     * @param queryParam 查询条件参数
-     * @param <T> 查询条件类型
-     * @param <R> 返回数据类型
+     * 
+     * @param pageNum 页码（从1开始）
+     * @param pageSize 每页大小
+     * @param queryFunction 查询函数，该函数内应该包含实际的查询逻辑
+     * @param <T> 返回数据类型
      * @return 分页结果
      */
-    public static <T, R> PageResult<R> doPage(
-            PageRequest pageRequest,
-            Function<T, Long> countFunction,
-            TriFunction<T, Integer, Integer, List<R>> selectFunction,
-            T queryParam) {
-        
+    public static <T> PageResult<T> doPage(Integer pageNum, Integer pageSize, Supplier<List<T>> queryFunction) {
         try {
             // 参数验证和默认值设置
-            validateAndSetDefaults(pageRequest);
+            pageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
+            pageSize = pageSize == null || pageSize < 1 ? 10 : pageSize;
+            pageSize = Math.min(pageSize, 100); // 限制最大页面大小
             
-            // 查询总数
-            Long total = countFunction.apply(queryParam);
-            if (total == null || total <= 0) {
-                return PageResult.of(pageRequest.getPageNum(), pageRequest.getPageSize(), 0L, Collections.emptyList());
-            }
+            // 开启分页
+            com.github.pagehelper.PageHelper.startPage(pageNum, pageSize);
             
-            // 计算分页参数
-            int offset = (pageRequest.getPageNum() - 1) * pageRequest.getPageSize();
+            // 执行查询
+            List<T> list = queryFunction.get();
             
-            // 查询分页数据
-            List<R> records = selectFunction.apply(queryParam, offset, pageRequest.getPageSize());
-            if (records == null) {
-                records = Collections.emptyList();
-            }
+            // 获取分页信息
+            PageInfo<T> pageInfo = new PageInfo<>(list);
             
-            return PageResult.of(pageRequest.getPageNum(), pageRequest.getPageSize(), total, records);
+            // 转换为统一的分页结果
+            return PageResult.of(
+                pageInfo.getPageNum(),
+                pageInfo.getPageSize(),
+                pageInfo.getTotal(),
+                pageInfo.getList()
+            );
             
         } catch (Exception e) {
             log.error("分页查询失败", e);
+            return PageResult.of(pageNum, pageSize, 0L, Collections.emptyList());
+        } finally {
+            // 清理分页参数，避免影响后续查询
+            com.github.pagehelper.PageHelper.clearPage();
+        }
+    }
+    
+    /**
+     * 执行分页查询（支持排序）
+     * 
+     * @param pageNum 页码（从1开始）
+     * @param pageSize 每页大小
+     * @param orderBy 排序字段，格式：field1 asc,field2 desc
+     * @param queryFunction 查询函数
+     * @param <T> 返回数据类型
+     * @return 分页结果
+     */
+    public static <T> PageResult<T> doPage(Integer pageNum, Integer pageSize, String orderBy, Supplier<List<T>> queryFunction) {
+        try {
+            // 参数验证和默认值设置
+            pageNum = pageNum == null || pageNum < 1 ? 1 : pageNum;
+            pageSize = pageSize == null || pageSize < 1 ? 10 : pageSize;
+            pageSize = Math.min(pageSize, 100); // 限制最大页面大小
+            
+            // 开启分页和排序
+            if (orderBy != null && !orderBy.trim().isEmpty()) {
+                com.github.pagehelper.PageHelper.startPage(pageNum, pageSize, orderBy);
+            } else {
+                com.github.pagehelper.PageHelper.startPage(pageNum, pageSize);
+            }
+            
+            // 执行查询
+            List<T> list = queryFunction.get();
+            
+            // 获取分页信息
+            PageInfo<T> pageInfo = new PageInfo<>(list);
+            
+            // 转换为统一的分页结果
             return PageResult.of(
-                pageRequest.getPageNum() != null ? pageRequest.getPageNum() : 1,
-                pageRequest.getPageSize() != null ? pageRequest.getPageSize() : 10,
-                0L, 
-                Collections.emptyList()
+                pageInfo.getPageNum(),
+                pageInfo.getPageSize(),
+                pageInfo.getTotal(),
+                pageInfo.getList()
+            );
+            
+        } catch (Exception e) {
+            log.error("分页查询失败", e);
+            return PageResult.of(pageNum, pageSize, 0L, Collections.emptyList());
+        } finally {
+            // 清理分页参数，避免影响后续查询
+            com.github.pagehelper.PageHelper.clearPage();
+        }
+    }
+    
+    /**
+     * 直接将 PageHelper 查询结果转换为 PageResult
+     * 适用于已经使用 PageHelper.startPage() 的场景
+     * 
+     * @param list PageHelper 查询结果
+     * @param <T> 数据类型
+     * @return 分页结果
+     */
+    public static <T> PageResult<T> toPageResult(List<T> list) {
+        if (list instanceof Page) {
+            Page<T> page = (Page<T>) list;
+            return PageResult.of(
+                page.getPageNum(),
+                page.getPageSize(),
+                page.getTotal(),
+                page.getResult()
             );
         }
-    }
-    
-    /**
-     * 执行分页查询（简化版本，当查询条件和查询参数是同一个对象时使用）
-     *
-     * @param pageRequest 分页请求参数（同时也是查询条件）
-     * @param countFunction 总数查询函数
-     * @param selectFunction 分页数据查询函数
-     * @param <T> 查询条件类型（实现了PageRequest接口）
-     * @param <R> 返回数据类型
-     * @return 分页结果
-     */
-    public static <T extends PageRequest, R> PageResult<R> doPage(
-            T pageRequest,
-            Function<T, Long> countFunction,
-            TriFunction<T, Integer, Integer, List<R>> selectFunction) {
         
-        return doPage(pageRequest, countFunction, selectFunction, pageRequest);
-    }
-    
-    /**
-     * 执行分页查询（使用BiFunction的简化版本）
-     *
-     * @param pageRequest 分页请求参数
-     * @param countFunction 总数查询函数
-     * @param selectFunction 分页数据查询函数（参数：查询条件，分页信息）
-     * @param queryParam 查询条件参数
-     * @param <T> 查询条件类型
-     * @param <R> 返回数据类型
-     * @return 分页结果
-     */
-    public static <T, R> PageResult<R> doPageWithBiFunction(
-            PageRequest pageRequest,
-            Function<T, Long> countFunction,
-            BiFunction<T, PageInfo, List<R>> selectFunction,
-            T queryParam) {
-        
-        return doPage(pageRequest, countFunction, 
-            (param, offset, pageSize) -> selectFunction.apply(param, new PageInfo(offset, pageSize)), 
-            queryParam);
-    }
-    
-    /**
-     * 参数验证和默认值设置
-     */
-    private static void validateAndSetDefaults(PageRequest pageRequest) {
-        if (pageRequest.getPageNum() == null || pageRequest.getPageNum() < 1) {
-            pageRequest.setPageNum(pageRequest.getDefaultPageNum());
-        }
-        
-        if (pageRequest.getPageSize() == null || pageRequest.getPageSize() < 1) {
-            pageRequest.setPageSize(pageRequest.getDefaultPageSize());
-        }
-        
-        // 限制最大页面大小
-        if (pageRequest.getPageSize() > pageRequest.getMaxPageSize()) {
-            pageRequest.setPageSize(pageRequest.getMaxPageSize());
-        }
-    }
-    
-    /**
-     * 三参数函数式接口
-     */
-    @FunctionalInterface
-    public interface TriFunction<T, U, V, R> {
-        R apply(T t, U u, V v);
-    }
-    
-    /**
-     * 分页信息类
-     */
-    public static class PageInfo {
-        private final int offset;
-        private final int pageSize;
-        
-        public PageInfo(int offset, int pageSize) {
-            this.offset = offset;
-            this.pageSize = pageSize;
-        }
-        
-        public int getOffset() {
-            return offset;
-        }
-        
-        public int getPageSize() {
-            return pageSize;
-        }
+        // 如果不是 Page 对象，说明没有使用分页
+        PageInfo<T> pageInfo = new PageInfo<>(list);
+        return PageResult.of(
+            pageInfo.getPageNum(),
+            pageInfo.getPageSize(),
+            pageInfo.getTotal(),
+            pageInfo.getList()
+        );
     }
 } 

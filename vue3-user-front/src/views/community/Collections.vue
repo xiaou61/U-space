@@ -81,8 +81,8 @@
 
         <div class="pagination-wrapper" v-if="total > 0">
           <el-pagination 
-            v-model:current-page="queryParams.page" 
-            v-model:page-size="queryParams.size"
+            v-model:current-page="queryParams.pageNum" 
+            v-model:page-size="queryParams.pageSize"
             :page-sizes="[10, 20, 30, 50]"
             :total="total"
             layout="total, sizes, prev, pager, next, jumper"
@@ -113,8 +113,8 @@ const total = ref(0)
 
 // 查询参数
 const queryParams = reactive({
-  page: 1,
-  size: 10
+  pageNum: 1,
+  pageSize: 10
 })
 
 // 格式化日期
@@ -139,14 +139,14 @@ const fetchCollections = async () => {
 
 // 分页大小改变
 const handleSizeChange = (size) => {
-  queryParams.size = size
-  queryParams.page = 1
+  queryParams.pageSize = size
+  queryParams.pageNum = 1
   fetchCollections()
 }
 
 // 当前页改变
 const handleCurrentChange = (page) => {
-  queryParams.page = page
+  queryParams.pageNum = page
   fetchCollections()
 }
 

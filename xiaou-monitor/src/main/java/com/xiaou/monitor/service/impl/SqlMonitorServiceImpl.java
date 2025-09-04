@@ -92,10 +92,8 @@ public class SqlMonitorServiceImpl implements SqlMonitorService {
     public PageResult<SqlMonitorLog> queryMonitorLogs(SqlMonitorQueryRequest request) {
         log.debug("查询SQL监控日志，查询条件: {}", request);
         
-        return PageHelper.doPage(
-            request,
-            sqlMonitorLogMapper::countByCondition,
-            sqlMonitorLogMapper::selectByCondition
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            sqlMonitorLogMapper.selectByCondition(request)
         );
     }
 

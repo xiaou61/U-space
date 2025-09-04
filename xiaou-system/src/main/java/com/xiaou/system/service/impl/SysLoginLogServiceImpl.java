@@ -31,16 +31,12 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
     public PageResult<LoginLogResponse> getLoginLogPage(LoginLogQueryRequest query) {
         log.debug("分页查询登录日志，查询条件: {}", query);
         
-        return PageHelper.doPage(
-            query,
-            loginLogMapper::selectPageCount,
-            (request, offset, pageSize) -> {
-                List<SysLoginLog> loginLogs = loginLogMapper.selectPageList(request, offset, pageSize);
-                return loginLogs.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            }
-        );
+        return PageHelper.doPage(query.getPageNum(), query.getPageSize(), () -> {
+            List<SysLoginLog> loginLogs = loginLogMapper.selectPageList(query);
+            return loginLogs.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        });
     }
 
     @Override

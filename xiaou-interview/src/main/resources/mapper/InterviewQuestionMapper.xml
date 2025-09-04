@@ -96,25 +96,34 @@
         ORDER BY iq.question_set_id, iq.sort_order ASC
     </select>
 
-    <!-- 分页查询题目列表 -->
+    <!-- 分页查询 -->
     <select id="selectPage" resultMap="BaseResultMap">
-        SELECT iq.*, iqs.title as question_set_title
-        FROM interview_question iq
-        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM interview_question
         <where>
             <if test="request.questionSetId != null">
-                AND iq.question_set_id = #{request.questionSetId}
+                AND question_set_id = #{request.questionSetId}
             </if>
             <if test="request.title != null and request.title != ''">
-                AND iq.title LIKE CONCAT('%', #{request.title}, '%')
+                AND title LIKE CONCAT('%', #{request.title}, '%')
             </if>
             <if test="request.keyword != null and request.keyword != ''">
-                AND (iq.title LIKE CONCAT('%', #{request.keyword}, '%') 
-                OR iq.answer LIKE CONCAT('%', #{request.keyword}, '%'))
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') 
+                     OR answer LIKE CONCAT('%', #{request.keyword}, '%'))
             </if>
         </where>
-        ORDER BY iq.question_set_id, iq.sort_order
-        LIMIT #{offset}, #{limit}
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 搜索问题 -->
+    <select id="searchQuestions" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE title LIKE CONCAT('%', #{keyword}, '%') 
+           OR content LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY create_time DESC
     </select>
 
     <!-- 查询题目总数 -->
@@ -182,19 +191,6 @@
         SET favorite_count = GREATEST(favorite_count - 1, 0)
         WHERE id = #{id}
     </update>
-
-    <!-- 搜索题目 -->
-    <select id="searchQuestions" resultMap="BaseResultMap">
-        SELECT iq.*, iqs.title as question_set_title
-        FROM interview_question iq
-        LEFT JOIN interview_question_set iqs ON iq.question_set_id = iqs.id
-        WHERE iqs.status = 1
-        AND iqs.visibility = 1
-        AND (iq.title LIKE CONCAT('%', #{keyword}, '%') 
-        OR iq.answer LIKE CONCAT('%', #{keyword}, '%'))
-        ORDER BY iq.view_count DESC, iq.create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
 
     <!-- 搜索题目总数 -->
     <select id="countSearchQuestions" resultType="long">

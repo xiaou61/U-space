@@ -52,7 +52,7 @@ export const interviewApi = {
   
   // 分页查询题单
   getQuestionSets(params) {
-    return request.get('/admin/interview/question-sets', { params })
+    return request.post('/admin/interview/question-sets/list', params)
   },
   
   // 获取用户的题单
@@ -99,7 +99,7 @@ export const interviewApi = {
   
   // 分页查询题目
   getQuestions(params) {
-    return request.get('/admin/interview/questions', { params })
+    return request.post('/admin/interview/questions/list', params)
   },
   
   // 获取题单的题目列表

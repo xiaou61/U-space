@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 // 获取帖子列表
 export function getPostList(params) {
-  return request.get('/admin/community/posts', params)
+  return request.post('/admin/community/posts/list', params)
 }
 
 // 获取帖子详情
@@ -22,7 +22,7 @@ export function togglePostTop(id) {
 
 // 获取评论列表
 export function getCommentList(params) {
-  return request.get('/admin/community/comments', params)
+  return request.post('/admin/community/comments/list', params)
 }
 
 // 删除评论
@@ -32,7 +32,7 @@ export function deleteComment(id) {
 
 // 获取用户状态列表
 export function getUserStatusList(params) {
-  return request.get('/admin/community/users', params)
+  return request.post('/admin/community/users/list', params)
 }
 
 // 封禁用户
@@ -49,7 +49,7 @@ export function unbanUser(id) {
 
 // 获取分类列表
 export function getCategoryList(params) {
-  return request.get('/admin/community/categories', params)
+  return request.post('/admin/community/categories/list', params)
 }
 
 // 获取分类详情

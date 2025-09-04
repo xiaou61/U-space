@@ -67,9 +67,9 @@ public class InterviewQuestionSetController {
     }
 
     @Operation(summary = "分页查询题单")
-    @GetMapping
+    @PostMapping("/list")
     @RequireAdmin
-    public Result<PageResult<InterviewQuestionSet>> getQuestionSets(InterviewQuestionSetQueryRequest request) {
+    public Result<PageResult<InterviewQuestionSet>> getQuestionSets(@RequestBody InterviewQuestionSetQueryRequest request) {
         PageResult<InterviewQuestionSet> result = questionSetService.getQuestionSets(request);
         return Result.success(result);
     }

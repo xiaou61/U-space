@@ -29,9 +29,11 @@ public class CommunityPostController {
      * 帖子列表查询
      */
     @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询帖子列表")
-    @GetMapping
-    public Result<PageResult<CommunityPostResponse>> getPostList(CommunityPostQueryRequest request) {
+    @PostMapping("/list")
+    public Result<PageResult<CommunityPostResponse>> getPostList(@RequestBody CommunityPostQueryRequest request) {
+        log.info("Controller收到帖子列表查询请求: {}", request);
         PageResult<CommunityPostResponse> result = communityPostService.getPostList(request);
+        log.info("Controller返回结果，total: {}", result.getTotal());
         return Result.success(result);
     }
     

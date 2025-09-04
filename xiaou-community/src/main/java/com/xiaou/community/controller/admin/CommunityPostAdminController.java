@@ -32,8 +32,8 @@ public class CommunityPostAdminController {
      * 帖子列表（管理端）
      */
     @RequireAdmin
-    @GetMapping
-    public Result<PageResult<CommunityPost>> getPostList(AdminPostQueryRequest request) {
+    @PostMapping("/list")
+    public Result<PageResult<CommunityPost>> getPostList(@RequestBody AdminPostQueryRequest request) {
         PageResult<CommunityPost> result = communityPostService.getAdminPostList(request);
         return Result.success(result);
     }

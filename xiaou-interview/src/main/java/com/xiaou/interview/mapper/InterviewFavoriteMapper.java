@@ -46,9 +46,7 @@ public interface InterviewFavoriteMapper {
     /**
      * 查询用户收藏的题单
      */
-    List<InterviewFavorite> selectQuestionSetsByUserId(@Param("userId") Long userId, 
-                                                      @Param("offset") int offset, 
-                                                      @Param("limit") int limit);
+    List<InterviewFavorite> selectQuestionSetsByUserId(@Param("userId") Long userId);
 
     /**
      * 统计用户收藏的题单数量
@@ -58,9 +56,7 @@ public interface InterviewFavoriteMapper {
     /**
      * 查询用户收藏的题目
      */
-    List<InterviewFavorite> selectQuestionsByUserId(@Param("userId") Long userId, 
-                                                   @Param("offset") int offset, 
-                                                   @Param("limit") int limit);
+    List<InterviewFavorite> selectQuestionsByUserId(@Param("userId") Long userId);
 
     /**
      * 统计用户收藏的题目数量

@@ -1,16 +1,18 @@
 package com.xiaou.user.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.security.JwtTokenUtil;
+import com.xiaou.common.security.TokenService;
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.user.domain.UserInfo;
 import com.xiaou.user.dto.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
 import com.xiaou.user.mapper.UserInfoMapper;
 import com.xiaou.user.service.CaptchaService;
 import com.xiaou.user.service.UserInfoService;
+import cn.hutool.core.bean.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -388,39 +390,25 @@ public class UserInfoServiceImpl implements UserInfoService {
         log.info("分页查询用户列表，查询条件: {}", request);
 
         try {
-            // 构建查询条件
-            UserInfo queryUser = new UserInfo();
-            queryUser.setUsername(request.getUsername());
-            queryUser.setNickname(request.getNickname());
-            queryUser.setRealName(request.getRealName());
-            queryUser.setEmail(request.getEmail());
-            queryUser.setPhone(request.getPhone());
-            queryUser.setGender(request.getGender());
-            queryUser.setStatus(request.getStatus());
+            return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+                // 构建查询条件
+                UserInfo queryUser = new UserInfo();
+                queryUser.setUsername(request.getUsername());
+                queryUser.setNickname(request.getNickname());
+                queryUser.setRealName(request.getRealName());
+                queryUser.setEmail(request.getEmail());
+                queryUser.setPhone(request.getPhone());
+                queryUser.setGender(request.getGender());
+                queryUser.setStatus(request.getStatus());
 
-            // 查询总数
-            Long total = userInfoMapper.selectCount(queryUser);
-
-            // 查询列表（这里简化实现，实际应该支持分页）
-            List<UserInfo> userList = userInfoMapper.selectList(queryUser);
-            
-            // 手动分页处理（实际项目中应该在SQL层面处理）
-            int start = (request.getPageNum() - 1) * request.getPageSize();
-            int end = Math.min(start + request.getPageSize(), userList.size());
-            
-            List<UserInfo> pagedList;
-            if (start >= userList.size()) {
-                pagedList = List.of();
-            } else {
-                pagedList = userList.subList(start, end);
-            }
-
-            // 转换为响应DTO
-            List<UserInfoResponse> responseList = pagedList.stream()
-                    .map(this::convertToUserInfoResponse)
-                    .collect(Collectors.toList());
-
-            return PageResult.of(request.getPageNum(), request.getPageSize(), total, responseList);
+                // 查询用户列表
+                List<UserInfo> userList = userInfoMapper.selectList(queryUser);
+                
+                // 转换为响应DTO
+                return userList.stream()
+                        .map(this::convertToUserInfoResponse)
+                        .collect(Collectors.toList());
+            });
 
         } catch (Exception e) {
             log.error("分页查询用户列表失败", e);

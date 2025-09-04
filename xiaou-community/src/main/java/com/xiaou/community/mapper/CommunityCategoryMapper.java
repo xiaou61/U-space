@@ -60,7 +60,5 @@ public interface CommunityCategoryMapper {
     /**
      * 查询分类列表（管理端）
      */
-    List<CommunityCategory> selectAdminCategoryList(@Param("request") AdminCategoryQueryRequest request,
-                                                   @Param("offset") Integer offset,
-                                                   @Param("pageSize") Integer pageSize);
+    List<CommunityCategory> selectAdminCategoryList(@Param("request") AdminCategoryQueryRequest request);
 } 

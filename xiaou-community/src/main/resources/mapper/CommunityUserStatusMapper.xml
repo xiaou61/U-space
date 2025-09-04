@@ -88,7 +88,6 @@
             </if>
         </where>
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
     <update id="banUser">

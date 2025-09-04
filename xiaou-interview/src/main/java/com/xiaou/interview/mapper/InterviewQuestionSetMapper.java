@@ -38,9 +38,7 @@ public interface InterviewQuestionSetMapper {
     /**
      * 分页查询题单列表
      */
-    List<InterviewQuestionSet> selectPage(@Param("request") InterviewQuestionSetQueryRequest request, 
-                                        @Param("offset") int offset, 
-                                        @Param("limit") int limit);
+    List<InterviewQuestionSet> selectPage(@Param("request") InterviewQuestionSetQueryRequest request);
 
     /**
      * 查询题单总数
@@ -80,9 +78,7 @@ public interface InterviewQuestionSetMapper {
     /**
      * 搜索题单
      */
-    List<InterviewQuestionSet> searchQuestionSets(@Param("keyword") String keyword, 
-                                                 @Param("offset") int offset, 
-                                                 @Param("limit") int limit);
+    List<InterviewQuestionSet> searchQuestionSets(@Param("keyword") String keyword);
 
     /**
      * 搜索题单总数
@@ -93,4 +89,9 @@ public interface InterviewQuestionSetMapper {
      * 根据分类ID统计题单数量
      */
     int countByCategoryId(@Param("categoryId") Long categoryId);
+
+    /**
+     * 查询公开的题单列表
+     */
+    List<InterviewQuestionSet> selectPublicQuestionSets(@Param("categoryId") Long categoryId);
 } 

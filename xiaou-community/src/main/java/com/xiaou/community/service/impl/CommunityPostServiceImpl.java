@@ -1,33 +1,31 @@
 package com.xiaou.community.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.date.DateUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.DateHelper;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.domain.CommunityPost;
-import com.xiaou.community.domain.CommunityPostLike;
 import com.xiaou.community.domain.CommunityPostCollect;
-import com.xiaou.community.dto.AdminPostQueryRequest;
-import com.xiaou.community.dto.CommunityPostQueryRequest;
-import com.xiaou.community.dto.CommunityPostCreateRequest;
-import com.xiaou.community.dto.CommunityPostResponse;
-import com.xiaou.community.mapper.CommunityPostMapper;
-import com.xiaou.community.mapper.CommunityPostLikeMapper;
+import com.xiaou.community.domain.CommunityPostLike;
+import com.xiaou.community.dto.*;
 import com.xiaou.community.mapper.CommunityPostCollectMapper;
+import com.xiaou.community.mapper.CommunityPostLikeMapper;
+import com.xiaou.community.mapper.CommunityPostMapper;
+import com.xiaou.community.service.CommunityCategoryService;
 import com.xiaou.community.service.CommunityPostService;
 import com.xiaou.community.service.CommunityUserStatusService;
-import com.xiaou.community.service.CommunityCategoryService;
-import com.xiaou.community.domain.CommunityCategory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,10 +48,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPost> getAdminPostList(AdminPostQueryRequest request) {
-        return PageHelper.doPage(
-            request,
-            communityPostMapper::selectAdminPostCount,
-            communityPostMapper::selectAdminPostList
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            communityPostMapper.selectAdminPostList(request)
         );
     }
     
@@ -130,33 +126,32 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getPostList(CommunityPostQueryRequest request) {
-        // 设置默认分页参数
-        if (request.getPageNum() == null || request.getPageNum() < 1) {
-            request.setPageNum(1);
-        }
-        if (request.getPageSize() == null || request.getPageSize() < 1) {
-            request.setPageSize(10);
-        }
-        if (request.getPageSize() > 100) {
-            request.setPageSize(100);
-        }
+        log.info("分页查询帖子列表，查询条件: {}", request);
         
-        // 查询总数
-        Long total = communityPostMapper.selectPostCount(request);
-        if (total == null || total <= 0) {
-            return PageResult.of(request.getPageNum(), request.getPageSize(), 0L, Collections.emptyList());
+        try {
+            // 先获取分页的原始帖子数据
+            PageResult<CommunityPost> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+                List<CommunityPost> posts = communityPostMapper.selectPostList(request);
+                log.info("查询到帖子数量: {}", posts.size());
+                return posts;
+            });
+            
+            // 在分页外进行DTO转换，避免额外查询干扰分页计数
+            List<CommunityPostResponse> responseList = pageResult.getRecords().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+            
+            // 构造返回结果，保持分页信息
+            return PageResult.of(
+                pageResult.getPageNum(),
+                pageResult.getPageSize(),
+                pageResult.getTotal(),
+                responseList
+            );
+        } catch (Exception e) {
+            log.error("分页查询帖子列表失败", e);
+            throw new BusinessException("查询帖子列表失败");
         }
-        
-        // 计算分页参数
-        int offset = (request.getPageNum() - 1) * request.getPageSize();
-        
-        // 查询分页数据
-        List<CommunityPost> posts = communityPostMapper.selectPostList(request, offset, request.getPageSize());
-        List<CommunityPostResponse> responseList = posts.stream()
-            .map(this::convertToResponse)
-            .collect(Collectors.toList());
-        
-        return PageResult.of(request.getPageNum(), request.getPageSize(), total, responseList);
     }
     
     @Override
@@ -370,16 +365,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(
-            request,
-            req -> communityPostMapper.selectUserCollectionCount(currentUser.getId(), req),
-            (req, offset, pageSize) -> {
-                List<CommunityPost> posts = communityPostMapper.selectUserCollectionList(currentUser.getId(), req, offset, pageSize);
-                return posts.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            }
-        );
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            List<CommunityPost> posts = communityPostMapper.selectUserCollectionList(currentUser.getId(), request);
+            return posts.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        });
     }
     
     @Override
@@ -389,16 +380,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(
-            request,
-            req -> communityPostMapper.selectUserPostCount(currentUser.getId(), req),
-            (req, offset, pageSize) -> {
-                List<CommunityPost> posts = communityPostMapper.selectUserPostList(currentUser.getId(), req, offset, pageSize);
-                return posts.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            }
-        );
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            List<CommunityPost> posts = communityPostMapper.selectUserPostList(currentUser.getId(), request);
+            return posts.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        });
     }
     
     /**

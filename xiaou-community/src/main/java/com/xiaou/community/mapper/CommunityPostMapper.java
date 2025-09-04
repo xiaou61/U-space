@@ -39,9 +39,7 @@ public interface CommunityPostMapper {
     /**
      * 后台查询帖子列表
      */
-    List<CommunityPost> selectAdminPostList(@Param("request") AdminPostQueryRequest request, 
-                                           @Param("offset") Integer offset, 
-                                           @Param("pageSize") Integer pageSize);
+    List<CommunityPost> selectAdminPostList(@Param("request") AdminPostQueryRequest request);
     
     /**
      * 置顶帖子
@@ -98,9 +96,7 @@ public interface CommunityPostMapper {
     /**
      * 前台查询帖子列表
      */
-    List<CommunityPost> selectPostList(@Param("request") CommunityPostQueryRequest request, 
-                                      @Param("offset") Integer offset, 
-                                      @Param("pageSize") Integer pageSize);
+    List<CommunityPost> selectPostList(@Param("request") CommunityPostQueryRequest request);
     
     /**
      * 查询用户收藏的帖子总数
@@ -111,9 +107,7 @@ public interface CommunityPostMapper {
      * 查询用户收藏的帖子列表
      */
     List<CommunityPost> selectUserCollectionList(@Param("userId") Long userId, 
-                                                 @Param("request") CommunityPostQueryRequest request,
-                                                 @Param("offset") Integer offset, 
-                                                 @Param("pageSize") Integer pageSize);
+                                                 @Param("request") CommunityPostQueryRequest request);
     
     /**
      * 查询用户发布的帖子总数
@@ -124,7 +118,5 @@ public interface CommunityPostMapper {
      * 查询用户发布的帖子列表
      */
     List<CommunityPost> selectUserPostList(@Param("userId") Long userId, 
-                                          @Param("request") CommunityPostQueryRequest request,
-                                          @Param("offset") Integer offset, 
-                                          @Param("pageSize") Integer pageSize);
+                                          @Param("request") CommunityPostQueryRequest request);
 } 

@@ -30,9 +30,7 @@ public interface SqlMonitorLogMapper {
     /**
      * 根据条件查询监控日志
      */
-    List<SqlMonitorLog> selectByCondition(@Param("request") SqlMonitorQueryRequest request, 
-                                         @Param("offset") int offset, 
-                                         @Param("limit") int limit);
+    List<SqlMonitorLog> selectByCondition(@Param("request") SqlMonitorQueryRequest request);
 
     /**
      * 根据条件统计数量

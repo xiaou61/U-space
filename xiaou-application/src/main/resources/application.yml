@@ -49,19 +49,36 @@ jwt:
   # 签发者
   issuer: code-nest
 
-# MyBatis配置
+# MyBatis 配置
 mybatis:
-  # 映射文件位置
-  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: 
+    - classpath*:mapper/**/*.xml
+    - classpath*:com/xiaou/*/mapper/*.xml
   # 实体类别名包路径（支持所有模块的domain包）
   type-aliases-package: com.xiaou.*.domain
-  configuration:
-    # 开启驼峰命名转换
-    map-underscore-to-camel-case: true
-    # 开启二级缓存
-    cache-enabled: true
-    # 延迟加载
-    lazy-loading-enabled: true
+  # 开启驼峰命名转换
+  # 开启二级缓存
+  # 延迟加载
+  # 开启驼峰命名转换
+  # 开启二级缓存
+  # 延迟加载
+
+# PageHelper 分页插件配置
+pagehelper:
+  helper-dialect: mysql
+  # 分页参数合理化，当pageNum<=0时会查询第一页，pageNum>总页数时会查询最后一页
+  reasonable: true
+  # 支持通过Mapper接口参数来传递分页参数
+  support-methods-arguments: true
+  # 为了支持startPage(Object params)方法
+  params: count=countSql;reasonable=reasonable;pageSizeZero=pageSizeZero
+  # 启用自动分页
+  auto-runtime-dialect: true
+  # 关闭banner
+  banner: false
 
 # 日志配置（使用logback-spring.xml配置文件）
 logging:
@@ -70,6 +87,8 @@ logging:
     # 禁用 Spring Security 的默认日志
     org.springframework.boot.autoconfigure.security: OFF
     org.springframework.security: WARN
+    com.xiaou: debug
+    org.springframework.web: debug
 
 # SpringDoc OpenAPI 3.0 配置
 springdoc:

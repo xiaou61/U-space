@@ -65,28 +65,29 @@
         </where>
     </select>
 
+    <!-- 后台查询评论列表 -->
     <select id="selectAdminCommentList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM community_comment
+        SELECT c.*, p.title as post_title
+        FROM community_comment c
+        LEFT JOIN community_post p ON c.post_id = p.id
         <where>
+            <if test="request.status != null">
+                AND c.status = #{request.status}
+            </if>
             <if test="request.postId != null">
-                AND post_id = #{request.postId}
+                AND c.post_id = #{request.postId}
             </if>
             <if test="request.authorName != null and request.authorName != ''">
-                AND author_name LIKE CONCAT('%', #{request.authorName}, '%')
-            </if>
-            <if test="request.status != null">
-                AND status = #{request.status}
+                AND c.author_name LIKE CONCAT('%', #{request.authorName}, '%')
             </if>
             <if test="request.startTime != null and request.startTime != ''">
-                AND create_time >= #{request.startTime}
+                AND c.create_time >= #{request.startTime}
             </if>
             <if test="request.endTime != null and request.endTime != ''">
-                AND create_time &lt;= #{request.endTime}
+                AND c.create_time &lt;= #{request.endTime}
             </if>
         </where>
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
+        ORDER BY c.create_time DESC
     </select>
 
     <update id="deleteComment" parameterType="java.lang.Long">
@@ -127,9 +128,6 @@
         <where>
             AND post_id = #{postId}
             AND status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND content LIKE CONCAT('%', #{request.keyword}, '%')
-            </if>
         </where>
     </select>
 
@@ -137,15 +135,11 @@
     <select id="selectPostCommentList" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM community_comment
-        <where>
-            AND post_id = #{postId}
-            AND status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND content LIKE CONCAT('%', #{request.keyword}, '%')
-            </if>
-        </where>
+        WHERE post_id = #{postId} AND status = 1
+        <if test="request.parentId != null">
+            AND parent_id = #{request.parentId}
+        </if>
         ORDER BY create_time ASC
-        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 查询用户的评论总数 -->
@@ -155,9 +149,6 @@
         <where>
             AND author_id = #{userId}
             AND status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND content LIKE CONCAT('%', #{request.keyword}, '%')
-            </if>
             <if test="request.postId != null">
                 AND post_id = #{request.postId}
             </if>
@@ -166,20 +157,11 @@
 
     <!-- 分页查询用户的评论列表 -->
     <select id="selectUserCommentList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM community_comment
-        <where>
-            AND author_id = #{userId}
-            AND status = 1
-            <if test="request.keyword != null and request.keyword != ''">
-                AND content LIKE CONCAT('%', #{request.keyword}, '%')
-            </if>
-            <if test="request.postId != null">
-                AND post_id = #{request.postId}
-            </if>
-        </where>
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{pageSize}
+        SELECT c.*, p.title as post_title
+        FROM community_comment c
+        LEFT JOIN community_post p ON c.post_id = p.id
+        WHERE c.author_id = #{userId} AND c.status = 1
+        ORDER BY c.create_time DESC
     </select>
 
 </mapper> 

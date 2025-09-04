@@ -29,10 +29,10 @@ public class CommunityCommentController {
      * 获取帖子的评论列表
      */
     @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询帖子评论列表")
-    @GetMapping("/posts/{postId}/comments")
+    @PostMapping("/posts/{postId}/comments")
     public Result<PageResult<CommunityCommentResponse>> getPostComments(
             @PathVariable Long postId,
-            CommunityCommentQueryRequest request) {
+            @RequestBody CommunityCommentQueryRequest request) {
         PageResult<CommunityCommentResponse> result = communityCommentService.getPostComments(postId, request);
         return Result.success(result);
     }
@@ -41,7 +41,7 @@ public class CommunityCommentController {
      * 发表评论
      */
     @Log(module = "社区", type = Log.OperationType.INSERT, description = "发表评论")
-    @PostMapping("/posts/{postId}/comments")
+    @PostMapping("/posts/{postId}/comments/create")
     public Result<Void> createComment(
             @PathVariable Long postId,
             @Validated @RequestBody CommunityCommentCreateRequest request) {

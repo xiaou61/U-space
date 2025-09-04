@@ -1,6 +1,5 @@
 package com.xiaou.community.service.impl;
 
-import cn.hutool.core.date.DateUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.DateHelper;
@@ -13,8 +12,10 @@ import com.xiaou.community.service.CommunityUserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 用户社区状态Service实现类
@@ -31,10 +32,8 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
     
     @Override
     public PageResult<CommunityUserStatus> getAdminUserList(AdminUserQueryRequest request) {
-        return PageHelper.doPage(
-            request,
-            communityUserStatusMapper::selectAdminUserCount,
-            communityUserStatusMapper::selectAdminUserList
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            communityUserStatusMapper.selectAdminUserList(request)
         );
     }
     
