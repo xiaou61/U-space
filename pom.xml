@@ -15,6 +15,7 @@
         <module>xiaou-monitor</module>
         <module>xiaou-application</module>
         <module>xiaou-interview</module>
+        <module>xiaou-community</module>
     </modules>
 
     <properties>

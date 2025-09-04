@@ -36,6 +36,14 @@
             <p>精选面试题，助力求职成功</p>
           </div>
 
+          <div class="feature-card" @click="goToCommunity">
+            <div class="feature-icon">
+              <el-icon size="48"><ChatDotRound /></el-icon>
+            </div>
+            <h3>技术社区</h3>
+            <p>分享经验，交流技术，共同成长</p>
+          </div>
+
           <div class="feature-card" @click="goToProfile">
             <div class="feature-icon">
               <el-icon size="48"><User /></el-icon>
@@ -55,7 +63,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Document } from '@element-plus/icons-vue'
+import { User, SwitchButton, Document, ChatDotRound } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -75,6 +83,11 @@ const loadUserInfo = async () => {
 // 跳转到面试题库
 const goToInterview = () => {
   router.push('/interview')
+}
+
+// 跳转到技术社区
+const goToCommunity = () => {
+  router.push('/community')
 }
 
 // 跳转到个人中心
@@ -204,7 +217,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 30px;
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
   justify-content: center;
 }

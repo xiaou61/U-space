@@ -45,6 +45,29 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/community">
+            <template #title>
+              <el-icon><ChatDotRound /></el-icon>
+              <span>社区管理</span>
+            </template>
+            <el-menu-item index="/community/categories">
+              <el-icon><Files /></el-icon>
+              <span>分类管理</span>
+            </el-menu-item>
+            <el-menu-item index="/community/posts">
+              <el-icon><Document /></el-icon>
+              <span>帖子管理</span>
+            </el-menu-item>
+            <el-menu-item index="/community/comments">
+              <el-icon><ChatLineRound /></el-icon>
+              <span>评论管理</span>
+            </el-menu-item>
+            <el-menu-item index="/community/users">
+              <el-icon><User /></el-icon>
+              <span>用户管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -165,7 +188,10 @@ import {
   DataAnalysis,
   FolderOpened,
   Collection,
-  Edit
+  Edit,
+  ChatDotRound,
+  ChatLineRound,
+  Files
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

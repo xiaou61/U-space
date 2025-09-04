@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityPostMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityPost">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="category" property="category"/>
+        <result column="author_id" property="authorId"/>
+        <result column="author_name" property="authorName"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="is_top" property="isTop"/>
+        <result column="top_expire_time" property="topExpireTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, title, content, category, author_id, author_name, view_count, like_count, 
+        comment_count, collect_count, is_top, top_expire_time, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityPost" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_post (title, content, category, author_id, author_name, view_count, 
+        like_count, comment_count, collect_count, is_top, top_expire_time, status, create_time, update_time)
+        VALUES (#{title}, #{content}, #{category}, #{authorId}, #{authorName}, #{viewCount}, 
+        #{likeCount}, #{commentCount}, #{collectCount}, #{isTop}, #{topExpireTime}, #{status}, 
+        NOW(), NOW())
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.community.domain.CommunityPost">
+        UPDATE community_post
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="commentCount != null">comment_count = #{commentCount},</if>
+            <if test="collectCount != null">collect_count = #{collectCount},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="topExpireTime != null">top_expire_time = #{topExpireTime},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectAdminPostCount" parameterType="com.xiaou.community.dto.AdminPostQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_post
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="authorName != null and authorName != ''">
+                AND author_name LIKE CONCAT('%', #{authorName}, '%')
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAdminPostList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post
+        <where>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.authorName != null and request.authorName != ''">
+                AND author_name LIKE CONCAT('%', #{request.authorName}, '%')
+            </if>
+            <if test="request.category != null and request.category != ''">
+                AND category = #{request.category}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+            <if test="request.startTime != null and request.startTime != ''">
+                AND create_time >= #{request.startTime}
+            </if>
+            <if test="request.endTime != null and request.endTime != ''">
+                AND create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+        ORDER BY is_top DESC, create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <update id="topPost">
+        UPDATE community_post 
+        SET is_top = 1, top_expire_time = #{topExpireTime}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancelTop" parameterType="java.lang.Long">
+        UPDATE community_post 
+        SET is_top = 0, top_expire_time = NULL, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="disablePost" parameterType="java.lang.Long">
+        UPDATE community_post 
+        SET status = 2, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="deletePost" parameterType="java.lang.Long">
+        UPDATE community_post 
+        SET status = 3, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementViewCount" parameterType="java.lang.Long">
+        UPDATE community_post 
+        SET view_count = view_count + 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLikeCount">
+        UPDATE community_post 
+        SET like_count = like_count + #{count}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCollectCount">
+        UPDATE community_post 
+        SET collect_count = collect_count + #{count}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCommentCount">
+        UPDATE community_post 
+        SET comment_count = comment_count + #{count}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post
+        WHERE author_id = #{userId} AND status != 3
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 前台查询帖子总数 -->
+    <select id="selectPostCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_post
+        <where>
+            AND status = 1
+            <if test="request.category != null and request.category != ''">
+                AND category = #{request.category}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 前台查询帖子列表 -->
+    <select id="selectPostList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post
+        <where>
+            AND status = 1
+            <if test="request.category != null and request.category != ''">
+                AND category = #{request.category}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY is_top DESC, create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 查询用户收藏帖子总数 -->
+    <select id="selectUserCollectionCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_post p
+        INNER JOIN community_post_collect c ON p.id = c.post_id
+        <where>
+            AND c.user_id = #{userId}
+            AND p.status = 1
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户收藏帖子列表 -->
+    <select id="selectUserCollectionList" resultMap="BaseResultMap">
+        SELECT p.*, c.create_time as collect_time
+        FROM community_post p
+        INNER JOIN community_post_collect c ON p.id = c.post_id
+        <where>
+            AND c.user_id = #{userId}
+            AND p.status = 1
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 查询用户发布帖子总数 -->
+    <select id="selectUserPostCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_post
+        <where>
+            AND author_id = #{userId}
+            AND status != 3
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户发布帖子列表 -->
+    <select id="selectUserPostList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post
+        <where>
+            AND author_id = #{userId}
+            AND status != 3
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+</mapper> 

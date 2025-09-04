@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityUserStatusMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityUserStatus">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="is_banned" property="isBanned"/>
+        <result column="ban_reason" property="banReason"/>
+        <result column="ban_expire_time" property="banExpireTime"/>
+        <result column="post_count" property="postCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, user_name, is_banned, ban_reason, ban_expire_time, post_count, 
+        comment_count, like_count, collect_count, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityUserStatus" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_user_status (user_id, user_name, is_banned, ban_reason, ban_expire_time, 
+        post_count, comment_count, like_count, collect_count, create_time, update_time)
+        VALUES (#{userId}, #{userName}, #{isBanned}, #{banReason}, #{banExpireTime}, 
+        #{postCount}, #{commentCount}, #{likeCount}, #{collectCount}, NOW(), NOW())
+    </insert>
+
+    <select id="selectByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_user_status
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.community.domain.CommunityUserStatus">
+        UPDATE community_user_status
+        <set>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="isBanned != null">is_banned = #{isBanned},</if>
+            <if test="banReason != null">ban_reason = #{banReason},</if>
+            <if test="banExpireTime != null">ban_expire_time = #{banExpireTime},</if>
+            <if test="postCount != null">post_count = #{postCount},</if>
+            <if test="commentCount != null">comment_count = #{commentCount},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="collectCount != null">collect_count = #{collectCount},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectAdminUserCount" parameterType="com.xiaou.community.dto.AdminUserQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_user_status
+        <where>
+            <if test="userName != null and userName != ''">
+                AND user_name LIKE CONCAT('%', #{userName}, '%')
+            </if>
+            <if test="isBanned != null">
+                AND is_banned = #{isBanned}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAdminUserList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_user_status
+        <where>
+            <if test="request.userName != null and request.userName != ''">
+                AND user_name LIKE CONCAT('%', #{request.userName}, '%')
+            </if>
+            <if test="request.isBanned != null">
+                AND is_banned = #{request.isBanned}
+            </if>
+            <if test="request.startTime != null and request.startTime != ''">
+                AND create_time >= #{request.startTime}
+            </if>
+            <if test="request.endTime != null and request.endTime != ''">
+                AND create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <update id="banUser">
+        UPDATE community_user_status 
+        SET is_banned = 1, ban_reason = #{reason}, ban_expire_time = #{expireTime}, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="unbanUser" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET is_banned = 0, ban_reason = NULL, ban_expire_time = NULL, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateStatistics">
+        UPDATE community_user_status 
+        <set>
+            <if test="postCount != null">post_count = #{postCount},</if>
+            <if test="commentCount != null">comment_count = #{commentCount},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="collectCount != null">collect_count = #{collectCount},</if>
+            update_time = NOW()
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加发帖数 -->
+    <update id="incrementPostCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET post_count = post_count + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 减少发帖数 -->
+    <update id="decrementPostCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET post_count = post_count - 1, update_time = NOW()
+        WHERE user_id = #{userId} AND post_count > 0
+    </update>
+
+    <!-- 增加评论数 -->
+    <update id="incrementCommentCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET comment_count = comment_count + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 减少评论数 -->
+    <update id="decrementCommentCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET comment_count = comment_count - 1, update_time = NOW()
+        WHERE user_id = #{userId} AND comment_count > 0
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="incrementLikeCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET like_count = like_count + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 减少点赞数 -->
+    <update id="decrementLikeCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET like_count = like_count - 1, update_time = NOW()
+        WHERE user_id = #{userId} AND like_count > 0
+    </update>
+
+    <!-- 增加收藏数 -->
+    <update id="incrementCollectCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET collect_count = collect_count + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 减少收藏数 -->
+    <update id="decrementCollectCount" parameterType="java.lang.Long">
+        UPDATE community_user_status 
+        SET collect_count = collect_count - 1, update_time = NOW()
+        WHERE user_id = #{userId} AND collect_count > 0
+    </update>
+
+</mapper> 

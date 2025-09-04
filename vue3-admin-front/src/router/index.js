@@ -101,6 +101,52 @@ const routes = [
         ],
       },
       {
+        path: 'community',
+        name: 'CommunityManagement',
+        meta: {
+          title: '社区管理',
+          icon: 'ChatDotRound',
+        },
+        children: [
+          {
+            path: 'posts',
+            name: 'CommunityPosts',
+            component: () => import('@/views/community/posts/index.vue'),
+            meta: {
+              title: '帖子管理',
+              icon: 'Document',
+            },
+          },
+          {
+            path: 'comments',
+            name: 'CommunityComments',
+            component: () => import('@/views/community/comments/index.vue'),
+            meta: {
+              title: '评论管理',
+              icon: 'ChatLineRound',
+            },
+          },
+          {
+            path: 'users',
+            name: 'CommunityUsers',
+            component: () => import('@/views/community/users/index.vue'),
+            meta: {
+              title: '用户管理',
+              icon: 'User',
+            },
+          },
+          {
+            path: 'categories',
+            name: 'CommunityCategories',
+            component: () => import('@/views/community/categories/index.vue'),
+            meta: {
+              title: '分类管理',
+              icon: 'Files',
+            },
+          },
+        ],
+      },
+      {
         path: 'system',
         name: 'SystemManagement',
         meta: {

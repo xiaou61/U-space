@@ -82,6 +82,56 @@ const routes = [
     }
   },
   {
+    path: '/community',
+    name: 'Community',
+    component: () => import('@/views/community/Index.vue'),
+    meta: {
+      title: '技术社区',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/community/posts/:id',
+    name: 'PostDetail',
+    component: () => import('@/views/community/PostDetail.vue'),
+    meta: {
+      title: '帖子详情',
+      requiresAuth: true,
+      keepAlive: false // 帖子详情不缓存，确保数据实时
+    }
+  },
+  {
+    path: '/community/collections',
+    name: 'MyCollections',
+    component: () => import('@/views/community/Collections.vue'),
+    meta: {
+      title: '我的收藏',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/community/my-posts',
+    name: 'MyPosts',
+    component: () => import('@/views/community/MyPosts.vue'),
+    meta: {
+      title: '我的帖子',
+      requiresAuth: true,
+      keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/community/create',
+    name: 'CreatePost',
+    component: () => import('@/views/community/CreatePost.vue'),
+    meta: {
+      title: '创作帖子',
+      requiresAuth: true,
+      keepAlive: false // 不缓存，确保每次都是新的编辑状态
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityPostLikeMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityPostLike">
+        <id column="id" property="id"/>
+        <result column="post_id" property="postId"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, post_id, user_id, user_name, create_time
+    </sql>
+
+    <!-- 插入点赞记录 -->
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityPostLike" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_post_like (post_id, user_id, user_name, create_time)
+        VALUES (#{postId}, #{userId}, #{userName}, NOW())
+    </insert>
+
+    <!-- 删除点赞记录 -->
+    <delete id="delete">
+        DELETE FROM community_post_like 
+        WHERE post_id = #{postId} AND user_id = #{userId}
+    </delete>
+
+    <!-- 查询用户是否已点赞指定帖子 -->
+    <select id="selectByPostIdAndUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post_like
+        WHERE post_id = #{postId} AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 统计帖子点赞数 -->
+    <select id="countByPostId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM community_post_like
+        WHERE post_id = #{postId}
+    </select>
+
+</mapper> 
