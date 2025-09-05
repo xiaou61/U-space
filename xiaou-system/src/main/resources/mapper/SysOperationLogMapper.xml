@@ -85,9 +85,6 @@
         FROM sys_operation_log
         <include refid="Query_Where_Clause"/>
         ORDER BY operation_time DESC
-        <if test="pageNum != null and pageSize != null">
-            LIMIT #{pageSize} OFFSET #{pageNum}
-        </if>
     </select>
 
     <!-- 查询总数 -->

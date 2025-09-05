@@ -108,23 +108,35 @@ export const useInterviewStore = defineStore('interview', () => {
   /**
    * 搜索题单
    */
-  const searchQuestionSets = async (params = {}, options = {}) => {
-    const cacheKey = `interview/question-sets/search?${JSON.stringify(params)}`
+  const searchQuestions = async (params = {}, options = {}) => {
+    const cacheKey = `interview/questions/search?${JSON.stringify(params)}`
     
     questionSetsLoading.value = true
     try {
       const data = await cachedRequest(
-        () => interviewApi.searchQuestionSets(params),
+        () => interviewApi.searchQuestions(params),
         cacheKey,
         { ttl: 2 * 60 * 1000, ...options } // 搜索结果缓存2分钟
       )
       
-      questionSets.value = data?.records || []
+      // 将搜索到的题目转换为题单格式显示
+      const questionSetsFromSearch = data?.records?.map(question => ({
+        id: `q-${question.id}`,
+        title: question.title,
+        description: question.answer ? question.answer.substring(0, 100) + '...' : '暂无答案',
+        questionCount: 1,
+        viewCount: 0,
+        type: 1,
+        categoryName: '搜索结果',
+        originalQuestion: question
+      })) || []
+      
+      questionSets.value = questionSetsFromSearch
       questionSetsTotal.value = data?.total || 0
       
       return data
     } catch (error) {
-      console.error('搜索题单失败:', error)
+      console.error('搜索题目失败:', error)
       throw error
     } finally {
       questionSetsLoading.value = false
@@ -402,7 +414,7 @@ export const useInterviewStore = defineStore('interview', () => {
     // 方法
     fetchCategories,
     fetchPublicQuestionSets,
-    searchQuestionSets,
+    searchQuestions,
     fetchQuestionSetById,
     fetchQuestionsBySetId,
     fetchQuestionById,

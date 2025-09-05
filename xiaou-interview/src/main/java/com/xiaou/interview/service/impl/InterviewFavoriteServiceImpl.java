@@ -2,6 +2,7 @@ package com.xiaou.interview.service.impl;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.interview.domain.InterviewFavorite;
 import com.xiaou.interview.mapper.InterviewFavoriteMapper;
 import com.xiaou.interview.mapper.InterviewQuestionMapper;
@@ -93,33 +94,26 @@ public class InterviewFavoriteServiceImpl implements InterviewFavoriteService {
     @Override
     public List<InterviewFavorite> getUserFavorites(Long userId, Integer targetType) {
         if (targetType == 1) { // 题单
-            return favoriteMapper.selectQuestionSetsByUserId(userId, 0, Integer.MAX_VALUE);
+            return favoriteMapper.selectQuestionSetsByUserId(userId);
         } else if (targetType == 2) { // 题目
-            return favoriteMapper.selectQuestionsByUserId(userId, 0, Integer.MAX_VALUE);
+            return favoriteMapper.selectQuestionsByUserId(userId);
         }
         return Collections.emptyList();
     }
 
     @Override
     public PageResult<InterviewFavorite> getUserFavoritePage(Long userId, Integer targetType, int page, int size) {
-        // 计算偏移量
-        int offset = (page - 1) * size;
-        
-        List<InterviewFavorite> favorites;
-        long total;
-        
         if (targetType == 1) { // 题单
-            favorites = favoriteMapper.selectQuestionSetsByUserId(userId, offset, size);
-            total = favoriteMapper.countQuestionSetsByUserId(userId);
-        } else if (targetType == 2) { // 题目
-            favorites = favoriteMapper.selectQuestionsByUserId(userId, offset, size);
-            total = favoriteMapper.countQuestionsByUserId(userId);
+            return PageHelper.doPage(page, size, () -> 
+                favoriteMapper.selectQuestionSetsByUserId(userId)
+            );
+        } else if (targetType == 2) { // 题目  
+            return PageHelper.doPage(page, size, () ->
+                favoriteMapper.selectQuestionsByUserId(userId)
+            );
         } else {
-            favorites = Collections.emptyList();
-            total = 0;
+            return PageResult.of(page, size, 0L, Collections.emptyList());
         }
-
-        return PageResult.of(page, size, total, favorites);
     }
 
     @Override

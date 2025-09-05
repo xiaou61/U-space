@@ -95,7 +95,6 @@
             </if>
         </where>
         ORDER BY iqs.create_time DESC
-        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 查询题单总数 -->
@@ -173,17 +172,27 @@
         AND status = 1
     </select>
 
-    <!-- 搜索题单 -->
+    <!-- 查询公开的题单列表 -->
+    <select id="selectPublicQuestionSets" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question_set
+        WHERE status = 1 
+          AND visibility = 1
+          <if test="categoryId != null">
+              AND category_id = #{categoryId}
+          </if>
+        ORDER BY view_count DESC, create_time DESC
+    </select>
+
+    <!-- 搜索题目集 -->
     <select id="searchQuestionSets" resultMap="BaseResultMap">
-        SELECT iqs.*, ic.name as category_name
-        FROM interview_question_set iqs
-        LEFT JOIN interview_category ic ON iqs.category_id = ic.id
-        WHERE iqs.status = 1
-        AND iqs.visibility = 1
-        AND (iqs.title LIKE CONCAT('%', #{keyword}, '%') 
-        OR iqs.description LIKE CONCAT('%', #{keyword}, '%'))
-        ORDER BY iqs.view_count DESC, iqs.create_time DESC
-        LIMIT #{offset}, #{limit}
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question_set
+        WHERE status = 1 
+          AND visibility = 1
+          AND (title LIKE CONCAT('%', #{keyword}, '%') 
+               OR description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY view_count DESC, create_time DESC
     </select>
 
     <!-- 搜索题单总数 -->

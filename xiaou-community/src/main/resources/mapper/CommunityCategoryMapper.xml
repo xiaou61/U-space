@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityCategoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityCategory">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="post_count" property="postCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="creator_id" property="creatorId"/>
+        <result column="creator_name" property="creatorName"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, sort_order, status, post_count, create_time, update_time, creator_id, creator_name
+    </sql>
+
+    <!-- 插入分类 -->
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_category (name, description, sort_order, status, post_count, 
+        create_time, update_time, creator_id, creator_name)
+        VALUES (#{name}, #{description}, #{sortOrder}, #{status}, #{postCount}, 
+        NOW(), NOW(), #{creatorId}, #{creatorName})
+    </insert>
+
+    <!-- 根据ID查询分类 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称查询分类 -->
+    <select id="selectByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        WHERE name = #{name}
+        LIMIT 1
+    </select>
+
+    <!-- 更新分类 -->
+    <update id="updateById" parameterType="com.xiaou.community.domain.CommunityCategory">
+        UPDATE community_category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="postCount != null">post_count = #{postCount},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除分类 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM community_category WHERE id = #{id}
+    </delete>
+
+    <!-- 查询所有启用的分类（前台用） -->
+    <select id="selectEnabledCategories" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        WHERE status = 1
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 前台分页查询启用的分类列表 -->
+    <select id="selectCategoryList" parameterType="com.xiaou.community.dto.CommunityCategoryQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        <where>
+            AND status = 1
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (name LIKE CONCAT('%', #{request.keyword}, '%') OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 更新分类下的帖子数量 -->
+    <update id="updatePostCount">
+        UPDATE community_category 
+        SET post_count = post_count + #{count}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 管理端查询分类总数 -->
+    <select id="selectAdminCategoryCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM community_category
+        <where>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (name LIKE CONCAT('%', #{request.keyword}, '%') OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询分类列表（管理端） -->
+    <select id="selectAdminCategoryList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        <where>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (name LIKE CONCAT('%', #{request.keyword}, '%') OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+</mapper> 

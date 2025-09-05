@@ -153,9 +153,9 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
 
     @Override
     public PageResult<InterviewQuestionSet> getQuestionSets(InterviewQuestionSetQueryRequest request) {
-        return PageHelper.doPage(request, 
-                                questionSetMapper::countPage,
-                                (req, offset, pageSize) -> questionSetMapper.selectPage(req, offset, pageSize));
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            questionSetMapper.selectPage(request)
+        );
     }
 
     @Override
@@ -235,15 +235,9 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
 
     @Override
     public PageResult<InterviewQuestionSet> getPublicQuestionSets(Long categoryId, int page, int size) {
-        // 构建查询请求
-        InterviewQuestionSetQueryRequest request = new InterviewQuestionSetQueryRequest();
-        request.setCategoryId(categoryId);
-        request.setStatus(1); // 只查询启用的题单
-        request.setType(1); // 只查询官方题单（公开）
-        request.setPageNum(page);
-        request.setPageSize(size);
-
-        return getQuestionSets(request);
+        return PageHelper.doPage(page, size, () -> 
+            questionSetMapper.selectPublicQuestionSets(categoryId)
+        );
     }
 
     @Override
@@ -252,13 +246,8 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
             return PageResult.of(page, size, 0L, Collections.emptyList());
         }
 
-        // 计算偏移量
-        int offset = (page - 1) * size;
-        
-        // 查询数据
-        List<InterviewQuestionSet> questionSets = questionSetMapper.searchQuestionSets(keyword, offset, size);
-        long total = questionSetMapper.countSearchQuestionSets(keyword);
-
-        return PageResult.of(page, size, total, questionSets);
+        return PageHelper.doPage(page, size, () -> 
+            questionSetMapper.searchQuestionSets(keyword)
+        );
     }
 } 

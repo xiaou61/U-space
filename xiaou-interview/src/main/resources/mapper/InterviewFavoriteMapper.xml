@@ -65,7 +65,6 @@
         AND f.target_type = 1
         AND iqs.status = 1
         ORDER BY f.create_time DESC
-        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 统计用户收藏的题单数量 -->
@@ -88,7 +87,6 @@
         AND f.target_type = 2
         AND iqs.status = 1
         ORDER BY f.create_time DESC
-        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 统计用户收藏的题目数量 -->
@@ -118,5 +116,16 @@
             #{id}
         </foreach>
     </delete>
+
+    <!-- 根据用户ID和目标类型查询收藏列表 -->
+    <select id="selectByUserIdAndTargetType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_favorite
+        WHERE user_id = #{userId}
+        <if test="targetType != null">
+            AND target_type = #{targetType}
+        </if>
+        ORDER BY create_time DESC
+    </select>
 
 </mapper> 

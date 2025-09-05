@@ -103,7 +103,6 @@
                 ORDER BY create_time DESC
             </otherwise>
         </choose>
-        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 根据条件统计数量 -->

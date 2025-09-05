@@ -55,7 +55,8 @@
 
     <!-- 分页查询登录日志列表 -->
     <select id="selectPageList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT 
+        <include refid="Base_Column_List"/>
         FROM sys_login_log
         <where>
             <if test="query.username != null and query.username != ''">
@@ -78,7 +79,6 @@
             </if>
         </where>
         ORDER BY login_time DESC
-        LIMIT #{offset}, #{size}
     </select>
 
     <!-- 查询登录日志总数（带条件） -->

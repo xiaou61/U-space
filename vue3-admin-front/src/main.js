@@ -8,6 +8,7 @@ import 'nprogress/nprogress.css'
 import App from './App.vue'
 import router from './router'
 import './styles/index.scss'
+import './styles/markdown.scss'
 
 const app = createApp(App)
 

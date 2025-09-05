@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.xiaou</groupId>
         <artifactId>Code-Nest</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>xiaou-interview</artifactId>
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- Spring Boot Starter Web -->

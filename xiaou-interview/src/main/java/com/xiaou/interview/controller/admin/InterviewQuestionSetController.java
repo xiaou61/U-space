@@ -8,6 +8,7 @@ import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.dto.InterviewQuestionSetQueryRequest;
 import com.xiaou.interview.dto.InterviewQuestionSetRequest;
 import com.xiaou.interview.dto.MarkdownImportRequest;
+import com.xiaou.interview.dto.SearchRequest;
 import com.xiaou.interview.service.InterviewQuestionSetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,9 +68,9 @@ public class InterviewQuestionSetController {
     }
 
     @Operation(summary = "分页查询题单")
-    @GetMapping
+    @PostMapping("/list")
     @RequireAdmin
-    public Result<PageResult<InterviewQuestionSet>> getQuestionSets(InterviewQuestionSetQueryRequest request) {
+    public Result<PageResult<InterviewQuestionSet>> getQuestionSets(@RequestBody InterviewQuestionSetQueryRequest request) {
         PageResult<InterviewQuestionSet> result = questionSetService.getQuestionSets(request);
         return Result.success(result);
     }
@@ -99,14 +100,5 @@ public class InterviewQuestionSetController {
         return Result.success();
     }
 
-    @Operation(summary = "搜索题单")
-    @GetMapping("/search")
-    @RequireAdmin
-    public Result<PageResult<InterviewQuestionSet>> searchQuestionSets(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<InterviewQuestionSet> result = questionSetService.searchQuestionSets(keyword, page, size);
-        return Result.success(result);
-    }
+
 } 

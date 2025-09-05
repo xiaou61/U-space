@@ -45,14 +45,9 @@ export const interviewApi = {
     return request.get(`/interview/question-sets/${setId}/questions/${questionId}/prev`)
   },
   
-  // 搜索题单
-  searchQuestionSets(params) {
-    return request.get('/interview/question-sets/search', { params })
-  },
-  
-  // 搜索题目
-  searchQuestions(params) {
-    return request.get('/interview/question-sets/questions/search', { params })
+  // 搜索题目（标题和答案）
+  searchQuestions(data) {
+    return request.post('/interview/question-sets/search', data)
   },
 
   // 随机抽题

@@ -5,7 +5,7 @@ export const logApi = {
   
   // 获取登录日志（分页）
   getLoginLogs(params) {
-    return request.get('/log/login', params)
+    return request.post('/log/login', params)
   },
   
   // 获取登录日志详情
@@ -22,7 +22,7 @@ export const logApi = {
   
   // 获取操作日志（分页）
   getOperationLogs(params) {
-    return request.get('/log/operation', params)
+    return request.post('/log/operation', params)
   },
   
   // 获取操作日志详情

@@ -126,9 +126,9 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
 
     @Override
     public PageResult<InterviewQuestion> getQuestions(InterviewQuestionQueryRequest request) {
-        return PageHelper.doPage(request,
-                                questionMapper::countPage,
-                                (req, offset, pageSize) -> questionMapper.selectPage(req, offset, pageSize));
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            questionMapper.selectPage(request)
+        );
     }
 
     @Override
@@ -161,14 +161,9 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
             return PageResult.of(page, size, 0L, Collections.emptyList());
         }
 
-        // 计算偏移量
-        int offset = (page - 1) * size;
-        
-        // 查询数据
-        List<InterviewQuestion> questions = questionMapper.searchQuestions(keyword, offset, size);
-        long total = questionMapper.countSearchQuestions(keyword);
-
-        return PageResult.of(page, size, total, questions);
+        return PageHelper.doPage(page, size, () -> 
+            questionMapper.searchQuestions(keyword)
+        );
     }
 
     @Override

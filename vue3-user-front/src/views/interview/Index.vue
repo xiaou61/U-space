@@ -200,7 +200,7 @@ const fetchQuestionSets = async () => {
   try {
     // 如果有搜索关键词，使用搜索接口，否则使用公开题单列表接口
     if (queryParams.keyword) {
-      await interviewStore.searchQuestionSets(queryParams)
+      await interviewStore.searchQuestions(queryParams)
     } else {
       await interviewStore.fetchPublicQuestionSets({
         categoryId: currentCategoryId.value,
@@ -243,7 +243,13 @@ const handleCurrentChange = (page) => {
 
 // 跳转到题单详情
 const goToQuestionSet = (questionSet) => {
-  router.push(`/interview/question-sets/${questionSet.id}`)
+  // 如果是搜索结果（题目），直接跳转到题目详情
+  if (questionSet.id.startsWith('q-') && questionSet.originalQuestion) {
+    router.push(`/interview/questions/${questionSet.originalQuestion.id}`)
+  } else {
+    // 正常题单，跳转到题单详情
+    router.push(`/interview/question-sets/${questionSet.id}`)
+  }
 }
 
 // 跳转到收藏页面

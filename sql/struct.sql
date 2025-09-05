@@ -342,4 +342,119 @@ CREATE TABLE `user_info`  (
   INDEX `idx_register_time`(`register_time` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户信息表' ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Table structure for community_post
+-- ----------------------------
+DROP TABLE IF EXISTS `community_post`;
+CREATE TABLE `community_post` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '帖子ID',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '帖子标题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '帖子内容',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分类标签',
+  `author_id` bigint NOT NULL COMMENT '作者用户ID',
+  `author_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '作者用户名',
+  `view_count` int DEFAULT 0 COMMENT '浏览次数',
+  `like_count` int DEFAULT 0 COMMENT '点赞数',
+  `comment_count` int DEFAULT 0 COMMENT '评论数',
+  `collect_count` int DEFAULT 0 COMMENT '收藏数',
+  `is_top` tinyint DEFAULT 0 COMMENT '是否置顶：0-否，1-是',
+  `top_expire_time` datetime DEFAULT NULL COMMENT '置顶过期时间',
+  `status` tinyint DEFAULT 1 COMMENT '状态：1-正常，2-下架，3-删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_author_id` (`author_id`) USING BTREE,
+  KEY `idx_status_top_create` (`status`,`is_top`,`create_time`) USING BTREE,
+  KEY `idx_category` (`category`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社区帖子表' ROW_FORMAT=Dynamic;
+
+-- ----------------------------
+-- Table structure for community_comment
+-- ----------------------------
+DROP TABLE IF EXISTS `community_comment`;
+CREATE TABLE `community_comment` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+  `post_id` bigint NOT NULL COMMENT '帖子ID',
+  `parent_id` bigint DEFAULT 0 COMMENT '父评论ID，0表示顶级评论',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论内容',
+  `author_id` bigint NOT NULL COMMENT '评论者用户ID',
+  `author_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论者用户名',
+  `like_count` int DEFAULT 0 COMMENT '点赞数',
+  `status` tinyint DEFAULT 1 COMMENT '状态：1-正常，2-删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_post_id` (`post_id`) USING BTREE,
+  KEY `idx_parent_id` (`parent_id`) USING BTREE,
+  KEY `idx_author_id` (`author_id`) USING BTREE,
+  KEY `idx_status_create` (`status`,`create_time`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社区评论表' ROW_FORMAT=Dynamic;
+
+-- ----------------------------
+-- Table structure for community_post_like
+-- ----------------------------
+DROP TABLE IF EXISTS `community_post_like`;
+CREATE TABLE `community_post_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+  `post_id` bigint NOT NULL COMMENT '帖子ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_post_user` (`post_id`,`user_id`) USING BTREE,
+  KEY `idx_user_id` (`user_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子点赞表' ROW_FORMAT=Dynamic;
+
+-- ----------------------------
+-- Table structure for community_comment_like
+-- ----------------------------
+DROP TABLE IF EXISTS `community_comment_like`;
+CREATE TABLE `community_comment_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+  `comment_id` bigint NOT NULL COMMENT '评论ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_comment_user` (`comment_id`,`user_id`) USING BTREE,
+  KEY `idx_user_id` (`user_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论点赞表' ROW_FORMAT=Dynamic;
+
+-- ----------------------------
+-- Table structure for community_post_collect
+-- ----------------------------
+DROP TABLE IF EXISTS `community_post_collect`;
+CREATE TABLE `community_post_collect` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+  `post_id` bigint NOT NULL COMMENT '帖子ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_post_user` (`post_id`,`user_id`) USING BTREE,
+  KEY `idx_user_id` (`user_id`) USING BTREE,
+  KEY `idx_create_time` (`create_time`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子收藏表' ROW_FORMAT=Dynamic;
+
+-- ----------------------------
+-- Table structure for community_user_status
+-- ----------------------------
+DROP TABLE IF EXISTS `community_user_status`;
+CREATE TABLE `community_user_status` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '状态ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+  `is_banned` tinyint DEFAULT 0 COMMENT '是否封禁：0-否，1-是',
+  `ban_reason` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '封禁原因',
+  `ban_expire_time` datetime DEFAULT NULL COMMENT '封禁过期时间',
+  `post_count` int DEFAULT 0 COMMENT '发帖数',
+  `comment_count` int DEFAULT 0 COMMENT '评论数',
+  `like_count` int DEFAULT 0 COMMENT '点赞数',
+  `collect_count` int DEFAULT 0 COMMENT '收藏数',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_id` (`user_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户社区状态表' ROW_FORMAT=Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;

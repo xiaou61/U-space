@@ -5,6 +5,7 @@ import com.xiaou.system.domain.SysOperationLog;
 import com.xiaou.system.dto.OperationLogQueryRequest;
 import com.xiaou.system.dto.OperationLogResponse;
 import com.xiaou.common.core.domain.PageResult;
+import com.xiaou.common.utils.PageHelper;
 import com.xiaou.system.mapper.SysOperationLogMapper;
 import com.xiaou.system.service.SysOperationLogService;
 import lombok.RequiredArgsConstructor;
@@ -50,20 +51,12 @@ public class SysOperationLogServiceImpl implements SysOperationLogService {
 
     @Override
     public PageResult<OperationLogResponse> getOperationLogPage(OperationLogQueryRequest query) {
-        // 计算分页偏移量
-        int offset = (query.getPageNum() - 1) * query.getPageSize();
-        query.setPageNum(offset);
-
-        // 查询数据
-        List<SysOperationLog> logList = operationLogMapper.selectList(query);
-        long total = operationLogMapper.selectCount(query);
-
-        // 转换为响应对象
-        List<OperationLogResponse> responseList = logList.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-        return PageResult.of(query.getPageNum() / query.getPageSize() + 1, query.getPageSize(), total, responseList);
+        return PageHelper.doPage(query.getPageNum(), query.getPageSize(), () -> {
+            List<SysOperationLog> logList = operationLogMapper.selectList(query);
+            return logList.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        });
     }
 
     @Override

@@ -45,10 +45,10 @@ public class LogController {
     })
     @SecurityRequirement(name = "Bearer Token")
     @RequireAdmin(message = "查询登录日志需要管理员权限")
-    @GetMapping("/login")
+    @PostMapping("/login")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询登录日志")
     public Result<PageResult<LoginLogResponse>> getLoginLogs(
-            @Parameter(description = "查询参数") LoginLogQueryRequest query) {
+            @Parameter(description = "查询参数") @RequestBody LoginLogQueryRequest query) {
         try {
             PageResult<LoginLogResponse> result = loginLogService.getLoginLogPage(query);
             return Result.success("查询成功", result);
@@ -122,10 +122,10 @@ public class LogController {
     })
     @SecurityRequirement(name = "Bearer Token")
     @RequireAdmin(message = "查询操作日志需要管理员权限")
-    @GetMapping("/operation")
+    @PostMapping("/operation")
     @Log(module = "日志管理", type = Log.OperationType.SELECT, description = "查询操作日志")
     public Result<PageResult<OperationLogResponse>> getOperationLogs(
-            @Parameter(description = "查询参数") OperationLogQueryRequest query) {
+            @Parameter(description = "查询参数") @RequestBody OperationLogQueryRequest query) {
         try {
             PageResult<OperationLogResponse> result = operationLogService.getOperationLogPage(query);
             return Result.success("查询成功", result);
