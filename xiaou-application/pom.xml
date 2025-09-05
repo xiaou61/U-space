@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.xiaou</groupId>
         <artifactId>Code-Nest</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>xiaou-application</artifactId>
@@ -16,42 +16,42 @@
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-common</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         
         <!-- 引入system模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-system</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         
         <!-- 引入user模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-user</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         
         <!-- 引入monitor模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-monitor</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- 引入interview模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-interview</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- 引入community模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-community</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         
         <!-- Mysql驱动包 -->

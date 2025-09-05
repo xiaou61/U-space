@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.xiaou</groupId>
         <artifactId>Code-Nest</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>xiaou-common</artifactId>

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -168,7 +168,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.0.0.jar
+java -jar target/xiaou-application-1.1.0.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -301,14 +301,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.0.0 .
+docker build -t code-nest:1.1.0 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.0.0
+  code-nest:1.1.0
 ```
 
 ### Nginx配置
@@ -344,6 +344,19 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.1.0 (2025-09-05)
+
+#### 🚀 功能增强
+- 新增社区模块
+- 社区帖子管理
+- 评论系统
+- 用户互动功能
+
+#### 🔧 技术改进
+- 优化系统架构
+- 代码结构重构
+- 性能优化
 
 ### v1.0.0 (2025-09-03)
 
