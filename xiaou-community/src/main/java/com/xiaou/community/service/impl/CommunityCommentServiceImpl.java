@@ -80,12 +80,23 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     
     @Override
     public PageResult<CommunityCommentResponse> getPostComments(Long postId, CommunityCommentQueryRequest request) {
-        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            List<CommunityComment> comments = communityCommentMapper.selectPostCommentList(postId, request);
-            return comments.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // 先获取分页的原始评论数据
+        PageResult<CommunityComment> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            return communityCommentMapper.selectPostCommentList(postId, request);
         });
+        
+        // 在分页外进行DTO转换，避免额外查询干扰分页计数
+        List<CommunityCommentResponse> responseList = pageResult.getRecords().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        // 构造返回结果，保持分页信息
+        return PageResult.of(
+            pageResult.getPageNum(),
+            pageResult.getPageSize(),
+            pageResult.getTotal(),
+            responseList
+        );
     }
     
     @Override
@@ -207,12 +218,23 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            List<CommunityComment> comments = communityCommentMapper.selectUserCommentList(currentUser.getId(), request);
-            return comments.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // 先获取分页的原始评论数据
+        PageResult<CommunityComment> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            return communityCommentMapper.selectUserCommentList(currentUser.getId(), request);
         });
+        
+        // 在分页外进行DTO转换，避免额外查询干扰分页计数
+        List<CommunityCommentResponse> responseList = pageResult.getRecords().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        // 构造返回结果，保持分页信息
+        return PageResult.of(
+            pageResult.getPageNum(),
+            pageResult.getPageSize(),
+            pageResult.getTotal(),
+            responseList
+        );
     }
     
     /**

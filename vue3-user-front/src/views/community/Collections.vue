@@ -28,8 +28,8 @@
               <div class="post-meta">
                 <span class="post-author">{{ post.authorName }}</span>
                 <span class="post-date">{{ formatDate(post.createTime) }}</span>
-                <el-tag v-if="post.category" type="info" size="small" class="category-tag">
-                  {{ post.category }}
+                <el-tag v-if="post.categoryName" type="info" size="small" class="category-tag">
+                  {{ post.categoryName }}
                 </el-tag>
               </div>
               <div class="collect-date">

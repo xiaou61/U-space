@@ -69,6 +69,19 @@
         ORDER BY sort_order ASC, create_time ASC
     </select>
 
+    <!-- 前台分页查询启用的分类列表 -->
+    <select id="selectCategoryList" parameterType="com.xiaou.community.dto.CommunityCategoryQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_category
+        <where>
+            AND status = 1
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (name LIKE CONCAT('%', #{request.keyword}, '%') OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
     <!-- 更新分类下的帖子数量 -->
     <update id="updatePostCount">
         UPDATE community_category 

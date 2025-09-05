@@ -6,7 +6,8 @@
         <id column="id" property="id"/>
         <result column="title" property="title"/>
         <result column="content" property="content"/>
-        <result column="category" property="category"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="category_name" property="categoryName"/>
         <result column="author_id" property="authorId"/>
         <result column="author_name" property="authorName"/>
         <result column="view_count" property="viewCount"/>
@@ -21,22 +22,23 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, title, content, category, author_id, author_name, view_count, like_count, 
-        comment_count, collect_count, is_top, top_expire_time, status, create_time, update_time
+        p.id, p.title, p.content, p.category_id, cc.name as category_name, p.author_id, p.author_name, p.view_count, p.like_count, 
+        p.comment_count, p.collect_count, p.is_top, p.top_expire_time, p.status, p.create_time, p.update_time
     </sql>
 
     <insert id="insert" parameterType="com.xiaou.community.domain.CommunityPost" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO community_post (title, content, category, author_id, author_name, view_count, 
+        INSERT INTO community_post (title, content, category_id, author_id, author_name, view_count, 
         like_count, comment_count, collect_count, is_top, top_expire_time, status, create_time, update_time)
-        VALUES (#{title}, #{content}, #{category}, #{authorId}, #{authorName}, #{viewCount}, 
+        VALUES (#{title}, #{content}, #{categoryId}, #{authorId}, #{authorName}, #{viewCount}, 
         #{likeCount}, #{commentCount}, #{collectCount}, #{isTop}, #{topExpireTime}, #{status}, 
         NOW(), NOW())
     </insert>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM community_post
-        WHERE id = #{id}
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.id = #{id}
     </select>
 
     <update id="updateById" parameterType="com.xiaou.community.domain.CommunityPost">
@@ -44,7 +46,7 @@
         <set>
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
-            <if test="category != null">category = #{category},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
             <if test="viewCount != null">view_count = #{viewCount},</if>
             <if test="likeCount != null">like_count = #{likeCount},</if>
             <if test="commentCount != null">comment_count = #{commentCount},</if>
@@ -67,8 +69,8 @@
             <if test="authorName != null and authorName != ''">
                 AND author_name LIKE CONCAT('%', #{authorName}, '%')
             </if>
-            <if test="category != null and category != ''">
-                AND category = #{category}
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
             </if>
             <if test="keyword != null and keyword != ''">
                 AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
@@ -85,28 +87,30 @@
     <!-- 后台查询帖子列表 -->
     <select id="selectAdminPostList" parameterType="com.xiaou.community.dto.AdminPostQueryRequest" 
             resultMap="BaseResultMap">
-        SELECT * FROM community_post
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
         <where>
             <if test="request.status != null">
-                AND status = #{request.status}
+                AND p.status = #{request.status}
             </if>
             <if test="request.authorName != null and request.authorName != ''">
-                AND author_name LIKE CONCAT('%', #{request.authorName}, '%')
+                AND p.author_name LIKE CONCAT('%', #{request.authorName}, '%')
             </if>
-            <if test="request.category != null and request.category != ''">
-                AND category = #{request.category}
+            <if test="request.categoryId != null">
+                AND p.category_id = #{request.categoryId}
             </if>
             <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
             </if>
             <if test="request.startTime != null and request.startTime != ''">
-                AND create_time >= #{request.startTime}
+                AND p.create_time >= #{request.startTime}
             </if>
             <if test="request.endTime != null and request.endTime != ''">
-                AND create_time &lt;= #{request.endTime}
+                AND p.create_time &lt;= #{request.endTime}
             </if>
         </where>
-        ORDER BY is_top DESC, create_time DESC
+        ORDER BY p.is_top DESC, p.create_time DESC
     </select>
 
     <update id="topPost">
@@ -159,24 +163,43 @@
 
     <select id="selectByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM community_post
-        WHERE author_id = #{userId} AND status != 3
-        ORDER BY create_time DESC
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.author_id = #{userId} AND p.status != 3
+        ORDER BY p.create_time DESC
     </select>
 
     <!-- 前台查询帖子总数 -->
-    <select id="selectPostCount" resultType="java.lang.Long">
+    <select id="selectPostCount" parameterType="com.xiaou.community.dto.CommunityPostQueryRequest" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM community_post
-        WHERE status = 1
+        <where>
+            AND status = 1
+            <if test="request.categoryId != null">
+                AND category_id = #{request.categoryId}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
     </select>
 
     <!-- 前台查询帖子列表 -->
     <select id="selectPostList" parameterType="com.xiaou.community.dto.CommunityPostQueryRequest" 
             resultMap="BaseResultMap">
-        SELECT * FROM community_post
-        WHERE status != 3  <!-- 排除已删除的帖子 -->
-        ORDER BY is_top DESC, create_time DESC
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        <where>
+            AND p.status = 1  <!-- 只显示已发布的帖子 -->
+            <if test="request.categoryId != null">
+                AND p.category_id = #{request.categoryId}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY p.is_top DESC, p.create_time DESC
     </select>
 
     <!-- 查询用户收藏帖子总数 -->
@@ -192,9 +215,9 @@
 
     <!-- 查询用户收藏的帖子列表 -->
     <select id="selectUserCollectionList" resultMap="BaseResultMap">
-        SELECT p.id, p.title, p.content, p.category, p.author_id, p.author_name, p.view_count, p.like_count, 
-               p.comment_count, p.collect_count, p.is_top, p.top_expire_time, p.status, p.create_time, p.update_time
+        SELECT <include refid="Base_Column_List"/>
         FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
         INNER JOIN community_post_collect c ON p.id = c.post_id
         WHERE c.user_id = #{userId} AND p.status != 3
         ORDER BY c.create_time DESC
@@ -213,9 +236,10 @@
     <!-- 查询用户发布的帖子列表 -->
     <select id="selectUserPostList" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM community_post
-        WHERE author_id = #{userId} AND status != 3  <!-- 排除已删除的帖子 -->
-        ORDER BY create_time DESC
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.author_id = #{userId} AND p.status != 3  <!-- 排除已删除的帖子 -->
+        ORDER BY p.create_time DESC
     </select>
 
 </mapper> 

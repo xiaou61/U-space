@@ -36,13 +36,19 @@
           />
         </el-col>
         <el-col :span="4">
-          <el-input 
-            v-model="searchForm.category" 
-            placeholder="分类标签" 
+          <el-select 
+            v-model="searchForm.categoryId" 
+            placeholder="选择分类" 
             clearable
-            @clear="handleSearch"
-            @keyup.enter="handleSearch"
-          />
+            @change="handleSearch"
+          >
+            <el-option
+              v-for="category in categoryList"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
         </el-col>
         <el-col :span="4">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable @change="handleSearch">
@@ -96,9 +102,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="category" label="分类" width="120" align="center">
+        <el-table-column prop="categoryName" label="分类" width="120" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.category" type="primary" size="small">{{ row.category }}</el-tag>
+            <el-tag v-if="row.categoryName" type="primary" size="small">{{ row.categoryName }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -200,7 +206,7 @@
           <h3>{{ currentPost.title }}</h3>
           <div class="meta-info">
             <span>作者：{{ currentPost.authorName }}</span>
-            <span v-if="currentPost.category">分类：{{ currentPost.category }}</span>
+            <span v-if="currentPost.categoryName">分类：{{ currentPost.categoryName }}</span>
             <span>创建时间：{{ currentPost.createTime }}</span>
           </div>
         </div>
@@ -252,13 +258,14 @@ const submitLoading = ref(false)
 const detailVisible = ref(false)
 const topDialogVisible = ref(false)
 const postList = ref([])
+const categoryList = ref([])
 const currentPost = ref(null)
 
 // 搜索表单
 const searchForm = reactive({
   keyword: '',
   authorName: '',
-  category: '',
+  categoryId: null,
   status: null,
   timeRange: null
 })
@@ -313,7 +320,7 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.keyword = ''
   searchForm.authorName = ''
-  searchForm.category = ''
+  searchForm.categoryId = null
   searchForm.status = null
   searchForm.timeRange = null
   pagination.pageNum = 1
@@ -447,8 +454,19 @@ const formatContent = (content) => {
   return renderMarkdown(content)
 }
 
+// 加载分类列表
+const loadCategories = async () => {
+  try {
+    const data = await communityApi.getEnabledCategories()
+    categoryList.value = data || []
+  } catch (error) {
+    console.error('加载分类列表失败:', error)
+  }
+}
+
 // 页面挂载
-onMounted(() => {
+onMounted(async () => {
+  await loadCategories()
   fetchPosts()
 })
 </script>

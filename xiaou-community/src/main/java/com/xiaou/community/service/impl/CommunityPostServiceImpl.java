@@ -176,19 +176,17 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         }
         
         // 如果指定了分类ID，需要验证分类是否存在且启用
-        String categoryName = null;
         if (request.getCategoryId() != null) {
             CommunityCategory category = communityCategoryService.getById(request.getCategoryId());
             if (category.getStatus() != 1) {
                 throw new BusinessException("所选分类已被禁用");
             }
-            categoryName = category.getName();
         }
         
         CommunityPost post = new CommunityPost();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setCategory(categoryName);
+        post.setCategoryId(request.getCategoryId());
         post.setAuthorId(currentUser.getId());
         post.setAuthorName(currentUser.getUsername());
         post.setViewCount(0);
@@ -211,7 +209,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             communityCategoryService.updatePostCount(request.getCategoryId(), 1);
         }
         
-        log.info("用户发布帖子成功，用户ID: {}, 帖子ID: {}, 分类: {}", currentUser.getId(), post.getId(), categoryName);
+        log.info("用户发布帖子成功，用户ID: {}, 帖子ID: {}, 分类ID: {}", currentUser.getId(), post.getId(), request.getCategoryId());
     }
     
     @Override
@@ -365,12 +363,23 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            List<CommunityPost> posts = communityPostMapper.selectUserCollectionList(currentUser.getId(), request);
-            return posts.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // 先获取分页的原始帖子数据
+        PageResult<CommunityPost> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            return communityPostMapper.selectUserCollectionList(currentUser.getId(), request);
         });
+        
+        // 在分页外进行DTO转换，避免额外查询干扰分页计数
+        List<CommunityPostResponse> responseList = pageResult.getRecords().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        // 构造返回结果，保持分页信息
+        return PageResult.of(
+            pageResult.getPageNum(),
+            pageResult.getPageSize(),
+            pageResult.getTotal(),
+            responseList
+        );
     }
     
     @Override
@@ -380,12 +389,23 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             throw new BusinessException("请先登录");
         }
         
-        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            List<CommunityPost> posts = communityPostMapper.selectUserPostList(currentUser.getId(), request);
-            return posts.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // 先获取分页的原始帖子数据
+        PageResult<CommunityPost> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            return communityPostMapper.selectUserPostList(currentUser.getId(), request);
         });
+        
+        // 在分页外进行DTO转换，避免额外查询干扰分页计数
+        List<CommunityPostResponse> responseList = pageResult.getRecords().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        // 构造返回结果，保持分页信息
+        return PageResult.of(
+            pageResult.getPageNum(),
+            pageResult.getPageSize(),
+            pageResult.getTotal(),
+            responseList
+        );
     }
     
     /**

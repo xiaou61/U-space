@@ -29,9 +29,14 @@ public class CommunityPost {
     private String content;
     
     /**
-     * 分类标签
+     * 分类ID
      */
-    private String category;
+    private Long categoryId;
+    
+    /**
+     * 分类名称（查询时使用）
+     */
+    private String categoryName;
     
     /**
      * 作者用户ID

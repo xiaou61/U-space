@@ -136,9 +136,6 @@
         SELECT <include refid="Base_Column_List"/>
         FROM community_comment
         WHERE post_id = #{postId} AND status = 1
-        <if test="request.parentId != null">
-            AND parent_id = #{request.parentId}
-        </if>
         ORDER BY create_time ASC
     </select>
 

@@ -4,6 +4,7 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.dto.AdminCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryCreateRequest;
+import com.xiaou.community.dto.CommunityCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryUpdateRequest;
 
 import java.util.List;
@@ -49,6 +50,11 @@ public interface CommunityCategoryService {
      * 获取所有启用的分类（前台用）
      */
     List<CommunityCategory> getEnabledCategories();
+    
+    /**
+     * 前台分页查询启用的分类列表
+     */
+    PageResult<CommunityCategory> getCategoryList(CommunityCategoryQueryRequest request);
     
     /**
      * 更新分类下的帖子数量

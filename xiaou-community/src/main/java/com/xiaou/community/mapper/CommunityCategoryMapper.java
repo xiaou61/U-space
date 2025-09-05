@@ -2,6 +2,7 @@ package com.xiaou.community.mapper;
 
 import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.dto.AdminCategoryQueryRequest;
+import com.xiaou.community.dto.CommunityCategoryQueryRequest;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -44,6 +45,11 @@ public interface CommunityCategoryMapper {
      * 查询所有启用的分类（用于前台下拉选择）
      */
     List<CommunityCategory> selectEnabledCategories();
+    
+    /**
+     * 前台分页查询启用的分类列表
+     */
+    List<CommunityCategory> selectCategoryList(@Param("request") CommunityCategoryQueryRequest request);
     
     /**
      * 更新分类下的帖子数量

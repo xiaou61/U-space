@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityCommentLikeMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityCommentLike">
+        <id column="id" property="id"/>
+        <result column="comment_id" property="commentId"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, comment_id, user_id, user_name, create_time
+    </sql>
+
+    <!-- 插入点赞记录 -->
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityCommentLike" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_comment_like (comment_id, user_id, user_name, create_time)
+        VALUES (#{commentId}, #{userId}, #{userName}, NOW())
+    </insert>
+
+    <!-- 删除点赞记录 -->
+    <delete id="delete">
+        DELETE FROM community_comment_like 
+        WHERE comment_id = #{commentId} AND user_id = #{userId}
+    </delete>
+
+    <!-- 查询用户是否已点赞指定评论 -->
+    <select id="selectByCommentIdAndUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_comment_like
+        WHERE comment_id = #{commentId} AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 统计评论点赞数 -->
+    <select id="countByCommentId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM community_comment_like
+        WHERE comment_id = #{commentId}
+    </select>
+
+</mapper> 

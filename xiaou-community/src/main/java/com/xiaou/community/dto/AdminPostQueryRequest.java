@@ -24,9 +24,9 @@ public class AdminPostQueryRequest implements PageRequest {
     private String authorName;
     
     /**
-     * 分类筛选
+     * 分类ID筛选
      */
-    private String category;
+    private Long categoryId;
     
     /**
      * 关键词搜索

@@ -6,6 +6,7 @@ import com.xiaou.common.utils.PageHelper;
 import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.dto.AdminCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryCreateRequest;
+import com.xiaou.community.dto.CommunityCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryUpdateRequest;
 import com.xiaou.community.mapper.CommunityCategoryMapper;
 import com.xiaou.community.service.CommunityCategoryService;
@@ -139,6 +140,13 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     @Override
     public List<CommunityCategory> getEnabledCategories() {
         return communityCategoryMapper.selectEnabledCategories();
+    }
+    
+    @Override
+    public PageResult<CommunityCategory> getCategoryList(CommunityCategoryQueryRequest request) {
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> 
+            communityCategoryMapper.selectCategoryList(request)
+        );
     }
     
     @Override

@@ -4,12 +4,12 @@ import com.xiaou.common.core.domain.PageRequest;
 import lombok.Data;
 
 /**
- * 评论查询请求DTO
+ * 前台分类查询请求DTO
  * 
  * @author xiaou
  */
 @Data
-public class CommunityCommentQueryRequest implements PageRequest {
+public class CommunityCategoryQueryRequest implements PageRequest {
     
     /**
      * 页码
@@ -22,9 +22,9 @@ public class CommunityCommentQueryRequest implements PageRequest {
     private Integer pageSize = 10;
     
     /**
-     * 排序方式：time/hot，默认time
+     * 关键字搜索（名称或描述）
      */
-    private String sort = "time";
+    private String keyword;
     
     @Override
     public PageRequest setPageNum(Integer pageNum) {

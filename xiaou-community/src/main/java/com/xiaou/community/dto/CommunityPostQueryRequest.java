@@ -12,6 +12,16 @@ import lombok.Data;
 public class CommunityPostQueryRequest implements PageRequest {
     
     /**
+     * 分类ID筛选
+     */
+    private Long categoryId;
+    
+    /**
+     * 关键词搜索
+     */
+    private String keyword;
+    
+    /**
      * 页码
      */
     private Integer pageNum = 1;

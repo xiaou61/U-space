@@ -16,8 +16,28 @@ export function deletePost(id) {
 }
 
 // 置顶帖子
-export function togglePostTop(id) {
-  return request.put(`/admin/community/posts/${id}/top`)
+export function topPost(id, data) {
+  return request.put(`/admin/community/posts/${id}/top`, data)
+}
+
+// 取消置顶
+export function cancelTop(id) {
+  return request.delete(`/admin/community/posts/${id}/top`)
+}
+
+// 下架帖子  
+export function disablePost(id) {
+  return request.put(`/admin/community/posts/${id}/disable`)
+}
+
+// 获取帖子详情
+export function getPostById(id) {
+  return request.get(`/admin/community/posts/${id}`)
+}
+
+// 获取所有启用的分类
+export function getEnabledCategories() {
+  return request.get('/community/categories')
 }
 
 // 获取评论列表
@@ -43,6 +63,16 @@ export function banUser(id, data) {
 // 解封用户
 export function unbanUser(id) {
   return request.put(`/admin/community/users/${id}/unban`)
+}
+
+// 获取用户发帖记录
+export function getUserPosts(userId) {
+  return request.get(`/admin/community/users/${userId}/posts`)
+}
+
+// 获取用户评论记录
+export function getUserComments(userId) {
+  return request.get(`/admin/community/users/${userId}/comments`)
 }
 
 // ============ 分类管理接口（新增）============
@@ -81,8 +111,12 @@ export const communityApi = {
   // 帖子相关
   getPostList,
   getPostDetail,
+  getPostById,
   deletePost,
-  togglePostTop,
+  topPost,
+  cancelTop,
+  disablePost,
+  getEnabledCategories,
   
   // 评论相关
   getCommentList,
@@ -92,6 +126,8 @@ export const communityApi = {
   getUserStatusList,
   banUser,
   unbanUser,
+  getUserPosts,
+  getUserComments,
   
   // 分类相关
   getCategoryList,

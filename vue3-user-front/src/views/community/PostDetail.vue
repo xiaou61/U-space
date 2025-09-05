@@ -14,8 +14,8 @@
           <div class="post-meta">
             <span class="post-author">{{ postDetail.authorName }}</span>
             <span class="post-date">{{ formatDate(postDetail.createTime) }}</span>
-            <el-tag v-if="postDetail.category" type="info" size="small" class="category-tag">
-              {{ postDetail.category }}
+            <el-tag v-if="postDetail.categoryName" type="info" size="small" class="category-tag">
+              {{ postDetail.categoryName }}
             </el-tag>
           </div>
           <div class="post-actions">

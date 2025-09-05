@@ -27,14 +27,8 @@
             <div class="post-header">
               <div class="post-meta">
                 <span class="post-date">发表于 {{ formatDate(post.createTime) }}</span>
-                <el-tag v-if="post.category" type="info" size="small" class="category-tag">
-                  {{ post.category }}
-                </el-tag>
-                <el-tag 
-                  :type="post.status === 1 ? 'success' : post.status === 0 ? 'warning' : 'danger'" 
-                  size="small"
-                >
-                  {{ getStatusText(post.status) }}
+                <el-tag v-if="post.categoryName" type="info" size="small" class="category-tag">
+                  {{ post.categoryName }}
                 </el-tag>
               </div>
             </div>
@@ -120,19 +114,7 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
-// 获取帖子状态文本
-const getStatusText = (status) => {
-  switch (status) {
-    case 1:
-      return '已发布'
-    case 0:
-      return '待审核'
-    case -1:
-      return '已删除'
-    default:
-      return '未知'
-  }
-}
+
 
 // 获取我的帖子列表
 const fetchMyPosts = async () => {

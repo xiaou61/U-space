@@ -28,7 +28,7 @@
     <div class="search-section">
       <el-card shadow="never" class="search-card">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="18">
             <el-input 
               v-model="searchKeyword" 
               placeholder="搜索帖子..." 
@@ -43,35 +43,42 @@
             </el-input>
           </el-col>
           <el-col :span="6">
-            <el-select 
-              v-model="searchCategory" 
-              placeholder="按分类筛选..." 
-              size="large"
-              clearable
-              @change="handleSearch"
-              style="width: 100%"
-            >
-              <template #prefix>
-                <el-icon><Flag /></el-icon>
-              </template>
-              <el-option
-                v-for="category in categoryList"
-                :key="category.id"
-                :label="category.name"
-                :value="category.name"
-              >
-                <span>{{ category.name }}</span>
-                <span style="color: #8492a6; font-size: 13px; margin-left: 8px">{{ category.description }}</span>
-              </el-option>
-            </el-select>
-          </el-col>
-          <el-col :span="6">
             <el-button type="primary" size="large" @click="handleSearch" style="width: 100%">
               <el-icon><Search /></el-icon>
               搜索
             </el-button>
           </el-col>
         </el-row>
+      </el-card>
+    </div>
+
+    <!-- 分类标签区域 -->
+    <div class="category-section">
+      <el-card shadow="never" class="category-card">
+        <div class="category-tabs">
+          <el-tag 
+            :type="selectedCategoryId === null ? 'primary' : ''"
+            :effect="selectedCategoryId === null ? 'dark' : 'plain'"
+            size="large"
+            class="category-tag"
+            @click="selectCategory(null)"
+          >
+            全部
+            <span v-if="selectedCategoryId === null" class="post-count">({{ total }})</span>
+          </el-tag>
+          <el-tag 
+            v-for="category in categoryList" 
+            :key="category.id"
+            :type="selectedCategoryId === category.id ? 'primary' : ''"
+            :effect="selectedCategoryId === category.id ? 'dark' : 'plain'"
+            size="large"
+            class="category-tag"
+            @click="selectCategory(category.id)"
+          >
+            {{ category.name }}
+            <span class="post-count">({{ category.postCount || 0 }})</span>
+          </el-tag>
+        </div>
       </el-card>
     </div>
 
@@ -96,8 +103,8 @@
               <div class="post-meta">
                 <span class="post-author">{{ post.authorName }}</span>
                 <span class="post-date">{{ formatDate(post.createTime) }}</span>
-                <el-tag v-if="post.category" type="info" size="small" class="category-tag">
-                  {{ post.category }}
+                <el-tag v-if="post.categoryName" type="info" size="small" class="post-category-tag">
+                  {{ post.categoryName }}
                 </el-tag>
               </div>
             </div>
@@ -182,17 +189,18 @@ const router = useRouter()
 
 // 响应式数据
 const searchKeyword = ref('')
-const searchCategory = ref('')
+const selectedCategoryId = ref(null)
 const loading = ref(false)
 const postList = ref([])
 const categoryList = ref([])
 const total = ref(0)
 
-
 // 查询参数
 const queryParams = reactive({
   pageNum: 1,
-  pageSize: 10
+  pageSize: 10,
+  categoryId: null,
+  keyword: null
 })
 
 
@@ -226,8 +234,17 @@ const fetchPostList = async () => {
   }
 }
 
+// 选择分类
+const selectCategory = (categoryId) => {
+  selectedCategoryId.value = categoryId
+  queryParams.categoryId = categoryId
+  queryParams.pageNum = 1
+  fetchPostList()
+}
+
 // 搜索
 const handleSearch = () => {
+  queryParams.keyword = searchKeyword.value || null
   queryParams.pageNum = 1
   fetchPostList()
 }
@@ -367,17 +384,49 @@ onMounted(async () => {
   gap: 12px;
 }
 
-.search-section, .content-section {
+.search-section, .category-section, .content-section {
   margin-bottom: 20px;
 }
 
-.search-card, .content-card {
+.search-card, .category-card, .content-card {
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .search-card {
   padding: 8px;
+}
+
+/* 分类标签样式 */
+.category-card {
+  padding: 16px;
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.category-tag {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 185, 148, 0.3);
+}
+
+.post-count {
+  margin-left: 4px;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 /* 帖子列表样式 */
@@ -432,6 +481,10 @@ onMounted(async () => {
 .post-author {
   color: #00b894;
   font-weight: 500;
+}
+
+.post-category-tag {
+  margin-left: auto;
 }
 
 .post-title {
