@@ -8,6 +8,7 @@ import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.dto.RandomQuestionRequest;
 import com.xiaou.interview.service.InterviewQuestionService;
 import com.xiaou.interview.service.InterviewQuestionSetService;
+import com.xiaou.interview.dto.SearchRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -120,23 +121,13 @@ public class InterviewQuestionSetPublicController {
         return Result.success(prevQuestion);
     }
 
-    @Operation(summary = "搜索题单")
-    @GetMapping("/search")
-    public Result<PageResult<InterviewQuestionSet>> searchQuestionSets(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<InterviewQuestionSet> result = questionSetService.searchQuestionSets(keyword, page, size);
-        return Result.success(result);
-    }
+
 
     @Operation(summary = "搜索题目")
-    @GetMapping("/questions/search")
-    public Result<PageResult<InterviewQuestion>> searchQuestions(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<InterviewQuestion> result = questionService.searchQuestions(keyword, page, size);
+    @PostMapping("/search")
+    public Result<PageResult<InterviewQuestion>> searchQuestions(@RequestBody SearchRequest request) {
+        PageResult<InterviewQuestion> result = questionService.searchQuestions(
+            request.getKeyword(), request.getPage(), request.getSize());
         return Result.success(result);
     }
 

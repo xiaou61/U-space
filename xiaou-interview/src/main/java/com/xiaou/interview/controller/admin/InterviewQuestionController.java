@@ -6,6 +6,7 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.dto.InterviewQuestionQueryRequest;
+import com.xiaou.interview.dto.SearchRequest;
 import com.xiaou.interview.service.InterviewQuestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -107,13 +108,11 @@ public class InterviewQuestionController {
     }
 
     @Operation(summary = "搜索题目")
-    @GetMapping("/search")
+    @PostMapping("/search")
     @RequireAdmin
-    public Result<PageResult<InterviewQuestion>> searchQuestions(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<InterviewQuestion> result = questionService.searchQuestions(keyword, page, size);
+    public Result<PageResult<InterviewQuestion>> searchQuestions(@RequestBody SearchRequest request) {
+        PageResult<InterviewQuestion> result = questionService.searchQuestions(
+            request.getKeyword(), request.getPage(), request.getSize());
         return Result.success(result);
     }
 

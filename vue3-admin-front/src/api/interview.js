@@ -70,9 +70,9 @@ export const interviewApi = {
     return request.post(`/admin/interview/question-sets/${id}/view`)
   },
   
-  // 搜索题单
-  searchQuestionSets(params) {
-    return request.get('/admin/interview/question-sets/search', { params })
+  // 搜索题目（标题和答案）
+  searchQuestions(data) {
+    return request.post('/admin/interview/questions/search', data)
   },
   
   // ============ 题目管理 ============

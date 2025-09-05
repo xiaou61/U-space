@@ -122,7 +122,7 @@
         <include refid="Base_Column_List"/>
         FROM interview_question
         WHERE title LIKE CONCAT('%', #{keyword}, '%') 
-           OR content LIKE CONCAT('%', #{keyword}, '%')
+           OR answer LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY create_time DESC
     </select>
 
