@@ -17,46 +17,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- ----------------------------
--- Table structure for sql_monitor_log
--- ----------------------------
-DROP TABLE IF EXISTS `sql_monitor_log`;
-CREATE TABLE `sql_monitor_log`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `trace_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '跟踪ID',
-  `user_id` bigint NULL DEFAULT NULL COMMENT '用户ID',
-  `user_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户类型 (admin/user)',
-  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户名',
-  `request_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '请求IP',
-  `request_uri` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '请求URI',
-  `http_method` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT 'HTTP方法',
-  `module` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作模块',
-  `method` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作方法',
-  `mapper_method` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'MyBatis Mapper方法',
-  `sql_statement` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'SQL语句',
-  `sql_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'SQL类型 (SELECT/INSERT/UPDATE/DELETE)',
-  `sql_params` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT 'SQL参数',
-  `execution_time` bigint NOT NULL COMMENT '执行时间(毫秒)',
-  `affected_rows` int NULL DEFAULT 0 COMMENT '影响行数',
-  `success` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否成功',
-  `error_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '错误信息',
-  `slow_sql` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否慢SQL',
-  `execute_time` datetime NOT NULL COMMENT '执行时间',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_trace_id`(`trace_id` ASC) USING BTREE,
-  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
-  INDEX `idx_user_type`(`user_type` ASC) USING BTREE,
-  INDEX `idx_username`(`username` ASC) USING BTREE,
-  INDEX `idx_module`(`module` ASC) USING BTREE,
-  INDEX `idx_sql_type`(`sql_type` ASC) USING BTREE,
-  INDEX `idx_slow_sql`(`slow_sql` ASC) USING BTREE,
-  INDEX `idx_success`(`success` ASC) USING BTREE,
-  INDEX `idx_execute_time`(`execute_time` ASC) USING BTREE,
-  INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
-  INDEX `idx_execution_time`(`execution_time` ASC) USING BTREE,
-  INDEX `idx_mapper_method`(`mapper_method`(100) ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1229 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'SQL监控日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_operation_log

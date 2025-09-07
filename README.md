@@ -1,7 +1,7 @@
 # Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -167,7 +167,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.1.0.jar
+java -jar target/xiaou-application-1.1.1.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -300,14 +300,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.1.0 .
+docker build -t code-nest:1.1.1 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.1.0
+  code-nest:1.1.1
 ```
 
 ### Nginx配置
@@ -343,6 +343,13 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.1.1 (2025-09-05)
+
+#### 🔧 技术改进
+- 重构SQL监控系统，优化为监控树类型结构
+- 提升监控数据可视化展示效果
+- 优化监控性能和用户体验
 
 ### v1.1.0 (2025-09-05)
 
