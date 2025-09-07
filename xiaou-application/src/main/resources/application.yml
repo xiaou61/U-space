@@ -126,15 +126,20 @@ xiaou:
   monitor:
     # 是否启用SQL监控 (默认true)
     enabled: true
-    # 慢SQL阈值(毫秒) (默认1000ms)
+    # 慢SQL阈值(毫秒) - 超过此阈值的SQL将被标记为慢SQL (默认1000ms)
     slow-sql-threshold: 1000
-    # 是否启用异步保存监控日志 (默认true) 
-    async-save: true
-    # 监控数据保留天数 (默认30天)
-    retention-days: 30
     # 是否启用调试日志 (默认false)
     debug-enabled: false
     
+    # ========== SQL调用树追踪配置 ==========
+    # 是否启用SQL调用树追踪 (默认true)
+    tree-trace-enabled: true
+    # 最大会话数量 - 内存中最多保存多少个调用树会话 (默认100)
+    max-session-count: 100
+    # 会话过期时间(分钟) - 超过此时间的会话将被自动清理 (默认60分钟)
+    session-expire-minutes: 60
+    
+    # ========== 排除配置 ==========
     # 排除监控的mapper包路径
     exclude-mapper-packages:
       - com.xiaou.monitor.mapper
@@ -146,10 +151,12 @@ xiaou:
       - /monitor/
       - /auth/login-logs
       - /logs/
+      - /api/sql-tree/
     
     # 排除监控的模块名称
     exclude-modules:
       - SqlMonitor
+      - SqlTreeController
       - LogController
       - AuthController
     
