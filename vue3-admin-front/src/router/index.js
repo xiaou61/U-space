@@ -147,6 +147,52 @@ const routes = [
         ],
       },
       {
+        path: 'filestorage',
+        name: 'FileStorageManagement',
+        meta: {
+          title: '文件存储管理',
+          icon: 'FolderOpened',
+        },
+        children: [
+          {
+            path: 'storage-config',
+            name: 'StorageConfig',
+            component: () => import('@/views/filestorage/storage-config/index.vue'),
+            meta: {
+              title: '存储配置',
+              icon: 'SetUp',
+            },
+          },
+          {
+            path: 'file-management',
+            name: 'FileManagement',
+            component: () => import('@/views/filestorage/file-management/index.vue'),
+            meta: {
+              title: '文件管理',
+              icon: 'Document',
+            },
+          },
+          {
+            path: 'migration',
+            name: 'FileMigration',
+            component: () => import('@/views/filestorage/migration/index.vue'),
+            meta: {
+              title: '文件迁移',
+              icon: 'Sort',
+            },
+          },
+          {
+            path: 'system-settings',
+            name: 'FileSystemSettings',
+            component: () => import('@/views/filestorage/system-settings/index.vue'),
+            meta: {
+              title: '系统设置',
+              icon: 'Tools',
+            },
+          },
+        ],
+      },
+      {
         path: 'system',
         name: 'SystemManagement',
         meta: {

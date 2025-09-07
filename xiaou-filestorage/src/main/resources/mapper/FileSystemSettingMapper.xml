@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.FileSystemSettingMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.FileSystemSetting">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="setting_key" property="settingKey" jdbcType="VARCHAR"/>
+        <result column="setting_value" property="settingValue" jdbcType="LONGVARCHAR"/>
+        <result column="setting_desc" property="settingDesc" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, setting_key, setting_value, setting_desc, create_time, update_time
+    </sql>
+
+    <!-- 插入系统设置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_system_setting (
+            setting_key, setting_value, setting_desc, create_time, update_time
+        ) VALUES (
+            #{settingKey}, #{settingValue}, #{settingDesc}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_system_setting
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据设置键查询 -->
+    <select id="selectByKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_system_setting
+        WHERE setting_key = #{settingKey}
+    </select>
+
+    <!-- 查询所有设置 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_system_setting
+        ORDER BY setting_key
+    </select>
+
+    <!-- 更新系统设置 -->
+    <update id="updateById">
+        UPDATE file_system_setting
+        <set>
+            <if test="settingKey != null">setting_key = #{settingKey},</if>
+            <if test="settingValue != null">setting_value = #{settingValue},</if>
+            <if test="settingDesc != null">setting_desc = #{settingDesc},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除系统设置 -->
+    <delete id="deleteById">
+        DELETE FROM file_system_setting WHERE id = #{id}
+    </delete>
+
+    <!-- 根据设置键删除 -->
+    <delete id="deleteByKey">
+        DELETE FROM file_system_setting WHERE setting_key = #{settingKey}
+    </delete>
+
+</mapper> 

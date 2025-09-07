@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.FileInfoMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.FileInfo">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="original_name" property="originalName" jdbcType="VARCHAR"/>
+        <result column="stored_name" property="storedName" jdbcType="VARCHAR"/>
+        <result column="file_size" property="fileSize" jdbcType="BIGINT"/>
+        <result column="content_type" property="contentType" jdbcType="VARCHAR"/>
+        <result column="md5_hash" property="md5Hash" jdbcType="VARCHAR"/>
+        <result column="module_name" property="moduleName" jdbcType="VARCHAR"/>
+        <result column="business_type" property="businessType" jdbcType="VARCHAR"/>
+        <result column="upload_time" property="uploadTime" jdbcType="TIMESTAMP"/>
+        <result column="access_url" property="accessUrl" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="is_public" property="isPublic" jdbcType="TINYINT"/>
+        <result column="delete_time" property="deleteTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, original_name, stored_name, file_size, content_type, md5_hash,
+        module_name, business_type, upload_time, access_url, status,
+        is_public, delete_time, create_time, update_time
+    </sql>
+
+    <!-- 插入文件信息 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_info (
+            original_name, stored_name, file_size, content_type, md5_hash,
+            module_name, business_type, upload_time, access_url, status,
+            is_public, delete_time, create_time, update_time
+        ) VALUES (
+            #{originalName}, #{storedName}, #{fileSize}, #{contentType}, #{md5Hash},
+            #{moduleName}, #{businessType}, #{uploadTime}, #{accessUrl}, #{status},
+            #{isPublic}, #{deleteTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询文件信息 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_info
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据MD5查询文件信息 -->
+    <select id="selectByMd5" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_info
+        WHERE md5_hash = #{md5Hash} AND status = 1
+        LIMIT 1
+    </select>
+
+    <!-- 根据ID列表查询文件信息 -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_info
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        AND status = 1
+    </select>
+
+    <!-- 分页查询文件信息 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_info
+        <where>
+            <if test="moduleName != null and moduleName != ''">
+                AND module_name = #{moduleName}
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND upload_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND upload_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY upload_time DESC
+    </select>
+
+    <!-- 更新文件信息 -->
+    <update id="updateById">
+        UPDATE file_info
+        <set>
+            <if test="originalName != null">original_name = #{originalName},</if>
+            <if test="storedName != null">stored_name = #{storedName},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="contentType != null">content_type = #{contentType},</if>
+            <if test="md5Hash != null">md5_hash = #{md5Hash},</if>
+            <if test="moduleName != null">module_name = #{moduleName},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
+            <if test="uploadTime != null">upload_time = #{uploadTime},</if>
+            <if test="accessUrl != null">access_url = #{accessUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="deleteTime != null">delete_time = #{deleteTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 逻辑删除文件 -->
+    <update id="logicalDeleteById">
+        UPDATE file_info
+        SET status = 0, delete_time = NOW(), update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 物理删除文件 -->
+    <delete id="deleteById">
+        DELETE FROM file_info WHERE id = #{id}
+    </delete>
+
+    <!-- 统计文件数量 -->
+    <select id="countByCondition" resultType="Long">
+        SELECT COUNT(1)
+        FROM file_info
+        <where>
+            <if test="moduleName != null and moduleName != ''">
+                AND module_name = #{moduleName}
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 统计存储容量 -->
+    <select id="sumFileSizeByCondition" resultType="Long">
+        SELECT COALESCE(SUM(file_size), 0)
+        FROM file_info
+        <where>
+            <if test="moduleName != null and moduleName != ''">
+                AND module_name = #{moduleName}
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type = #{businessType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询需要迁移的文件 -->
+    <select id="selectForMigration" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_info
+        WHERE storage_config_id = #{sourceStorageId}
+        AND status = 1
+        <if test="startTime != null">
+            AND upload_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND upload_time &lt;= #{endTime}
+        </if>
+        ORDER BY upload_time ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 按时间范围统计文件数量 -->
+    <select id="countByTimeRange" resultType="Long">
+        SELECT COUNT(*)
+        FROM file_info
+        WHERE status = 1
+        <if test="startTime != null">
+            AND upload_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND upload_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 按模块统计文件使用情况 -->
+    <select id="countByModule" resultType="Map">
+        SELECT 
+            module_name as moduleName,
+            COUNT(*) as fileCount,
+            COALESCE(SUM(file_size), 0) as totalSize
+        FROM file_info
+        WHERE status = 1
+        GROUP BY module_name
+        ORDER BY totalSize DESC
+    </select>
+
+    <!-- 按存储类型统计文件使用情况 -->
+    <select id="countByStorageType" resultType="Map">
+        SELECT 
+            CASE 
+                WHEN stored_name LIKE '/uploads/%' THEN 'LOCAL'
+                WHEN stored_name LIKE 'oss://%' THEN 'OSS'
+                WHEN stored_name LIKE 'cos://%' THEN 'COS'
+                ELSE 'UNKNOWN'
+            END as storageType,
+            COUNT(*) as fileCount,
+            COALESCE(SUM(file_size), 0) as totalSize
+        FROM file_info
+        WHERE status = 1
+        GROUP BY storageType
+        ORDER BY totalSize DESC
+    </select>
+
+    <!-- 按文件类型统计 -->
+    <select id="countByFileType" resultType="Map">
+        SELECT 
+            CASE 
+                WHEN content_type LIKE 'image/%' THEN 'images'
+                WHEN content_type LIKE 'video/%' THEN 'videos'
+                WHEN content_type LIKE 'audio/%' THEN 'audios'
+                WHEN content_type LIKE 'application/pdf' THEN 'documents'
+                WHEN content_type LIKE 'text/%' THEN 'documents'
+                WHEN content_type LIKE 'application/msword' THEN 'documents'
+                WHEN content_type LIKE 'application/vnd.openxmlformats-officedocument%' THEN 'documents'
+                ELSE 'others'
+            END as fileType,
+            COUNT(*) as fileCount,
+            COALESCE(SUM(file_size), 0) as totalSize
+        FROM file_info
+        WHERE status = 1
+        GROUP BY fileType
+        ORDER BY fileCount DESC
+    </select>
+
+    <!-- 按日期统计上传趋势 -->
+    <select id="countUploadTrend" resultType="Map">
+        SELECT 
+            DATE_FORMAT(upload_time, '%Y-%m-%d') as uploadDate,
+            COUNT(*) as fileCount,
+            COALESCE(SUM(file_size), 0) as totalSize
+        FROM file_info
+        WHERE status = 1
+        <if test="startDate != null">
+            AND upload_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND upload_time &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(upload_time, '%Y-%m-%d')
+        ORDER BY uploadDate ASC
+    </select>
+
+</mapper> 

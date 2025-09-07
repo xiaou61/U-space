@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.FileMigrationMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.FileMigration">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_name" property="taskName" jdbcType="VARCHAR"/>
+        <result column="source_storage_id" property="sourceStorageId" jdbcType="BIGINT"/>
+        <result column="target_storage_id" property="targetStorageId" jdbcType="BIGINT"/>
+        <result column="migration_type" property="migrationType" jdbcType="VARCHAR"/>
+        <result column="filter_params" property="filterParams" jdbcType="LONGVARCHAR"/>
+        <result column="total_files" property="totalFiles" jdbcType="INTEGER"/>
+        <result column="success_count" property="successCount" jdbcType="INTEGER"/>
+        <result column="fail_count" property="failCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="error_message" property="errorMessage" jdbcType="LONGVARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, task_name, source_storage_id, target_storage_id, migration_type, 
+        filter_params, total_files, success_count, fail_count, status, 
+        start_time, end_time, error_message, create_time, update_time
+    </sql>
+
+    <!-- 插入迁移任务 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_migration (
+            task_name, source_storage_id, target_storage_id, migration_type,
+            filter_params, total_files, success_count, fail_count, status,
+            start_time, end_time, error_message, create_time, update_time
+        ) VALUES (
+            #{taskName}, #{sourceStorageId}, #{targetStorageId}, #{migrationType},
+            #{filterParams}, #{totalFiles}, #{successCount}, #{failCount}, #{status},
+            #{startTime}, #{endTime}, #{errorMessage}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_migration
+        WHERE id = #{id}
+    </select>
+
+    <!-- 按条件查询迁移任务列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_migration
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询指定存储的迁移任务 -->
+    <select id="selectByStorageIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_migration
+        WHERE (source_storage_id = #{sourceStorageId} OR #{sourceStorageId} IS NULL)
+        AND (target_storage_id = #{targetStorageId} OR #{targetStorageId} IS NULL)
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新迁移任务 -->
+    <update id="updateById">
+        UPDATE file_migration
+        <set>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="sourceStorageId != null">source_storage_id = #{sourceStorageId},</if>
+            <if test="targetStorageId != null">target_storage_id = #{targetStorageId},</if>
+            <if test="migrationType != null">migration_type = #{migrationType},</if>
+            <if test="filterParams != null">filter_params = #{filterParams},</if>
+            <if test="totalFiles != null">total_files = #{totalFiles},</if>
+            <if test="successCount != null">success_count = #{successCount},</if>
+            <if test="failCount != null">fail_count = #{failCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除迁移任务 -->
+    <delete id="deleteById">
+        DELETE FROM file_migration WHERE id = #{id}
+    </delete>
+
+    <!-- 更新迁移进度 -->
+    <update id="updateProgress">
+        UPDATE file_migration
+        SET success_count = #{successCount}, 
+            fail_count = #{failCount},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新任务状态 -->
+    <update id="updateStatus">
+        UPDATE file_migration
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 统计各状态的任务数量 -->
+    <select id="countByStatus" resultType="Map">
+        SELECT 
+            status,
+            COUNT(1) as count
+        FROM file_migration
+        GROUP BY status
+    </select>
+
+</mapper> 

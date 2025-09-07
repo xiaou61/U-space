@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.StorageConfigMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.StorageConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="storage_type" property="storageType" jdbcType="VARCHAR"/>
+        <result column="config_name" property="configName" jdbcType="VARCHAR"/>
+        <result column="config_params" property="configParams" jdbcType="LONGVARCHAR"/>
+        <result column="is_default" property="isDefault" jdbcType="TINYINT"/>
+        <result column="is_enabled" property="isEnabled" jdbcType="TINYINT"/>
+        <result column="test_status" property="testStatus" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, storage_type, config_name, config_params, is_default,
+        is_enabled, test_status, create_time, update_time
+    </sql>
+
+    <!-- 插入存储配置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO storage_config (
+            storage_type, config_name, config_params, is_default,
+            is_enabled, test_status, create_time, update_time
+        ) VALUES (
+            #{storageType}, #{configName}, #{configParams}, #{isDefault},
+            #{isEnabled}, #{testStatus}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM storage_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据配置名称查询 -->
+    <select id="selectByConfigName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM storage_config
+        WHERE config_name = #{configName}
+    </select>
+
+    <!-- 查询默认配置 -->
+    <select id="selectDefault" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM storage_config
+        WHERE is_default = 1 AND is_enabled = 1
+        ORDER BY update_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询所有启用的配置 -->
+    <select id="selectEnabled" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM storage_config
+        WHERE is_enabled = 1
+        ORDER BY is_default DESC, update_time DESC
+    </select>
+
+    <!-- 条件查询 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM storage_config
+        <where>
+            <if test="storageType != null and storageType != ''">
+                AND storage_type = #{storageType}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+        ORDER BY is_default DESC, create_time DESC
+    </select>
+
+    <!-- 更新存储配置 -->
+    <update id="updateById">
+        UPDATE storage_config
+        <set>
+            <if test="storageType != null">storage_type = #{storageType},</if>
+            <if test="configName != null">config_name = #{configName},</if>
+            <if test="configParams != null">config_params = #{configParams},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="testStatus != null">test_status = #{testStatus},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除存储配置 -->
+    <delete id="deleteById">
+        DELETE FROM storage_config WHERE id = #{id}
+    </delete>
+
+    <!-- 更新默认配置状态 -->
+    <update id="updateDefaultStatus">
+        UPDATE storage_config
+        SET is_default = #{isDefault}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 清除所有默认配置状态 -->
+    <update id="clearAllDefaultStatus">
+        UPDATE storage_config
+        SET is_default = 0, update_time = NOW()
+        WHERE is_default = 1
+    </update>
+
+    <!-- 更新启用状态 -->
+    <update id="updateEnabledStatus">
+        UPDATE storage_config
+        SET is_enabled = #{isEnabled}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新测试状态 -->
+    <update id="updateTestStatus">
+        UPDATE storage_config
+        SET test_status = #{testStatus}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper> 

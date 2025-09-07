@@ -83,6 +83,29 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/filestorage">
+            <template #title>
+              <el-icon><FolderOpened /></el-icon>
+              <span>文件存储管理</span>
+            </template>
+            <el-menu-item index="/filestorage/storage-config">
+              <el-icon><SetUp /></el-icon>
+              <span>存储配置</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/file-management">
+              <el-icon><Document /></el-icon>
+              <span>文件管理</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/migration">
+              <el-icon><Sort /></el-icon>
+              <span>文件迁移</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/system-settings">
+              <el-icon><Tools /></el-icon>
+              <span>系统设置</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/system">
             <template #title>
               <el-icon><Setting /></el-icon>
@@ -191,7 +214,10 @@ import {
   Edit,
   ChatDotRound,
   ChatLineRound,
-  Files
+  Files,
+  SetUp,
+  Sort,
+  Tools
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

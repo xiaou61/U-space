@@ -16,6 +16,7 @@
         <module>xiaou-application</module>
         <module>xiaou-interview</module>
         <module>xiaou-community</module>
+        <module>xiaou-filestorage</module>
     </modules>
 
     <properties>
