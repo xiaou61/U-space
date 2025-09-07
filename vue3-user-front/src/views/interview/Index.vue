@@ -244,7 +244,7 @@ const handleCurrentChange = (page) => {
 // 跳转到题单详情
 const goToQuestionSet = (questionSet) => {
   // 如果是搜索结果（题目），直接跳转到题目详情
-  if (questionSet.id.startsWith('q-') && questionSet.originalQuestion) {
+  if (typeof questionSet.id === 'string' && questionSet.id.startsWith('q-') && questionSet.originalQuestion) {
     router.push(`/interview/questions/${questionSet.originalQuestion.id}`)
   } else {
     // 正常题单，跳转到题单详情
