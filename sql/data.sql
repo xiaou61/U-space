@@ -51,4 +51,14 @@ INSERT INTO `file_system_setting` (`setting_key`, `setting_value`, `setting_desc
                                                                                        ('STORAGE_QUOTA_PER_MODULE', '10737418240', '每个模块存储配额(字节) - 10GB');
 
 
+
+-- 初始化消息模板数据
+INSERT INTO notification_template (code, name, title_template, content_template) VALUES
+                                                                                     ('WELCOME', '欢迎消息', '欢迎加入{platform}', '亲爱的{username}，欢迎加入我们的平台！'),
+                                                                                     ('COMMUNITY_LIKE', '帖子点赞', '您的帖子收到点赞', '您的帖子《{postTitle}》收到了{likerName}的点赞'),
+                                                                                     ('COMMUNITY_COMMENT', '帖子评论', '您的帖子收到评论', '您的帖子《{postTitle}》收到了{commenterName}的评论'),
+                                                                                     ('INTERVIEW_FAVORITE', '面试题收藏', '收藏提醒', '您收藏的面试题《{questionTitle}》已更新'),
+                                                                                     ('SYSTEM_MAINTENANCE', '系统维护', '系统维护通知', '系统将于{maintenanceTime}进行维护，预计耗时{duration}');
+
+
 SET FOREIGN_KEY_CHECKS = 1;

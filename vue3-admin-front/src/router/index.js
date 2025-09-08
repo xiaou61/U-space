@@ -29,6 +29,7 @@ const routes = [
       {
         path: 'logs',
         name: 'Logs',
+        redirect: '/logs/login',
         meta: {
           title: '日志管理',
           icon: 'Document',
@@ -66,6 +67,7 @@ const routes = [
       {
         path: 'interview',
         name: 'InterviewManagement',
+        redirect: '/interview/categories',
         meta: {
           title: '面试题管理',
           icon: 'Document',
@@ -103,6 +105,7 @@ const routes = [
       {
         path: 'community',
         name: 'CommunityManagement',
+        redirect: '/community/posts',
         meta: {
           title: '社区管理',
           icon: 'ChatDotRound',
@@ -147,8 +150,18 @@ const routes = [
         ],
       },
       {
+        path: 'notification',
+        name: 'NotificationManagement',
+        component: () => import('@/views/notification/index.vue'),
+        meta: {
+          title: '通知管理',
+          icon: 'Bell',
+        },
+      },
+      {
         path: 'filestorage',
         name: 'FileStorageManagement',
+        redirect: '/filestorage/storage-config',
         meta: {
           title: '文件存储管理',
           icon: 'FolderOpened',
@@ -195,6 +208,7 @@ const routes = [
       {
         path: 'system',
         name: 'SystemManagement',
+        redirect: '/system/monitor/sql',
         meta: {
           title: '系统管理',
           icon: 'Setting',
@@ -203,6 +217,7 @@ const routes = [
           {
             path: 'monitor',
             name: 'SystemMonitor',
+            redirect: '/system/monitor/sql',
             meta: {
               title: '系统监控',
               icon: 'Monitor',

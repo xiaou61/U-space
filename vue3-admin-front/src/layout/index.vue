@@ -83,6 +83,11 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-menu-item index="/notification">
+            <el-icon><Bell /></el-icon>
+            <span>通知管理</span>
+          </el-menu-item>
+          
           <el-sub-menu index="/filestorage">
             <template #title>
               <el-icon><FolderOpened /></el-icon>
@@ -217,7 +222,10 @@ import {
   Files,
   SetUp,
   Sort,
-  Tools
+  Tools,
+  Bell,
+  Notification,
+  Message
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

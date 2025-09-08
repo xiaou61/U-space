@@ -60,6 +60,13 @@
             <artifactId>xiaou-filestorage</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- 引入notification模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-notification</artifactId>
+            <version>${revision}</version>
+        </dependency>
         
         <!-- Mysql驱动包 -->
         <dependency>
