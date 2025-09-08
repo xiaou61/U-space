@@ -37,12 +37,14 @@
 
 | 消息类型 | 代码 | 描述 | 示例 |
 |---------|------|------|------|
-| 系统公告 | SYSTEM_ANNOUNCEMENT | 管理员发布的全站公告 | 系统维护通知 |
+| 个人消息 | PERSONAL | 用户间点对点消息 | 私信、回复 |
+| 系统公告 | ANNOUNCEMENT | 管理员发布的全站公告 | 系统维护通知 |
 | 社区互动 | COMMUNITY_INTERACTION | 社区模块相关通知 | 帖子被点赞、评论 |
 | 面试提醒 | INTERVIEW_REMINDER | 面试模块相关通知 | 收藏的题目更新 |
-| 系统通知 | SYSTEM_NOTIFICATION | 系统自动通知 | 账号异常登录 |
+| 系统通知 | SYSTEM | 系统自动通知 | 账号异常登录 |
 | 审核结果 | AUDIT_RESULT | 内容审核结果通知 | 帖子审核通过/拒绝 |
 | 活动通知 | ACTIVITY_NOTIFICATION | 活动相关通知 | 活动开始提醒 |
+| 模板消息 | TEMPLATE | 基于模板的消息 | 参数化消息内容 |
 
 ### 2.3 消息优先级
 
@@ -58,22 +60,37 @@
 ```
 xiaou-notification/
 ├── controller/
-│   ├── admin/           # 管理端接口
-│   │   ├── AdminNotificationController.java
-│   │   └── AdminAnnouncementController.java
-│   └── pub/             # 用户端接口
-│       └── NotificationController.java
-├── domain/              # 实体类
+│   ├── AdminNotificationController.java
+│   └── NotificationController.java
+├── dto/
+│   ├── AnnouncementRequest.java
+│   ├── BatchSendRequest.java
+│   ├── DeleteMessageRequest.java
+│   ├── MarkReadRequest.java
+│   ├── NotificationQueryRequest.java
+│   ├── NotificationStatistics.java
+│   └── StatisticsRequest.java
+└── service/
+    ├── NotificationAdminService.java
+    └── NotificationUserService.java
+
+xiaou-common/
+├── domain/
 │   ├── Notification.java
 │   ├── NotificationTemplate.java
 │   └── NotificationConfig.java
-├── dto/                 # 数据传输对象
-├── mapper/              # MyBatis Mapper
-├── service/             # 业务服务
-│   ├── NotificationService.java
-│   ├── NotificationSender.java
-│   └── NotificationTemplate.java
-└── utils/               # 工具类
+├── enums/
+│   ├── NotificationTypeEnum.java
+│   ├── NotificationStatusEnum.java
+│   ├── NotificationPriorityEnum.java
+│   └── NotificationSourceEnum.java
+├── mapper/
+│   ├── NotificationMapper.java
+│   ├── NotificationTemplateMapper.java
+│   └── NotificationConfigMapper.java
+├── service/
+│   └── NotificationService.java
+└── utils/
     └── NotificationUtil.java
 ```
 
@@ -165,23 +182,20 @@ public interface NotificationSender {
 ### 4.1 用户端页面
 
 #### 4.1.1 消息中心
-- **路径**：`/message/center`
+- **路径**：`/notification`
 - **功能**：
   - 消息列表展示（分页）
   - 消息类型筛选
-  - 批量操作（标记已读、删除）
+  - 消息状态筛选
+  - 时间范围筛选
   - 消息搜索
   - 未读消息统计
+  - 消息详情弹窗
+  - 标记已读/删除操作
+  - 全部已读功能
 
-#### 4.1.2 消息详情
-- **路径**：`/message/detail/:id`
-- **功能**：
-  - 消息详细内容展示
-  - 相关操作（删除、标记已读）
-  - 相关链接跳转
-
-#### 4.1.3 消息设置
-- **路径**：`/message/settings`
+#### 4.1.2 消息设置
+- **路径**：`/notification/settings`
 - **功能**：
   - 各类型消息接收开关
   - 消息提醒方式设置
@@ -218,7 +232,42 @@ public interface NotificationSender {
 
 ## 5. 集成方案
 
-- 暂时不与其他模块进行基础
+### 5.1 集成架构
+
+#### 5.1.1 模块依赖
+- **xiaou-notification** 模块仅依赖 **xiaou-common**
+- **xiaou-common** 提供核心组件和工具类
+- 其他模块通过 **NotificationUtil** 进行集成
+
+#### 5.1.2 集成方式
+```java
+// 其他模块调用示例
+// 发送个人消息
+NotificationUtil.sendPersonalMessage(userId, "标题", "内容");
+
+// 发送系统公告
+NotificationUtil.sendAnnouncement("公告标题", "公告内容", "HIGH");
+
+// 发送模板消息
+Map<String, Object> params = new HashMap<>();
+params.put("username", "张三");
+NotificationUtil.sendTemplateMessage(userId, "WELCOME", params);
+
+// 发送社区相关消息
+NotificationUtil.sendCommunityMessage(userId, "帖子收到点赞", "您的帖子被点赞了");
+```
+
+#### 5.1.3 集成模块
+- **系统模块 (xiaou-system)** 通过 NotificationUtil 发送系统通知
+- **用户模块 (xiaou-user)** 通过 NotificationUtil 发送用户相关消息
+- **社区模块 (xiaou-community)** 通过 NotificationUtil 发送互动消息
+- **面试模块 (xiaou-interview)** 通过 NotificationUtil 发送提醒消息
+
+### 5.2 扩展计划
+- 邮件推送集成
+- 短信推送集成
+- WebSocket 实时推送
+- 移动端推送
 
 ## 6. 技术要点
 
@@ -226,14 +275,17 @@ public interface NotificationSender {
 - **异步处理**：消息发送采用异步处理，避免阻塞主流程
 - **批量处理**：支持批量发送和批量更新状态
 - **缓存策略**：未读消息数量使用Redis缓存
+- **数据库索引优化**：针对查询场景建立复合索引
 
 ### 6.2 扩展性设计
 - **消息类型扩展**：通过枚举和配置支持新消息类型
 - **推送方式扩展**：预留邮件、短信等推送方式接口
 - **模板系统**：支持复杂的消息模板和参数替换
+- **来源模块管理**：通过枚举管理消息来源
 
 ### 6.3 可靠性保证
 - **消息去重**：防止重复发送相同消息
 - **失败重试**：发送失败时支持重试机制
 - **数据一致性**：保证消息状态的一致性
+- **异常处理**：完善的异常处理和日志记录
 
