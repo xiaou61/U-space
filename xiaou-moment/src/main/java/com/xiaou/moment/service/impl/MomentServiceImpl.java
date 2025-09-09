@@ -416,10 +416,12 @@ public class MomentServiceImpl implements MomentService {
         // 统计总数据
         Map<String, Object> params = new HashMap<>();
         if (StrUtil.isNotBlank(request.getStartDate())) {
-            params.put("startDate", request.getStartDate());
+            // 转换为完整的时间格式
+            params.put("startDate", request.getStartDate() + " 00:00:00");
         }
         if (StrUtil.isNotBlank(request.getEndDate())) {
-            params.put("endDate", request.getEndDate());
+            // 转换为完整的时间格式
+            params.put("endDate", request.getEndDate() + " 23:59:59");
         }
         
         // 总动态数
