@@ -139,8 +139,7 @@ mysql -u root -p
 CREATE DATABASE code_nest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 # 导入表结构和数据
-mysql -u root -p code_nest < sql/struct.sql
-mysql -u root -p code_nest < sql/data.sql
+
 ```
 
 ### 3. 配置文件
