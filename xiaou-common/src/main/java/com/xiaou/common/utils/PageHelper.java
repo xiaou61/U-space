@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static com.github.pagehelper.page.PageMethod.startPage;
+
 /**
  * PageHelper 分页插件工具类
  * 基于 PageHelper 分页插件实现的统一分页工具
@@ -39,7 +41,7 @@ public class PageHelper {
             pageSize = Math.min(pageSize, 100); // 限制最大页面大小
             
             // 开启分页
-            com.github.pagehelper.PageHelper.startPage(pageNum, pageSize);
+            startPage(pageNum, pageSize);
             
             // 执行查询
             List<T> list = queryFunction.get();
@@ -83,9 +85,9 @@ public class PageHelper {
             
             // 开启分页和排序
             if (orderBy != null && !orderBy.trim().isEmpty()) {
-                com.github.pagehelper.PageHelper.startPage(pageNum, pageSize, orderBy);
+                startPage(pageNum, pageSize, orderBy);
             } else {
-                com.github.pagehelper.PageHelper.startPage(pageNum, pageSize);
+                startPage(pageNum, pageSize);
             }
             
             // 执行查询

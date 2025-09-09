@@ -14,6 +14,9 @@
           <el-button type="primary" @click="goToFavorites" :icon="Star">
             我的收藏
           </el-button>
+          <el-button @click="goToMoments" :icon="Picture">
+            朋友圈
+          </el-button>
           <el-button @click="goBack" :icon="Back">
             返回首页
           </el-button>
@@ -156,7 +159,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Back, Edit, View, Collection, Refresh
+  Search, Star, Back, Edit, View, Collection, Refresh, Picture
 } from '@element-plus/icons-vue'
 import { useInterviewStore } from '@/stores/interview'
 
@@ -260,6 +263,11 @@ const goToFavorites = () => {
 // 返回首页
 const goBack = () => {
   router.push('/')
+}
+
+// 跳转到朋友圈
+const goToMoments = () => {
+  router.push('/moments')
 }
 
 // 跳转到随机抽题页面

@@ -132,6 +132,26 @@ const routes = [
     }
   },
   {
+    path: '/notification',
+    name: 'Notification',
+    component: () => import('@/views/notification/index.vue'),
+    meta: {
+      title: '通知中心',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moments',
+    name: 'Moments',
+    component: () => import('@/views/moments/Index.vue'),
+    meta: {
+      title: '朋友圈',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

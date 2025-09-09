@@ -68,6 +68,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/moments">
+            <template #title>
+              <el-icon><Picture /></el-icon>
+              <span>朋友圈管理</span>
+            </template>
+            <el-menu-item index="/moments/list">
+              <el-icon><Document /></el-icon>
+              <span>动态管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moments/comments">
+              <el-icon><ChatLineRound /></el-icon>
+              <span>评论管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moments/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据统计</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -80,6 +99,34 @@
             <el-menu-item index="/logs/operation">
               <el-icon><Operation /></el-icon>
               <span>操作日志</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
+          <el-menu-item index="/notification">
+            <el-icon><Bell /></el-icon>
+            <span>通知管理</span>
+          </el-menu-item>
+          
+          <el-sub-menu index="/filestorage">
+            <template #title>
+              <el-icon><FolderOpened /></el-icon>
+              <span>文件存储管理</span>
+            </template>
+            <el-menu-item index="/filestorage/storage-config">
+              <el-icon><SetUp /></el-icon>
+              <span>存储配置</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/file-management">
+              <el-icon><Document /></el-icon>
+              <span>文件管理</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/migration">
+              <el-icon><Sort /></el-icon>
+              <span>文件迁移</span>
+            </el-menu-item>
+            <el-menu-item index="/filestorage/system-settings">
+              <el-icon><Tools /></el-icon>
+              <span>系统设置</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -191,7 +238,14 @@ import {
   Edit,
   ChatDotRound,
   ChatLineRound,
-  Files
+  Files,
+  SetUp,
+  Sort,
+  Tools,
+  Bell,
+  Notification,
+  Message,
+  Picture
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

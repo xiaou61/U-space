@@ -7,6 +7,9 @@
           <h2>Code Nest</h2>
         </div>
         <div class="nav-menu">
+          <el-button @click="goToMoments" :icon="Picture">
+            朋友圈
+          </el-button>
           <el-button @click="goHome" :icon="House">
             返回首页
           </el-button>
@@ -35,6 +38,42 @@
               label-width="100px"
               :disabled="!editMode"
             >
+              <!-- 头像上传区域 -->
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="头像">
+                    <div class="avatar-section">
+                      <div class="avatar-display">
+                        <el-avatar 
+                          :size="100" 
+                          :src="profileForm.avatar" 
+                          :alt="profileForm.nickname || profileForm.username"
+                        >
+                          <el-icon><User /></el-icon>
+                        </el-avatar>
+                      </div>
+                      <div class="avatar-actions" v-if="editMode">
+                        <el-upload
+                          ref="avatarUploadRef"
+                          :auto-upload="false"
+                          :show-file-list="false"
+                          :before-upload="beforeAvatarUpload"
+                          :on-change="handleAvatarChange"
+                          accept="image/*"
+                        >
+                          <el-button type="primary" :icon="Plus" :loading="avatarUploading">
+                            {{ avatarUploading ? '上传中...' : '更换头像' }}
+                          </el-button>
+                        </el-upload>
+                        <div class="avatar-tips">
+                          <p>支持jpg、png、gif格式，文件大小不超过5MB</p>
+                        </div>
+                      </div>
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
               <el-row :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="用户名" prop="username">
@@ -158,7 +197,7 @@ import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { captchaApi } from '@/api/captcha'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { House } from '@element-plus/icons-vue'
+import { House, User, Plus, Picture } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -180,9 +219,14 @@ const profileForm = reactive({
   email: '',
   realName: '',
   phone: '',
+  avatar: '',
   createTime: '',
   lastLoginTime: ''
 })
+
+// 头像上传相关
+const avatarUploadRef = ref()
+const avatarUploading = ref(false)
 
 // 密码修改表单
 const passwordForm = reactive({
@@ -241,6 +285,7 @@ const loadUserInfo = async () => {
       email: userInfo.email,
       realName: userInfo.realName || '',
       phone: userInfo.phone || '',
+      avatar: userInfo.avatar || '',
       createTime: userInfo.createTime || '',
       lastLoginTime: userInfo.lastLoginTime || '从未登录'
     })
@@ -331,12 +376,58 @@ const resetPasswordForm = () => {
   loadPasswordCaptcha() // 重置时重新加载验证码
 }
 
+// 头像上传前的校验
+const beforeAvatarUpload = (rawFile) => {
+  const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(rawFile.type)
+  const isLt5M = rawFile.size / 1024 / 1024 < 5
+
+  if (!isValidType) {
+    ElMessage.error('头像只能是 JPG、PNG、GIF 格式!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('头像大小不能超过 5MB!')
+    return false
+  }
+  return true
+}
+
+// 头像文件选择变化
+const handleAvatarChange = async (uploadFile) => {
+  if (!uploadFile.raw) return
+  
+  try {
+    avatarUploading.value = true
+    const avatarUrl = await userApi.uploadAvatar(uploadFile.raw)
+    
+    // 更新头像显示
+    profileForm.avatar = avatarUrl
+    
+    // 更新用户存储信息
+    const currentUserInfo = userStore.userInfo
+    if (currentUserInfo) {
+      currentUserInfo.avatar = avatarUrl
+      userStore.setUserInfo(currentUserInfo)
+    }
+    
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    ElMessage.error('头像上传失败，请重试')
+  } finally {
+    avatarUploading.value = false
+  }
+}
+
 // 返回首页
 const goHome = () => {
   router.push('/')
 }
 
-
+// 跳转到朋友圈
+const goToMoments = () => {
+  router.push('/moments')
+}
 
 onMounted(() => {
   loadUserInfo()
@@ -621,6 +712,73 @@ onMounted(() => {
       background: rgba(116, 185, 255, 0.2);
       border-color: #74b9ff;
       transform: translateY(-1px);
+    }
+  }
+}
+
+/* 头像部分样式 */
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+}
+
+.avatar-display {
+  position: relative;
+  
+  :deep(.el-avatar) {
+    border: 3px solid rgba(116, 185, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(116, 185, 255, 0.15);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      border-color: rgba(116, 185, 255, 0.4);
+      transform: scale(1.05);
+      box-shadow: 0 12px 32px rgba(116, 185, 255, 0.25);
+    }
+  }
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  @media (max-width: 768px) {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.avatar-tips {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.4;
+  
+  p {
+    margin: 0;
+  }
+}
+
+:deep(.el-upload) {
+  .el-button {
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    border: none;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #0984e3 0%, #2d3436 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
     }
   }
 }

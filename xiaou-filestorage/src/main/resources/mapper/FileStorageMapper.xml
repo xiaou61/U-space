@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.FileStorageMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.FileStorage">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="file_id" property="fileId" jdbcType="BIGINT"/>
+        <result column="storage_config_id" property="storageConfigId" jdbcType="BIGINT"/>
+        <result column="storage_path" property="storagePath" jdbcType="VARCHAR"/>
+        <result column="is_primary" property="isPrimary" jdbcType="TINYINT"/>
+        <result column="sync_status" property="syncStatus" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, file_id, storage_config_id, storage_path, is_primary, sync_status, create_time, update_time
+    </sql>
+
+    <!-- 插入文件存储记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_storage (
+            file_id, storage_config_id, storage_path, is_primary, sync_status, create_time, update_time
+        ) VALUES (
+            #{fileId}, #{storageConfigId}, #{storagePath}, #{isPrimary}, #{syncStatus}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_storage
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据文件ID查询存储记录 -->
+    <select id="selectByFileId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_storage
+        WHERE file_id = #{fileId}
+        ORDER BY is_primary DESC, create_time DESC
+    </select>
+
+    <!-- 根据存储配置ID查询存储记录 -->
+    <select id="selectByStorageConfigId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_storage
+        WHERE storage_config_id = #{storageConfigId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询主存储记录 -->
+    <select id="selectPrimaryByFileId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_storage
+        WHERE file_id = #{fileId} AND is_primary = 1
+        LIMIT 1
+    </select>
+
+    <!-- 更新存储记录 -->
+    <update id="updateById">
+        UPDATE file_storage
+        <set>
+            <if test="fileId != null">file_id = #{fileId},</if>
+            <if test="storageConfigId != null">storage_config_id = #{storageConfigId},</if>
+            <if test="storagePath != null">storage_path = #{storagePath},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
+            <if test="syncStatus != null">sync_status = #{syncStatus},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除存储记录 -->
+    <delete id="deleteById">
+        DELETE FROM file_storage WHERE id = #{id}
+    </delete>
+
+    <!-- 根据文件ID删除存储记录 -->
+    <delete id="deleteByFileId">
+        DELETE FROM file_storage WHERE file_id = #{fileId}
+    </delete>
+
+    <!-- 更新同步状态 -->
+    <update id="updateSyncStatus">
+        UPDATE file_storage
+        SET sync_status = #{syncStatus}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新主存储状态 -->
+    <update id="updatePrimaryStatus">
+        UPDATE file_storage
+        SET is_primary = #{isPrimary}, update_time = NOW()
+        WHERE file_id = #{fileId}
+    </update>
+
+</mapper> 

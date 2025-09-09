@@ -16,11 +16,14 @@
         <module>xiaou-application</module>
         <module>xiaou-interview</module>
         <module>xiaou-community</module>
+        <module>xiaou-filestorage</module>
+        <module>xiaou-notification</module>
+        <module>xiaou-moment</module>
     </modules>
 
     <properties>
         <!-- 统一版本管理 -->
-        <revision>1.1.1</revision>
+        <revision>1.2.0</revision>
         
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>

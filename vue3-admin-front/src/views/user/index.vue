@@ -113,6 +113,13 @@
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="头像" width="80" align="center">
+          <template #default="{ row }">
+            <el-avatar :size="40" :src="row.avatar">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="用户名" width="120" />
         <el-table-column prop="email" label="邮箱" width="200" />
         <el-table-column prop="phone" label="手机号" width="120" />
@@ -286,7 +293,8 @@ import {
   Delete, 
   Edit, 
   View, 
-  ArrowDown 
+  ArrowDown,
+  User
 } from '@element-plus/icons-vue'
 import { userApi } from '@/api/user'
 

@@ -29,6 +29,7 @@ const routes = [
       {
         path: 'logs',
         name: 'Logs',
+        redirect: '/logs/login',
         meta: {
           title: '日志管理',
           icon: 'Document',
@@ -66,6 +67,7 @@ const routes = [
       {
         path: 'interview',
         name: 'InterviewManagement',
+        redirect: '/interview/categories',
         meta: {
           title: '面试题管理',
           icon: 'Document',
@@ -103,6 +105,7 @@ const routes = [
       {
         path: 'community',
         name: 'CommunityManagement',
+        redirect: '/community/posts',
         meta: {
           title: '社区管理',
           icon: 'ChatDotRound',
@@ -147,8 +150,103 @@ const routes = [
         ],
       },
       {
+        path: 'notification',
+        name: 'NotificationManagement',
+        component: () => import('@/views/notification/index.vue'),
+        meta: {
+          title: '通知管理',
+          icon: 'Bell',
+        },
+      },
+      {
+        path: 'moments',
+        name: 'MomentsManagement',
+        redirect: '/moments/list',
+        meta: {
+          title: '朋友圈管理',
+          icon: 'Picture',
+        },
+        children: [
+          {
+            path: 'list',
+            name: 'MomentsList',
+            component: () => import('@/views/moments/list/index.vue'),
+            meta: {
+              title: '动态管理',
+              icon: 'Document',
+            },
+          },
+          {
+            path: 'comments',
+            name: 'MomentsComments',
+            component: () => import('@/views/moments/comments/index.vue'),
+            meta: {
+              title: '评论管理',
+              icon: 'ChatLineRound',
+            },
+          },
+          {
+            path: 'statistics',
+            name: 'MomentsStatistics',
+            component: () => import('@/views/moments/statistics/index.vue'),
+            meta: {
+              title: '数据统计',
+              icon: 'DataAnalysis',
+            },
+          },
+        ],
+      },
+      {
+        path: 'filestorage',
+        name: 'FileStorageManagement',
+        redirect: '/filestorage/storage-config',
+        meta: {
+          title: '文件存储管理',
+          icon: 'FolderOpened',
+        },
+        children: [
+          {
+            path: 'storage-config',
+            name: 'StorageConfig',
+            component: () => import('@/views/filestorage/storage-config/index.vue'),
+            meta: {
+              title: '存储配置',
+              icon: 'SetUp',
+            },
+          },
+          {
+            path: 'file-management',
+            name: 'FileManagement',
+            component: () => import('@/views/filestorage/file-management/index.vue'),
+            meta: {
+              title: '文件管理',
+              icon: 'Document',
+            },
+          },
+          {
+            path: 'migration',
+            name: 'FileMigration',
+            component: () => import('@/views/filestorage/migration/index.vue'),
+            meta: {
+              title: '文件迁移',
+              icon: 'Sort',
+            },
+          },
+          {
+            path: 'system-settings',
+            name: 'FileSystemSettings',
+            component: () => import('@/views/filestorage/system-settings/index.vue'),
+            meta: {
+              title: '系统设置',
+              icon: 'Tools',
+            },
+          },
+        ],
+      },
+      {
         path: 'system',
         name: 'SystemManagement',
+        redirect: '/system/monitor/sql',
         meta: {
           title: '系统管理',
           icon: 'Setting',
@@ -157,6 +255,7 @@ const routes = [
           {
             path: 'monitor',
             name: 'SystemMonitor',
+            redirect: '/system/monitor/sql',
             meta: {
               title: '系统监控',
               icon: 'Monitor',

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moment.mapper.MomentCommentMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.moment.domain.MomentComment">
+        <id column="id" property="id" />
+        <result column="moment_id" property="momentId" />
+        <result column="user_id" property="userId" />
+        <result column="content" property="content" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, moment_id, user_id, content, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.moment.domain.MomentComment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO moment_comments (moment_id, user_id, content, status)
+        VALUES (#{momentId}, #{userId}, #{content}, #{status})
+    </insert>
+
+    <delete id="deleteById" parameterType="long">
+        UPDATE moment_comments SET status = 0 WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByMomentId" parameterType="long">
+        UPDATE moment_comments SET status = 0 WHERE moment_id = #{momentId}
+    </delete>
+
+    <update id="updateById" parameterType="com.xiaou.moment.domain.MomentComment">
+        UPDATE moment_comments
+        <set>
+            <if test="content != null">content = #{content},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moment_comments
+        WHERE id = #{id} AND status = 1
+    </select>
+
+    <select id="selectByMomentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moment_comments
+        WHERE moment_id = #{momentId} AND status = 1
+        ORDER BY create_time ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectList" parameterType="map" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moment_comments
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            <if test="status == null">
+                status = 1
+            </if>
+            <if test="momentId != null">
+                AND moment_id = #{momentId}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="userNickname != null">
+                AND user_id IN (SELECT id FROM user_info WHERE nickname LIKE CONCAT('%', #{userNickname}, '%'))
+            </if>
+            <if test="contentKeyword != null">
+                AND content LIKE #{contentKeyword}
+            </if>
+            <if test="startDate != null">
+                AND create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND create_time &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{offset}, #{size}
+        </if>
+    </select>
+
+    <select id="selectCount" parameterType="map" resultType="long">
+        SELECT COUNT(*)
+        FROM moment_comments
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            <if test="status == null">
+                status = 1
+            </if>
+            <if test="momentId != null">
+                AND moment_id = #{momentId}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="userNickname != null">
+                AND user_id IN (SELECT id FROM user_info WHERE nickname LIKE CONCAT('%', #{userNickname}, '%'))
+            </if>
+            <if test="contentKeyword != null">
+                AND content LIKE #{contentKeyword}
+            </if>
+            <if test="startDate != null">
+                AND create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND create_time &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+</mapper> 

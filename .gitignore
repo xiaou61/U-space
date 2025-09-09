@@ -38,3 +38,4 @@ build/
 /vue3-user-front/node_modules/
 /logs/
 /.cursor/
+/.idea/

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.filestorage.mapper.FileAccessMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.filestorage.domain.FileAccess">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="file_id" property="fileId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="access_time" property="accessTime" jdbcType="TIMESTAMP"/>
+        <result column="access_ip" property="accessIp" jdbcType="VARCHAR"/>
+        <result column="access_type" property="accessType" jdbcType="VARCHAR"/>
+        <result column="module_name" property="moduleName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, file_id, user_id, access_time, access_ip, access_type, module_name
+    </sql>
+
+    <!-- 插入访问记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_access (
+            file_id, user_id, access_time, access_ip, access_type, module_name
+        ) VALUES (
+            #{fileId}, #{userId}, #{accessTime}, #{accessIp}, #{accessType}, #{moduleName}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_access
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询文件的访问记录 -->
+    <select id="selectByFileId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_access
+        WHERE file_id = #{fileId}
+        ORDER BY access_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 按条件查询访问记录 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_access
+        <where>
+            <if test="fileId != null">
+                AND file_id = #{fileId}
+            </if>
+            <if test="moduleName != null and moduleName != ''">
+                AND module_name = #{moduleName}
+            </if>
+            <if test="accessType != null and accessType != ''">
+                AND access_type = #{accessType}
+            </if>
+            <if test="startTime != null">
+                AND access_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND access_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY access_time DESC
+    </select>
+
+    <!-- 统计文件访问次数 -->
+    <select id="countByFileId" resultType="Long">
+        SELECT COUNT(1)
+        FROM file_access
+        WHERE file_id = #{fileId}
+        <if test="startTime != null">
+            AND access_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND access_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 统计模块访问次数 -->
+    <select id="countByModule" resultType="Long">
+        SELECT COUNT(1)
+        FROM file_access
+        WHERE module_name = #{moduleName}
+        <if test="startTime != null">
+            AND access_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND access_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 删除指定时间之前的访问记录 -->
+    <delete id="deleteBeforeTime">
+        DELETE FROM file_access WHERE access_time &lt; #{beforeTime}
+    </delete>
+
+    <!-- 查询热门文件 -->
+    <select id="selectHotFiles" resultType="Map">
+        SELECT 
+            f.id as fileId,
+            f.original_name as fileName,
+            f.content_type as contentType,
+            f.file_size as fileSize,
+            f.module_name as moduleName,
+            COUNT(a.id) as accessCount
+        FROM file_access a
+        INNER JOIN file_info f ON a.file_id = f.id
+        WHERE a.access_time BETWEEN #{startTime} AND #{endTime}
+        AND f.status = 1
+        GROUP BY f.id, f.original_name, f.content_type, f.file_size, f.module_name
+        ORDER BY COUNT(a.id) DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper> 

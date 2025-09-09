@@ -1,7 +1,7 @@
 # Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -61,11 +61,14 @@ Code Nest 是一个基于 Spring Boot + Vue3 的前后端分离的一个程序�
     ┌────────────▼─────────────┐
     │     Spring Boot API      │
     │    ┌─────────────────┐   │
-    │    │   xiaou-system  │   │
-    │    │   xiaou-user    │   │
-    │    │ xiaou-interview │   │
-    │    │  xiaou-monitor  │   │
-    │    │  xiaou-common   │   │
+    │    │   xiaou-system    │   │
+    │    │   xiaou-user      │   │
+    │    │ xiaou-interview   │   │
+    │    │  xiaou-monitor    │   │
+    │    │  xiaou-moment     │   │
+    │    │ xiaou-notification│   │
+    │    │ xiaou-filestorage │   │
+    │    │  xiaou-common     │   │
     │    └─────────────────┘   │
     └────────────┬─────────────┘
                  │
@@ -105,6 +108,9 @@ Code-Nest/
 ├── xiaou-monitor/                 # 监控模块
 ├── xiaou-system/                  # 系统模块
 ├── xiaou-user/                    # 用户模块
+├── xiaou-moment/                  # 朋友圈模块
+├── xiaou-notification/            # 消息通知模块
+├── xiaou-filestorage/             # 文件存储模块
 └── pom.xml                        # Maven主配置
 ```
 
@@ -133,8 +139,7 @@ mysql -u root -p
 CREATE DATABASE code_nest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 # 导入表结构和数据
-mysql -u root -p code_nest < sql/struct.sql
-mysql -u root -p code_nest < sql/data.sql
+
 ```
 
 ### 3. 配置文件
@@ -167,7 +172,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.1.1.jar
+java -jar target/xiaou-application-1.2.0.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -300,14 +305,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.1.1 .
+docker build -t code-nest:1.2.0 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.1.1
+  code-nest:1.2.0
 ```
 
 ### Nginx配置
@@ -344,14 +349,40 @@ server {
 
 ## 📄 更新日志
 
-### v1.1.1 (2025-09-07)
+### v1.2.0
+
+#### 🚀 新增功能模块
+- **朋友圈模块** - 全新的社交功能
+  - 用户动态发布与展示
+  - 点赞、评论、转发功能
+  - 动态可见性控制
+  - 图片/视频多媒体支持
+  
+- **消息通知模块** - 完整的消息推送系统
+  - 系统消息通知
+  - 用户互动消息
+  - 消息状态管理
+  - 批量操作支持
+  
+- **文件存储模块** - 统一的文件管理系统
+  - 多种存储策略支持(本地、云存储)
+  - 文件上传下载管理
+  - 文件访问权限控制
+  - 存储统计与监控
+
+#### 🔧 技术改进
+- 完善模块化架构设计
+- 优化系统安全性
+- 提升用户体验
+
+### v1.1.1 
 
 #### 🔧 技术改进
 - 重构SQL监控系统，优化为监控树类型结构
 - 提升监控数据可视化展示效果
 - 优化监控性能和用户体验
 
-### v1.1.0 (2025-09-05)
+### v1.1.0
 
 #### 🚀 功能增强
 - 新增社区模块
@@ -364,7 +395,7 @@ server {
 - 代码结构重构
 - 性能优化
 
-### v1.0.0 (2025-09-03)
+### v1.0.0
 
 #### 🎉 首次发布
 

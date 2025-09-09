@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moment.mapper.MomentMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.moment.domain.Moment">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="content" property="content" />
+        <result column="images" property="images" />
+        <result column="like_count" property="likeCount" />
+        <result column="comment_count" property="commentCount" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, content, images, like_count, comment_count, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.moment.domain.Moment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO moments (user_id, content, images, like_count, comment_count, status)
+        VALUES (#{userId}, #{content}, #{images}, #{likeCount}, #{commentCount}, #{status})
+    </insert>
+
+    <delete id="deleteById" parameterType="long">
+        UPDATE moments SET status = 0 WHERE id = #{id}
+    </delete>
+
+    <update id="updateById" parameterType="com.xiaou.moment.domain.Moment">
+        UPDATE moments
+        <set>
+            <if test="content != null">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        WHERE id = #{id} AND status != 0
+    </select>
+
+    <select id="selectList" parameterType="map" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            <if test="status == null">
+                status = 1
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="userNickname != null">
+                AND user_id IN (SELECT id FROM user_info WHERE nickname LIKE CONCAT('%', #{userNickname}, '%'))
+            </if>
+            <if test="startDate != null">
+                AND create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND create_time &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{offset}, #{size}
+        </if>
+    </select>
+
+    <select id="selectCount" parameterType="map" resultType="long">
+        SELECT COUNT(*)
+        FROM moments
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            <if test="status == null">
+                status = 1
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="userNickname != null">
+                AND user_id IN (SELECT id FROM user_info WHERE nickname LIKE CONCAT('%', #{userNickname}, '%'))
+            </if>
+            <if test="startDate != null">
+                AND create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND create_time &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <update id="incrementLikeCount" parameterType="long">
+        UPDATE moments SET like_count = like_count + 1 WHERE id = #{momentId}
+    </update>
+
+    <update id="decrementLikeCount" parameterType="long">
+        UPDATE moments SET like_count = like_count - 1 WHERE id = #{momentId} AND like_count &gt; 0
+    </update>
+
+    <update id="incrementCommentCount" parameterType="long">
+        UPDATE moments SET comment_count = comment_count + 1 WHERE id = #{momentId}
+    </update>
+
+    <update id="decrementCommentCount" parameterType="long">
+        UPDATE moments SET comment_count = comment_count - 1 WHERE id = #{momentId} AND comment_count &gt; 0
+    </update>
+
+    <select id="selectTotalLikes" parameterType="map" resultType="long">
+        SELECT COALESCE(SUM(m.like_count), 0)
+        FROM moments m
+        WHERE m.status = 1
+        <if test="startDate != null">
+            AND m.create_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND m.create_time &lt;= #{endDate}
+        </if>
+    </select>
+
+    <select id="selectActiveUsersCount" parameterType="map" resultType="long">
+        SELECT COUNT(DISTINCT m.user_id)
+        FROM moments m
+        WHERE m.status = 1
+        <if test="startDate != null">
+            AND m.create_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND m.create_time &lt;= #{endDate}
+        </if>
+    </select>
+
+</mapper> 
