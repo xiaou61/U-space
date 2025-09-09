@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.DateHelper;
+import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityCategory;
@@ -249,6 +250,21 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 更新用户点赞数统计
         communityUserStatusService.incrementLikeCount(currentUser.getId());
         
+        // 发送消息通知：通知帖子作者
+        if (!currentUser.getId().equals(post.getAuthorId())) {
+            try {
+                NotificationUtil.sendCommunityMessage(
+                    post.getAuthorId(),
+                    "您的帖子收到新点赞",
+                    "用户 " + currentUser.getUsername() + " 点赞了您的帖子《" + post.getTitle() + "》",
+                    id.toString()
+                );
+            } catch (Exception e) {
+                log.warn("发送帖子点赞通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
+                        currentUser.getId(), id, e.getMessage());
+            }
+        }
+        
         log.info("用户点赞帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
     }
     
@@ -320,6 +336,21 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         
         // 更新用户收藏数
         communityUserStatusService.incrementCollectCount(currentUser.getId());
+        
+        // 发送消息通知：通知帖子作者
+        if (!currentUser.getId().equals(post.getAuthorId())) {
+            try {
+                NotificationUtil.sendCommunityMessage(
+                    post.getAuthorId(),
+                    "您的帖子被收藏",
+                    "用户 " + currentUser.getUsername() + " 收藏了您的帖子《" + post.getTitle() + "》",
+                    id.toString()
+                );
+            } catch (Exception e) {
+                log.warn("发送帖子收藏通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
+                        currentUser.getId(), id, e.getMessage());
+            }
+        }
         
         log.info("用户收藏帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
     }

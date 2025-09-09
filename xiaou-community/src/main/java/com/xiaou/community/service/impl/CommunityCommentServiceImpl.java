@@ -3,10 +3,12 @@ package com.xiaou.community.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityComment;
 import com.xiaou.community.domain.CommunityCommentLike;
+import com.xiaou.community.domain.CommunityPost;
 import com.xiaou.community.dto.AdminCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentCreateRequest;
@@ -135,6 +137,36 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 更新用户评论数
         communityUserStatusService.incrementCommentCount(currentUser.getId());
         
+        // 发送消息通知
+        try {
+            if (request.getParentId() == null) {
+                // 对帖子的评论，通知帖子作者
+                CommunityPost post = communityPostMapper.selectById(postId);
+                if (post != null && !currentUser.getId().equals(post.getAuthorId())) {
+                    NotificationUtil.sendCommunityMessage(
+                        post.getAuthorId(),
+                        "您的帖子收到新评论",
+                        "用户 " + currentUser.getUsername() + " 评论了您的帖子《" + post.getTitle() + "》",
+                        postId.toString()
+                    );
+                }
+            } else {
+                // 对评论的回复，通知被回复的评论作者
+                CommunityComment parentComment = communityCommentMapper.selectById(request.getParentId());
+                if (parentComment != null && !currentUser.getId().equals(parentComment.getAuthorId())) {
+                    NotificationUtil.sendCommunityMessage(
+                        parentComment.getAuthorId(),
+                        "您的评论收到新回复",
+                        "用户 " + currentUser.getUsername() + " 回复了您的评论",
+                        comment.getId().toString()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.warn("发送评论通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
+                    currentUser.getId(), postId, e.getMessage());
+        }
+        
         log.info("用户发表评论成功，用户ID: {}, 帖子ID: {}, 评论ID: {}", 
                 currentUser.getId(), postId, comment.getId());
     }
@@ -175,6 +207,21 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
 
         // 更新用户点赞数统计
         communityUserStatusService.incrementLikeCount(currentUser.getId());
+
+        // 发送消息通知：通知评论作者
+        if (!currentUser.getId().equals(comment.getAuthorId())) {
+            try {
+                NotificationUtil.sendCommunityMessage(
+                    comment.getAuthorId(),
+                    "您的评论收到新点赞",
+                    "用户 " + currentUser.getUsername() + " 点赞了您的评论",
+                    commentId.toString()
+                );
+            } catch (Exception e) {
+                log.warn("发送评论点赞通知失败，用户ID: {}, 评论ID: {}, 错误: {}", 
+                        currentUser.getId(), commentId, e.getMessage());
+            }
+        }
 
         log.info("用户点赞评论成功，用户ID: {}, 评论ID: {}", currentUser.getId(), commentId);
     }

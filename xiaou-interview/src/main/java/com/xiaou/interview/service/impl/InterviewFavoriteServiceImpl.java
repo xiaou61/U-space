@@ -2,7 +2,9 @@ package com.xiaou.interview.service.impl;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
+import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.interview.domain.InterviewFavorite;
 import com.xiaou.interview.mapper.InterviewFavoriteMapper;
 import com.xiaou.interview.mapper.InterviewQuestionMapper;
@@ -30,6 +32,7 @@ public class InterviewFavoriteServiceImpl implements InterviewFavoriteService {
     private final InterviewFavoriteMapper favoriteMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewQuestionSetMapper questionSetMapper;
+    private final UserContextUtil userContextUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -56,6 +59,26 @@ public class InterviewFavoriteServiceImpl implements InterviewFavoriteService {
         // 增加目标的收藏次数
         if (targetType == 1) { // 题单
             questionSetMapper.increaseFavoriteCount(targetId);
+            
+            // 发送消息通知：通知题单作者
+            try {
+                InterviewQuestionSet questionSet = questionSetMapper.selectById(targetId);
+                if (questionSet != null && !userId.equals(questionSet.getCreatorId())) {
+                    // 获取当前用户信息
+                    UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+                    String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                    
+                    NotificationUtil.sendInterviewMessage(
+                        questionSet.getCreatorId(),
+                        "您的题单被收藏",
+                        "用户 " + userName + " 收藏了您的题单《" + questionSet.getTitle() + "》",
+                        targetId.toString()
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("发送题单收藏通知失败，userId: {}, targetId: {}, 错误: {}", 
+                        userId, targetId, e.getMessage());
+            }
         } else if (targetType == 2) { // 题目
             questionMapper.increaseFavoriteCount(targetId);
         }

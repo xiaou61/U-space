@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.moment.domain.Moment;
 import com.xiaou.moment.domain.MomentComment;
@@ -134,6 +135,24 @@ public class MomentServiceImpl implements MomentService {
             momentLike.setUserId(currentUserId);
             momentLikeMapper.insert(momentLike);
             momentMapper.incrementLikeCount(momentId);
+            
+            // 发送消息通知：通知动态作者
+            if (!currentUserId.equals(moment.getUserId())) {
+                try {
+                    UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+                    String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                    
+                    NotificationUtil.sendPersonalMessage(
+                        moment.getUserId(),
+                        "您的动态收到新点赞",
+                        "用户 " + userName + " 点赞了您的动态"
+                    );
+                } catch (Exception e) {
+                    log.warn("发送动态点赞通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
+                            currentUserId, momentId, e.getMessage());
+                }
+            }
+            
             return true;
         }
     }
@@ -162,6 +181,23 @@ public class MomentServiceImpl implements MomentService {
         
         // 增加评论数
         momentMapper.incrementCommentCount(request.getMomentId());
+        
+        // 发送消息通知：通知动态作者
+        if (!currentUserId.equals(moment.getUserId())) {
+            try {
+                UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+                String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                
+                NotificationUtil.sendPersonalMessage(
+                    moment.getUserId(),
+                    "您的动态收到新评论",
+                    "用户 " + userName + " 评论了您的动态：" + request.getContent()
+                );
+            } catch (Exception e) {
+                log.warn("发送动态评论通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
+                        currentUserId, request.getMomentId(), e.getMessage());
+            }
+        }
         
         return comment.getId();
     }
