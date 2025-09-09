@@ -17,6 +17,9 @@
           <el-button type="info" @click="goToMyPosts" :icon="Document">
             我的帖子
           </el-button>
+          <el-button @click="goToMoments" :icon="Picture">
+            朋友圈
+          </el-button>
           <el-button @click="goBack" :icon="Back">
             返回首页
           </el-button>
@@ -181,7 +184,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Back, Edit, View, StarFilled, ChatDotRound, Document, Flag
+  Search, Star, Back, Edit, View, StarFilled, ChatDotRound, Document, Flag, Picture
 } from '@element-plus/icons-vue'
 import { communityApi } from '@/api/community'
 
@@ -325,6 +328,11 @@ const goToMyPosts = () => {
 // 返回首页
 const goBack = () => {
   router.push('/')
+}
+
+// 跳转到朋友圈
+const goToMoments = () => {
+  router.push('/moments')
 }
 
 // 加载分类列表

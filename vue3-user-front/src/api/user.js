@@ -14,5 +14,16 @@ export const userApi = {
   // 修改密码
   changePassword(data) {
     return request.put('/user/password', data)
+  },
+
+  // 上传头像
+  uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request.post('/user/avatar/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   }
 } 

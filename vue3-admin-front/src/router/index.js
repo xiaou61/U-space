@@ -159,6 +159,44 @@ const routes = [
         },
       },
       {
+        path: 'moments',
+        name: 'MomentsManagement',
+        redirect: '/moments/list',
+        meta: {
+          title: '朋友圈管理',
+          icon: 'Picture',
+        },
+        children: [
+          {
+            path: 'list',
+            name: 'MomentsList',
+            component: () => import('@/views/moments/list/index.vue'),
+            meta: {
+              title: '动态管理',
+              icon: 'Document',
+            },
+          },
+          {
+            path: 'comments',
+            name: 'MomentsComments',
+            component: () => import('@/views/moments/comments/index.vue'),
+            meta: {
+              title: '评论管理',
+              icon: 'ChatLineRound',
+            },
+          },
+          {
+            path: 'statistics',
+            name: 'MomentsStatistics',
+            component: () => import('@/views/moments/statistics/index.vue'),
+            meta: {
+              title: '数据统计',
+              icon: 'DataAnalysis',
+            },
+          },
+        ],
+      },
+      {
         path: 'filestorage',
         name: 'FileStorageManagement',
         redirect: '/filestorage/storage-config',

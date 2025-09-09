@@ -68,6 +68,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/moments">
+            <template #title>
+              <el-icon><Picture /></el-icon>
+              <span>朋友圈管理</span>
+            </template>
+            <el-menu-item index="/moments/list">
+              <el-icon><Document /></el-icon>
+              <span>动态管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moments/comments">
+              <el-icon><ChatLineRound /></el-icon>
+              <span>评论管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moments/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据统计</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -225,7 +244,8 @@ import {
   Tools,
   Bell,
   Notification,
-  Message
+  Message,
+  Picture
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

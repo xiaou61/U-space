@@ -15,6 +15,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.xiaou.filestorage.service.FileStorageService;
+import com.xiaou.filestorage.dto.FileUploadResult;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 用户信息管理控制器
@@ -37,6 +41,9 @@ public class UserController {
     private  ObjectMapper objectMapper;
     @Resource
     private UserContextUtil userContextUtil;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * 获取用户信息
@@ -193,6 +200,71 @@ public class UserController {
         } catch (Exception e) {
             log.error("修改当前用户密码失败", e);
             return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 上传头像
+     */
+    @PostMapping("/avatar/upload")
+    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            // 使用 UserContextUtil 获取当前用户信息
+            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+            if (currentUser == null) {
+                return Result.error("Token无效或已过期");
+            }
+            
+            // 验证是否为普通用户
+            if (!currentUser.isUser()) {
+                return Result.error("权限不足");
+            }
+
+            // 文件校验
+            if (file == null || file.isEmpty()) {
+                return Result.error("请选择要上传的头像文件");
+            }
+
+            // 检查文件类型
+            String originalName = file.getOriginalFilename();
+            if (originalName == null) {
+                return Result.error("文件名无效");
+            }
+            
+            String extension = originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase();
+            if (!extension.matches("jpg|jpeg|png|gif")) {
+                return Result.error("仅支持jpg、jpeg、png、gif格式的图片");
+            }
+
+            // 检查文件大小 (5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return Result.error("头像文件大小不能超过5MB");
+            }
+
+            log.info("用户上传头像，用户ID: {}, 文件名: {}, 大小: {}KB", 
+                currentUser.getId(), originalName, file.getSize() / 1024);
+
+            // 上传文件
+            FileUploadResult uploadResult = fileStorageService.uploadSingle(file, "user", "avatar");
+            
+            if (!uploadResult.isSuccess()) {
+                return Result.error("头像上传失败: " + uploadResult.getErrorMessage());
+            }
+
+            // 更新用户头像
+            UserUpdateRequest updateRequest = new UserUpdateRequest();
+            updateRequest.setAvatar(uploadResult.getAccessUrl());
+            
+            userInfoService.updateUserInfo(currentUser.getId(), updateRequest);
+
+            log.info("用户头像上传成功，用户ID: {}, 头像URL: {}", 
+                currentUser.getId(), uploadResult.getAccessUrl());
+            
+            return Result.success("头像上传成功", uploadResult.getAccessUrl());
+            
+        } catch (Exception e) {
+            log.error("头像上传失败", e);
+            return Result.error("头像上传失败: " + e.getMessage());
         }
     }
 } 

@@ -142,6 +142,16 @@ const routes = [
     }
   },
   {
+    path: '/moments',
+    name: 'Moments',
+    component: () => import('@/views/moments/Index.vue'),
+    meta: {
+      title: '朋友圈',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

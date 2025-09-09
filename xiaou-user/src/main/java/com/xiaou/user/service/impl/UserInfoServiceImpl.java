@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.xiaou.common.utils.AvatarUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -155,7 +156,8 @@ public class UserInfoServiceImpl implements UserInfoService {
             userInfo.setRealName(user.getRealName());
             userInfo.setEmail(user.getEmail());
             userInfo.setPhone(user.getPhone());
-            userInfo.setAvatar(user.getAvatar());
+            // 处理头像，如果为空则使用默认头像
+            userInfo.setAvatar(AvatarUtils.getUserAvatar(user.getAvatar(), user.getId()));
             userInfo.setGender(user.getGender());
             userInfo.setLastLoginTime(user.getLastLoginTime());
             response.setUserInfo(userInfo);
@@ -650,7 +652,8 @@ public class UserInfoServiceImpl implements UserInfoService {
         response.setRealName(user.getRealName());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
-        response.setAvatar(user.getAvatar());
+        // 处理头像，如果为空则使用默认头像
+        response.setAvatar(AvatarUtils.getUserAvatar(user.getAvatar(), user.getId()));
         response.setGender(user.getGender());
         response.setBirthday(user.getBirthday());
         response.setStatus(user.getStatus());

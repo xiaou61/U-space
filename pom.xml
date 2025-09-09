@@ -18,6 +18,7 @@
         <module>xiaou-community</module>
         <module>xiaou-filestorage</module>
         <module>xiaou-notification</module>
+        <module>xiaou-moment</module>
     </modules>
 
     <properties>

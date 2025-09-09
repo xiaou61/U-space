@@ -5,6 +5,9 @@
       <div class="header-section">
         <h1>通知中心</h1>
         <div class="header-actions">
+          <el-button @click="goToMoments" icon="Picture">
+            朋友圈
+          </el-button>
           <el-button @click="goToHome" type="default" icon="HomeFilled">
             返回首页
           </el-button>
@@ -267,7 +270,8 @@ import {
   User,
   Notification,
   ChatDotSquare,
-  HomeFilled
+  HomeFilled,
+  Picture
 } from '@element-plus/icons-vue'
 import { 
   getMessages, 
@@ -446,6 +450,11 @@ const handleDetailClose = () => {
 // 返回首页
 const goToHome = () => {
   router.push('/')
+}
+
+// 跳转到朋友圈
+const goToMoments = () => {
+  router.push('/moments')
 }
 
 // 工具方法

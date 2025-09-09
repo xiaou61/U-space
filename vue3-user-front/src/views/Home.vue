@@ -44,6 +44,14 @@
             <p>分享经验，交流技术，共同成长</p>
           </div>
 
+          <div class="feature-card" @click="goToMoments">
+            <div class="feature-icon">
+              <el-icon size="48"><Picture /></el-icon>
+            </div>
+            <h3>朋友圈</h3>
+            <p>分享动态，记录美好时光</p>
+          </div>
+
           <div class="feature-card" @click="goToNotification">
             <div class="feature-icon">
               <el-icon size="48"><Bell /></el-icon>
@@ -71,7 +79,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Document, ChatDotRound, Bell } from '@element-plus/icons-vue'
+import { User, SwitchButton, Document, ChatDotRound, Bell, Picture } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -96,6 +104,11 @@ const goToInterview = () => {
 // 跳转到技术社区
 const goToCommunity = () => {
   router.push('/community')
+}
+
+// 跳转到朋友圈
+const goToMoments = () => {
+  router.push('/moments')
 }
 
 // 跳转到消息中心
@@ -230,7 +243,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 30px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   justify-content: center;
 }

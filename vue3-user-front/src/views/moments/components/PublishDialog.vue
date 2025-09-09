@@ -1,0 +1,321 @@
+<template>
+  <el-dialog
+    v-model="visible"
+    title="发布动态"
+    width="600px"
+    :before-close="handleBeforeClose"
+  >
+    <el-form :model="form" :rules="rules" ref="formRef" label-width="0">
+      <!-- 文字内容 -->
+      <el-form-item prop="content">
+        <el-input
+          v-model="form.content"
+          type="textarea"
+          placeholder="分享此刻的想法..."
+          :rows="4"
+          maxlength="100"
+          show-word-limit
+        />
+      </el-form-item>
+
+      <!-- 图片上传 -->
+      <el-form-item>
+        <div class="upload-section">
+          <div class="upload-title">添加图片</div>
+          <div class="image-upload-grid">
+            <!-- 已上传的图片 -->
+            <div 
+              v-for="(image, index) in form.images" 
+              :key="index" 
+              class="image-item"
+            >
+              <el-image
+                :src="image"
+                fit="cover"
+                class="uploaded-image"
+              />
+              <div class="image-overlay">
+                <el-button 
+                  type="danger" 
+                  circle 
+                  size="small" 
+                  @click="removeImage(index)"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+            </div>
+            
+            <!-- 上传按钮 -->
+            <div 
+              v-if="form.images.length < 9" 
+              class="upload-item"
+              @click="triggerUpload"
+            >
+              <el-icon class="upload-icon"><Plus /></el-icon>
+              <div class="upload-text">添加图片</div>
+            </div>
+          </div>
+          
+          <div class="upload-tips">
+            最多可添加9张图片，支持JPG、PNG格式，单张图片不超过5MB
+          </div>
+        </div>
+
+        <!-- 隐藏的文件选择器 -->
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept="image/*"
+          multiple
+          style="display: none"
+          @change="handleFileSelect"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button type="primary" @click="handlePublish" :loading="publishing">
+        发布
+      </el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup>
+import { ref, reactive, computed, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Plus, Delete } from '@element-plus/icons-vue'
+import { publishMoment } from '@/api/moment'
+import { uploadSingle } from '@/api/upload'
+
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['update:modelValue', 'published'])
+
+// 响应式数据
+const formRef = ref(null)
+const fileInputRef = ref(null)
+const publishing = ref(false)
+
+// 表单数据
+const form = reactive({
+  content: '',
+  images: []
+})
+
+// 表单验证规则
+const rules = {
+  content: [
+    { required: true, message: '请输入动态内容', trigger: 'blur' },
+    { min: 1, max: 100, message: '内容长度应在1-100字符之间', trigger: 'blur' }
+  ]
+}
+
+// 对话框可见性
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
+// 监听对话框打开，重置表单
+watch(visible, (newVal) => {
+  if (newVal) {
+    resetForm()
+  }
+})
+
+// 重置表单
+const resetForm = () => {
+  form.content = ''
+  form.images = []
+  if (formRef.value) {
+    formRef.value.clearValidate()
+  }
+}
+
+// Element Plus的before-close处理函数
+const handleBeforeClose = (done) => {
+  publishing.value = false // 重置发布状态
+  done() // 调用done()才能真正关闭弹窗
+}
+
+// 触发文件选择
+const triggerUpload = () => {
+  fileInputRef.value.click()
+}
+
+// 处理文件选择
+const handleFileSelect = async (event) => {
+  const files = Array.from(event.target.files)
+  if (!files.length) return
+
+  // 检查文件数量限制
+  const remainingSlots = 9 - form.images.length
+  if (files.length > remainingSlots) {
+    ElMessage.warning(`最多只能再添加 ${remainingSlots} 张图片`)
+    return
+  }
+
+  // 检查文件类型和大小
+  const validFiles = []
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      ElMessage.warning(`文件 ${file.name} 不是图片格式`)
+      continue
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      ElMessage.warning(`图片 ${file.name} 超过5MB限制`)
+      continue
+    }
+    validFiles.push(file)
+  }
+
+  if (validFiles.length === 0) return
+
+  // 上传图片
+  try {
+    const uploadPromises = validFiles.map(file => 
+      uploadSingle(file, 'moment', 'image')
+    )
+    
+    ElMessage.info('正在上传图片...')
+    const results = await Promise.all(uploadPromises)
+    
+    // 添加到图片列表
+    const newImages = results.map(result => result.accessUrl)
+    form.images.push(...newImages)
+    
+    ElMessage.success(`成功上传 ${validFiles.length} 张图片`)
+  } catch (error) {
+    ElMessage.error('图片上传失败：' + error.message)
+  }
+
+  // 清空文件选择器
+  event.target.value = ''
+}
+
+// 删除图片
+const removeImage = (index) => {
+  form.images.splice(index, 1)
+}
+
+// 发布动态
+const handlePublish = async () => {
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+    
+    publishing.value = true
+    
+    const data = {
+      content: form.content,
+      images: form.images
+    }
+    
+    await publishMoment(data)
+    
+    ElMessage.success('发布成功！')
+    emit('published')
+    visible.value = false
+  } catch (error) {
+    ElMessage.error('发布失败：' + (error.message || '未知错误'))
+  } finally {
+    publishing.value = false
+  }
+}
+</script>
+
+<style scoped>
+.upload-section {
+  margin-top: 10px;
+}
+
+.upload-title {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.image-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 100px);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.image-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.uploaded-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.image-item:hover .image-overlay {
+  opacity: 1;
+}
+
+.upload-item {
+  width: 100px;
+  height: 100px;
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.upload-item:hover {
+  border-color: #409eff;
+}
+
+.upload-icon {
+  font-size: 24px;
+  color: #8c939d;
+  margin-bottom: 5px;
+}
+
+.upload-text {
+  font-size: 12px;
+  color: #8c939d;
+}
+
+.upload-tips {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+}
+
+:deep(.el-dialog__body) {
+  padding-top: 10px;
+}
+</style> 
