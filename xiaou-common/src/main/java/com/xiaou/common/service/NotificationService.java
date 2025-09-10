@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,6 +31,7 @@ public class NotificationService {
     /**
      * 同步发送单个消息
      */
+    @Transactional
     public boolean sendNotification(Notification notification) {
         try {
             int result = notificationMapper.insert(notification);
@@ -51,7 +53,8 @@ public class NotificationService {
     /**
      * 批量发送消息
      */
-    @Async("notificationExecutor") 
+    @Async("notificationExecutor")
+    @Transactional
     public void sendBatchNotifications(List<Notification> notifications) {
         try {
             if (notifications != null && !notifications.isEmpty()) {
@@ -102,6 +105,7 @@ public class NotificationService {
     /**
      * 标记消息已读
      */
+    @Transactional
     public boolean markAsRead(Long messageId, Long userId) {
         try {
             // 先获取消息信息
@@ -109,6 +113,11 @@ public class NotificationService {
             if (notification == null) {
                 log.warn("消息不存在, messageId: {}", messageId);
                 return false;
+            }
+            
+            // 如果消息已经是已读状态，直接返回成功
+            if ("READ".equals(notification.getStatus())) {
+                return true;
             }
             
             // 如果是系统公告（receiverId为null），创建用户阅读记录
@@ -139,6 +148,7 @@ public class NotificationService {
     /**
      * 批量标记已读
      */
+    @Transactional
     public boolean batchMarkAsRead(List<Long> messageIds, Long userId) {
         try {
             if (messageIds != null && !messageIds.isEmpty()) {
@@ -193,6 +203,7 @@ public class NotificationService {
     /**
      * 删除消息
      */
+    @Transactional
     public boolean deleteMessage(Long messageId, Long userId) {
         try {
             int result = notificationMapper.deleteMessage(messageId, userId);
