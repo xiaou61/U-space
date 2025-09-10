@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveCategoryMapper">
+
+    <!-- 敏感词分类结果映射 -->
+    <resultMap id="SensitiveCategoryResult" type="com.xiaou.sensitive.domain.SensitiveCategory">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 查询字段 -->
+    <sql id="selectSensitiveCategoryVo">
+        SELECT id, name, description, sort_order, status, create_time
+        FROM sensitive_category
+    </sql>
+
+    <!-- 查询所有启用的分类 -->
+    <select id="selectEnabledCategories" resultMap="SensitiveCategoryResult">
+        <include refid="selectSensitiveCategoryVo"/>
+        WHERE status = 1
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 查询所有分类 -->
+    <select id="selectAllCategories" resultMap="SensitiveCategoryResult">
+        <include refid="selectSensitiveCategoryVo"/>
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 根据ID查询分类 -->
+    <select id="selectCategoryById" parameterType="Integer" resultMap="SensitiveCategoryResult">
+        <include refid="selectSensitiveCategoryVo"/>
+        WHERE id = #{id}
+    </select>
+
+</mapper> 

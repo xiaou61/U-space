@@ -5,6 +5,7 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
+import com.xiaou.common.utils.SensitiveWordUtils;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityComment;
 import com.xiaou.community.domain.CommunityCommentLike;
@@ -117,10 +118,30 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             throw new BusinessException("帖子不存在");
         }
         
+        // 敏感词检测
+        String content = request.getContent();
+        try {
+            SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
+                SensitiveWordUtils.checkText(content, "community", postId, currentUser.getId());
+            
+            if (!sensitiveResult.getAllowed()) {
+                throw new BusinessException("评论包含违规内容，禁止发布");
+            }
+            
+            // 使用处理后的文本（替换敏感词）
+            content = sensitiveResult.getProcessedText();
+            
+        } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            log.warn("敏感词检测异常，使用原始内容：{}", e.getMessage());
+        }
+        
         CommunityComment comment = new CommunityComment();
         comment.setPostId(postId);
         comment.setParentId(request.getParentId());
-        comment.setContent(request.getContent());
+        comment.setContent(content); // 使用处理后的内容
         comment.setAuthorId(currentUser.getId());
         comment.setAuthorName(currentUser.getUsername());
         comment.setLikeCount(0);

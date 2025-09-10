@@ -19,6 +19,16 @@
     <file url="file://$PROJECT_DIR$/xiaou-monitor/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-notification/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-notification/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive-biz/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive-biz/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-biz/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-biz/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-system/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-system/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-user/src/main/java" charset="UTF-8" />

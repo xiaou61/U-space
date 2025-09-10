@@ -244,6 +244,26 @@ const routes = [
         ],
       },
       {
+        path: 'sensitive',
+        name: 'SensitiveManagement',
+        redirect: '/sensitive/words',
+        meta: {
+          title: '敏感词管理',
+          icon: 'Warning',
+        },
+        children: [
+          {
+            path: 'words',
+            name: 'SensitiveWords',
+            component: () => import('@/views/sensitive/words/index.vue'),
+            meta: {
+              title: '敏感词管理',
+              icon: 'EditPen',
+            },
+          },
+        ],
+      },
+      {
         path: 'system',
         name: 'SystemManagement',
         redirect: '/system/monitor/sql',

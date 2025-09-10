@@ -107,6 +107,17 @@
             <span>通知管理</span>
           </el-menu-item>
           
+          <el-sub-menu index="/sensitive">
+            <template #title>
+              <el-icon><Warning /></el-icon>
+              <span>敏感词管理</span>
+            </template>
+            <el-menu-item index="/sensitive/words">
+              <el-icon><EditPen /></el-icon>
+              <span>敏感词管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/filestorage">
             <template #title>
               <el-icon><FolderOpened /></el-icon>
@@ -245,7 +256,9 @@ import {
   Bell,
   Notification,
   Message,
-  Picture
+  Picture,
+  Warning,
+  EditPen
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

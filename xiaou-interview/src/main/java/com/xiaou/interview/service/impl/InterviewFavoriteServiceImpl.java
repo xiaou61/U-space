@@ -6,6 +6,7 @@ import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.interview.domain.InterviewFavorite;
+import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.mapper.InterviewFavoriteMapper;
 import com.xiaou.interview.mapper.InterviewQuestionMapper;
 import com.xiaou.interview.mapper.InterviewQuestionSetMapper;

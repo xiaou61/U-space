@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveLogMapper">
+
+    <!-- 敏感词检测日志结果映射 -->
+    <resultMap id="SensitiveLogResult" type="com.xiaou.sensitive.domain.SensitiveLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="module" column="module"/>
+        <result property="businessId" column="business_id"/>
+        <result property="originalText" column="original_text"/>
+        <result property="hitWords" column="hit_words"/>
+        <result property="action" column="action"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 插入检测日志 -->
+    <insert id="insertLog" parameterType="com.xiaou.sensitive.domain.SensitiveLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_log (
+            user_id, module, business_id, original_text, hit_words, action
+        ) VALUES (
+            #{userId}, #{module}, #{businessId}, #{originalText}, #{hitWords}, #{action}
+        )
+    </insert>
+
+</mapper> 

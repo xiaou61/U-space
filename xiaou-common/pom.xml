@@ -89,6 +89,12 @@
             <artifactId>hutool-all</artifactId>
         </dependency>
         
+        <!-- Apache HttpComponents for HTTP client -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        
         <!-- Spring AOP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -105,6 +111,13 @@
         <dependency>
             <groupId>com.github.pagehelper</groupId>
             <artifactId>pagehelper-spring-boot-starter</artifactId>
+        </dependency>
+        
+        <!-- 敏感词API模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-sensitive-api</artifactId>
+            <version>${revision}</version>
         </dependency>
     </dependencies>
 

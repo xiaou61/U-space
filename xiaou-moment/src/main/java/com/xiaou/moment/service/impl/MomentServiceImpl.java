@@ -8,6 +8,7 @@ import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.NotificationUtil;
+import com.xiaou.common.utils.SensitiveWordUtils;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.moment.domain.Moment;
 import com.xiaou.moment.domain.MomentComment;
@@ -171,10 +172,30 @@ public class MomentServiceImpl implements MomentService {
             throw new BusinessException("动态不存在");
         }
         
+        // 敏感词检测
+        String content = request.getContent();
+        try {
+            SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
+                SensitiveWordUtils.checkText(content, "moment", request.getMomentId(), currentUserId);
+            
+            if (!sensitiveResult.getAllowed()) {
+                throw new BusinessException("评论包含违规内容，禁止发布");
+            }
+            
+            // 使用处理后的文本（替换敏感词）
+            content = sensitiveResult.getProcessedText();
+            
+        } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            log.warn("敏感词检测异常，使用原始内容：{}", e.getMessage());
+        }
+        
         MomentComment comment = new MomentComment();
         comment.setMomentId(request.getMomentId());
         comment.setUserId(currentUserId);
-        comment.setContent(request.getContent());
+        comment.setContent(content); // 使用处理后的内容
         comment.setStatus(CommentStatus.NORMAL.getCode());
         
         momentCommentMapper.insert(comment);
