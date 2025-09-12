@@ -1,7 +1,7 @@
 # Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -172,7 +172,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.2.0.jar
+java -jar target/xiaou-application-1.2.1.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -305,14 +305,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.2.0 .
+docker build -t code-nest:1.2.1 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.2.0
+  code-nest:1.2.1
 ```
 
 ### Nginx配置
@@ -348,6 +348,20 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.2.1
+
+#### 🚀 新增功能
+- **敏感词过滤系统** - 完善的内容审核机制
+  - 支持敏感词分类管理
+  - 多种过滤策略配置
+  - 敏感词检测日志记录
+  - 实时内容过滤与替换
+
+#### 🔧 系统优化
+- 优化通知模块性能和功能
+- 完善各模块间的集成和协作
+- 提升系统稳定性和可维护性
 
 ### v1.2.0
 
