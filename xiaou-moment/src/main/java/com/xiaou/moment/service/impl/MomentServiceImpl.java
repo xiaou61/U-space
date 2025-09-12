@@ -7,6 +7,8 @@ import cn.hutool.json.JSONUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.utils.NotificationUtil;
+import com.xiaou.common.utils.SensitiveWordUtils;
 import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.moment.domain.Moment;
 import com.xiaou.moment.domain.MomentComment;
@@ -134,6 +136,24 @@ public class MomentServiceImpl implements MomentService {
             momentLike.setUserId(currentUserId);
             momentLikeMapper.insert(momentLike);
             momentMapper.incrementLikeCount(momentId);
+            
+            // 发送消息通知：通知动态作者
+            if (!currentUserId.equals(moment.getUserId())) {
+                try {
+                    UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+                    String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                    
+                    NotificationUtil.sendPersonalMessage(
+                        moment.getUserId(),
+                        "您的动态收到新点赞",
+                        "用户 " + userName + " 点赞了您的动态"
+                    );
+                } catch (Exception e) {
+                    log.warn("发送动态点赞通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
+                            currentUserId, momentId, e.getMessage());
+                }
+            }
+            
             return true;
         }
     }
@@ -152,16 +172,53 @@ public class MomentServiceImpl implements MomentService {
             throw new BusinessException("动态不存在");
         }
         
+        // 敏感词检测
+        String content = request.getContent();
+        try {
+            SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
+                SensitiveWordUtils.checkText(content, "moment", request.getMomentId(), currentUserId);
+            
+            if (!sensitiveResult.getAllowed()) {
+                throw new BusinessException("评论包含违规内容，禁止发布");
+            }
+            
+            // 使用处理后的文本（替换敏感词）
+            content = sensitiveResult.getProcessedText();
+            
+        } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            log.warn("敏感词检测异常，使用原始内容：{}", e.getMessage());
+        }
+        
         MomentComment comment = new MomentComment();
         comment.setMomentId(request.getMomentId());
         comment.setUserId(currentUserId);
-        comment.setContent(request.getContent());
+        comment.setContent(content); // 使用处理后的内容
         comment.setStatus(CommentStatus.NORMAL.getCode());
         
         momentCommentMapper.insert(comment);
         
         // 增加评论数
         momentMapper.incrementCommentCount(request.getMomentId());
+        
+        // 发送消息通知：通知动态作者
+        if (!currentUserId.equals(moment.getUserId())) {
+            try {
+                UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+                String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                
+                NotificationUtil.sendPersonalMessage(
+                    moment.getUserId(),
+                    "您的动态收到新评论",
+                    "用户 " + userName + " 评论了您的动态：" + request.getContent()
+                );
+            } catch (Exception e) {
+                log.warn("发送动态评论通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
+                        currentUserId, request.getMomentId(), e.getMessage());
+            }
+        }
         
         return comment.getId();
     }

@@ -13,7 +13,7 @@ public enum NotificationStatusEnum {
     /**
      * 已读
      */
-    READ("read", "已读"),
+    READ("READ", "已读"),
     
     /**
      * 已删除

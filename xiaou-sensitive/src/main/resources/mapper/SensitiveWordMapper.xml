@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveWordMapper">
+
+    <!-- 敏感词结果映射 -->
+    <resultMap id="SensitiveWordResult" type="com.xiaou.sensitive.domain.SensitiveWord">
+        <id property="id" column="id"/>
+        <result property="word" column="word"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="level" column="level"/>
+        <result property="action" column="action"/>
+        <result property="status" column="status"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 敏感词DTO结果映射 -->
+    <resultMap id="SensitiveWordDTOResult" type="com.xiaou.sensitive.dto.SensitiveWordDTO">
+        <id property="id" column="id"/>
+        <result property="word" column="word"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="level" column="level"/>
+        <result property="action" column="action"/>
+        <result property="status" column="status"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="creatorName" column="creator_name"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 查询字段 -->
+    <sql id="selectSensitiveWordVo">
+        SELECT 
+            sw.id, sw.word, sw.category_id, sw.level, sw.action, 
+            sw.status, sw.creator_id, sw.create_time, sw.update_time
+        FROM sensitive_word sw
+    </sql>
+
+    <!-- 查询字段（包含分类名称） -->
+    <sql id="selectSensitiveWordWithCategoryVo">
+        SELECT 
+            sw.id, sw.word, sw.category_id, sc.name as category_name,
+            sw.level, sw.action, sw.status, sw.creator_id, 
+            sa.username as creator_name, sw.create_time, sw.update_time
+        FROM sensitive_word sw
+        LEFT JOIN sensitive_category sc ON sw.category_id = sc.id
+        LEFT JOIN sys_admin sa ON sw.creator_id = sa.id
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="whereClause">
+        <where>
+            <if test="word != null and word != ''">
+                AND sw.word LIKE CONCAT('%', #{word}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND sw.category_id = #{categoryId}
+            </if>
+            <if test="level != null">
+                AND sw.level = #{level}
+            </if>
+            <if test="status != null">
+                AND sw.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND sw.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND sw.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 分页查询敏感词列表 -->
+    <select id="selectWordList" parameterType="com.xiaou.sensitive.dto.SensitiveWordQuery" resultMap="SensitiveWordDTOResult">
+        <include refid="selectSensitiveWordWithCategoryVo"/>
+        <include refid="whereClause"/>
+        ORDER BY sw.create_time DESC
+    </select>
+
+    <!-- 根据ID查询敏感词 -->
+    <select id="selectWordById" parameterType="Long" resultMap="SensitiveWordResult">
+        <include refid="selectSensitiveWordVo"/>
+        WHERE sw.id = #{id}
+    </select>
+
+    <!-- 新增敏感词 -->
+    <insert id="insertWord" parameterType="com.xiaou.sensitive.domain.SensitiveWord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_word (
+            word, category_id, level, action, status, creator_id
+        ) VALUES (
+            #{word}, #{categoryId}, #{level}, #{action}, #{status}, #{creatorId}
+        )
+    </insert>
+
+    <!-- 更新敏感词 -->
+    <update id="updateWord" parameterType="com.xiaou.sensitive.domain.SensitiveWord">
+        UPDATE sensitive_word
+        <set>
+            <if test="word != null and word != ''">word = #{word},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="level != null">level = #{level},</if>
+            <if test="action != null">action = #{action},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除敏感词 -->
+    <delete id="deleteWordById" parameterType="Long">
+        DELETE FROM sensitive_word WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除敏感词 -->
+    <delete id="deleteWordByIds" parameterType="java.util.List">
+        DELETE FROM sensitive_word WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 查询所有启用的敏感词 -->
+    <select id="selectEnabledWords" resultType="String">
+        SELECT word FROM sensitive_word WHERE status = 1
+    </select>
+
+    <!-- 根据词汇查询是否存在 -->
+    <select id="selectWordByWord" parameterType="String" resultMap="SensitiveWordResult">
+        <include refid="selectSensitiveWordVo"/>
+        WHERE sw.word = #{word}
+    </select>
+
+    <!-- 批量插入敏感词 -->
+    <insert id="batchInsertWords" parameterType="java.util.List">
+        INSERT INTO sensitive_word (word, category_id, level, action, status, creator_id)
+        VALUES
+        <foreach collection="words" item="word" separator=",">
+            (#{word.word}, #{word.categoryId}, #{word.level}, #{word.action}, #{word.status}, #{word.creatorId})
+        </foreach>
+    </insert>
+
+    <!-- 统计敏感词数量 -->
+    <select id="countWords" parameterType="com.xiaou.sensitive.dto.SensitiveWordQuery" resultType="int">
+        SELECT COUNT(*) FROM sensitive_word sw
+        <include refid="whereClause"/>
+    </select>
+
+</mapper> 

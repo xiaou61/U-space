@@ -8,6 +8,8 @@ import com.xiaou.common.enums.NotificationStatusEnum;
 import com.xiaou.common.enums.NotificationTypeEnum;
 import com.xiaou.common.mapper.NotificationTemplateMapper;
 import com.xiaou.common.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +23,8 @@ import java.util.Map;
  */
 @Component
 public class NotificationUtil {
+    
+    private static final Logger log = LoggerFactory.getLogger(NotificationUtil.class);
     
     private static NotificationService notificationService;
     private static NotificationTemplateMapper notificationTemplateMapper;
@@ -78,6 +82,12 @@ public class NotificationUtil {
      * @param type 消息类型
      */
     public static void sendPersonalMessage(Long receiverId, String title, String content, String type) {
+        // 防护：检查接收者ID是否为空
+        if (receiverId == null) {
+            log.warn("接收者ID为空，无法发送个人消息: title={}, content={}", title, content);
+            return;
+        }
+        
         // 验证消息类型
         if (!NotificationTypeEnum.isValidCode(type)) {
             type = NotificationTypeEnum.PERSONAL.getCode();
@@ -238,6 +248,12 @@ public class NotificationUtil {
      * @param sourceId 来源数据ID（如帖子ID）
      */
     public static void sendCommunityMessage(Long receiverId, String title, String content, String sourceId) {
+        // 防护：检查接收者ID是否为空
+        if (receiverId == null) {
+            log.warn("接收者ID为空，无法发送社区消息: title={}, content={}", title, content);
+            return;
+        }
+        
         // 检查用户是否开启该类型消息接收
         if (!isUserAcceptType(receiverId, NotificationTypeEnum.COMMUNITY_INTERACTION.getCode())) {
             return;
@@ -261,6 +277,12 @@ public class NotificationUtil {
      * @param sourceId 来源数据ID（如题目ID）
      */
     public static void sendInterviewMessage(Long receiverId, String title, String content, String sourceId) {
+        // 防护：检查接收者ID是否为空
+        if (receiverId == null) {
+            log.warn("接收者ID为空，无法发送面试题消息: title={}, content={}", title, content);
+            return;
+        }
+        
         // 检查用户是否开启该类型消息接收
         if (!isUserAcceptType(receiverId, NotificationTypeEnum.INTERVIEW_REMINDER.getCode())) {
             return;

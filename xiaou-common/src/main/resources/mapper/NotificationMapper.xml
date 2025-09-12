@@ -85,7 +85,7 @@
     <!-- 批量标记已读 -->
     <update id="batchMarkAsRead">
         UPDATE notification 
-        SET status = 'read', read_time = NOW(), updated_time = NOW()
+        SET status = 'READ', read_time = NOW(), updated_time = NOW()
         WHERE id IN 
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}

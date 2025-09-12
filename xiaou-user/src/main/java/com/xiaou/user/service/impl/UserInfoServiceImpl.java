@@ -5,6 +5,7 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.security.JwtTokenUtil;
 import com.xiaou.common.security.TokenService;
+import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.user.domain.UserInfo;
@@ -90,6 +91,17 @@ public class UserInfoServiceImpl implements UserInfoService {
             }
 
             log.info("用户注册成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
+
+            // 发送欢迎消息
+            try {
+                NotificationUtil.sendSystemMessage(
+                    user.getId(),
+                    "欢迎加入 Code-Nest",
+                    "亲爱的 " + user.getNickname() + "，欢迎您加入 Code-Nest 学习社区！这里有丰富的技术内容和活跃的学习氛围，祝您学习愉快！"
+                );
+            } catch (Exception e) {
+                log.warn("发送用户注册欢迎消息失败，用户ID: {}, 错误: {}", user.getId(), e.getMessage());
+            }
 
             // 返回用户信息（不包含密码）
             user.setPassword(null);
@@ -317,6 +329,38 @@ public class UserInfoServiceImpl implements UserInfoService {
 
             log.info("用户信息更新成功，用户ID: {}", userId);
 
+            // 发送信息变更通知
+            try {
+                // 检查是否有重要信息变更（邮箱或手机号）
+                boolean hasImportantChange = false;
+                StringBuilder changeDetails = new StringBuilder("您的账户信息已更新：");
+                
+                if (request.getEmail() != null && !request.getEmail().equals(existingUser.getEmail())) {
+                    hasImportantChange = true;
+                    changeDetails.append("邮箱已更新、");
+                }
+                if (request.getPhone() != null && !request.getPhone().equals(existingUser.getPhone())) {
+                    hasImportantChange = true;
+                    changeDetails.append("手机号已更新、");
+                }
+                
+                if (hasImportantChange) {
+                    String details = changeDetails.toString();
+                    if (details.endsWith("、")) {
+                        details = details.substring(0, details.length() - 1);
+                    }
+                    details += "。如非本人操作，请立即联系客服。";
+                    
+                    NotificationUtil.sendSystemMessage(
+                        userId,
+                        "账户信息变更通知",
+                        details
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("发送用户信息变更通知失败，用户ID: {}, 错误: {}", userId, e.getMessage());
+            }
+
             // 返回更新后的用户信息
             return getUserInfoById(userId);
 
@@ -377,6 +421,17 @@ public class UserInfoServiceImpl implements UserInfoService {
             }
 
             log.info("用户密码修改成功，用户ID: {}", userId);
+
+            // 发送密码修改成功通知
+            try {
+                NotificationUtil.sendSystemMessage(
+                    userId,
+                    "密码修改成功",
+                    "您的账户密码已成功修改，修改时间：" + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "。如非本人操作，请立即联系客服。"
+                );
+            } catch (Exception e) {
+                log.warn("发送密码修改通知失败，用户ID: {}, 错误: {}", userId, e.getMessage());
+            }
 
         } catch (Exception e) {
             log.error("修改用户密码失败，用户ID: {}", userId, e);
