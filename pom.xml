@@ -21,6 +21,7 @@
         <module>xiaou-moment</module>
         <module>xiaou-sensitive-api</module>
         <module>xiaou-sensitive</module>
+        <module>xiaou-knowledge</module>
     </modules>
 
     <properties>

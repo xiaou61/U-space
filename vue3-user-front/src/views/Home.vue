@@ -18,7 +18,7 @@
     <div class="main-content">
       <div class="welcome-section">
         <h1 class="welcome-title">欢迎来到 Code Nest</h1>
-        <p class="welcome-subtitle">您的代码管理平台</p>
+        <p class="welcome-subtitle">您的代码学习与成长平台</p>
         <div class="user-info" v-if="userStore.userInfo">
           <p>欢迎您，{{ userStore.userInfo.username }}</p>
           <p class="user-email">{{ userStore.userInfo.email }}</p>
@@ -34,6 +34,14 @@
             </div>
             <h3>面试题库</h3>
             <p>精选面试题，助力求职成功</p>
+          </div>
+
+          <div class="feature-card" @click="goToKnowledge">
+            <div class="feature-icon">
+              <el-icon size="48"><DataAnalysis /></el-icon>
+            </div>
+            <h3>知识图谱</h3>
+            <p>可视化学习，从整体到细节的知识体系</p>
           </div>
 
           <div class="feature-card" @click="goToCommunity">
@@ -79,7 +87,9 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Document, ChatDotRound, Bell, Picture } from '@element-plus/icons-vue'
+import { 
+  User, SwitchButton, Document, ChatDotRound, Bell, Picture, DataAnalysis 
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -99,6 +109,11 @@ const loadUserInfo = async () => {
 // 跳转到面试题库
 const goToInterview = () => {
   router.push('/interview')
+}
+
+// 跳转到知识图谱
+const goToKnowledge = () => {
+  router.push('/knowledge')
 }
 
 // 跳转到技术社区
@@ -121,10 +136,6 @@ const goToProfile = () => {
   router.push('/profile')
 }
 
-
-
-
-
 // 退出登录
 const handleLogout = async () => {
   try {
@@ -136,7 +147,7 @@ const handleLogout = async () => {
     
     userStore.logout()
     ElMessage.success('退出登录成功')
-    router.push('/login')
+    router.push('/auth/login')
   } catch (error) {
     // 用户取消
   }
@@ -188,6 +199,7 @@ onMounted(() => {
   font-size: 28px;
   font-weight: bold;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 
 .main-content {
@@ -242,56 +254,55 @@ onMounted(() => {
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 30px;
-  max-width: 1200px;
+  gap: 24px;
+  max-width: 900px;
   margin: 0 auto;
-  justify-content: center;
 }
 
 .feature-card {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px 30px;
+  border-radius: 16px;
+  padding: 32px 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   background: rgba(255, 255, 255, 1);
 }
 
 .feature-icon {
   margin-bottom: 20px;
-  color: #409eff;
+  color: #0984e3;
   transition: all 0.3s ease;
 }
 
 .feature-card:hover .feature-icon {
   transform: scale(1.1);
-  color: #0984e3;
+  color: #74b9ff;
 }
 
 .feature-card h3 {
   margin: 0 0 12px 0;
   font-size: 20px;
   font-weight: 600;
-  color: #303133;
+  color: #2d3436;
 }
 
 .feature-card p {
   margin: 0;
-  color: #606266;
   font-size: 14px;
+  color: #636e72;
   line-height: 1.5;
 }
 
-/* 动画效果 */
+/* 动画定义 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -309,31 +320,25 @@ onMounted(() => {
     padding: 15px 20px;
   }
   
-  .header-content {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-
   .main-content {
-    padding: 20px;
+    padding: 30px 20px;
   }
-
+  
   .welcome-title {
     font-size: 36px;
   }
-
+  
   .welcome-subtitle {
     font-size: 18px;
   }
-
+  
   .features-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-
+  
   .feature-card {
-    padding: 30px 20px;
+    padding: 24px 20px;
   }
 }
 
@@ -341,13 +346,17 @@ onMounted(() => {
   .welcome-title {
     font-size: 28px;
   }
-
+  
   .welcome-subtitle {
     font-size: 16px;
   }
-
-  .logo h2 {
-    font-size: 24px;
+  
+  .feature-card h3 {
+    font-size: 18px;
+  }
+  
+  .feature-card p {
+    font-size: 13px;
   }
 }
 </style> 

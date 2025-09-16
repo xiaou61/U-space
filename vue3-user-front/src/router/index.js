@@ -161,6 +161,27 @@ const routes = [
     }
   },
   {
+    path: '/knowledge',
+    name: 'Knowledge',
+    component: () => import('@/views/knowledge/Index.vue'),
+    meta: {
+      title: '知识图谱',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/knowledge/maps/:id',
+    name: 'KnowledgeMapViewer',
+    component: () => import('@/views/knowledge/MapViewer.vue'),
+    props: true,
+    meta: {
+      title: '知识图谱学习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

@@ -45,6 +45,17 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/knowledge">
+            <template #title>
+              <el-icon><DataAnalysis /></el-icon>
+              <span>知识图谱管理</span>
+            </template>
+            <el-menu-item index="/knowledge/maps">
+              <el-icon><Share /></el-icon>
+              <span>图谱管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/community">
             <template #title>
               <el-icon><ChatDotRound /></el-icon>
@@ -258,7 +269,8 @@ import {
   Message,
   Picture,
   Warning,
-  EditPen
+  EditPen,
+  Share
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

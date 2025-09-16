@@ -9,11 +9,13 @@
     "lint": "eslint . --ext .vue,.js,.jsx --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@antv/g6": "^4.8.24",
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.2",
     "element-plus": "^2.4.4",
     "highlight.js": "^11.11.1",
     "js-cookie": "^3.0.5",
+    "lodash": "^4.17.21",
     "markdown-it": "^14.1.0",
     "nprogress": "^0.2.0",
     "pinia": "^2.1.7",
