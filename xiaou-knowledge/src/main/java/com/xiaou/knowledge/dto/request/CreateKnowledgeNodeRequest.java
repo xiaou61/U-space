@@ -28,9 +28,10 @@ public class CreateKnowledgeNodeRequest {
     private String title;
     
     /**
-     * 节点详细内容(Markdown格式)
+     * 飞书云文档链接
      */
-    private String content;
+    @Size(max = 1000, message = "飞书文档链接长度不能超过1000个字符")
+    private String url;
     
     /**
      * 节点类型: 1-普通 2-重点 3-难点

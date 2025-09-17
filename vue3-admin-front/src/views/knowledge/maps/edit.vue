@@ -116,12 +116,11 @@
                 <el-switch v-model="nodeForm.isExpanded" />
               </el-form-item>
               
-              <el-form-item label="内容" prop="content">
+              <el-form-item label="链接" prop="url">
                 <el-input
-                  v-model="nodeForm.content"
-                  type="textarea"
-                  :rows="8"
-                  placeholder="支持Markdown格式"
+                  v-model="nodeForm.url"
+                  placeholder="请输入飞书云文档链接"
+                  clearable
                 />
               </el-form-item>
               
@@ -189,7 +188,7 @@
           @click="handleSelectSearchResult(result)"
         >
           <div class="result-title">{{ result.title }}</div>
-          <div class="result-content">{{ result.content || '暂无内容' }}</div>
+          <div class="result-content">{{ result.url || '暂无链接' }}</div>
         </div>
       </div>
       
@@ -266,7 +265,7 @@ const contextMenuNode = ref(null)
 // 表单相关
 const nodeForm = reactive({
   title: '',
-  content: '',
+  url: '',
   nodeType: 1,
   isExpanded: true
 })
@@ -331,7 +330,7 @@ const mindMapData = computed(() => {
     nodes.push({
       id: node.id.toString(),
       title: node.title,
-      description: node.content || '',
+      description: node.url || '',
       nodeType: getNodeTypeString(node.nodeType)
     })
     
@@ -437,7 +436,7 @@ const handleNodeClick = (data) => {
     // 填充编辑表单 - 使用数据副本
     Object.assign(nodeForm, {
       title: fullNodeData.title,
-      content: fullNodeData.content,
+      url: fullNodeData.url,
       nodeType: fullNodeData.nodeType,
       isExpanded: fullNodeData.isExpanded
     })
@@ -460,7 +459,7 @@ const handleMindMapNodeClick = (nodeData) => {
       // 填充编辑表单
       Object.assign(nodeForm, {
         title: fullNodeData.title,
-        content: fullNodeData.content,
+        url: fullNodeData.url,
         nodeType: fullNodeData.nodeType,
         isExpanded: fullNodeData.isExpanded
       })
@@ -479,7 +478,7 @@ const handleAddNodeFromMindMap = async (nodeData) => {
     const createData = {
       parentId: nodeData.parentId || 0,
       title: nodeData.title,
-      content: nodeData.description || '',
+      url: nodeData.description || '',
       nodeType: getNodeTypeNumber(nodeData.nodeType),
       sortOrder: 0,
       isExpanded: true
@@ -530,7 +529,7 @@ const handleUpdateNodeFromMindMap = async (nodeData) => {
   try {
     const updateData = {
       title: nodeData.title,
-      content: nodeData.description || '',
+      url: nodeData.description || '',
       nodeType: getNodeTypeNumber(nodeData.nodeType),
       isExpanded: true
     }
@@ -575,7 +574,7 @@ const handleAddChildNode = async (parentNode) => {
     const nodeData = {
       parentId: parentNode.id,
       title: title.trim(),
-      content: '',
+      url: '',
       nodeType: 1,
       sortOrder: 0,
       isExpanded: true
@@ -857,7 +856,7 @@ const getStatusText = (status) => {
 const resetNodeForm = () => {
   Object.assign(nodeForm, {
     title: '',
-    content: '',
+    url: '',
     nodeType: 1,
     isExpanded: true
   })

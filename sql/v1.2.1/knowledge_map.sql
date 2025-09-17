@@ -24,7 +24,7 @@ CREATE TABLE knowledge_node (
     map_id BIGINT NOT NULL COMMENT '所属图谱ID',
     parent_id BIGINT DEFAULT 0 COMMENT '父节点ID，0为根节点',
     title VARCHAR(200) NOT NULL COMMENT '节点标题',
-    content LONGTEXT COMMENT '节点详细内容(Markdown格式)',
+    url VARCHAR(1000) COMMENT '飞书云文档链接',
     node_type TINYINT(1) DEFAULT 1 COMMENT '节点类型: 1-普通 2-重点 3-难点',
     sort_order INT DEFAULT 0 COMMENT '同级排序序号',
     level_depth INT DEFAULT 1 COMMENT '层级深度',

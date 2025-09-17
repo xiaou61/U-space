@@ -35,9 +35,9 @@ public class KnowledgeNodeTreeResponse {
     private String title;
     
     /**
-     * 节点详细内容(Markdown格式)
+     * 飞书云文档链接
      */
-    private String content;
+    private String url;
     
     /**
      * 节点类型: 1-普通 2-重点 3-难点

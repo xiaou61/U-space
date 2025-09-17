@@ -8,7 +8,7 @@
         <result column="map_id" property="mapId" />
         <result column="parent_id" property="parentId" />
         <result column="title" property="title" />
-        <result column="content" property="content" />
+        <result column="url" property="url" />
         <result column="node_type" property="nodeType" />
         <result column="sort_order" property="sortOrder" />
         <result column="level_depth" property="levelDepth" />
@@ -25,7 +25,7 @@
         <result column="map_id" property="mapId" />
         <result column="parent_id" property="parentId" />
         <result column="title" property="title" />
-        <result column="content" property="content" />
+        <result column="url" property="url" />
         <result column="node_type" property="nodeType" />
         <result column="node_type_desc" property="nodeTypeDesc" />
         <result column="sort_order" property="sortOrder" />
@@ -39,7 +39,7 @@
 
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
-        id, map_id, parent_id, title, content, node_type, sort_order, 
+        id, map_id, parent_id, title, url, node_type, sort_order, 
         level_depth, is_expanded, view_count, last_view_time, create_time, update_time
     </sql>
 
@@ -54,7 +54,7 @@
     <!-- 根据图谱ID查询所有节点(树形结构) -->
     <select id="selectTreeByMapId" resultMap="KnowledgeNodeTreeResponseResultMap">
         SELECT 
-            id, map_id, parent_id, title, content, node_type,
+            id, map_id, parent_id, title, url, node_type,
             CASE 
                 WHEN node_type = 1 THEN '普通'
                 WHEN node_type = 2 THEN '重点'
@@ -94,10 +94,10 @@
     <!-- 插入知识节点 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO knowledge_node (
-            map_id, parent_id, title, content, node_type, 
+            map_id, parent_id, title, url, node_type, 
             sort_order, level_depth, is_expanded, view_count, create_time, update_time
         ) VALUES (
-            #{mapId}, #{parentId}, #{title}, #{content}, #{nodeType}, 
+            #{mapId}, #{parentId}, #{title}, #{url}, #{nodeType}, 
             #{sortOrder}, #{levelDepth}, #{isExpanded}, 0, NOW(), NOW()
         )
     </insert>
@@ -107,7 +107,7 @@
         UPDATE knowledge_node 
         SET 
             title = #{request.title},
-            content = #{request.content},
+            url = #{request.url},
             node_type = #{request.nodeType},
             is_expanded = #{request.isExpanded},
             update_time = NOW()
@@ -146,7 +146,7 @@
     <!-- 搜索节点 -->
     <select id="searchNodes" resultMap="KnowledgeNodeTreeResponseResultMap">
         SELECT 
-            id, map_id, parent_id, title, content, node_type,
+            id, map_id, parent_id, title, url, node_type,
             CASE 
                 WHEN node_type = 1 THEN '普通'
                 WHEN node_type = 2 THEN '重点'
@@ -159,7 +159,7 @@
         WHERE map_id = #{mapId}
         <if test="keyword != null and keyword != ''">
             AND (title LIKE CONCAT('%', #{keyword}, '%') 
-            OR content LIKE CONCAT('%', #{keyword}, '%'))
+            OR url LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY level_depth ASC, sort_order ASC, create_time ASC
     </select>

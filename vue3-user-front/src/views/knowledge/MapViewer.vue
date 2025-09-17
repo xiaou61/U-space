@@ -95,13 +95,21 @@
           </div>
         </div>
         
-        <!-- Markdown内容 -->
-        <div v-if="selectedNode.content || selectedNode.description" class="markdown-content" v-html="renderedContent"></div>
+        <!-- 飞书文档内容 -->
+        <div v-if="selectedNode.url" class="document-content">
+          <iframe 
+            :src="selectedNode.url" 
+            frameborder="0" 
+            width="100%" 
+            height="800px"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          ></iframe>
+        </div>
         
         <!-- 空内容提示 -->
         <div v-else class="empty-content">
           <el-icon size="48" color="#c0c4cc"><Document /></el-icon>
-          <p>该节点暂无详细内容</p>
+          <p>该节点暂无文档链接</p>
         </div>
       </div>
       
@@ -154,7 +162,7 @@
             </el-tag>
           </div>
           <div class="result-content">
-            {{ result.content || '暂无内容' }}
+            {{ result.url || '暂无链接' }}
           </div>
         </div>
       </div>
@@ -181,8 +189,7 @@ import {
 import {
   getKnowledgeMapById,
   getKnowledgeNodeTree,
-  searchKnowledgeNodes,
-  recordNodeView
+  searchKnowledgeNodes
 } from '@/api/knowledge'
 import MindMap from '@/components/MindMap.vue'
 
@@ -342,17 +349,9 @@ const renderMarkdown = (text) => {
   return result
 }
 
-// 计算属性
-const renderedContent = computed(() => {
-  const content = selectedNode.value?.content || selectedNode.value?.description || ''
-  if (!content) return ''
-  
-  try {
-    return renderMarkdown(content)
-  } catch (error) {
-    console.warn('Markdown 渲染失败:', error)
-    return content.replace(/\n/g, '<br>')
-  }
+// 计算属性 - 不再需要渲染Markdown，直接处理URL
+const documentUrl = computed(() => {
+  return selectedNode.value?.url || ''
 })
 
 const hasPrevNode = computed(() => {
@@ -372,7 +371,7 @@ const mindMapData = computed(() => {
     nodes.push({
       id: node.id.toString(),
       title: node.title,
-      description: node.content,
+      description: node.url,
       nodeType: getNodeTypeString(node.nodeType)
     })
     
@@ -449,7 +448,7 @@ const handleNodeClick = (nodeData) => {
   let fullNode = nodeData
   
   // 如果传入的是G6格式的数据，需要从扁平化列表中查找
-  if (nodeData.id && !nodeData.content) {
+      if (nodeData.id && !nodeData.url) {
     fullNode = flatNodeList.value.find(n => n.id.toString() === nodeData.id.toString())
   }
   
@@ -461,8 +460,7 @@ const handleNodeClick = (nodeData) => {
     // 处理图片加载
     handleImageLoading()
     
-    // 记录节点查看
-    recordNodeView(fullNode.id).catch(() => {})
+
   }
 }
 
@@ -494,8 +492,7 @@ const navigateToNode = (direction) => {
     // 处理图片加载
     handleImageLoading()
     
-    // 记录节点查看
-    recordNodeView(node.id).catch(() => {})
+
   }
 }
 
@@ -743,10 +740,16 @@ onMounted(() => {
   color: #909399;
 }
 
-.markdown-content {
-  line-height: 1.8;
-  color: #2c3e50;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+.document-content {
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+}
+
+.document-content iframe {
+  border-radius: 4px;
 }
 
 .markdown-content :deep(h1) {

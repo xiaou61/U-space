@@ -91,7 +91,7 @@ public class KnowledgeNodeServiceImpl implements KnowledgeNodeService {
         knowledgeNode.setMapId(mapId);
         knowledgeNode.setParentId(request.getParentId());
         knowledgeNode.setTitle(request.getTitle());
-        knowledgeNode.setContent(request.getContent());
+        knowledgeNode.setUrl(request.getUrl());
         knowledgeNode.setNodeType(request.getNodeType());
         knowledgeNode.setSortOrder(sortOrder);
         knowledgeNode.setLevelDepth(levelDepth);
