@@ -79,7 +79,7 @@
     </appender>
 
     <!-- 开发环境配置 -->
-    <springProfile name="dev">
+    <springProfile name="prod">
         <!-- MyBatis SQL日志 - DEBUG级别显示SQL -->
         <logger name="com.xiaou.system.mapper" level="DEBUG" additivity="false">
             <appender-ref ref="SQL_CONSOLE" />
@@ -118,7 +118,7 @@
     </springProfile>
 
     <!-- 生产环境配置 -->
-    <springProfile name="prod">
+    <springProfile name="dev">
         <!-- MyBatis SQL日志（生产环境可选择关闭或设为INFO级别） -->
         <logger name="com.xiaou.system.mapper" level="WARN" additivity="false">
             <appender-ref ref="SQL_FILE" />
