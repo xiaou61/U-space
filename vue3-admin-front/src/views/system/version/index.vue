@@ -431,12 +431,12 @@ const pagination = reactive({
   total: 0
 })
 
-// 搜索表单
+// 搜索表单 - 确保初始化
 const searchForm = reactive({
   keyword: '',
-  updateType: null,
-  status: null,
-  isFeatured: null,
+  updateType: '',
+  status: '',
+  isFeatured: '',
   releaseTimeRange: null
 })
 
@@ -471,7 +471,7 @@ const rules = {
     { max: 200, message: '标题长度不能超过200个字符', trigger: 'blur' }
   ],
   updateType: [
-    { required: true, message: '请选择更新类型', trigger: 'change' }
+    { required: true, message: '请选择更新类型', trigger: 'change', type: 'number' }
   ],
   releaseTime: [
     { required: true, message: '请选择发布时间', trigger: 'change' }
@@ -488,9 +488,22 @@ const loadVersionList = async () => {
   try {
     loading.value = true
     const params = {
-      ...searchForm,
       pageNum: pagination.pageNum,
       pageSize: pagination.pageSize
+    }
+    
+    // 只添加有值的搜索条件
+    if (searchForm.keyword) {
+      params.keyword = searchForm.keyword
+    }
+    if (searchForm.updateType !== '' && searchForm.updateType !== null && searchForm.updateType !== undefined) {
+      params.updateType = searchForm.updateType
+    }
+    if (searchForm.status !== '' && searchForm.status !== null && searchForm.status !== undefined) {
+      params.status = searchForm.status
+    }
+    if (searchForm.isFeatured !== '' && searchForm.isFeatured !== null && searchForm.isFeatured !== undefined) {
+      params.isFeatured = searchForm.isFeatured
     }
     
     // 处理时间范围
@@ -498,7 +511,6 @@ const loadVersionList = async () => {
       params.releaseTimeStart = searchForm.releaseTimeRange[0]
       params.releaseTimeEnd = searchForm.releaseTimeRange[1]
     }
-    delete params.releaseTimeRange
 
     const data = await getVersionList(params)
     versionList.value = data.records || []
@@ -521,9 +533,9 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     keyword: '',
-    updateType: null,
-    status: null,
-    isFeatured: null,
+    updateType: '',
+    status: '',
+    isFeatured: '',
     releaseTimeRange: null
   })
   handleSearch()
@@ -560,8 +572,10 @@ const handleEdit = (row) => {
   dialogTitle.value = '编辑版本'
   Object.assign(form, {
     ...row,
-    isFeatured: row.isFeatured || 0,
-    sortOrder: row.sortOrder || 0
+    updateType: row.updateType ? Number(row.updateType) : null,
+    status: Number(row.status) || 0,
+    isFeatured: Number(row.isFeatured) || 0,
+    sortOrder: Number(row.sortOrder) || 0
   })
   dialogVisible.value = true
 }

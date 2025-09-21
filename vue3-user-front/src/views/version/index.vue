@@ -350,7 +350,7 @@ const getUpdateTypeTagType = (type) => {
   max-width: 1000px;
   margin: 0 auto;
   padding-left: 60px;
-  opacity: 0;
+  opacity: 1;
   animation: container-fade-in 1.2s ease-out 0.3s both;
 }
 
@@ -392,11 +392,8 @@ const getUpdateTypeTagType = (type) => {
   margin-bottom: 40px;
   display: flex;
   align-items: flex-start;
-  opacity: 0;
-  transform: translateY(50px);
-  animation: timeline-fade-in linear;
-  animation-timeline: view();
-  animation-range: entry 0% entry 70%;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .timeline-item.featured .version-card {
@@ -643,7 +640,7 @@ const getUpdateTypeTagType = (type) => {
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .timeline-item {
-      opacity: 0;
+      opacity: 1;
       animation: timeline-fade-in linear;
       animation-timeline: view();
       animation-range: entry 0% entry 70%;
@@ -745,8 +742,8 @@ const getUpdateTypeTagType = (type) => {
   }
   
   .timeline-item {
-    transform: translateX(-10px) translateY(30px);
-    animation-range: entry 0% entry 80%;
+    opacity: 1;
+    transform: none;
   }
   
   .version-card:hover {

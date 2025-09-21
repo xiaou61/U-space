@@ -30,6 +30,10 @@
             <el-icon><Picture /></el-icon>
             <span>朋友圈</span>
           </router-link>
+          <router-link to="/dev-tools" class="nav-item" active-class="active">
+            <el-icon><Tools /></el-icon>
+            <span>程序员工具</span>
+          </router-link>
           <router-link to="/version-history" class="nav-item" active-class="active">
             <el-icon><Calendar /></el-icon>
             <span>版本历史</span>
@@ -84,7 +88,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar
+  User, UserFilled, SwitchButton, Calendar, Tools
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

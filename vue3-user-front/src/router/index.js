@@ -192,6 +192,46 @@ const routes = [
     }
   },
   {
+    path: '/dev-tools',
+    name: 'DevTools',
+    component: () => import('@/views/dev-tools/index.vue'),
+    meta: {
+      title: '程序员工具',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/json',
+    name: 'JsonTool',
+    component: () => import('@/views/dev-tools/JsonTool.vue'),
+    meta: {
+      title: 'JSON工具',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/text-diff',
+    name: 'TextDiff',
+    component: () => import('@/views/dev-tools/TextDiff.vue'),
+    meta: {
+      title: '文本比对',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/translation',
+    name: 'Translation',
+    component: () => import('@/views/dev-tools/Translation.vue'),
+    meta: {
+      title: '聚合翻译',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
