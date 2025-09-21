@@ -182,6 +182,16 @@ const routes = [
     }
   },
   {
+    path: '/version-history',
+    name: 'VersionHistory',
+    component: () => import('@/views/version/index.vue'),
+    meta: {
+      title: '版本更新历史',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

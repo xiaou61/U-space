@@ -9,12 +9,74 @@
           <span v-else>CN</span>
         </div>
         
+        <!-- 菜单搜索框 -->
+        <div class="sidebar-search-input-wrapper" v-if="!collapsed">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="🔍 搜索功能... (Ctrl+K)"
+            size="small"
+            @keyup.enter="handleSearchEnter"
+            @input="handleSearchInput"
+            ref="searchInput"
+            class="sidebar-search-input"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+        
+        <!-- 折叠状态下的搜索按钮 -->
+        <div class="sidebar-search-collapsed" v-else>
+          <el-tooltip content="搜索功能 (Ctrl+K)" placement="right">
+            <el-button 
+              text 
+              @click="expandAndFocusSearch"
+              class="search-toggle-btn"
+            >
+              <el-icon size="18"><Search /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+        
+        <!-- 搜索结果区域 -->
+        <div v-if="!collapsed && searchKeyword" class="search-results-container">
+          <!-- 有搜索结果 -->
+          <div v-if="filteredMenuItems.length > 0" class="search-results">
+            <div class="search-results-header">
+              找到 {{ filteredMenuItems.length }} 个功能
+            </div>
+            <div 
+              v-for="item in filteredMenuItems" 
+              :key="item.path"
+              class="search-result-item"
+              @click="handleMenuSelect(item)"
+            >
+              <el-icon class="search-result-icon">
+                <component :is="item.icon" />
+              </el-icon>
+              <div class="search-result-content">
+                <div class="search-result-title">{{ item.title }}</div>
+                <div class="search-result-path">{{ item.breadcrumb }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 无搜索结果 -->
+          <div v-else class="search-no-results">
+            <div class="no-results-icon">🔍</div>
+            <div class="no-results-text">未找到匹配的功能</div>
+          </div>
+        </div>
+
         <!-- 导航菜单 -->
         <el-menu
           :default-active="currentRoute"
           :collapse="collapsed"
           router
           class="sidebar-menu"
+          v-if="!searchKeyword"
         >
           <el-menu-item index="/dashboard">
             <el-icon><Odometer /></el-icon>
@@ -157,6 +219,10 @@
               <el-icon><Setting /></el-icon>
               <span>系统管理</span>
             </template>
+            <el-menu-item index="/system/version">
+              <el-icon><Document /></el-icon>
+              <span>版本管理</span>
+            </el-menu-item>
             <el-sub-menu index="/system/monitor">
               <template #title>
                 <el-icon><Monitor /></el-icon>
@@ -238,7 +304,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { 
@@ -270,7 +336,8 @@ import {
   Picture,
   Warning,
   EditPen,
-  Share
+  Share,
+  Search
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -290,10 +357,303 @@ const currentRoute = computed(() => route.path)
 // 当前页面标题
 const currentTitle = computed(() => route.meta?.title || '仪表板')
 
+// 搜索相关
+const searchKeyword = ref('')
+const searchInput = ref()
+
+// 智能图标推断函数
+const getIconByPath = (path, title = '') => {
+  // 精确路径匹配（优先级最高）
+  const exactIconMap = {
+    '/dashboard': 'Odometer',
+    '/user': 'Avatar',
+    '/notification': 'Bell',
+    '/system/version': 'Document',
+    '/system/monitor/sql': 'DataAnalysis'
+  }
+  
+  if (exactIconMap[path]) {
+    return exactIconMap[path]
+  }
+  
+  // 路径关键词匹配
+  const pathKeywords = {
+    'dashboard': 'Odometer',
+    'user': 'Avatar', 
+    'interview': 'Document',
+    'categories': 'FolderOpened',
+    'question-sets': 'Collection',
+    'questions': 'Edit',
+    'knowledge': 'DataAnalysis',
+    'maps': 'Share',
+    'community': 'ChatDotRound',
+    'posts': 'Document',
+    'comments': 'ChatLineRound',
+    'moments': 'Picture',
+    'statistics': 'DataAnalysis',
+    'logs': 'Document',
+    'login': 'UserFilled',
+    'operation': 'Operation',
+    'notification': 'Bell',
+    'sensitive': 'Warning',
+    'words': 'EditPen',
+    'filestorage': 'FolderOpened',
+    'storage-config': 'SetUp',
+    'file-management': 'Document',
+    'migration': 'Sort',
+    'system-settings': 'Tools',
+    'system': 'Setting',
+    'version': 'Document',
+    'monitor': 'Monitor',
+    'sql': 'DataAnalysis',
+    'profile': 'User',
+    'edit': 'Edit',
+    'password': 'EditPen'
+  }
+  
+  // 从路径中提取关键词
+  const pathSegments = path.split('/').filter(segment => segment !== '')
+  for (const segment of pathSegments) {
+    if (pathKeywords[segment]) {
+      return pathKeywords[segment]
+    }
+  }
+  
+  // 标题关键词匹配
+  const titleKeywords = {
+    '仪表板': 'Odometer',
+    '用户': 'Avatar',
+    '管理': 'Setting',
+    '分类': 'FolderOpened',
+    '题目': 'Edit',
+    '题单': 'Collection',
+    '知识': 'DataAnalysis',
+    '图谱': 'Share',
+    '社区': 'ChatDotRound',
+    '帖子': 'Document',
+    '评论': 'ChatLineRound',
+    '朋友圈': 'Picture',
+    '动态': 'Picture',
+    '统计': 'DataAnalysis',
+    '日志': 'Document',
+    '登录': 'UserFilled',
+    '操作': 'Operation',
+    '通知': 'Bell',
+    '敏感词': 'Warning',
+    '文件': 'FolderOpened',
+    '存储': 'FolderOpened',
+    '配置': 'SetUp',
+    '迁移': 'Sort',
+    '设置': 'Tools',
+    '系统': 'Setting',
+    '版本': 'Document',
+    '监控': 'Monitor',
+    'SQL': 'DataAnalysis',
+    '个人': 'User',
+    '编辑': 'Edit',
+    '修改': 'EditPen',
+    '密码': 'EditPen'
+  }
+  
+  // 从标题中匹配关键词
+  for (const [keyword, icon] of Object.entries(titleKeywords)) {
+    if (title.includes(keyword)) {
+      return icon
+    }
+  }
+  
+  // 默认图标
+  return 'Document'
+}
+
+// 智能面包屑生成函数
+const generateBreadcrumb = (path, title) => {
+  // 特殊路径的面包屑映射（单层级页面）
+  const singleLevelPages = {
+    '/dashboard': '仪表板',
+    '/user': '用户管理',
+    '/notification': '通知管理'
+  }
+  
+  if (singleLevelPages[path]) {
+    return singleLevelPages[path]
+  }
+  
+  // 路径段到父级模块名称的映射
+  const moduleNames = {
+    'interview': '面试题目管理',
+    'knowledge': '知识图谱管理', 
+    'community': '社区管理',
+    'moments': '朋友圈管理',
+    'logs': '日志管理',
+    'sensitive': '敏感词管理',
+    'filestorage': '文件存储管理',
+    'system': '系统管理',
+    'profile': '个人中心'
+  }
+  
+  // 特殊子模块的映射
+  const subModuleNames = {
+    'monitor': '系统监控'
+  }
+  
+  // 分解路径构建面包屑
+  const pathSegments = path.split('/').filter(segment => segment !== '')
+  const breadcrumbParts = []
+  
+  // 构建层级结构
+  for (let i = 0; i < pathSegments.length - 1; i++) {
+    const segment = pathSegments[i]
+    
+    // 检查是否是已知的模块
+    if (moduleNames[segment]) {
+      breadcrumbParts.push(moduleNames[segment])
+    } else if (subModuleNames[segment]) {
+      breadcrumbParts.push(subModuleNames[segment])
+    }
+  }
+  
+  // 添加当前页面标题
+  breadcrumbParts.push(title)
+  
+  return breadcrumbParts.join(' > ')
+}
+
+// 动态生成菜单项
+const generateMenuItems = () => {
+  const menuItems = []
+  
+  // 获取所有路由
+  const allRoutes = router.getRoutes()
+  
+  // 过滤并处理路由
+  allRoutes.forEach(route => {
+    // 跳过特殊路由
+    if (route.path === '/login' || 
+        route.name === 'NotFound' || 
+        route.path === '/:pathMatch(.*)*' ||
+        !route.meta?.title) {
+      return
+    }
+    
+    // 构建菜单项
+    const menuItem = {
+      path: route.path,
+      title: route.meta.title,
+      icon: getIconByPath(route.path, route.meta.title),
+      breadcrumb: generateBreadcrumb(route.path, route.meta.title)
+    }
+    
+    menuItems.push(menuItem)
+  })
+  
+  // 去重（防止重复路由）
+  const uniqueMenuItems = menuItems.filter((item, index, self) => 
+    index === self.findIndex(t => t.path === item.path)
+  )
+  
+  // 排序（将常用功能放在前面）
+  const sortOrder = [
+    '/dashboard', '/user', '/system/version', '/notification'
+  ]
+  
+  uniqueMenuItems.sort((a, b) => {
+    const aIndex = sortOrder.indexOf(a.path)
+    const bIndex = sortOrder.indexOf(b.path)
+    
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex
+    } else if (aIndex !== -1) {
+      return -1
+    } else if (bIndex !== -1) {
+      return 1
+    } else {
+      return a.title.localeCompare(b.title)
+    }
+  })
+  
+  return uniqueMenuItems
+}
+
+// 获取动态菜单项
+const menuItems = computed(() => generateMenuItems())
+
 // 切换侧边栏
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
 }
+
+// 过滤后的菜单项
+const filteredMenuItems = computed(() => {
+  if (!searchKeyword.value.trim()) {
+    return []
+  }
+  
+  const query = searchKeyword.value.toLowerCase().trim()
+  return menuItems.value.filter(item => 
+    item.title.toLowerCase().includes(query) ||
+    item.breadcrumb.toLowerCase().includes(query)
+  ).slice(0, 10) // 限制显示10个结果
+})
+
+// 处理菜单选择
+const handleMenuSelect = (item) => {
+  router.push(item.path)
+  searchKeyword.value = ''
+}
+
+// 处理搜索输入
+const handleSearchInput = () => {
+  // 输入时的实时处理，现在主要依靠computed自动更新
+}
+
+// 处理搜索框回车
+const handleSearchEnter = () => {
+  if (filteredMenuItems.value.length > 0) {
+    handleMenuSelect(filteredMenuItems.value[0])
+  }
+}
+
+// 展开侧边栏并聚焦搜索
+const expandAndFocusSearch = () => {
+  if (collapsed.value) {
+    collapsed.value = false
+    // 等待DOM更新后聚焦搜索框
+    setTimeout(() => {
+      if (searchInput.value) {
+        searchInput.value.focus()
+      }
+    }, 300)
+  }
+}
+
+// 键盘快捷键处理
+const handleKeyDown = (event) => {
+  // Ctrl+K 或 Cmd+K 唤起搜索
+  if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+    event.preventDefault()
+    
+    // 如果侧边栏折叠，先展开
+    if (collapsed.value) {
+      expandAndFocusSearch()
+    } else if (searchInput.value) {
+      searchInput.value.focus()
+    }
+  }
+  // Escape 清空搜索
+  if (event.key === 'Escape' && searchKeyword.value) {
+    searchKeyword.value = ''
+  }
+}
+
+// 生命周期
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
 
 // 处理用户下拉菜单命令
 const handleUserCommand = async (command) => {
@@ -327,6 +687,9 @@ const handleUserCommand = async (command) => {
 .sidebar {
   background-color: #001529;
   transition: width 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .logo {
@@ -381,6 +744,8 @@ const handleUserCommand = async (command) => {
 .sidebar-menu {
   border: none;
   background-color: #001529;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .sidebar-menu :deep(.el-menu-item) {
@@ -414,5 +779,178 @@ const handleUserCommand = async (command) => {
 .page-container {
   height: 100%;
   overflow: auto;
+}
+
+/* 侧边栏搜索输入框容器 */
+.sidebar-search-input-wrapper {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0; /* 防止搜索区域被压缩 */
+}
+
+.sidebar-search-input {
+  width: 100%;
+}
+
+.sidebar-search :deep(.el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-search :deep(.el-input__wrapper:hover) {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-search :deep(.el-input__wrapper.is-focus) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.sidebar-search :deep(.el-input__inner) {
+  color: white;
+  font-size: 13px;
+}
+
+.sidebar-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar-search :deep(.el-input__prefix) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 搜索结果容器 - 占用菜单区域的空间 */
+.search-results-container {
+  flex: 1; /* 占用剩余空间，和菜单区域一样 */
+  overflow-y: auto;
+  padding: 0 16px 16px 16px;
+}
+
+/* 搜索结果区域 */
+.search-results {
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 搜索结果滚动条样式 */
+.search-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.search-results-header {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.search-result-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-icon {
+  margin-right: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.search-result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-path {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 无搜索结果 */
+.search-no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.no-results-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.no-results-text {
+  font-size: 12px;
+}
+
+/* 折叠状态下的搜索按钮 */
+.sidebar-search-collapsed {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.3s ease;
+}
+
+.search-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
 }
 </style> 

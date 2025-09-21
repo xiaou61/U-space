@@ -88,6 +88,13 @@
             <artifactId>xiaou-knowledge</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- 引入version模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-version</artifactId>
+            <version>${revision}</version>
+        </dependency>
         
         <!-- Mysql驱动包 -->
         <dependency>

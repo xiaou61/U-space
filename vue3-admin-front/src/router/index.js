@@ -227,6 +227,12 @@ const routes = [
         name: 'SqlMonitor',
         component: () => import('@/views/system/monitor/SqlMonitor.vue'),
         meta: { title: 'SQL监控' }
+      },
+      {
+        path: 'version',
+        name: 'VersionManagement',
+        component: () => import('@/views/system/version/index.vue'),
+        meta: { title: '版本管理' }
       }
     ]
   },

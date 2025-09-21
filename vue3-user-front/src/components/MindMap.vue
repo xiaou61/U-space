@@ -116,11 +116,20 @@ const selectedNode = ref(null)
 const selectedNodeInfo = ref(null)
 
 // Methods
+// 检测是否为移动设备
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         ('ontouchstart' in window) || 
+         (navigator.maxTouchPoints > 0)
+}
+
 const initGraph = () => {
   if (!containerRef.value) return
   
   const container = document.getElementById(containerId.value)
   if (!container) return
+
+  console.log('初始化G6图实例，是否为移动设备:', isMobileDevice()) // 调试日志
 
   // 创建G6图实例 - G6 v4 API
   try {
@@ -136,8 +145,24 @@ const initGraph = () => {
         ranksep: 50
       },
       modes: {
-        default: ['zoom-canvas', 'drag-canvas', 'drag-node']
+        default: [
+          'zoom-canvas', 
+          'drag-canvas', 
+          'drag-node',
+          {
+            type: 'tooltip',
+            formatText: (model) => {
+              return model.label || model.title || '节点'
+            }
+          }
+        ]
       },
+      // 移动端触摸支持
+      fitView: true,
+      animate: true,
+      enabledStack: true,
+      maxZoom: 5,
+      minZoom: 0.1,
       defaultNode: {
         type: 'rect',
         size: [100, 40],
@@ -195,8 +220,8 @@ const initGraph = () => {
     return
   }
 
-  // 事件监听
-  graph.value.on('node:click', (event) => {
+  // 事件监听 - 同时监听点击和触摸事件
+  const handleNodeInteraction = (event) => {
     try {
       const { item } = event
       const nodeData = item.getModel()
@@ -209,21 +234,32 @@ const initGraph = () => {
       }
       graph.value.setItemState(item, 'selected', true)
       
+      console.log('G6节点交互事件:', nodeData) // 调试日志
       emit('node-click', nodeData)
     } catch (error) {
-      console.warn('节点点击事件处理错误:', error)
+      console.warn('节点交互事件处理错误:', error)
     }
-  })
+  }
+  
+  // 绑定多种事件以确保移动端兼容性
+  graph.value.on('node:click', handleNodeInteraction)
+  graph.value.on('node:tap', handleNodeInteraction) // 移动端tap事件
+  graph.value.on('node:touchstart', handleNodeInteraction) // 触摸开始事件
 
-  graph.value.on('node:dblclick', (event) => {
+  // 双击/双触摸事件
+  const handleNodeDoubleInteraction = (event) => {
     try {
       const { item } = event
       const nodeData = item.getModel()
+      console.log('G6节点双击/双触摸事件:', nodeData) // 调试日志
       emit('node-dblclick', nodeData)
     } catch (error) {
       console.warn('节点双击事件处理错误:', error)
     }
-  })
+  }
+  
+  graph.value.on('node:dblclick', handleNodeDoubleInteraction)
+  graph.value.on('node:dbltap', handleNodeDoubleInteraction) // 移动端双击事件
 
   graph.value.on('canvas:click', () => {
     if (selectedNode.value) {
@@ -238,8 +274,51 @@ const initGraph = () => {
     currentZoom.value = graph.value.getZoom()
   })
 
+  // 移动端备选事件监听 - 直接在DOM上监听
+  if (isMobileDevice()) {
+    console.log('添加移动端DOM事件监听') // 调试日志
+    const canvas = container.querySelector('canvas')
+    if (canvas) {
+      // 触摸事件处理
+      canvas.addEventListener('touchstart', (e) => {
+        console.log('Canvas touchstart事件触发') // 调试日志
+        handleCanvasTouchStart(e)
+      }, { passive: false })
+      
+      canvas.addEventListener('click', (e) => {
+        console.log('Canvas click事件触发') // 调试日志
+        handleCanvasClick(e)
+      })
+    }
+  }
+
   // 加载数据
   loadData()
+}
+
+// 处理canvas触摸开始事件
+const handleCanvasTouchStart = (e) => {
+  const touch = e.touches[0]
+  const point = graph.value.getPointByClient(touch.clientX, touch.clientY)
+  const item = graph.value.getItemAt(point.x, point.y)
+  
+  if (item && item.getType() === 'node') {
+    console.log('通过Canvas触摸找到节点:', item.getModel()) // 调试日志
+    const nodeData = item.getModel()
+    emit('node-click', nodeData)
+  }
+}
+
+// 处理canvas点击事件
+const handleCanvasClick = (e) => {
+  const point = graph.value.getPointByClient(e.clientX, e.clientY)
+  const item = graph.value.getItemAt(point.x, point.y)
+  
+  if (item && item.getType() === 'node') {
+    console.log('通过Canvas点击找到节点:', item.getModel()) // 调试日志
+    const nodeData = item.getModel()
+    emit('node-click', nodeData)
+  }
 }
 
 const loadData = () => {
@@ -297,7 +376,8 @@ const formatData = (rawData) => {
         shadowColor: `${colorInfo.stroke}30`,
         shadowBlur: 6,
         shadowOffsetX: 2,
-        shadowOffsetY: 2
+        shadowOffsetY: 2,
+        cursor: 'pointer' // 确保显示可点击状态
       },
       // 保存原始数据
       nodeType: nodeType,
@@ -447,7 +527,8 @@ defineExpose({
   zoomIn,
   zoomOut,
   resetZoom,
-  refresh: loadData
+  refresh: loadData,
+  isMobileDevice // 暴露移动设备检测方法
 })
 </script>
 
@@ -566,6 +647,14 @@ defineExpose({
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .mindmap-canvas {
+    /* 确保在移动端可以正常触摸 */
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
   .node-panel {
     width: 95vw;
     max-height: 85vh;
@@ -586,6 +675,11 @@ defineExpose({
   .node-description p {
     font-size: 14px;
   }
+}
+
+/* 移动端触摸优化 */
+.mindmap-canvas * {
+  touch-action: manipulation;
 }
 
 /* 覆盖Element Plus样式 */

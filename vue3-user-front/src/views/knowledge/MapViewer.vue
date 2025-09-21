@@ -77,7 +77,8 @@
     <el-dialog
       v-model="showNodeDetail"
       :title="selectedNode?.title || '节点详情'"
-      width="1200px"
+      :width="isMobile ? '95%' : '1200px'"
+      :fullscreen="isMobile"
       class="node-detail-dialog"
       @close="handleCloseDetail"
     >
@@ -101,7 +102,7 @@
             :src="selectedNode.url" 
             frameborder="0" 
             width="100%" 
-            height="800px"
+            :height="isMobile ? '60vh' : '800px'"
             sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
           ></iframe>
         </div>
@@ -211,6 +212,14 @@ const showNodeDetail = ref(false)
 const showSearchResults = ref(false)
 const searchKeyword = ref('')
 const searchResults = ref([])
+
+// 移动端检测
+const isMobile = ref(false)
+
+// 检测设备类型
+const checkDevice = () => {
+  isMobile.value = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
 
 // 组件ref
 const mindMapRef = ref()
@@ -444,23 +453,28 @@ const initMindMap = () => {
 }
 
 const handleNodeClick = (nodeData) => {
+  console.log('节点点击事件触发:', nodeData) // 添加调试日志
+  
   // 如果直接传入了完整节点数据，就直接使用
   let fullNode = nodeData
   
   // 如果传入的是G6格式的数据，需要从扁平化列表中查找
-      if (nodeData.id && !nodeData.url) {
+  if (nodeData.id && !nodeData.url) {
     fullNode = flatNodeList.value.find(n => n.id.toString() === nodeData.id.toString())
   }
   
   if (fullNode) {
     selectedNode.value = fullNode
     selectedNodeIndex.value = flatNodeList.value.findIndex(n => n.id === fullNode.id)
-    showNodeDetail.value = true
+    
+    // 延迟一帧确保在移动端正确显示
+    nextTick(() => {
+      showNodeDetail.value = true
+      console.log('弹框应该显示了:', showNodeDetail.value) // 添加调试日志
+    })
     
     // 处理图片加载
     handleImageLoading()
-    
-
   }
 }
 
@@ -576,8 +590,19 @@ const handleImageLoading = () => {
 
 // 生命周期
 onMounted(async () => {
+  // 初始化设备检测
+  checkDevice()
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', checkDevice)
+  
   await fetchMapInfo()
   await fetchNodeTree()
+})
+
+onUnmounted(() => {
+  // 清理事件监听
+  window.removeEventListener('resize', checkDevice)
 })
 
 // 监听路由变化
@@ -1147,6 +1172,26 @@ onMounted(() => {
     width: 100%;
     justify-content: space-between;
   }
+  
+  /* 移动端弹框优化 */
+  .node-detail-dialog {
+    margin: 0 !important;
+  }
+  
+  .document-content {
+    height: auto !important;
+    min-height: 60vh;
+  }
+  
+  .node-content {
+    padding: 10px !important;
+  }
+  
+  .node-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 /* Element Plus 样式覆盖 */
@@ -1158,5 +1203,25 @@ onMounted(() => {
   margin-bottom: 0;
   padding-bottom: 16px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+/* 移动端弹框样式优化 */
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    margin: 0 !important;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 10px !important;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+  
+  :deep(.el-dialog__footer) {
+    padding: 10px !important;
+    border-top: 1px solid #f0f0f0;
+  }
 }
 </style> 

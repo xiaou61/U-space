@@ -75,6 +75,14 @@
             <h3>个人中心</h3>
             <p>管理个人信息和设置</p>
           </div>
+
+          <div class="feature-card" @click="goToVersionHistory">
+            <div class="feature-icon">
+              <el-icon size="48"><Calendar /></el-icon>
+            </div>
+            <h3>版本历史</h3>
+            <p>了解产品发展历程和功能演进</p>
+          </div>
         </div>
       </div>
     </div>
@@ -88,7 +96,7 @@ import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  User, SwitchButton, Document, ChatDotRound, Bell, Picture, DataAnalysis 
+  User, SwitchButton, Document, ChatDotRound, Bell, Picture, DataAnalysis, Calendar 
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -134,6 +142,11 @@ const goToNotification = () => {
 // 跳转到个人中心
 const goToProfile = () => {
   router.push('/profile')
+}
+
+// 跳转到版本历史
+const goToVersionHistory = () => {
+  router.push('/version-history')
 }
 
 // 退出登录
