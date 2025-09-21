@@ -1,12 +1,6 @@
 <template>
   <div class="moments-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-button @click="goToHome" type="primary" plain icon="ArrowLeft">
-        返回首页
-      </el-button>
-      <h2 class="page-title">朋友圈</h2>
-    </div>
+
     
     <!-- 发布动态区域 -->
     <el-card class="publish-card">
@@ -61,7 +55,6 @@
                 v-for="(image, index) in moment.images" 
                 :key="index" 
                 class="image-item"
-                :class="getImageClass(moment.images.length)"
                 @click="previewImage(moment.images, index)"
               >
                 <el-image
@@ -175,7 +168,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus'
-import { Star, ChatDotRound, MoreFilled, ArrowLeft } from '@element-plus/icons-vue'
+import { Star, ChatDotRound, MoreFilled } from '@element-plus/icons-vue'
 import { getMomentList, toggleLike, deleteMoment as deleteMomentApi, deleteComment as deleteCommentApi } from '@/api/moment'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
@@ -246,10 +239,7 @@ const loadMomentList = async (page = 1) => {
   }
 }
 
-// 返回首页
-const goToHome = () => {
-  router.push('/')
-}
+
 
 // 加载更多
 const loadMore = () => {
@@ -384,14 +374,7 @@ const closeImageViewer = () => {
   imageViewerVisible.value = false
 }
 
-// 获取图片网格类名
-const getImageClass = (count) => {
-  if (count === 1) return 'single'
-  if (count === 2) return 'double'
-  if (count === 3) return 'triple'
-  if (count === 4) return 'four'
-  return 'multiple'
-}
+
 
 onMounted(() => {
   loadMomentList()
@@ -400,28 +383,15 @@ onMounted(() => {
 
 <style scoped>
 .moments-page {
-  max-width: 800px;
-  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #f5f5f5;
   padding: 20px;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #ebeef5;
-}
 
-.page-title {
-  margin: 0;
-  color: #303133;
-  font-size: 20px;
-  font-weight: 600;
-}
 
 .publish-card {
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 
@@ -479,41 +449,19 @@ onMounted(() => {
 }
 
 .images-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 15px;
-}
-
-.images-grid.single {
-  grid-template-columns: 1fr;
-  max-width: 400px;
-}
-
-.images-grid.double {
-  grid-template-columns: 1fr 1fr;
-  max-width: 400px;
-}
-
-.images-grid.triple {
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 300px;
-}
-
-.images-grid.four {
-  grid-template-columns: 1fr 1fr;
-  max-width: 300px;
-}
-
-.images-grid.multiple {
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 300px;
+  max-width: 360px;
 }
 
 .image-item {
   cursor: pointer;
   border-radius: 8px;
   overflow: hidden;
-  aspect-ratio: 1;
+  width: 116px;
+  height: 116px;
 }
 
 .moment-image {
@@ -585,5 +533,17 @@ onMounted(() => {
 
 :deep(.el-textarea__inner) {
   resize: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .images-grid {
+    max-width: 300px;
+  }
+  
+  .image-item {
+    width: 96px;
+    height: 96px;
+  }
 }
 </style> 

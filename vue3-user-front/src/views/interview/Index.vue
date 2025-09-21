@@ -1,52 +1,38 @@
 <template>
   <div class="interview-index">
-    <!-- 头部导航 -->
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h2>面试题库</h2>
-          <p>精选面试题，助力求职成功</p>
-        </div>
-        <div class="header-right">
-          <el-button type="warning" @click="goToRandomQuestions" :icon="Refresh">
-            随机抽题
-          </el-button>
-          <el-button type="primary" @click="goToFavorites" :icon="Star">
-            我的收藏
-          </el-button>
-          <el-button @click="goToMoments" :icon="Picture">
-            朋友圈
-          </el-button>
-          <el-button @click="goBack" :icon="Back">
-            返回首页
-          </el-button>
-        </div>
-      </div>
-    </div>
-
     <!-- 分类导航 -->
     <div class="category-nav">
       <el-card shadow="never" class="category-card">
-        <div class="category-tabs">
-          <el-button 
-            :type="currentCategoryId === null ? 'primary' : ''"
-            :plain="currentCategoryId !== null"
-            @click="selectCategory(null)"
-          >
-            全部分类
-          </el-button>
-          <el-button 
-            v-for="category in categoryList" 
-            :key="category.id"
-            :type="currentCategoryId === category.id ? 'primary' : ''"
-            :plain="currentCategoryId !== category.id"
-            @click="selectCategory(category.id)"
-          >
-            {{ category.name }}
-            <el-tag v-if="category.questionSetCount > 0" type="info" size="small" style="margin-left: 6px;">
-              {{ category.questionSetCount }}
-            </el-tag>
-          </el-button>
+        <div class="category-content">
+          <div class="category-tabs">
+            <el-button 
+              :type="currentCategoryId === null ? 'primary' : ''"
+              :plain="currentCategoryId !== null"
+              @click="selectCategory(null)"
+            >
+              全部分类
+            </el-button>
+            <el-button 
+              v-for="category in categoryList" 
+              :key="category.id"
+              :type="currentCategoryId === category.id ? 'primary' : ''"
+              :plain="currentCategoryId !== category.id"
+              @click="selectCategory(category.id)"
+            >
+              {{ category.name }}
+              <el-tag v-if="category.questionSetCount > 0" type="info" size="small" style="margin-left: 6px;">
+                {{ category.questionSetCount }}
+              </el-tag>
+            </el-button>
+          </div>
+          <div class="category-actions">
+            <el-button type="warning" @click="goToRandomQuestions" :icon="Refresh">
+              随机抽题
+            </el-button>
+            <el-button type="primary" @click="goToFavorites" :icon="Star">
+              我的收藏
+            </el-button>
+          </div>
         </div>
       </el-card>
     </div>
@@ -159,7 +145,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Back, Edit, View, Collection, Refresh, Picture
+  Search, Star, Edit, View, Collection, Refresh
 } from '@element-plus/icons-vue'
 import { useInterviewStore } from '@/stores/interview'
 
@@ -260,15 +246,7 @@ const goToFavorites = () => {
   router.push('/interview/favorites')
 }
 
-// 返回首页
-const goBack = () => {
-  router.push('/')
-}
 
-// 跳转到朋友圈
-const goToMoments = () => {
-  router.push('/moments')
-}
 
 // 跳转到随机抽题页面
 const goToRandomQuestions = () => {
@@ -289,39 +267,15 @@ onMounted(async () => {
   padding: 20px;
 }
 
-.header {
+
+
+
+.category-nav {
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-}
-
-.header-left h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.header-left p {
-  margin: 0;
-  opacity: 0.9;
-  font-size: 16px;
-}
-
-.header-right {
-  display: flex;
-  gap: 12px;
-}
-
-.category-nav, .search-section, .content-section {
+.search-section, .content-section {
   margin-bottom: 20px;
 }
 
@@ -330,10 +284,24 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
+.category-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
 .category-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  flex: 1;
+}
+
+.category-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .search-card {
@@ -445,17 +413,22 @@ onMounted(async () => {
     padding: 10px;
   }
   
-  .header-content {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-  
+
   .question-sets-grid {
     grid-template-columns: 1fr;
   }
   
+  .category-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
   .category-tabs {
+    justify-content: center;
+  }
+  
+  .category-actions {
     justify-content: center;
   }
 }

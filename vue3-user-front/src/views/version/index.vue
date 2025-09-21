@@ -1,71 +1,5 @@
 <template>
   <div class="version-history">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">📅 版本更新历史</h1>
-        <p class="page-subtitle">了解我们的产品发展历程和功能演进轨迹</p>
-      </div>
-    </div>
-
-    <!-- 搜索筛选区 -->
-    <div class="search-section">
-      <el-card shadow="never">
-        <el-row :gutter="20" align="middle">
-          <el-col :xs="24" :sm="8" :md="6">
-            <el-input
-              v-model="searchForm.keyword"
-              placeholder="🔍 搜索版本号、标题或描述"
-              clearable
-              @keyup.enter="handleSearch"
-              @clear="handleSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-          </el-col>
-          <el-col :xs="12" :sm="6" :md="4">
-            <el-select
-              v-model="searchForm.updateType"
-              placeholder="更新类型"
-              clearable
-              @change="handleSearch"
-            >
-              <el-option label="全部类型" :value="null" />
-              <el-option label="🚀 重大更新" :value="1" />
-              <el-option label="✨ 功能更新" :value="2" />
-              <el-option label="🐛 修复更新" :value="3" />
-              <el-option label="📋 其他" :value="4" />
-            </el-select>
-          </el-col>
-          <el-col :xs="12" :sm="6" :md="4">
-            <el-select
-              v-model="searchForm.isFeatured"
-              placeholder="筛选类型"
-              clearable
-              @change="handleSearch"
-            >
-              <el-option label="全部版本" :value="null" />
-              <el-option label="💎 重点推荐" :value="1" />
-              <el-option label="📝 普通版本" :value="0" />
-            </el-select>
-          </el-col>
-          <el-col :xs="24" :sm="4" :md="3">
-            <el-button type="primary" @click="handleSearch" :loading="loading">
-              搜索
-            </el-button>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="7">
-            <div class="stats-info">
-              <el-icon><InfoFilled /></el-icon>
-              <span>共 {{ pagination.total }} 个版本</span>
-            </div>
-          </el-col>
-        </el-row>
-      </el-card>
-    </div>
-
     <!-- 版本时间轴 -->
     <div class="timeline-section">
       <div v-if="loading" class="loading-container">
@@ -197,7 +131,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, InfoFilled, Calendar, View, Document, Share
+  Calendar, View, Document, Share
 } from '@element-plus/icons-vue'
 import { versionApi } from '@/api/version'
 
@@ -213,12 +147,7 @@ const pagination = reactive({
   total: 0
 })
 
-// 搜索表单
-const searchForm = reactive({
-  keyword: '',
-  updateType: null,
-  isFeatured: null
-})
+
 
 // 计算属性
 const hasMore = computed(() => {
@@ -243,7 +172,6 @@ const loadVersionList = async (isLoadMore = false) => {
     }
     
     const params = {
-      ...searchForm,
       pageNum: pagination.pageNum,
       pageSize: pagination.pageSize
     }
@@ -266,10 +194,7 @@ const loadVersionList = async (isLoadMore = false) => {
   }
 }
 
-// 搜索
-const handleSearch = () => {
-  loadVersionList()
-}
+
 
 // 加载更多
 const loadMore = () => {
@@ -382,44 +307,36 @@ const getUpdateTypeTagType = (type) => {
 
 <style scoped>
 .version-history {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #f5f7fa;
+  padding: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
   min-height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 40px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  color: white;
+.version-history::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(24, 144, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(24, 144, 255, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.page-title {
-  font-size: 2.5rem;
-  margin: 0 0 10px 0;
-  font-weight: 700;
+.version-history > * {
+  position: relative;
+  z-index: 1;
 }
 
-.page-subtitle {
-  font-size: 1.1rem;
-  margin: 0;
-  opacity: 0.9;
-}
 
-.search-section {
-  margin-bottom: 30px;
-}
 
-.stats-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #666;
-  font-size: 14px;
+.timeline-section {
+  padding: 20px 0;
 }
 
 .loading-container,
@@ -429,17 +346,45 @@ const getUpdateTypeTagType = (type) => {
 
 .timeline-container {
   position: relative;
-  padding-left: 40px;
+  padding: 60px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-left: 60px;
+  opacity: 0;
+  animation: container-fade-in 1.2s ease-out 0.3s both;
+}
+
+@keyframes container-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .timeline-container::before {
   content: '';
   position: absolute;
-  left: 15px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(180deg, #e6f7ff 0%, #1890ff 50%, #e6f7ff 100%);
+  left: 35px;
+  top: 60px;
+  bottom: 60px;
+  width: 4px;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    #e6f7ff 8%, 
+    #1890ff 20%, 
+    #40a9ff 50%, 
+    #1890ff 80%, 
+    #e6f7ff 92%, 
+    transparent 100%
+  );
+  border-radius: 3px;
+  box-shadow: 
+    0 0 15px rgba(24, 144, 255, 0.4),
+    inset 0 0 3px rgba(255, 255, 255, 0.5);
 }
 
 .timeline-item {
@@ -447,6 +392,11 @@ const getUpdateTypeTagType = (type) => {
   margin-bottom: 40px;
   display: flex;
   align-items: flex-start;
+  opacity: 0;
+  transform: translateY(50px);
+  animation: timeline-fade-in linear;
+  animation-timeline: view();
+  animation-range: entry 0% entry 70%;
 }
 
 .timeline-item.featured .version-card {
@@ -456,7 +406,7 @@ const getUpdateTypeTagType = (type) => {
 
 .timeline-marker {
   position: absolute;
-  left: -32px;
+  left: -52px;
   z-index: 2;
 }
 
@@ -470,6 +420,26 @@ const getUpdateTypeTagType = (type) => {
   color: white;
   font-size: 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.marker-dot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.3s ease;
+}
+
+.marker-dot:hover::before {
+  transform: scale(1);
 }
 
 .marker-emoji {
@@ -506,8 +476,15 @@ const getUpdateTypeTagType = (type) => {
 }
 
 .version-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+.version-card:hover .marker-dot {
+  transform: scale(1.3);
+  animation: none;
+  box-shadow: 0 0 0 8px rgba(24, 144, 255, 0.2);
 }
 
 .version-header {
@@ -621,22 +598,117 @@ const getUpdateTypeTagType = (type) => {
   box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
 }
 
+/* 滚动动画效果 */
+@keyframes timeline-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes line-draw {
+  from {
+    height: 0;
+  }
+  to {
+    height: 100%;
+  }
+}
+
+@keyframes marker-pulse {
+  from {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes card-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 支持现代浏览器的动画 */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .timeline-item {
+      opacity: 0;
+      animation: timeline-fade-in linear;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    
+    .marker-dot {
+      animation: marker-pulse ease-in-out;
+      animation-timeline: view();
+      animation-range: entry 0% entry 50%;
+    }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .timeline-item {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    
+    .marker-dot {
+      animation: none;
+    }
+    
+    .timeline-container {
+      animation: none;
+      opacity: 1;
+    }
+  }
+}
+
+/* 降级方案：不支持view()的浏览器 */
+@supports not (animation-timeline: view()) {
+  .timeline-item {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  
+  .timeline-item:nth-child(even) {
+    animation: timeline-fade-in 0.8s ease-out 0.1s both;
+  }
+  
+  .timeline-item:nth-child(odd) {
+    animation: timeline-fade-in 0.8s ease-out 0.3s both;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .version-history {
-    padding: 10px;
-  }
-  
-  .page-title {
-    font-size: 2rem;
+    padding: 0;
   }
   
   .timeline-container {
-    padding-left: 25px;
+    padding: 40px 15px;
+    padding-left: 45px;
+  }
+  
+  .timeline-container::before {
+    left: 20px;
+    width: 3px;
   }
   
   .timeline-marker {
-    left: -20px;
+    left: -37px;
   }
   
   .marker-dot {
@@ -666,16 +738,19 @@ const getUpdateTypeTagType = (type) => {
 }
 
 @media (max-width: 480px) {
-  .page-header {
-    padding: 30px 15px;
-    margin: 0 -10px 30px;
-    border-radius: 0;
-  }
-  
   .version-number-line {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  
+  .timeline-item {
+    transform: translateX(-10px) translateY(30px);
+    animation-range: entry 0% entry 80%;
+  }
+  
+  .version-card:hover {
+    transform: translateY(-4px) scale(1.01);
   }
 }
 </style> 
