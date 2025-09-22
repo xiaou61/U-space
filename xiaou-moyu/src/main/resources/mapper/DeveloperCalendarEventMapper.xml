@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.DeveloperCalendarEventMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.DeveloperCalendarEvent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="event_name" property="eventName" jdbcType="VARCHAR"/>
+        <result column="event_date" property="eventDate" jdbcType="VARCHAR"/>
+        <result column="event_type" property="eventType" jdbcType="TINYINT"/>
+        <result column="description" property="description" jdbcType="LONGVARCHAR"/>
+        <result column="icon" property="icon" jdbcType="VARCHAR"/>
+        <result column="color" property="color" jdbcType="VARCHAR"/>
+        <result column="is_major" property="isMajor" jdbcType="TINYINT"/>
+        <result column="blessing_text" property="blessingText" jdbcType="LONGVARCHAR"/>
+        <result column="related_links" property="relatedLinks" jdbcType="LONGVARCHAR"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, event_name, event_date, event_type, description, icon, color, is_major,
+        blessing_text, related_links, sort_order, status, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询事件 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据日期查询事件列表 -->
+    <select id="selectByEventDate" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE event_date = #{eventDate}
+          AND status = 1
+        ORDER BY is_major DESC, sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 查询指定月份的所有事件 -->
+    <select id="selectByMonth" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE event_date LIKE CONCAT(#{month}, '%')
+          AND status = 1
+        ORDER BY event_date ASC, is_major DESC, sort_order ASC
+    </select>
+
+    <!-- 根据事件类型查询事件列表 -->
+    <select id="selectByEventType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE event_type = #{eventType}
+          AND status = #{status}
+        ORDER BY event_date ASC, is_major DESC, sort_order ASC
+    </select>
+
+    <!-- 查询所有启用的事件 -->
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE status = 1
+        ORDER BY event_date ASC, is_major DESC, sort_order ASC
+    </select>
+
+    <!-- 查询重要节日列表 -->
+    <select id="selectMajorEvents" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE is_major = 1
+          AND status = 1
+        ORDER BY event_date ASC, sort_order ASC
+    </select>
+
+    <!-- 插入事件 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO developer_calendar_event (
+            event_name, event_date, event_type, description, icon, color,
+            is_major, blessing_text, related_links, sort_order, status
+        ) VALUES (
+            #{eventName}, #{eventDate}, #{eventType}, #{description}, #{icon}, #{color},
+            #{isMajor}, #{blessingText}, #{relatedLinks}, #{sortOrder}, #{status}
+        )
+    </insert>
+
+    <!-- 根据ID更新事件 -->
+    <update id="updateById">
+        UPDATE developer_calendar_event SET
+            event_name = #{eventName},
+            event_date = #{eventDate},
+            event_type = #{eventType},
+            description = #{description},
+            icon = #{icon},
+            color = #{color},
+            is_major = #{isMajor},
+            blessing_text = #{blessingText},
+            related_links = #{relatedLinks},
+            sort_order = #{sortOrder},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除事件 -->
+    <delete id="deleteById">
+        DELETE FROM developer_calendar_event WHERE id = #{id}
+    </delete>
+
+    <!-- 统计事件总数 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM developer_calendar_event WHERE status = #{status}
+    </select>
+
+</mapper>

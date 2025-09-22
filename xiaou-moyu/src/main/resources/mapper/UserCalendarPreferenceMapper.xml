@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.UserCalendarPreferenceMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.UserCalendarPreference">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="event_reminder" property="eventReminder" jdbcType="TINYINT"/>
+        <result column="daily_content_push" property="dailyContentPush" jdbcType="TINYINT"/>
+        <result column="preferred_languages" property="preferredLanguages" jdbcType="LONGVARCHAR"/>
+        <result column="preferred_content_types" property="preferredContentTypes" jdbcType="LONGVARCHAR"/>
+        <result column="difficulty_preference" property="difficultyPreference" jdbcType="TINYINT"/>
+        <result column="notification_time" property="notificationTime" jdbcType="TIME"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, event_reminder, daily_content_push, preferred_languages,
+        preferred_content_types, difficulty_preference, notification_time,
+        status, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询偏好设置 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_calendar_preference
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 插入偏好设置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_calendar_preference (
+            user_id, event_reminder, daily_content_push, preferred_languages,
+            preferred_content_types, difficulty_preference, notification_time, status
+        ) VALUES (
+            #{userId}, #{eventReminder}, #{dailyContentPush}, #{preferredLanguages},
+            #{preferredContentTypes}, #{difficultyPreference}, #{notificationTime}, #{status}
+        )
+    </insert>
+
+    <!-- 根据用户ID更新偏好设置 -->
+    <update id="updateByUserId">
+        UPDATE user_calendar_preference SET
+            event_reminder = #{eventReminder},
+            daily_content_push = #{dailyContentPush},
+            preferred_languages = #{preferredLanguages},
+            preferred_content_types = #{preferredContentTypes},
+            difficulty_preference = #{difficultyPreference},
+            notification_time = #{notificationTime},
+            status = #{status},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据用户ID删除偏好设置 -->
+    <delete id="deleteByUserId">
+        DELETE FROM user_calendar_preference WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

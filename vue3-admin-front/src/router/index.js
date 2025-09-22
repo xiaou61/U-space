@@ -262,6 +262,32 @@ const routes = [
     ]
   },
   {
+    path: '/moyu',
+    component: Layout,
+    redirect: '/moyu/calendar-events',
+    meta: { title: '摸鱼工具管理' },
+    children: [
+      {
+        path: 'calendar-events',
+        name: 'MoyuCalendarEvents',
+        component: () => import('@/views/moyu/calendar-events/index.vue'),
+        meta: { title: '日历事件管理' }
+      },
+      {
+        path: 'daily-content',
+        name: 'MoyuDailyContent',
+        component: () => import('@/views/moyu/daily-content/index.vue'),
+        meta: { title: '每日内容管理' }
+      },
+      {
+        path: 'statistics',
+        name: 'MoyuStatistics',
+        component: () => import('@/views/moyu/statistics/index.vue'),
+        meta: { title: '统计分析' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

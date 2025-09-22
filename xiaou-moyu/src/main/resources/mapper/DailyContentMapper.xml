@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.DailyContentMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.DailyContent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="content_type" property="contentType" jdbcType="TINYINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
+        <result column="author" property="author" jdbcType="VARCHAR"/>
+        <result column="programming_language" property="programmingLanguage" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags" jdbcType="LONGVARCHAR"/>
+        <result column="difficulty_level" property="difficultyLevel" jdbcType="TINYINT"/>
+        <result column="source_url" property="sourceUrl" jdbcType="VARCHAR"/>
+        <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, content_type, title, content, author, programming_language, tags,
+        difficulty_level, source_url, view_count, like_count, status, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询内容 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据内容类型查询内容列表 -->
+    <select id="selectByContentType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE content_type = #{contentType}
+        <if test="status != null">
+          AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据编程语言查询内容列表 -->
+    <select id="selectByProgrammingLanguage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE programming_language = #{programmingLanguage}
+          AND status = #{status}
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据难度等级查询内容列表 -->
+    <select id="selectByDifficultyLevel" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE difficulty_level = #{difficultyLevel}
+          AND status = #{status}
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 随机获取指定类型的内容 -->
+    <select id="selectRandomByContentType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE content_type = #{contentType}
+          AND status = #{status}
+        ORDER BY RAND()
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据用户偏好查询推荐内容 -->
+    <select id="selectByUserPreference" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE status = #{status}
+        <if test="contentTypes != null and contentTypes.size > 0">
+            AND content_type IN
+            <foreach collection="contentTypes" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="programmingLanguages != null and programmingLanguages.size > 0">
+            AND (programming_language IS NULL OR programming_language IN
+            <foreach collection="programmingLanguages" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="difficultyLevel != null">
+            AND (difficulty_level IS NULL OR difficulty_level &lt;= #{difficultyLevel})
+        </if>
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询热门内容 -->
+    <select id="selectPopularContent" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE status = #{status}
+        ORDER BY view_count DESC, like_count DESC, create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 插入内容 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO daily_content (
+            content_type, title, content, author, programming_language, tags,
+            difficulty_level, source_url, view_count, like_count, status
+        ) VALUES (
+            #{contentType}, #{title}, #{content}, #{author}, #{programmingLanguage}, #{tags},
+            #{difficultyLevel}, #{sourceUrl}, #{viewCount}, #{likeCount}, #{status}
+        )
+    </insert>
+
+    <!-- 根据ID更新内容 -->
+    <update id="updateById">
+        UPDATE daily_content SET
+            content_type = #{contentType},
+            title = #{title},
+            content = #{content},
+            author = #{author},
+            programming_language = #{programmingLanguage},
+            tags = #{tags},
+            difficulty_level = #{difficultyLevel},
+            source_url = #{sourceUrl},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加查看次数 -->
+    <update id="incrementViewCount">
+        UPDATE daily_content SET
+            view_count = view_count + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="incrementLikeCount">
+        UPDATE daily_content SET
+            like_count = like_count + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除内容 -->
+    <delete id="deleteById">
+        DELETE FROM daily_content WHERE id = #{id}
+    </delete>
+
+    <!-- 统计内容总数 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM daily_content WHERE status = #{status}
+    </select>
+
+</mapper>

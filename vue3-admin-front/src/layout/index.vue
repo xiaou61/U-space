@@ -214,6 +214,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/moyu">
+            <template #title>
+              <el-icon><Coffee /></el-icon>
+              <span>摸鱼工具管理</span>
+            </template>
+            <el-menu-item index="/moyu/calendar-events">
+              <el-icon><Calendar /></el-icon>
+              <span>日历事件管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moyu/daily-content">
+              <el-icon><Document /></el-icon>
+              <span>每日内容管理</span>
+            </el-menu-item>
+            <el-menu-item index="/moyu/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>统计分析</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/system">
             <template #title>
               <el-icon><Setting /></el-icon>
@@ -402,6 +421,9 @@ const getIconByPath = (path, title = '') => {
     'file-management': 'Document',
     'migration': 'Sort',
     'system-settings': 'Tools',
+    'moyu': 'Coffee',
+    'calendar-events': 'Calendar',
+    'daily-content': 'Document',
     'system': 'Setting',
     'version': 'Document',
     'monitor': 'Monitor',
