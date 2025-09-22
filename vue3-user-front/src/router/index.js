@@ -237,7 +237,7 @@ const routes = [
     component: () => import('@/views/moyu-tools/index.vue'),
     meta: {
       title: '摸鱼工具',
-      requiresAuth: false,
+      requiresAuth: true,
       keepAlive: true
     }
   },
@@ -249,6 +249,16 @@ const routes = [
       title: '今日热榜',
       requiresAuth: false,
       keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/salary-calculator',
+    name: 'SalaryCalculator',
+    component: () => import('@/views/moyu-tools/SalaryCalculator.vue'),
+    meta: {
+      title: '时薪计算器',
+      requiresAuth: true,
+      keepAlive: false
     }
   },
   {

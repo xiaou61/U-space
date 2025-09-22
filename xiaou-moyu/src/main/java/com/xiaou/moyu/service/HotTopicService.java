@@ -42,4 +42,10 @@ public interface HotTopicService {
      * 定时任务调用，强制刷新所有数据
      */
     void refreshHotTopicData();
+    
+    /**
+     * 智能初始化热榜数据
+     * 仅在Redis缓存为空时才请求API，避免重启时重复请求
+     */
+    void initializeHotTopicDataIfNeeded();
 }

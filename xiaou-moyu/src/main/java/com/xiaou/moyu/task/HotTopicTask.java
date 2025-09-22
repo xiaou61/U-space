@@ -34,14 +34,15 @@ public class HotTopicTask {
     }
     
     /**
-     * 应用启动后延迟1分钟执行一次初始化
+     * 应用启动后延迟1分钟执行一次智能初始化
+     * 只有Redis缓存为空时才请求API
      */
     @Scheduled(initialDelay = 60 * 1000, fixedRate = Long.MAX_VALUE)
     public void initializeHotTopicData() {
-        log.info("启动热榜数据初始化任务");
+        log.info("启动热榜数据智能初始化任务");
         
         try {
-            hotTopicService.refreshHotTopicData();
+            hotTopicService.initializeHotTopicDataIfNeeded();
         } catch (Exception e) {
             log.error("热榜数据初始化任务异常: {}", e.getMessage());
         }

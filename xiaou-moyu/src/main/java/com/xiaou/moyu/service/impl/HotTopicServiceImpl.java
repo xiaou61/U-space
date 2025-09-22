@@ -46,9 +46,9 @@ public class HotTopicServiceImpl implements HotTopicService {
     private static final String CACHE_KEY_PREFIX = "hot_topics:";
     
     /**
-     * 缓存过期时间（秒）16分钟
+     * 缓存过期时间（秒）15分钟
      */
-    private static final long CACHE_EXPIRE_TIME = 16 * 60;
+    private static final long CACHE_EXPIRE_TIME = 15 * 60;
     
     @Override
     public HotTopicResponse getHotTopicCategories() {
@@ -167,6 +167,65 @@ public class HotTopicServiceImpl implements HotTopicService {
             }
         } catch (Exception e) {
             log.error("热榜数据刷新异常: {}", e.getMessage());
+        }
+    }
+    
+    @Override
+    public void initializeHotTopicDataIfNeeded() {
+        try {
+            // 检查缓存是否已存在数据
+            boolean hasCache = false;
+            
+            // 检查几个主要平台的缓存情况
+            String[] checkPlatforms = {"weibo", "zhihu", "douyin", "kuaishou"};
+            for (String platform : checkPlatforms) {
+                String cacheKey = CACHE_KEY_PREFIX + "data:" + platform;
+                if (redisUtil.hasKey(cacheKey)) {
+                    hasCache = true;
+                    break;
+                }
+            }
+            
+            if (hasCache) {
+                log.info("热榜数据缓存已存在，跳过初始化");
+                return;
+            }
+            
+            log.info("热榜数据缓存为空，开始初始化数据");
+            
+            // 只有当缓存为空时才进行数据初始化
+            int successCount = 0;
+            int totalCount = HotTopicEnum.values().length;
+            
+            // 使用串行方式初始化，避免启动时大量并发请求
+            for (HotTopicEnum platform : HotTopicEnum.values()) {
+                try {
+                    String cacheKey = CACHE_KEY_PREFIX + "data:" + platform.getCode();
+                    // 再次检查单个平台缓存，防止在循环过程中其他地方设置了缓存
+                    if (!redisUtil.hasKey(cacheKey)) {
+                        String url = baseUrl + "/" + platform.getCode();
+                        HotTopicData data = restTemplate.getForObject(url, HotTopicData.class);
+                        
+                        if (data != null) {
+                            redisUtil.set(cacheKey, JSONUtil.toJsonStr(data), CACHE_EXPIRE_TIME);
+                            successCount++;
+                        }
+                    } else {
+                        successCount++; // 缓存已存在也算成功
+                    }
+                    
+                    // 添加短暂延迟，避免请求过于频繁
+                    Thread.sleep(100);
+                    
+                } catch (Exception e) {
+                    log.warn("初始化平台[{}]热榜数据失败: {}", platform.getCode(), e.getMessage());
+                }
+            }
+            
+            log.info("热榜数据初始化完成（成功:{}/总数:{})", successCount, totalCount);
+            
+        } catch (Exception e) {
+            log.error("热榜数据初始化异常: {}", e.getMessage());
         }
     }
 }

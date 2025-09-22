@@ -57,4 +57,5 @@ public class HotTopicData {
      * 是否来自缓存
      */
     private Boolean fromCache;
+
 }

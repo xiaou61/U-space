@@ -42,6 +42,34 @@
         </div>
       </div>
 
+      <!-- 时薪计算器工具卡片 -->
+      <div class="tool-card salary-calculator-tool" @click="navigateToTool('salary-calculator')">
+        <div class="card-header">
+          <div class="tool-icon">
+            <el-icon><Money /></el-icon>
+          </div>
+          <div class="tool-badge">激励</div>
+        </div>
+        <div class="card-content">
+          <h3 class="tool-title">时薪计算器</h3>
+          <p class="tool-description">
+            实时计算工作收入，追踪每日工作时长，让每分钟的努力都有意义
+          </p>
+          <div class="tool-features">
+            <span class="feature-tag">实时计算</span>
+            <span class="feature-tag">收入统计</span>
+            <span class="feature-tag">工作跟踪</span>
+            <span class="feature-tag">激励展示</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <el-button type="success" size="large" class="tool-button">
+            <el-icon><Right /></el-icon>
+            开始计算
+          </el-button>
+        </div>
+      </div>
+
       <!-- 预留其他摸鱼工具卡片 -->
       <div class="tool-card coming-soon" style="opacity: 0.6; cursor: not-allowed;">
         <div class="card-header">
@@ -75,7 +103,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { 
-  Coffee, TrendCharts, Right, Clock
+  Coffee, TrendCharts, Right, Clock, Money
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -198,6 +226,10 @@ const navigateToTool = (toolName) => {
   background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), rgba(255, 154, 158, 0.05));
 }
 
+.salary-calculator-tool:hover {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(16, 185, 129, 0.05));
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -220,6 +252,10 @@ const navigateToTool = (toolName) => {
   background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
 }
 
+.salary-calculator-tool .tool-icon {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+}
+
 .coming-soon .tool-icon {
   background: linear-gradient(135deg, #94a3b8, #cbd5e1);
 }
@@ -234,6 +270,10 @@ const navigateToTool = (toolName) => {
 
 .hot-topics-tool .tool-badge {
   background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.salary-calculator-tool .tool-badge {
+  background: linear-gradient(135deg, #059669, #047857);
 }
 
 .coming-soon .tool-badge {

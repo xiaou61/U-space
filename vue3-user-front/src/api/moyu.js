@@ -32,3 +32,44 @@ export const getAllHotTopicData = () => {
 export const refreshHotTopicData = () => {
   return request.post('/moyu/hot-topic/refresh')
 }
+
+/**
+ * 时薪计算器 API
+ */
+
+/**
+ * 获取时薪计算器数据
+ */
+export const getSalaryCalculatorData = () => {
+  return request.get('/moyu/salary-calculator/data')
+}
+
+/**
+ * 获取用户薪资配置
+ */
+export const getSalaryConfig = () => {
+  return request.get('/moyu/salary-calculator/config')
+}
+
+/**
+ * 保存或更新薪资配置
+ * @param {Object} config - 薪资配置
+ */
+export const saveOrUpdateSalaryConfig = (config) => {
+  return request.post('/moyu/salary-calculator/config', config)
+}
+
+/**
+ * 删除薪资配置
+ */
+export const deleteSalaryConfig = () => {
+  return request.delete('/moyu/salary-calculator/config')
+}
+
+/**
+ * 工作时间操作（开始/结束工作）
+ * @param {Object} action - 操作信息
+ */
+export const handleWorkTime = (action) => {
+  return request.post('/moyu/salary-calculator/work-time', action)
+}

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.UserSalaryConfigMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.UserSalaryConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="monthly_salary" property="monthlySalary" jdbcType="DECIMAL"/>
+        <result column="work_days_per_month" property="workDaysPerMonth" jdbcType="TINYINT"/>
+        <result column="work_hours_per_day" property="workHoursPerDay" jdbcType="DECIMAL"/>
+        <result column="hourly_rate" property="hourlyRate" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, monthly_salary, work_days_per_month, work_hours_per_day,
+        hourly_rate, status, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询薪资配置 -->
+    <select id="selectByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_salary_config
+        WHERE user_id = #{userId} AND status = 1
+    </select>
+
+    <!-- 插入薪资配置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_salary_config (
+            user_id,
+            monthly_salary,
+            work_days_per_month,
+            work_hours_per_day,
+            status,
+            create_time,
+            update_time
+        ) VALUES (
+            #{userId},
+            #{monthlySalary},
+            #{workDaysPerMonth},
+            #{workHoursPerDay},
+            #{status},
+            #{createTime},
+            #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新薪资配置 -->
+    <update id="update">
+        UPDATE user_salary_config
+        SET monthly_salary = #{monthlySalary},
+            work_days_per_month = #{workDaysPerMonth},
+            work_hours_per_day = #{workHoursPerDay},
+            status = #{status},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据用户ID删除配置 -->
+    <delete id="deleteByUserId" parameterType="java.lang.Long">
+        DELETE FROM user_salary_config WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

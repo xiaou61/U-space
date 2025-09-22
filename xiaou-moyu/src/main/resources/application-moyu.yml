@@ -4,6 +4,6 @@ hot-topic:
     # 热榜API基础URL
     base-url: http://113.44.190.45:9996/api
     # 缓存过期时间（分钟）
-    cache-expire-minutes: 16
+    cache-expire-minutes: 15
     # 定时任务执行间隔（分钟）
     refresh-interval-minutes: 15
