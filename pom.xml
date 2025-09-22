@@ -23,6 +23,7 @@
         <module>xiaou-sensitive</module>
         <module>xiaou-knowledge</module>
         <module>xiaou-version</module>
+        <module>xiaou-moyu</module>
     </modules>
 
     <properties>

@@ -95,6 +95,13 @@
             <artifactId>xiaou-version</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- 引入moyu模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-moyu</artifactId>
+            <version>${revision}</version>
+        </dependency>
         
         <!-- Mysql驱动包 -->
         <dependency>

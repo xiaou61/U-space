@@ -232,6 +232,26 @@ const routes = [
     }
   },
   {
+    path: '/moyu-tools',
+    name: 'MoyuTools',
+    component: () => import('@/views/moyu-tools/index.vue'),
+    meta: {
+      title: '摸鱼工具',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/hot-topics',
+    name: 'HotTopics',
+    component: () => import('@/views/moyu-tools/HotTopics.vue'),
+    meta: {
+      title: '今日热榜',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
