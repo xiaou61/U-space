@@ -119,6 +119,13 @@
             <artifactId>xiaou-sensitive-api</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- Coze Java SDK -->
+        <dependency>
+            <groupId>com.coze</groupId>
+            <artifactId>coze-api</artifactId>
+            <version>0.4.2</version>
+        </dependency>
     </dependencies>
 
 </project>

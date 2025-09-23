@@ -175,3 +175,33 @@ xiaou:
       - Monitor
       - Permission
       - Role
+
+# ==================== Coze工作流配置 ====================
+coze:
+  # API相关配置
+  api:
+    # Coze API基础URL
+    base-url: https://api.coze.cn
+    # 请求超时时间（毫秒）
+    timeout: 30000
+    # 重试次数
+    retry-count: 3
+    # 连接超时时间（毫秒）
+    connect-timeout: 10000
+    # 读取超时时间（毫秒）
+    read-timeout: 60000
+  
+  # 认证相关配置
+  auth:
+    # API密钥 - 建议通过环境变量或application-sec.yml配置
+    # 是否启用认证
+    enabled: true
+  
+  # 缓存相关配置
+  cache:
+    # 是否启用缓存
+    enabled: true
+    # 缓存TTL（秒）
+    ttl: 3600
+    # 缓存Key前缀
+    key-prefix: "coze:"
