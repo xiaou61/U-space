@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.WorkRecordMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.WorkRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="work_date" property="workDate" jdbcType="DATE"/>
+        <result column="work_hours" property="workHours" jdbcType="DECIMAL"/>
+        <result column="daily_earnings" property="dailyEarnings" jdbcType="DECIMAL"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="pause_start_time" property="pauseStartTime" jdbcType="TIMESTAMP"/>
+        <result column="total_pause_minutes" property="totalPauseMinutes" jdbcType="INTEGER"/>
+        <result column="work_status" property="workStatus" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, work_date, work_hours, daily_earnings, start_time,
+        end_time, pause_start_time, total_pause_minutes, work_status, status, remark, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID和日期查询工作记录 -->
+    <select id="selectByUserIdAndDate" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM work_record
+        WHERE user_id = #{userId} AND work_date = #{workDate}
+    </select>
+
+    <!-- 查询用户指定日期范围的工作记录 -->
+    <select id="selectByUserIdAndDateRange" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM work_record
+        WHERE user_id = #{userId}
+          AND work_date &gt;= #{startDate}
+          AND work_date &lt;= #{endDate}
+        ORDER BY work_date DESC
+    </select>
+
+    <!-- 插入工作记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO work_record (
+            user_id,
+            work_date,
+            work_hours,
+            daily_earnings,
+            start_time,
+            end_time,
+            pause_start_time,
+            total_pause_minutes,
+            work_status,
+            status,
+            remark,
+            create_time,
+            update_time
+        ) VALUES (
+            #{userId},
+            #{workDate},
+            #{workHours},
+            #{dailyEarnings},
+            #{startTime},
+            #{endTime},
+            #{pauseStartTime},
+            #{totalPauseMinutes},
+            #{workStatus},
+            #{status},
+            #{remark},
+            #{createTime},
+            #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新工作记录 -->
+    <update id="update">
+        UPDATE work_record
+        SET work_hours = #{workHours},
+            daily_earnings = #{dailyEarnings},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            pause_start_time = #{pauseStartTime},
+            total_pause_minutes = #{totalPauseMinutes},
+            work_status = #{workStatus},
+            status = #{status},
+            remark = #{remark},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId} AND work_date = #{workDate}
+    </update>
+
+    <!-- 插入或更新工作记录 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO work_record (
+            user_id,
+            work_date,
+            work_hours,
+            daily_earnings,
+            start_time,
+            end_time,
+            pause_start_time,
+            total_pause_minutes,
+            work_status,
+            status,
+            remark,
+            create_time,
+            update_time
+        ) VALUES (
+            #{userId},
+            #{workDate},
+            #{workHours},
+            #{dailyEarnings},
+            #{startTime},
+            #{endTime},
+            #{pauseStartTime},
+            #{totalPauseMinutes},
+            #{workStatus},
+            #{status},
+            #{remark},
+            #{createTime},
+            #{updateTime}
+        ) ON DUPLICATE KEY UPDATE
+            work_hours = VALUES(work_hours),
+            daily_earnings = VALUES(daily_earnings),
+            start_time = VALUES(start_time),
+            end_time = VALUES(end_time),
+            pause_start_time = VALUES(pause_start_time),
+            total_pause_minutes = VALUES(total_pause_minutes),
+            work_status = VALUES(work_status),
+            status = VALUES(status),
+            remark = VALUES(remark),
+            update_time = VALUES(update_time)
+    </insert>
+
+    <!-- 根据用户ID和日期删除工作记录 -->
+    <delete id="deleteByUserIdAndDate">
+        DELETE FROM work_record 
+        WHERE user_id = #{userId} AND work_date = #{workDate}
+    </delete>
+
+</mapper>

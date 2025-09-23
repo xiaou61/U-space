@@ -1,7 +1,3 @@
--- ======================================
--- 敏感词过滤系统 v1.0.0 数据库表结构
--- ======================================
-
 -- 1. 敏感词分类表
 CREATE TABLE IF NOT EXISTS sensitive_category (
     id INT PRIMARY KEY AUTO_INCREMENT,

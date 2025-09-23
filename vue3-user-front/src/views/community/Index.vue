@@ -1,32 +1,5 @@
 <template>
   <div class="community-index">
-    <!-- 头部导航 -->
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h2>技术社区</h2>
-          <p>分享经验，交流技术，共同成长</p>
-        </div>
-        <div class="header-right">
-          <el-button type="success" @click="showCreateDialog" :icon="Edit">
-            发表帖子
-          </el-button>
-          <el-button type="primary" @click="goToMyCollection" :icon="Star">
-            我的收藏
-          </el-button>
-          <el-button type="info" @click="goToMyPosts" :icon="Document">
-            我的帖子
-          </el-button>
-          <el-button @click="goToMoments" :icon="Picture">
-            朋友圈
-          </el-button>
-          <el-button @click="goBack" :icon="Back">
-            返回首页
-          </el-button>
-        </div>
-      </div>
-    </div>
-
     <!-- 搜索区域 -->
     <div class="search-section">
       <el-card shadow="never" class="search-card">
@@ -52,6 +25,23 @@
             </el-button>
           </el-col>
         </el-row>
+      </el-card>
+    </div>
+
+    <!-- 操作按钮区域 -->
+    <div class="actions-section">
+      <el-card shadow="never" class="actions-card">
+        <div class="actions-content">
+          <el-button type="success" @click="showCreateDialog" :icon="Edit">
+            发表帖子
+          </el-button>
+          <el-button type="primary" @click="goToMyCollection" :icon="Star">
+            我的收藏
+          </el-button>
+          <el-button type="info" @click="goToMyPosts" :icon="Document">
+            我的帖子
+          </el-button>
+        </div>
       </el-card>
     </div>
 
@@ -184,7 +174,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Back, Edit, View, StarFilled, ChatDotRound, Document, Flag, Picture
+  Search, Star, Edit, View, StarFilled, ChatDotRound, Document, Flag
 } from '@element-plus/icons-vue'
 import { communityApi } from '@/api/community'
 
@@ -325,15 +315,7 @@ const goToMyPosts = () => {
   router.push('/community/my-posts')
 }
 
-// 返回首页
-const goBack = () => {
-  router.push('/')
-}
 
-// 跳转到朋友圈
-const goToMoments = () => {
-  router.push('/moments')
-}
 
 // 加载分类列表
 const loadCategories = async () => {
@@ -360,48 +342,32 @@ onMounted(async () => {
   padding: 20px;
 }
 
-.header {
+
+
+
+
+.search-section {
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 185, 148, 0.3);
-}
-
-.header-left h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.header-left p {
-  margin: 0;
-  opacity: 0.9;
-  font-size: 16px;
-}
-
-.header-right {
-  display: flex;
-  gap: 12px;
-}
-
-.search-section, .category-section, .content-section {
+.actions-section, .category-section, .content-section {
   margin-bottom: 20px;
 }
 
-.search-card, .category-card, .content-card {
+.search-card, .actions-card, .category-card, .content-card {
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .search-card {
+  padding: 8px;
+}
+
+.actions-content {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
   padding: 8px;
 }
 
@@ -556,17 +522,7 @@ onMounted(async () => {
     padding: 10px;
   }
   
-  .header-content {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-  
-  .header-right {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
+
   .post-stats {
     flex-wrap: wrap;
     gap: 12px;
@@ -574,6 +530,11 @@ onMounted(async () => {
   
   .post-actions {
     flex-wrap: wrap;
+  }
+  
+  .actions-content {
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }
 </style> 

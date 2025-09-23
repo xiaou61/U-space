@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.BugItemMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.BugItem">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="phenomenon" property="phenomenon" jdbcType="LONGVARCHAR"/>
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="LONGVARCHAR"/>
+        <result column="solution" property="solution" jdbcType="LONGVARCHAR"/>
+        <result column="tech_tags" property="techTags" jdbcType="VARCHAR"/>
+        <result column="difficulty_level" property="difficultyLevel" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="created_by" property="createdBy" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, title, phenomenon, cause_analysis, solution, tech_tags,
+        difficulty_level, status, sort_order, created_by, create_time, update_time
+    </sql>
+
+    <!-- 插入Bug条目 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bug_item (
+            title,
+            phenomenon,
+            cause_analysis,
+            solution,
+            tech_tags,
+            difficulty_level,
+            status,
+            sort_order,
+            created_by,
+            create_time,
+            update_time
+        ) VALUES (
+            #{title},
+            #{phenomenon},
+            #{causeAnalysis},
+            #{solution},
+            #{techTags},
+            #{difficultyLevel},
+            #{status},
+            #{sortOrder},
+            #{createdBy},
+            #{createTime},
+            #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID删除Bug条目 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM bug_item WHERE id = #{id}
+    </delete>
+
+    <!-- 更新Bug条目 -->
+    <update id="updateById">
+        UPDATE bug_item
+        SET title = #{title},
+            phenomenon = #{phenomenon},
+            cause_analysis = #{causeAnalysis},
+            solution = #{solution},
+            tech_tags = #{techTags},
+            difficulty_level = #{difficultyLevel},
+            status = #{status},
+            sort_order = #{sortOrder},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询Bug条目 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM bug_item
+        WHERE id = #{id}
+    </select>
+
+    <!-- 分页查询Bug条目 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM bug_item
+        <where>
+            <if test="query.title != null and query.title != ''">
+                AND title LIKE CONCAT('%', #{query.title}, '%')
+            </if>
+            <if test="query.difficultyLevel != null">
+                AND difficulty_level = #{query.difficultyLevel}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+            <if test="query.techTag != null and query.techTag != ''">
+                AND tech_tags LIKE CONCAT('%', #{query.techTag}, '%')
+            </if>
+        </where>
+        ORDER BY sort_order DESC, create_time DESC
+    </select>
+
+    <!-- 查询Bug条目总数 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM bug_item
+        <where>
+            <if test="query.title != null and query.title != ''">
+                AND title LIKE CONCAT('%', #{query.title}, '%')
+            </if>
+            <if test="query.difficultyLevel != null">
+                AND difficulty_level = #{query.difficultyLevel}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+            <if test="query.techTag != null and query.techTag != ''">
+                AND tech_tags LIKE CONCAT('%', #{query.techTag}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 随机获取一个启用的Bug条目（排除用户最近浏览的） -->
+    <select id="selectRandomBug" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM bug_item
+        WHERE status = 1
+        <if test="excludeIds != null and excludeIds.size() > 0">
+            AND id NOT IN
+            <foreach collection="excludeIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        ORDER BY RAND()
+        LIMIT 1
+    </select>
+
+    <!-- 查询所有启用的Bug条目ID -->
+    <select id="selectEnabledBugIds" resultType="java.lang.Long">
+        SELECT id FROM bug_item WHERE status = 1
+    </select>
+
+    <!-- 批量插入Bug条目 -->
+    <insert id="insertBatch">
+        INSERT INTO bug_item (
+            title, phenomenon, cause_analysis, solution, tech_tags,
+            difficulty_level, status, sort_order, created_by, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.title},
+                #{item.phenomenon},
+                #{item.causeAnalysis},
+                #{item.solution},
+                #{item.techTags},
+                #{item.difficultyLevel},
+                #{item.status},
+                #{item.sortOrder},
+                #{item.createdBy},
+                #{item.createTime},
+                #{item.updateTime}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

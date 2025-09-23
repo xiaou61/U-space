@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.UserCalendarCollectionMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.UserCalendarCollection">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="collection_type" property="collectionType" jdbcType="TINYINT"/>
+        <result column="target_id" property="targetId" jdbcType="BIGINT"/>
+        <result column="collection_time" property="collectionTime" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, collection_type, target_id, collection_time,
+        status, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID和收藏类型查询收藏列表 -->
+    <select id="selectByUserIdAndType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_calendar_collection
+        WHERE user_id = #{userId}
+          AND collection_type = #{collectionType}
+          AND status = #{status}
+        ORDER BY collection_time DESC
+    </select>
+
+    <!-- 查询用户是否已收藏指定目标 -->
+    <select id="selectByUserIdAndTarget" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_calendar_collection
+        WHERE user_id = #{userId}
+          AND collection_type = #{collectionType}
+          AND target_id = #{targetId}
+        ORDER BY update_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 插入收藏记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_calendar_collection (
+            user_id, collection_type, target_id, collection_time, status
+        ) VALUES (
+            #{userId}, #{collectionType}, #{targetId}, #{collectionTime}, #{status}
+        )
+    </insert>
+
+    <!-- 更新收藏状态 -->
+    <update id="updateStatus">
+        UPDATE user_calendar_collection SET
+            status = #{status},
+            collection_time = CASE 
+                WHEN #{status} = 1 THEN NOW()
+                ELSE collection_time
+            END,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND collection_type = #{collectionType}
+          AND target_id = #{targetId}
+    </update>
+
+    <!-- 根据用户ID删除收藏记录 -->
+    <delete id="deleteByUserIdAndTarget">
+        DELETE FROM user_calendar_collection
+        WHERE user_id = #{userId}
+          AND collection_type = #{collectionType}
+          AND target_id = #{targetId}
+    </delete>
+
+    <!-- 统计用户收藏数量 -->
+    <select id="countByUserIdAndType" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_calendar_collection
+        WHERE user_id = #{userId}
+          AND collection_type = #{collectionType}
+          AND status = #{status}
+    </select>
+
+</mapper>

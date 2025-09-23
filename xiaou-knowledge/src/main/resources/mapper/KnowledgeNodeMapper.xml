@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.knowledge.mapper.KnowledgeNodeMapper">
+
+    <!-- 知识节点结果映射 -->
+    <resultMap id="KnowledgeNodeResultMap" type="com.xiaou.knowledge.domain.KnowledgeNode">
+        <id column="id" property="id" />
+        <result column="map_id" property="mapId" />
+        <result column="parent_id" property="parentId" />
+        <result column="title" property="title" />
+        <result column="url" property="url" />
+        <result column="node_type" property="nodeType" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="level_depth" property="levelDepth" />
+        <result column="is_expanded" property="isExpanded" />
+        <result column="view_count" property="viewCount" />
+        <result column="last_view_time" property="lastViewTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 知识节点树形响应映射 -->
+    <resultMap id="KnowledgeNodeTreeResponseResultMap" type="com.xiaou.knowledge.dto.response.KnowledgeNodeTreeResponse">
+        <id column="id" property="id" />
+        <result column="map_id" property="mapId" />
+        <result column="parent_id" property="parentId" />
+        <result column="title" property="title" />
+        <result column="url" property="url" />
+        <result column="node_type" property="nodeType" />
+        <result column="node_type_desc" property="nodeTypeDesc" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="level_depth" property="levelDepth" />
+        <result column="is_expanded" property="isExpanded" />
+        <result column="view_count" property="viewCount" />
+        <result column="last_view_time" property="lastViewTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, map_id, parent_id, title, url, node_type, sort_order, 
+        level_depth, is_expanded, view_count, last_view_time, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询知识节点 -->
+    <select id="selectById" resultMap="KnowledgeNodeResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM knowledge_node 
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据图谱ID查询所有节点(树形结构) -->
+    <select id="selectTreeByMapId" resultMap="KnowledgeNodeTreeResponseResultMap">
+        SELECT 
+            id, map_id, parent_id, title, url, node_type,
+            CASE 
+                WHEN node_type = 1 THEN '普通'
+                WHEN node_type = 2 THEN '重点'
+                WHEN node_type = 3 THEN '难点'
+                ELSE '未知'
+            END as node_type_desc,
+            sort_order, level_depth, is_expanded, view_count, 
+            last_view_time, create_time, update_time
+        FROM knowledge_node 
+        WHERE map_id = #{mapId}
+        ORDER BY level_depth ASC, sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 根据父节点ID查询子节点 -->
+    <select id="selectByParentId" resultMap="KnowledgeNodeResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM knowledge_node 
+        WHERE parent_id = #{parentId}
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 查询节点的最大排序序号 -->
+    <select id="selectMaxSortOrder" resultType="java.lang.Integer">
+        SELECT COALESCE(MAX(sort_order), 0) 
+        FROM knowledge_node 
+        WHERE map_id = #{mapId} AND parent_id = #{parentId}
+    </select>
+
+    <!-- 统计图谱节点数量 -->
+    <select id="countByMapId" resultType="java.lang.Integer">
+        SELECT COUNT(*) 
+        FROM knowledge_node 
+        WHERE map_id = #{mapId}
+    </select>
+
+    <!-- 插入知识节点 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO knowledge_node (
+            map_id, parent_id, title, url, node_type, 
+            sort_order, level_depth, is_expanded, view_count, create_time, update_time
+        ) VALUES (
+            #{mapId}, #{parentId}, #{title}, #{url}, #{nodeType}, 
+            #{sortOrder}, #{levelDepth}, #{isExpanded}, 0, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新知识节点 -->
+    <update id="updateById">
+        UPDATE knowledge_node 
+        SET 
+            title = #{request.title},
+            url = #{request.url},
+            node_type = #{request.nodeType},
+            is_expanded = #{request.isExpanded},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新节点排序 -->
+    <update id="batchUpdateOrder">
+        <foreach collection="nodeOrders" item="nodeOrder" separator=";">
+            UPDATE knowledge_node 
+            SET parent_id = #{nodeOrder.parentId}, 
+                sort_order = #{nodeOrder.sortOrder},
+                update_time = NOW()
+            WHERE id = #{nodeOrder.nodeId}
+        </foreach>
+    </update>
+
+    <!-- 增加查看次数 -->
+    <update id="incrementViewCount">
+        UPDATE knowledge_node 
+        SET view_count = view_count + 1, 
+            last_view_time = NOW() 
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除知识节点 -->
+    <delete id="deleteById">
+        DELETE FROM knowledge_node WHERE id = #{id}
+    </delete>
+
+    <!-- 根据图谱ID删除所有节点 -->
+    <delete id="deleteByMapId">
+        DELETE FROM knowledge_node WHERE map_id = #{mapId}
+    </delete>
+
+    <!-- 搜索节点 -->
+    <select id="searchNodes" resultMap="KnowledgeNodeTreeResponseResultMap">
+        SELECT 
+            id, map_id, parent_id, title, url, node_type,
+            CASE 
+                WHEN node_type = 1 THEN '普通'
+                WHEN node_type = 2 THEN '重点'
+                WHEN node_type = 3 THEN '难点'
+                ELSE '未知'
+            END as node_type_desc,
+            sort_order, level_depth, is_expanded, view_count, 
+            last_view_time, create_time, update_time
+        FROM knowledge_node 
+        WHERE map_id = #{mapId}
+        <if test="keyword != null and keyword != ''">
+            AND (title LIKE CONCAT('%', #{keyword}, '%') 
+            OR url LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY level_depth ASC, sort_order ASC, create_time ASC
+    </select>
+
+</mapper> 

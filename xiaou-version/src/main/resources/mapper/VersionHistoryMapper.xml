@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.version.mapper.VersionHistoryMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, version_number, title, update_type, description, prd_url, 
+        release_time, status, sort_order, view_count, is_featured, 
+        created_by, created_time, updated_by, updated_time, deleted
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Condition">
+        <where>
+            deleted = 0
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    title LIKE CONCAT('%', #{keyword}, '%') 
+                    OR version_number LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="updateType != null">
+                AND update_type = #{updateType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="isFeatured != null">
+                AND is_featured = #{isFeatured}
+            </if>
+            <if test="releaseTimeStart != null and releaseTimeStart != ''">
+                AND release_time &gt;= #{releaseTimeStart}
+            </if>
+            <if test="releaseTimeEnd != null and releaseTimeEnd != ''">
+                AND release_time &lt;= #{releaseTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 用户端查询条件（只查询已发布） -->
+    <sql id="Published_Where_Condition">
+        <where>
+            deleted = 0 AND status = 1
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    title LIKE CONCAT('%', #{keyword}, '%') 
+                    OR version_number LIKE CONCAT('%', #{keyword}, '%')
+                    OR description LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="updateType != null">
+                AND update_type = #{updateType}
+            </if>
+            <if test="isFeatured != null">
+                AND is_featured = #{isFeatured}
+            </if>
+            <if test="releaseTimeStart != null and releaseTimeStart != ''">
+                AND release_time &gt;= #{releaseTimeStart}
+            </if>
+            <if test="releaseTimeEnd != null and releaseTimeEnd != ''">
+                AND release_time &lt;= #{releaseTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 插入版本历史记录 -->
+    <insert id="insert" parameterType="com.xiaou.version.domain.VersionHistory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO version_history
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            version_number, title, update_type, 
+            <if test="description != null and description != ''">description,</if>
+            <if test="prdUrl != null and prdUrl != ''">prd_url,</if>
+            release_time, status, sort_order, view_count, is_featured,
+            <if test="createdBy != null">created_by,</if>
+            created_time, updated_time, deleted
+        </trim>
+        <trim prefix="VALUES(" suffix=")" suffixOverrides=",">
+            #{versionNumber}, #{title}, #{updateType},
+            <if test="description != null and description != ''">#{description},</if>
+            <if test="prdUrl != null and prdUrl != ''">#{prdUrl},</if>
+            #{releaseTime}, #{status}, #{sortOrder}, #{viewCount}, #{isFeatured},
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW(), NOW(), 0
+        </trim>
+    </insert>
+
+    <!-- 根据ID删除（物理删除） -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM version_history WHERE id = #{id}
+    </delete>
+
+    <!-- 根据ID逻辑删除 -->
+    <update id="logicalDeleteById">
+        UPDATE version_history 
+        SET deleted = 1,
+            updated_by = #{updatedBy},
+            updated_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新版本历史记录 -->
+    <update id="updateById" parameterType="com.xiaou.version.domain.VersionHistory">
+        UPDATE version_history
+        <set>
+            <if test="versionNumber != null">version_number = #{versionNumber},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="updateType != null">update_type = #{updateType},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="prdUrl != null">prd_url = #{prdUrl},</if>
+            <if test="releaseTime != null">release_time = #{releaseTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isFeatured != null">is_featured = #{isFeatured},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            updated_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 根据ID查询版本历史记录 -->
+    <select id="selectById" parameterType="java.lang.Long" resultType="com.xiaou.version.domain.VersionHistory">
+        SELECT <include refid="Base_Column_List"/>
+        FROM version_history
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 根据版本号查询版本历史记录 -->
+    <select id="selectByVersionNumber" resultType="com.xiaou.version.domain.VersionHistory">
+        SELECT <include refid="Base_Column_List"/>
+        FROM version_history
+        WHERE version_number = #{versionNumber} AND deleted = #{deleted}
+    </select>
+
+    <!-- 分页查询版本历史记录（管理端） -->
+    <select id="selectByPage" parameterType="com.xiaou.version.dto.VersionHistoryQueryRequest" 
+            resultType="com.xiaou.version.domain.VersionHistory">
+        SELECT <include refid="Base_Column_List"/>
+        FROM version_history
+        <include refid="Where_Condition"/>
+        ORDER BY sort_order DESC, release_time DESC, created_time DESC
+    </select>
+
+    <!-- 统计查询条件下的总数（管理端） -->
+    <select id="countByCondition" parameterType="com.xiaou.version.dto.VersionHistoryQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM version_history
+        <include refid="Where_Condition"/>
+    </select>
+
+    <!-- 查询已发布的版本历史记录（用户端时间轴） -->
+    <select id="selectPublishedByPage" parameterType="com.xiaou.version.dto.VersionHistoryQueryRequest" 
+            resultType="com.xiaou.version.domain.VersionHistory">
+        SELECT <include refid="Base_Column_List"/>
+        FROM version_history
+        <include refid="Published_Where_Condition"/>
+        ORDER BY sort_order DESC, release_time DESC, created_time DESC
+    </select>
+
+    <!-- 统计已发布版本总数（用户端时间轴） -->
+    <select id="countPublishedByCondition" parameterType="com.xiaou.version.dto.VersionHistoryQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM version_history
+        <include refid="Published_Where_Condition"/>
+    </select>
+
+    <!-- 增加查看次数 -->
+    <update id="incrementViewCount" parameterType="java.lang.Long">
+        UPDATE version_history 
+        SET view_count = view_count + 1,
+            updated_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新版本状态 -->
+    <update id="updateStatus">
+        UPDATE version_history 
+        SET status = #{status},
+            updated_by = #{updatedBy},
+            updated_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 批量更新版本状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE version_history 
+        SET status = #{status},
+            updated_by = #{updatedBy},
+            updated_time = NOW()
+        WHERE deleted = 0 AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量逻辑删除 -->
+    <update id="batchLogicalDelete">
+        UPDATE version_history 
+        SET deleted = 1,
+            updated_by = #{updatedBy},
+            updated_time = NOW()
+        WHERE deleted = 0 AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper> 

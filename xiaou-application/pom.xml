@@ -81,6 +81,39 @@
             <artifactId>xiaou-sensitive</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- 引入knowledge模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-knowledge</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!-- 引入version模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-version</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!-- 引入moyu模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-moyu</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+        </dependency>
         
         <!-- Mysql驱动包 -->
         <dependency>

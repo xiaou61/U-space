@@ -161,6 +161,137 @@ const routes = [
     }
   },
   {
+    path: '/knowledge',
+    name: 'Knowledge',
+    component: () => import('@/views/knowledge/Index.vue'),
+    meta: {
+      title: '知识图谱',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/knowledge/maps/:id',
+    name: 'KnowledgeMapViewer',
+    component: () => import('@/views/knowledge/MapViewer.vue'),
+    props: true,
+    meta: {
+      title: '知识图谱学习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/version-history',
+    name: 'VersionHistory',
+    component: () => import('@/views/version/index.vue'),
+    meta: {
+      title: '版本更新历史',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools',
+    name: 'DevTools',
+    component: () => import('@/views/dev-tools/index.vue'),
+    meta: {
+      title: '程序员工具',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/json',
+    name: 'JsonTool',
+    component: () => import('@/views/dev-tools/JsonTool.vue'),
+    meta: {
+      title: 'JSON工具',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/text-diff',
+    name: 'TextDiff',
+    component: () => import('@/views/dev-tools/TextDiff.vue'),
+    meta: {
+      title: '文本比对',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/dev-tools/translation',
+    name: 'Translation',
+    component: () => import('@/views/dev-tools/Translation.vue'),
+    meta: {
+      title: '聚合翻译',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools',
+    name: 'MoyuTools',
+    component: () => import('@/views/moyu-tools/index.vue'),
+    meta: {
+      title: '摸鱼工具',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/hot-topics',
+    name: 'HotTopics',
+    component: () => import('@/views/moyu-tools/HotTopics.vue'),
+    meta: {
+      title: '今日热榜',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/salary-calculator',
+    name: 'SalaryCalculator',
+    component: () => import('@/views/moyu-tools/SalaryCalculator.vue'),
+    meta: {
+      title: '时薪计算器',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/moyu-tools/calendar',
+    name: 'DeveloperCalendar',
+    component: () => import('@/views/moyu-tools/DeveloperCalendar.vue'),
+    meta: {
+      title: '程序员日历',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/daily-content',
+    name: 'DailyContent',
+    component: () => import('@/views/moyu-tools/DailyContent.vue'),
+    meta: {
+      title: '每日内容',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/bug-store',
+    name: 'BugStore',
+    component: () => import('@/views/moyu-tools/bug-store.vue'),
+    meta: {
+      title: 'Bug商店',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

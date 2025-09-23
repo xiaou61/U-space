@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moyu.mapper.UserBugHistoryMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.moyu.domain.UserBugHistory">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="bug_id" property="bugId" jdbcType="BIGINT"/>
+        <result column="view_time" property="viewTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, bug_id, view_time, create_time
+    </sql>
+
+    <!-- 插入浏览历史 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_bug_history (
+            user_id,
+            bug_id,
+            view_time,
+            create_time
+        ) VALUES (
+            #{userId},
+            #{bugId},
+            #{viewTime},
+            #{createTime}
+        )
+    </insert>
+
+    <!-- 查询用户最近浏览的Bug ID列表 -->
+    <select id="selectRecentBugIds" resultType="java.lang.Long">
+        SELECT bug_id
+        FROM (
+            SELECT DISTINCT bug_id, MAX(view_time) as max_view_time
+            FROM user_bug_history
+            WHERE user_id = #{userId}
+            AND view_time &gt;= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+            GROUP BY bug_id
+            ORDER BY max_view_time DESC
+            <if test="limit != null and limit > 0">
+                LIMIT #{limit}
+            </if>
+        ) t
+    </select>
+
+    <!-- 删除过期的浏览历史 -->
+    <delete id="deleteExpiredHistory">
+        DELETE FROM user_bug_history
+        WHERE create_time &lt; #{beforeTime}
+    </delete>
+
+    <!-- 查询用户是否浏览过指定Bug -->
+    <select id="existsByUserIdAndBugId" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM user_bug_history
+        WHERE user_id = #{userId}
+        AND bug_id = #{bugId}
+        AND view_time &gt;= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+        LIMIT 1
+    </select>
+
+</mapper>
