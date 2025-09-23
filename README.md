@@ -1,7 +1,7 @@
 # Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -68,6 +68,9 @@ Code Nest 是一个基于 Spring Boot + Vue3 的前后端分离的一个程序�
     │    │  xiaou-moment     │   │
     │    │ xiaou-notification│   │
     │    │ xiaou-filestorage │   │
+    │    │  xiaou-knowledge  │   │
+    │    │   xiaou-version   │   │
+    │    │    xiaou-moyu     │   │
     │    │  xiaou-common     │   │
     │    └─────────────────┘   │
     └────────────┬─────────────┘
@@ -111,6 +114,9 @@ Code-Nest/
 ├── xiaou-moment/                  # 朋友圈模块
 ├── xiaou-notification/            # 消息通知模块
 ├── xiaou-filestorage/             # 文件存储模块
+├── xiaou-knowledge/               # 知识图谱模块
+├── xiaou-version/                 # 版本管理模块
+├── xiaou-moyu/                    # 摸鱼工具模块
 └── pom.xml                        # Maven主配置
 ```
 
@@ -172,7 +178,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.2.1.jar
+java -jar target/xiaou-application-1.3.0.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -305,14 +311,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.2.1 .
+docker build -t code-nest:1.3.0 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.2.1
+  code-nest:1.3.0
 ```
 
 ### Nginx配置
@@ -348,6 +354,57 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.3.0 🔥
+
+#### 🚀 重大功能新增
+- **🤖 Coze AI工作流集成** - 引入智能AI工作流平台
+  - 支持Coze平台工作流调用
+  - 提供统一工具类和配置管理
+  - 同步和异步两种调用方式
+  - 参数传递、结果缓存、异常处理等完整功能
+  - 通过枚举统一管理工作流信息
+
+- **🐛 Bug商店功能模块** - 趣味化编程体验
+  - Bug条目展示和管理系统
+  - 随机Bug获取和浏览功能
+  - 用户Bug浏览历史记录
+  - Bug内容复制和切换浏览
+  - 批量导入和数据初始化
+  - 管理端完整的CRUD操作
+
+- **🎮 摸鱼工具集** - 程序员专属工具箱
+  - 程序员日历和每日内容管理
+  - 时薪计算器功能
+  - 今日热榜数据展示
+  - 热榜数据初始化和管理
+
+- **🛠️ 开发者工具模块** - 提升开发效率
+  - 程序员工具模块集成
+  - 完善的工具路由配置
+  - 统一的工具管理界面
+
+#### 🎨 用户体验优化
+- **导航系统升级** - 全局导航栏设计
+  - 统一的页面布局优化
+  - 响应式导航交互
+  - 更好的用户体验流程
+
+- **版本管理功能** - 系统版本追踪
+  - 版本历史管理和展示
+  - 菜单搜索功能实现
+  - 版本信息统一管理
+
+#### 🔧 技术架构优化
+- **知识图谱增强** - 知识管理系统完善
+  - 知识节点内容改为飞书文档链接
+  - 管理员端知识图谱和节点管理
+  - 更好的知识内容组织方式
+
+- **模块化架构** - 新增多个功能模块
+  - xiaou-moyu 摸鱼工具模块
+  - xiaou-version 版本管理模块
+  - 模块间依赖关系优化
 
 ### v1.2.1
 
@@ -429,7 +486,11 @@ server {
 
 **⭐ 如果这个项目对你有帮助，请点个Star支持一下！⭐**
 
-## 预计新增功能
+## 🗓️ 未来规划
 
-- 社区功能
-- 开发者工具功能
+- 🎨 UI/UX持续优化
+- 🔍 高级搜索功能
+- 📊 数据分析dashboard
+- 🔔 实时消息推送
+- 📱 移动端适配
+- 🌐 国际化支持

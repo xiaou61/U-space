@@ -28,7 +28,7 @@
 
     <properties>
         <!-- 统一版本管理 -->
-        <revision>1.2.1</revision>
+        <revision>1.3.0</revision>
         
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
