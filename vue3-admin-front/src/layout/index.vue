@@ -231,6 +231,10 @@
               <el-icon><DataAnalysis /></el-icon>
               <span>统计分析</span>
             </el-menu-item>
+            <el-menu-item index="/moyu/bug-store">
+              <el-icon><Warning /></el-icon>
+              <span>Bug商店管理</span>
+            </el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="/system">

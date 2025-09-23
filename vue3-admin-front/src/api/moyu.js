@@ -45,6 +45,11 @@ export const developerCalendarApi = {
   // 用户端获取今日事件
   getTodayEvents() {
     return request.get('/moyu/developer-calendar/today')
+  },
+  
+  // 更新事件状态
+  updateEventStatus(id, status) {
+    return request.post(`/admin/moyu/developer-calendar/events/${id}/status`, null, { status })
   }
 }
 
@@ -93,6 +98,11 @@ export const dailyContentApi = {
   // 获取收藏统计
   getCollectionStatistics() {
     return request.get('/admin/moyu/daily-content/collections/statistics')
+  },
+  
+  // 更新内容状态
+  updateContentStatus(id, status) {
+    return request.post(`/admin/moyu/daily-content/${id}/status`, null, { status })
   },
   
   // 用户端获取每日内容
@@ -154,11 +164,45 @@ export const statisticsApi = {
   }
 }
 
+// ============ Bug商店相关API ============
+export const bugStoreApi = {
+  // 分页查询Bug列表
+  getBugList(data) {
+    return request.post('/admin/moyu/bug-store/list', data)
+  },
+  
+  // 获取Bug详情
+  getBugById(id) {
+    return request.get(`/admin/moyu/bug-store/${id}`)
+  },
+  
+  // 添加Bug
+  addBug(data) {
+    return request.post('/admin/moyu/bug-store', data)
+  },
+  
+  // 更新Bug
+  updateBug(id, data) {
+    return request.put(`/admin/moyu/bug-store/${id}`, data)
+  },
+  
+  // 删除Bug
+  deleteBug(id) {
+    return request.delete(`/admin/moyu/bug-store/${id}`)
+  },
+  
+  // 批量导入Bug
+  batchImportBugs(data) {
+    return request.post('/admin/moyu/bug-store/batch-import', data)
+  }
+}
+
 // ============ 导出所有API ============
 export const moyuApi = {
   calendar: developerCalendarApi,
   content: dailyContentApi,
-  statistics: statisticsApi
+  statistics: statisticsApi,
+  bugStore: bugStoreApi
 }
 
 export default moyuApi

@@ -371,7 +371,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Edit, Search, Refresh, View, Star, DataAnalysis, Document, InfoFilled, EditPen, Calendar } from '@element-plus/icons-vue'
-import axios from 'axios'
+import { dailyContentApi } from '@/api/moyu'
 
 // 响应式数据
 const loading = ref(false)
@@ -504,10 +504,8 @@ const formatDateTime = (dateTime) => {
 const loadContentList = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/admin/moyu/daily-content/list', {
-      params: { ...searchForm, limit: pagination.pageSize }
-    })
-    contentList.value = response.data || []
+    const data = await dailyContentApi.getContentList({ ...searchForm, limit: pagination.pageSize })
+    contentList.value = data || []
     pagination.total = contentList.value.length
   } catch (error) {
     console.error('加载内容列表失败:', error)
@@ -520,8 +518,8 @@ const loadContentList = async () => {
 // 加载统计信息
 const loadStatistics = async () => {
   try {
-    const response = await axios.get('/admin/moyu/daily-content/statistics')
-    statistics.value = response.data
+    const data = await dailyContentApi.getContentStatistics()
+    statistics.value = data
   } catch (error) {
     console.error('加载统计信息失败:', error)
   }
@@ -531,10 +529,8 @@ const loadStatistics = async () => {
 const loadPopularRanking = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/admin/moyu/daily-content/popular-ranking', {
-      params: { limit: 50 }
-    })
-    contentList.value = response.data || []
+    const data = await dailyContentApi.getPopularRanking({ limit: 50 })
+    contentList.value = data || []
     pagination.total = contentList.value.length
     ElMessage.success('已加载热门内容排行')
   } catch (error) {
@@ -567,9 +563,7 @@ const handleSelectionChange = (selection) => {
 // 状态变更
 const handleStatusChange = async (row) => {
   try {
-    await axios.post(`/admin/moyu/daily-content/${row.id}/status`, null, {
-      params: { status: row.status }
-    })
+    await dailyContentApi.updateContentStatus(row.id, row.status)
     ElMessage.success('状态更新成功')
     loadStatistics()
   } catch (error) {
@@ -583,8 +577,8 @@ const handleStatusChange = async (row) => {
 // 查看内容
 const handleView = async (row) => {
   try {
-    const response = await axios.get(`/admin/moyu/daily-content/${row.id}`)
-    viewContent.value = response.data
+    const data = await dailyContentApi.getContentById(row.id)
+    viewContent.value = data
     viewDialogVisible.value = true
   } catch (error) {
     console.error('加载内容详情失败:', error)
@@ -603,8 +597,7 @@ const handleAdd = () => {
 const handleEdit = async (row) => {
   try {
     isEdit.value = true
-    const response = await axios.get(`/admin/moyu/daily-content/${row.id}`)
-    const contentData = response.data
+    const contentData = await dailyContentApi.getContentById(row.id)
     
     Object.keys(contentForm).forEach(key => {
       if (key === 'tagsText') {
@@ -634,7 +627,7 @@ const handleDelete = async (row) => {
       }
     )
     
-    await axios.delete(`/admin/moyu/daily-content/${row.id}`)
+    await dailyContentApi.deleteContent(row.id)
     ElMessage.success('删除成功')
     loadContentList()
     loadStatistics()
@@ -659,7 +652,7 @@ const handleBatchDelete = async () => {
     )
     
     const ids = selectedContents.value.map(item => item.id)
-    await axios.post('/admin/moyu/daily-content/batch-delete', ids)
+    await dailyContentApi.batchDeleteContents(ids)
     ElMessage.success('批量删除成功')
     selectedContents.value = []
     loadContentList()
@@ -687,10 +680,10 @@ const handleSubmit = async () => {
     delete formData.tagsText
     
     if (isEdit.value) {
-      await axios.put(`/admin/moyu/daily-content/${formData.id}`, formData)
+      await dailyContentApi.updateContent(formData.id, formData)
       ElMessage.success('更新成功')
     } else {
-      await axios.post('/admin/moyu/daily-content', formData)
+      await dailyContentApi.createContent(formData)
       ElMessage.success('创建成功')
     }
     

@@ -262,6 +262,36 @@ const routes = [
     }
   },
   {
+    path: '/moyu-tools/calendar',
+    name: 'DeveloperCalendar',
+    component: () => import('@/views/moyu-tools/DeveloperCalendar.vue'),
+    meta: {
+      title: '程序员日历',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/daily-content',
+    name: 'DailyContent',
+    component: () => import('@/views/moyu-tools/DailyContent.vue'),
+    meta: {
+      title: '每日内容',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moyu-tools/bug-store',
+    name: 'BugStore',
+    component: () => import('@/views/moyu-tools/bug-store.vue'),
+    meta: {
+      title: 'Bug商店',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

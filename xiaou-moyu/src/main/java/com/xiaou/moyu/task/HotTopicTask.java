@@ -27,7 +27,7 @@ public class HotTopicTask {
         log.info("启动热榜数据定时刷新任务");
         
         try {
-            hotTopicService.refreshHotTopicData();
+            hotTopicService.initializeHotTopicDataIfNeeded();
         } catch (Exception e) {
             log.error("热榜数据定时任务异常: {}", e.getMessage());
         }

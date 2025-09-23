@@ -286,7 +286,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Edit, Search, Refresh, Calendar, Mug, Platform } from '@element-plus/icons-vue'
-import axios from 'axios'
+import { developerCalendarApi } from '@/api/moyu'
 
 // 响应式数据
 const loading = ref(false)
@@ -384,10 +384,8 @@ const getIconComponent = (iconName) => {
 const loadEventList = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/admin/moyu/developer-calendar/events', {
-      params: searchForm
-    })
-    eventList.value = response.data || []
+    const data = await developerCalendarApi.getEventList(searchForm)
+    eventList.value = data || []
     pagination.total = eventList.value.length
   } catch (error) {
     console.error('加载事件列表失败:', error)
@@ -400,8 +398,8 @@ const loadEventList = async () => {
 // 加载统计信息
 const loadStatistics = async () => {
   try {
-    const response = await axios.get('/admin/moyu/developer-calendar/events/statistics')
-    statistics.value = response.data
+    const data = await developerCalendarApi.getEventStatistics()
+    statistics.value = data
   } catch (error) {
     console.error('加载统计信息失败:', error)
   }
@@ -429,9 +427,7 @@ const handleSelectionChange = (selection) => {
 // 状态变更
 const handleStatusChange = async (row) => {
   try {
-    await axios.post(`/admin/moyu/developer-calendar/events/${row.id}/status`, null, {
-      params: { status: row.status }
-    })
+    await developerCalendarApi.updateEventStatus(row.id, row.status)
     ElMessage.success('状态更新成功')
     loadStatistics()
   } catch (error) {
@@ -453,8 +449,7 @@ const handleAdd = () => {
 const handleEdit = async (row) => {
   try {
     isEdit.value = true
-    const response = await axios.get(`/admin/moyu/developer-calendar/events/${row.id}`)
-    const eventData = response.data
+    const eventData = await developerCalendarApi.getEventById(row.id)
     
     Object.keys(eventForm).forEach(key => {
       if (key === 'relatedLinksText') {
@@ -484,7 +479,7 @@ const handleDelete = async (row) => {
       }
     )
     
-    await axios.delete(`/admin/moyu/developer-calendar/events/${row.id}`)
+    await developerCalendarApi.deleteEvent(row.id)
     ElMessage.success('删除成功')
     loadEventList()
     loadStatistics()
@@ -509,7 +504,7 @@ const handleBatchDelete = async () => {
     )
     
     const ids = selectedEvents.value.map(item => item.id)
-    await axios.post('/admin/moyu/developer-calendar/events/batch-delete', ids)
+    await developerCalendarApi.batchDeleteEvents(ids)
     ElMessage.success('批量删除成功')
     selectedEvents.value = []
     loadEventList()
@@ -537,10 +532,10 @@ const handleSubmit = async () => {
     delete formData.relatedLinksText
     
     if (isEdit.value) {
-      await axios.put(`/admin/moyu/developer-calendar/events/${formData.id}`, formData)
+      await developerCalendarApi.updateEvent(formData.id, formData)
       ElMessage.success('更新成功')
     } else {
-      await axios.post('/admin/moyu/developer-calendar/events', formData)
+      await developerCalendarApi.createEvent(formData)
       ElMessage.success('创建成功')
     }
     

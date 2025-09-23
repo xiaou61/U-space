@@ -284,6 +284,12 @@ const routes = [
         name: 'MoyuStatistics',
         component: () => import('@/views/moyu/statistics/index.vue'),
         meta: { title: '统计分析' }
+      },
+      {
+        path: 'bug-store',
+        name: 'MoyuBugStore',
+        component: () => import('@/views/moyu/bug-store/index.vue'),
+        meta: { title: 'Bug商店管理' }
       }
     ]
   },

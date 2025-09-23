@@ -70,28 +70,86 @@
         </div>
       </div>
 
-      <!-- 预留其他摸鱼工具卡片 -->
-      <div class="tool-card coming-soon" style="opacity: 0.6; cursor: not-allowed;">
+      <!-- 程序员日历工具卡片 -->
+      <div class="tool-card calendar-tool" @click="navigateToTool('calendar')">
         <div class="card-header">
           <div class="tool-icon">
-            <el-icon><Clock /></el-icon>
+            <el-icon><Calendar /></el-icon>
           </div>
-          <div class="tool-badge">敬请期待</div>
+          <div class="tool-badge">精选</div>
         </div>
         <div class="card-content">
-          <h3 class="tool-title">更多工具</h3>
+          <h3 class="tool-title">程序员日历</h3>
           <p class="tool-description">
-            更多有趣的摸鱼工具正在开发中，敬请期待...
+            发现属于程序员的特殊时刻，包含技术纪念日、开源节日、程序员节日等
           </p>
           <div class="tool-features">
-            <span class="feature-tag">即将推出</span>
-            <span class="feature-tag">敬请期待</span>
+            <span class="feature-tag">月历视图</span>
+            <span class="feature-tag">今日推荐</span>
+            <span class="feature-tag">事件详情</span>
+            <span class="feature-tag">类型筛选</span>
           </div>
         </div>
         <div class="card-footer">
-          <el-button size="large" class="tool-button" disabled>
-            <el-icon><Clock /></el-icon>
-            敬请期待
+          <el-button type="info" size="large" class="tool-button">
+            <el-icon><Right /></el-icon>
+            查看日历
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 每日内容工具卡片 -->
+      <div class="tool-card content-tool" @click="navigateToTool('daily-content')">
+        <div class="card-header">
+          <div class="tool-icon">
+            <el-icon><Reading /></el-icon>
+          </div>
+          <div class="tool-badge">学习</div>
+        </div>
+        <div class="card-content">
+          <h3 class="tool-title">每日内容</h3>
+          <p class="tool-description">
+            每天一点小知识，包含编程格言、技术小贴士、代码片段、历史回顾等
+          </p>
+          <div class="tool-features">
+            <span class="feature-tag">今日推荐</span>
+            <span class="feature-tag">分类浏览</span>
+            <span class="feature-tag">点赞收藏</span>
+            <span class="feature-tag">知识积累</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <el-button type="warning" size="large" class="tool-button">
+            <el-icon><Right /></el-icon>
+            开始学习
+          </el-button>
+        </div>
+      </div>
+
+      <!-- Bug商店工具卡片 -->
+      <div class="tool-card bug-store-tool" @click="navigateToTool('bug-store')">
+        <div class="card-header">
+          <div class="tool-icon">
+            <el-icon><Notification /></el-icon>
+          </div>
+          <div class="tool-badge">发现</div>
+        </div>
+        <div class="card-content">
+          <h3 class="tool-title">Bug 商店</h3>
+          <p class="tool-description">
+            随机发现经典Bug，学习分析思路和解决方案，提升调试技能和经验
+          </p>
+          <div class="tool-features">
+            <span class="feature-tag">随机推荐</span>
+            <span class="feature-tag">经典Bug</span>
+            <span class="feature-tag">解决方案</span>
+            <span class="feature-tag">技能提升</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <el-button type="danger" size="large" class="tool-button">
+            <el-icon><Right /></el-icon>
+            来一发Bug
           </el-button>
         </div>
       </div>
@@ -103,7 +161,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { 
-  Coffee, TrendCharts, Right, Clock, Money
+  Coffee, TrendCharts, Right, Clock, Money, Calendar, Reading, Notification
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -230,6 +288,18 @@ const navigateToTool = (toolName) => {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(16, 185, 129, 0.05));
 }
 
+.calendar-tool:hover {
+  background: linear-gradient(135deg, rgba(116, 185, 255, 0.05), rgba(108, 92, 231, 0.05));
+}
+
+.content-tool:hover {
+  background: linear-gradient(135deg, rgba(253, 203, 110, 0.05), rgba(255, 193, 7, 0.05));
+}
+
+.bug-store-tool:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(220, 38, 38, 0.05));
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -256,6 +326,18 @@ const navigateToTool = (toolName) => {
   background: linear-gradient(135deg, #22c55e, #10b981);
 }
 
+.calendar-tool .tool-icon {
+  background: linear-gradient(135deg, #74b9ff, #6c5ce7);
+}
+
+.content-tool .tool-icon {
+  background: linear-gradient(135deg, #fdcb6e, #ffc107);
+}
+
+.bug-store-tool .tool-icon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
 .coming-soon .tool-icon {
   background: linear-gradient(135deg, #94a3b8, #cbd5e1);
 }
@@ -274,6 +356,18 @@ const navigateToTool = (toolName) => {
 
 .salary-calculator-tool .tool-badge {
   background: linear-gradient(135deg, #059669, #047857);
+}
+
+.calendar-tool .tool-badge {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+}
+
+.content-tool .tool-badge {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.bug-store-tool .tool-badge {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
 .coming-soon .tool-badge {
