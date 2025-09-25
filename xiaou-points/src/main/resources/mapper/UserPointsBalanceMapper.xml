@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.UserPointsBalanceMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.UserPointsBalance">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="total_points" property="totalPoints" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, total_points, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询积分余额 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_balance
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 插入用户积分记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_points_balance (
+            user_id, total_points, create_time, update_time
+        ) VALUES (
+            #{userId}, #{totalPoints}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新用户积分余额 -->
+    <update id="updateBalance">
+        UPDATE user_points_balance 
+        SET total_points = #{totalPoints}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加用户积分 -->
+    <update id="addPoints">
+        UPDATE user_points_balance 
+        SET total_points = total_points + #{points}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 减少用户积分 -->
+    <update id="subtractPoints">
+        UPDATE user_points_balance 
+        SET total_points = total_points - #{points}, 
+            update_time = NOW()
+        WHERE user_id = #{userId} 
+        AND total_points >= #{points}
+    </update>
+
+    <!-- 查询积分排行榜 -->
+    <select id="selectTopUsers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_balance
+        WHERE total_points > 0
+        ORDER BY total_points DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询积分余额列表（分页） -->
+    <select id="selectBalanceList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_balance
+        ORDER BY total_points DESC, create_time DESC
+    </select>
+
+    <!-- 统计总积分发放量 -->
+    <select id="selectTotalPointsSum" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(total_points), 0)
+        FROM user_points_balance
+    </select>
+
+    <!-- 统计积分用户数量 -->
+    <select id="selectActiveUserCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_points_balance
+        WHERE total_points > 0
+    </select>
+
+</mapper>

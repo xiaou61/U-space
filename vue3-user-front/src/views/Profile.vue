@@ -20,6 +20,54 @@
     <!-- 主要内容 -->
     <div class="main-content">
       <div class="profile-section">
+        <!-- 积分卡片 -->
+        <el-card class="points-card">
+          <template #header>
+            <div class="card-header">
+              <h3>我的积分</h3>
+              <el-button type="primary" @click="goToPointsPage" :icon="TrophyIcon">
+                查看详情
+              </el-button>
+            </div>
+          </template>
+
+          <div class="points-content" v-loading="pointsLoading">
+            <div class="points-overview">
+              <div class="points-main">
+                <div class="points-balance">
+                  <span class="balance-number">{{ pointsBalance?.totalPoints || 0 }}</span>
+                  <span class="balance-label">总积分</span>
+                </div>
+                
+                <div class="checkin-info">
+                  <div class="checkin-stats">
+                    <div class="stat-item">
+                      <span class="stat-number">{{ pointsBalance?.continuousDays || 0 }}</span>
+                      <span class="stat-label">连续打卡</span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-number">{{ pointsBalance?.nextDayPoints || 0 }}</span>
+                      <span class="stat-label">明日可得</span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    class="checkin-btn" 
+                    :class="{ 'checked': pointsBalance?.hasCheckedToday }"
+                    :disabled="pointsBalance?.hasCheckedToday || checkinLoading"
+                    @click="handleQuickCheckin"
+                  >
+                    <span v-if="checkinLoading" class="loading-icon">⏳</span>
+                    <span v-else-if="pointsBalance?.hasCheckedToday" class="check-icon">✅</span>
+                    <span v-else class="checkin-icon">📅</span>
+                    {{ pointsBalance?.hasCheckedToday ? '今日已打卡' : '立即打卡' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-card>
+        
         <el-card class="profile-card">
           <template #header>
             <div class="card-header">
@@ -196,8 +244,12 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { captchaApi } from '@/api/captcha'
+import pointsApi from '@/api/points'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { House, User, Plus, Picture } from '@element-plus/icons-vue'
+import { House, User, Plus, Picture, Trophy } from '@element-plus/icons-vue'
+
+// 图标别名（避免和变量冲突）
+const TrophyIcon = Trophy
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -212,6 +264,11 @@ const loading = ref(false)
 const saveLoading = ref(false)
 const passwordLoading = ref(false)
 const passwordCaptchaImage = ref('')
+
+// 积分相关数据
+const pointsBalance = ref(null)
+const pointsLoading = ref(false)
+const checkinLoading = ref(false)
 
 // 个人资料表单
 const profileForm = reactive({
@@ -429,9 +486,57 @@ const goToMoments = () => {
   router.push('/moments')
 }
 
+// 加载积分余额
+const loadPointsBalance = async () => {
+  pointsLoading.value = true
+  try {
+    const response = await pointsApi.getPointsBalance()
+    pointsBalance.value = response
+  } catch (error) {
+    console.error('加载积分信息失败:', error)
+    // 不显示错误提示，避免干扰用户体验
+  } finally {
+    pointsLoading.value = false
+  }
+}
+
+// 快速打卡
+const handleQuickCheckin = async () => {
+  if (pointsBalance.value?.hasCheckedToday) {
+    ElMessage.warning('今日已打卡，请勿重复操作')
+    return
+  }
+
+  checkinLoading.value = true
+  
+  try {
+    const response = await pointsApi.checkin()
+    
+    ElMessage.success({
+      message: `打卡成功！获得 ${response.pointsEarned} 积分`,
+      duration: 3000
+    })
+    
+    // 刷新积分余额
+    await loadPointsBalance()
+    
+  } catch (error) {
+    console.error('打卡失败:', error)
+    ElMessage.error(error.message || '打卡失败，请重试')
+  } finally {
+    checkinLoading.value = false
+  }
+}
+
+// 跳转到积分页面
+const goToPointsPage = () => {
+  router.push('/points')
+}
+
 onMounted(() => {
   loadUserInfo()
   loadPasswordCaptcha() // 页面加载时获取密码修改验证码
+  loadPointsBalance() // 加载积分信息
 })
 </script>
 
@@ -554,7 +659,8 @@ onMounted(() => {
 }
 
 .profile-card,
-.password-card {
+.password-card,
+.points-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -845,5 +951,143 @@ onMounted(() => {
     max-width: 250px;
     align-self: center;
   }
+}
+
+/* 积分卡片样式 */
+.points-card {
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.95) 0%, rgba(116, 185, 255, 0.95) 100%);
+  color: white;
+  
+  &::before {
+    background: linear-gradient(90deg, #67c23a, #74b9ff);
+  }
+  
+  .card-header h3 {
+    color: white;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: white;
+    background-clip: unset;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+}
+
+.points-content {
+  padding: 24px 32px;
+}
+
+.points-overview {
+  .points-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 20px;
+      text-align: center;
+    }
+  }
+}
+
+.points-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  .balance-number {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    background: linear-gradient(45deg, #fff, rgba(255,255,255,0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .balance-label {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+}
+
+.checkin-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-end;
+  
+  @media (max-width: 768px) {
+    align-items: center;
+  }
+}
+
+.checkin-stats {
+  display: flex;
+  gap: 20px;
+  
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 2px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+  }
+}
+
+.checkin-btn {
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 12px;
+  color: white;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  
+  &:hover:not(:disabled) {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
+  
+  &.checked {
+    background: rgba(76, 175, 80, 0.8);
+    border-color: rgba(76, 175, 80, 0.9);
+  }
+  
+  .loading-icon {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style> 

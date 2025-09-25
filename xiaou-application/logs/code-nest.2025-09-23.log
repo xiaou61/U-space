@@ -1,0 +1,43 @@
+2025-09-23 11:42:36.532 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-09-23 11:42:36.596 [main] INFO  CozeTest - Starting CozeTest using Java 17 with PID 34036 (started by Lenovo in D:\onenodes\githubprojectstart\Code-Nest\xiaou-application)
+2025-09-23 11:42:36.597 [main] INFO  CozeTest - The following 1 profile is active: "dev"
+2025-09-23 11:42:42.550 [main] INFO  com.xiaou.common.utils.CozeUtils - Coze客户端初始化成功
+2025-09-23 11:42:42.605 [main] DEBUG com.xiaou.monitor.context.SqlCallTreeContext - 进入SQL调用 - 节点ID: 015f7012-4c39-4225-b199-9b4ad183e2d1, 深度: 1, SQL: SELECT word FROM sensitive_word WHERE status = 1
+2025-09-23 11:42:42.618 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-09-23 11:42:43.106 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3e356ed6
+2025-09-23 11:42:43.108 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-09-23 11:42:43.333 [main] DEBUG com.xiaou.monitor.context.SqlCallTreeContext - 保存SQL调用树会话 - 会话ID: main_1758598963329, 根节点数: 1
+2025-09-23 11:42:43.333 [main] DEBUG com.xiaou.monitor.context.SqlCallTreeContext - 退出SQL调用 - 节点ID: 015f7012-4c39-4225-b199-9b4ad183e2d1, 耗时: 724ms, 影响行数: 2416
+2025-09-23 11:42:43.346 [main] INFO  com.xiaou.sensitive.engine.AhoCorasickEngine - AC自动机初始化完成，有效敏感词数量: 1908
+2025-09-23 11:42:43.346 [main] INFO  c.x.s.service.impl.SensitiveCheckServiceImpl - 敏感词库刷新完成，加载词汇数量: 1909，耗时: 768ms
+2025-09-23 11:42:43.713 [main] INFO  c.xiaou.filestorage.factory.StorageStrategyFactory - 注册存储策略: COS
+2025-09-23 11:42:43.713 [main] INFO  c.xiaou.filestorage.factory.StorageStrategyFactory - 注册存储策略: KODO
+2025-09-23 11:42:43.713 [main] INFO  c.xiaou.filestorage.factory.StorageStrategyFactory - 注册存储策略: LOCAL
+2025-09-23 11:42:43.713 [main] INFO  c.xiaou.filestorage.factory.StorageStrategyFactory - 注册存储策略: OBS
+2025-09-23 11:42:43.713 [main] INFO  c.xiaou.filestorage.factory.StorageStrategyFactory - 注册存储策略: OSS
+2025-09-23 11:42:47.088 [main] INFO  CozeTest - Started CozeTest in 11.205 seconds (process running for 12.474)
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - 🎉 Code-Nest 启动成功！
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-09-23 11:42:47.097 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌐 运行环境:
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 环境: dev
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 端口: 9999
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 路径: /api
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 🌍 访问地址:
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 首页: http://localhost:9999/api
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - API文档: http://localhost:9999/api/swagger-ui.html
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-09-23 11:42:47.098 [main] INFO  com.xiaou.config.StartupApplicationListener - ✨ Happy Coding! ✨
+2025-09-23 11:42:47.099 [main] INFO  com.xiaou.config.StartupApplicationListener - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-09-23 11:42:47.099 [main] INFO  com.xiaou.config.StartupApplicationListener - 
+2025-09-23 11:42:47.105 [main] INFO  com.xiaou.monitor.config.MonitorConfig - SQL调用树拦截器注册成功
+2025-09-23 11:42:47.108 [scheduling-1] INFO  com.xiaou.moyu.task.HotTopicTask - 启动热榜数据定时刷新任务
+2025-09-23 11:42:47.133 [scheduling-1] INFO  com.xiaou.moyu.service.impl.HotTopicServiceImpl - 热榜数据缓存已存在，跳过初始化
+2025-09-23 11:42:49.020 [main] DEBUG com.xiaou.common.utils.CozeUtils - 收到工作流事件: com.coze.openapi.client.workflows.run.model.WorkflowEventType@418f2af3
+2025-09-23 11:42:49.021 [main] INFO  com.xiaou.common.utils.CozeUtils - 工作流执行完成: 7553122464865255463
+2025-09-23 11:42:49.045 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-09-23 11:42:49.051 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.UserPointsDetailMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.UserPointsDetail">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="points_change" property="pointsChange" jdbcType="INTEGER"/>
+        <result column="points_type" property="pointsType" jdbcType="TINYINT"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="balance_after" property="balanceAfter" jdbcType="INTEGER"/>
+        <result column="admin_id" property="adminId" jdbcType="BIGINT"/>
+        <result column="continuous_days" property="continuousDays" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, points_change, points_type, description, balance_after, 
+        admin_id, continuous_days, create_time
+    </sql>
+
+    <!-- 插入积分明细记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_points_detail (
+            user_id, points_change, points_type, description, balance_after, 
+            admin_id, continuous_days, create_time
+        ) VALUES (
+            #{userId}, #{pointsChange}, #{pointsType}, #{description}, #{balanceAfter}, 
+            #{adminId}, #{continuousDays}, #{createTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询明细 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_detail
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询用户积分明细列表（分页） -->
+    <select id="selectDetailList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_detail
+        WHERE user_id = #{userId}
+        <if test="pointsType != null">
+            AND points_type = #{pointsType}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有积分明细列表（管理端分页） -->
+    <select id="selectAllDetailList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_detail
+        WHERE 1=1
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="pointsType != null">
+            AND points_type = #{pointsType}
+        </if>
+        <if test="adminId != null">
+            AND admin_id = #{adminId}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户积分明细总数 -->
+    <select id="countUserDetails" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_points_detail
+        WHERE user_id = #{userId}
+        <if test="pointsType != null">
+            AND points_type = #{pointsType}
+        </if>
+    </select>
+
+    <!-- 统计所有积分明细总数 -->
+    <select id="countAllDetails" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_points_detail
+        WHERE 1=1
+        <if test="pointsType != null">
+            AND points_type = #{pointsType}
+        </if>
+    </select>
+
+    <!-- 统计指定类型积分总量 -->
+    <select id="selectPointsSumByType" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(points_change), 0)
+        FROM user_points_detail
+        WHERE points_change > 0
+        <if test="pointsType != null">
+            AND points_type = #{pointsType}
+        </if>
+    </select>
+
+    <!-- 查询用户今日积分明细 -->
+    <select id="selectTodayDetails" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_detail
+        WHERE user_id = #{userId}
+        AND DATE(create_time) = CURDATE()
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询用户指定时间范围的积分明细 -->
+    <select id="selectDetailsByTimeRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_points_detail
+        WHERE user_id = #{userId}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

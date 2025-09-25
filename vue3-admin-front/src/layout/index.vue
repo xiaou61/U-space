@@ -237,6 +237,29 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/points">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>积分管理</span>
+            </template>
+            <el-menu-item index="/points/index">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>积分概览</span>
+            </el-menu-item>
+            <el-menu-item index="/points/users">
+              <el-icon><Trophy /></el-icon>
+              <span>积分排行</span>
+            </el-menu-item>
+            <el-menu-item index="/points/details">
+              <el-icon><Document /></el-icon>
+              <span>积分明细</span>
+            </el-menu-item>
+            <el-menu-item index="/points/grant">
+              <el-icon><Plus /></el-icon>
+              <span>积分发放</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/system">
             <template #title>
               <el-icon><Setting /></el-icon>
@@ -360,7 +383,12 @@ import {
   Warning,
   EditPen,
   Share,
-  Search
+  Search,
+  Coin,
+  Trophy,
+  Plus,
+  Coffee,
+  Calendar
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -428,6 +456,8 @@ const getIconByPath = (path, title = '') => {
     'moyu': 'Coffee',
     'calendar-events': 'Calendar',
     'daily-content': 'Document',
+    'points': 'Coin',
+    'grant': 'Plus',
     'system': 'Setting',
     'version': 'Document',
     'monitor': 'Monitor',
@@ -471,6 +501,11 @@ const getIconByPath = (path, title = '') => {
     '配置': 'SetUp',
     '迁移': 'Sort',
     '设置': 'Tools',
+    '积分': 'Coin',
+    '排行': 'Trophy',
+    '发放': 'Plus',
+    '明细': 'Document',
+    '概览': 'DataAnalysis',
     '系统': 'Setting',
     '版本': 'Document',
     '监控': 'Monitor',
@@ -514,6 +549,8 @@ const generateBreadcrumb = (path, title) => {
     'logs': '日志管理',
     'sensitive': '敏感词管理',
     'filestorage': '文件存储管理',
+    'moyu': '摸鱼工具管理',
+    'points': '积分管理',
     'system': '系统管理',
     'profile': '个人中心'
   }

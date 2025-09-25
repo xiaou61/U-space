@@ -161,6 +161,16 @@ const routes = [
     }
   },
   {
+    path: '/points',
+    name: 'Points',
+    component: () => import('@/views/points/Index.vue'),
+    meta: {
+      title: '我的积分',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/knowledge',
     name: 'Knowledge',
     component: () => import('@/views/knowledge/Index.vue'),

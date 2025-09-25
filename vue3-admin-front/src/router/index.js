@@ -294,6 +294,38 @@ const routes = [
     ]
   },
   {
+    path: '/points',
+    component: Layout,
+    redirect: '/points/index',
+    meta: { title: '积分管理' },
+    children: [
+      {
+        path: 'index',
+        name: 'PointsOverview',
+        component: () => import('@/views/points/index.vue'),
+        meta: { title: '积分概览' }
+      },
+      {
+        path: 'users',
+        name: 'PointsUsers',
+        component: () => import('@/views/points/users.vue'),
+        meta: { title: '积分排行' }
+      },
+      {
+        path: 'details',
+        name: 'PointsDetails',
+        component: () => import('@/views/points/details.vue'),
+        meta: { title: '积分明细' }
+      },
+      {
+        path: 'grant',
+        name: 'PointsGrant',
+        component: () => import('@/views/points/grant.vue'),
+        meta: { title: '积分发放' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

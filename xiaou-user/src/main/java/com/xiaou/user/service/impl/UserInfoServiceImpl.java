@@ -12,6 +12,7 @@ import com.xiaou.user.domain.UserInfo;
 import com.xiaou.user.dto.*;
 import com.xiaou.user.mapper.UserInfoMapper;
 import com.xiaou.user.service.CaptchaService;
+import com.xiaou.points.service.PointsService;
 import com.xiaou.user.service.UserInfoService;
 import cn.hutool.core.bean.BeanUtil;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     private final JwtTokenUtil jwtTokenUtil;
     private final TokenService tokenService;
     private final ObjectMapper objectMapper;
+    private final PointsService pointsService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -91,6 +93,14 @@ public class UserInfoServiceImpl implements UserInfoService {
             }
 
             log.info("用户注册成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
+
+            // 为新用户创建积分账户
+            try {
+                pointsService.createPointsAccountForNewUser(user.getId());
+                log.info("为新用户创建积分账户成功，用户ID: {}", user.getId());
+            } catch (Exception e) {
+                log.warn("为新用户创建积分账户失败，用户ID: {}, 错误: {}", user.getId(), e.getMessage());
+            }
 
             // 发送欢迎消息
             try {
@@ -520,6 +530,14 @@ public class UserInfoServiceImpl implements UserInfoService {
             }
 
             log.info("管理员创建用户成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
+
+            // 为新用户创建积分账户
+            try {
+                pointsService.createPointsAccountForNewUser(user.getId());
+                log.info("为新用户创建积分账户成功，用户ID: {}", user.getId());
+            } catch (Exception e) {
+                log.warn("为新用户创建积分账户失败，用户ID: {}, 错误: {}", user.getId(), e.getMessage());
+            }
 
             return convertToUserInfoResponse(user);
 
