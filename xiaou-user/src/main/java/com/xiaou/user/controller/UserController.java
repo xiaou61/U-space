@@ -1,18 +1,13 @@
 package com.xiaou.user.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
-import com.xiaou.common.utils.UserContextUtil;
-import com.xiaou.user.domain.UserInfo;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.user.dto.UserChangePasswordRequest;
 import com.xiaou.user.dto.UserInfoResponse;
 import com.xiaou.user.dto.UserUpdateRequest;
 import com.xiaou.user.service.UserInfoService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,19 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 @RestController
 @RequestMapping("/user")
-
 public class UserController {
 
     @Resource
-    private  UserInfoService userInfoService;
-    @Resource
-    private  TokenService tokenService;
-    @Resource
-    private  JwtTokenUtil jwtTokenUtil;
-    @Resource
-    private  ObjectMapper objectMapper;
-    @Resource
-    private UserContextUtil userContextUtil;
+    private UserInfoService userInfoService;
 
     @Autowired
     private FileStorageService fileStorageService;
@@ -70,22 +56,17 @@ public class UserController {
     @GetMapping("/profile")
     public Result<UserInfoResponse> getCurrentUserInfo() {
         try {
-            // 使用 UserContextUtil 获取当前用户信息
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            // 使用 Sa-Token 获取当前用户ID
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            // 验证是否为普通用户
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            log.info("获取当前用户信息，用户ID: {}", userId);
             
-            log.info("获取当前用户信息，用户ID: {}", currentUser.getId());
+            UserInfoResponse userInfo = userInfoService.getUserInfoById(userId);
             
-            UserInfoResponse userInfo = userInfoService.getUserInfoById(currentUser.getId());
-            
-            log.info("获取当前用户信息成功，用户ID: {}", currentUser.getId());
+            log.info("获取当前用户信息成功，用户ID: {}", userId);
             return Result.success("获取用户信息成功", userInfo);
             
         } catch (Exception e) {

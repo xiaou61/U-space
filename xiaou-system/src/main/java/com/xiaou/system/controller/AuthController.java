@@ -5,10 +5,7 @@ import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.ResultCode;
-import com.xiaou.common.utils.AdminContextUtil;
-import com.xiaou.common.utils.UserContextUtil;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.dto.*;
 import com.xiaou.system.service.SysAdminService;
@@ -21,7 +18,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,11 +37,7 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final SysAdminService adminService;
-    private final TokenService tokenService;
-    private final JwtTokenUtil jwtTokenUtil;
     private final SysLoginLogService loginLogService;
-    private final UserContextUtil userContextUtil;
-    private final AdminContextUtil adminContextUtil;
 
     /**
      * 管理员登录
@@ -79,26 +71,16 @@ public class AuthController {
     @SecurityRequirement(name = "Bearer Token")
     @PostMapping("/logout")
     @Log(module = "用户管理", type = Log.OperationType.OTHER, description = "用户登出")
-    public Result<?> logout(
-            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
-            @RequestHeader("Authorization") String authHeader) {
+    public Result<?> logout() {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token != null) {
-                // 将Token加入黑名单
-                tokenService.addToBlacklist(token, "admin");
-                // 从Redis中删除用户信息
-                tokenService.deleteToken(token, "admin");
-                
-                String username = tokenService.getUsernameFromToken(token);
-                log.info("🚪 用户登出");
-                log.info("用户: {}", username);
-            }
+            // 获取当前管理员ID
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
+            log.info("🚪 管理员登出，管理员ID: {}", adminId);
             
-            // 清除Security上下文
-            SecurityContextHolder.clearContext();
+            // 使用 Sa-Token 登出（自动清除 Session 和 Token）
+            StpAdminUtil.logout();
             
-            return Result.success();
+            return Result.success("登出成功");
         } catch (Exception e) {
             log.error("登出失败", e);
             return Result.error("登出失败");
@@ -106,7 +88,7 @@ public class AuthController {
     }
 
     /**
-     * 刷新令牌
+     * 刷新令牌（Sa-Token 自动续签，此接口可选）
      */
     @Operation(summary = "刷新令牌", description = "使用当前Token刷新获取新的Token")
     @ApiResponses(value = {
@@ -117,22 +99,17 @@ public class AuthController {
     })
     @SecurityRequirement(name = "Bearer Token")
     @PostMapping("/refresh")
-    public Result<String> refresh(
-            @Parameter(description = "认证头，格式：Bearer {token}", required = true)
-            @RequestHeader("Authorization") String authHeader) {
+    public Result<String> refresh() {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效");
+            if (!StpAdminUtil.isLogin()) {
+                return Result.error(ResultCode.TOKEN_INVALID.getCode(), "Token无效或已过期");
             }
             
-            String newToken = tokenService.refreshToken(token, "admin");
-            if (newToken == null) {
-                return Result.error(ResultCode.TOKEN_EXPIRED.getCode(), "Token已过期，请重新登录");
-            }
+            // Sa-Token 会自动续签，这里直接返回当前 Token
+            String token = StpAdminUtil.getTokenValue();
             
             log.info("🔄 令牌刷新成功");
-            return Result.success("刷新成功", newToken);
+            return Result.success("刷新成功", token);
         } catch (Exception e) {
             log.error("刷新令牌失败", e);
             return Result.error("刷新令牌失败");
@@ -154,20 +131,26 @@ public class AuthController {
     @GetMapping("/info")
     public Result<LoginResponse.UserInfo> info() {
         try {
-            // 通过AOP自动验证管理员权限，直接获取管理员信息
-            UserContextUtil.UserInfo currentUser = adminContextUtil.getCurrentAdmin();
+            // 通过AOP自动验证管理员权限，直接获取管理员ID
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
+            
+            // 从数据库获取管理员信息
+            SysAdmin admin = adminService.getById(adminId);
+            if (admin == null) {
+                return Result.error("用户信息不存在");
+            }
             
             // 构建用户信息响应
             LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
-            userInfo.setId(currentUser.getId())
-                    .setUsername(currentUser.getUsername())
-                    .setRealName(currentUser.getRealName())
-                    .setEmail(currentUser.getEmail())
-                    .setAvatar(currentUser.getAvatar())
-                    .setRoles(adminService.getAdminRoles(currentUser.getId()))
-                    .setPermissions(adminService.getAdminPermissions(currentUser.getId()));
+            userInfo.setId(admin.getId())
+                    .setUsername(admin.getUsername())
+                    .setRealName(admin.getRealName())
+                    .setEmail(admin.getEmail())
+                    .setAvatar(admin.getAvatar())
+                    .setRoles(adminService.getAdminRoles(admin.getId()))
+                    .setPermissions(adminService.getAdminPermissions(admin.getId()));
             
-            log.debug("获取用户信息成功: {}", currentUser.getUsername());
+            log.debug("获取用户信息成功: {}", admin.getUsername());
             return Result.success("获取成功", userInfo);
         } catch (Exception e) {
             log.error("获取用户信息失败", e);
@@ -268,13 +251,11 @@ public class AuthController {
             @Valid @RequestBody UpdateAdminRequest request) {
         try {
             // 通过AOP自动验证管理员权限，直接获取管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
-            String adminUsername = adminContextUtil.getCurrentAdminUsername();
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             boolean success = adminService.updateCurrentUserInfo(adminId, request);
             if (success) {
-                log.info("✅ 用户个人信息更新成功");
-                log.info("用户: {}", adminUsername);
+                log.info("✅ 用户个人信息更新成功，管理员ID: {}", adminId);
                 return Result.success("个人信息更新成功");
             } else {
                 return Result.error("个人信息更新失败");
@@ -303,14 +284,12 @@ public class AuthController {
     public Result<?> changePassword(@Parameter(description = "修改密码请求", required = true)
             @Valid @RequestBody ChangePasswordRequest request) {
         try {
-            // 通过AOP自动验证管理员权限，直接获取管理员信息
-            Long adminId = adminContextUtil.getCurrentAdminId();
-            String adminUsername = adminContextUtil.getCurrentAdminUsername();
+            // 通过AOP自动验证管理员权限，直接获取管理员ID
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             boolean success = adminService.changeCurrentUserPassword(adminId, request);
             if (success) {
-                log.info("✅ 用户密码修改成功");
-                log.info("用户: {}", adminUsername);
+                log.info("✅ 用户密码修改成功，管理员ID: {}", adminId);
                 
                 // 密码修改后，需要前端重新登录
                 return Result.success("密码修改成功，请重新登录");

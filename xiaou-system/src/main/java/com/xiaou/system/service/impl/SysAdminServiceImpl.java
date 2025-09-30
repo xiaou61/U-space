@@ -5,6 +5,7 @@ import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import com.xiaou.common.core.domain.ResultCode;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.domain.SysLoginLog;
 import com.xiaou.system.dto.LoginRequest;
@@ -15,10 +16,7 @@ import com.xiaou.system.mapper.SysAdminMapper;
 import com.xiaou.system.mapper.SysLoginLogMapper;
 import com.xiaou.system.mapper.SysPermissionMapper;
 import com.xiaou.system.mapper.SysRoleMapper;
-import com.xiaou.common.security.JwtTokenUtil;
 import com.xiaou.system.service.SysAdminService;
-import com.xiaou.common.security.TokenService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,10 +44,7 @@ public class SysAdminServiceImpl implements SysAdminService {
     private final SysRoleMapper roleMapper;
     private final SysPermissionMapper permissionMapper;
     private final SysLoginLogMapper loginLogMapper;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -106,38 +101,34 @@ public class SysAdminServiceImpl implements SysAdminService {
                 throw new BusinessException(ResultCode.LOGIN_FAILED, "用户名或密码错误");
             }
 
-            // 4. 生成JWT令牌
-            String accessToken = jwtTokenUtil.generateAccessToken(admin.getUsername(), admin.getId());
-            String refreshToken = jwtTokenUtil.generateRefreshToken(admin.getUsername(), admin.getId());
-
+            // 4. 使用 Sa-Token 进行登录（自动生成 Token 并存储到 Redis）
+            StpAdminUtil.login(admin.getId());
+            
             // 5. 更新登录信息
             Integer loginCount = admin.getLoginCount() == null ? 1 : admin.getLoginCount() + 1;
-            adminMapper.updateLastLoginInfo(admin.getId(), LocalDateTime.now(), ip, loginCount);
-            
-            // 6. 保存Token到Redis
             admin.setLastLoginTime(LocalDateTime.now());
             admin.setLastLoginIp(ip);
             admin.setLoginCount(loginCount);
-            try {
-                String adminJson = objectMapper.writeValueAsString(admin);
-                tokenService.saveToken(admin.getUsername(), accessToken, adminJson);
-            } catch (Exception e) {
-                log.error("保存管理员Token失败", e);
-                throw new BusinessException(ResultCode.ERROR, "登录失败");
-            }
-
-            // 7. 记录登录成功日志
+            adminMapper.updateLastLoginInfo(admin.getId(), LocalDateTime.now(), ip, loginCount);
+            
+            // 6. 存储用户信息到 Sa-Token Session
+            StpAdminUtil.set("userInfo", admin);
+            
+            // 7. 获取 Token 值
+            String accessToken = StpAdminUtil.getTokenValue();
+            
+            // 8. 记录登录成功日志
             loginLog.setLoginStatus(0);
             loginLog.setLoginMessage("登录成功");
             loginLogMapper.insert(loginLog);
 
-            // 8. 构建响应
+            // 9. 构建响应
             LoginResponse response = new LoginResponse();
             response.setAccessToken(accessToken)
-                    .setRefreshToken(refreshToken)
-                    .setExpiresIn(7200L); // 2小时
+                    .setRefreshToken(accessToken)  // Sa-Token 使用相同 Token
+                    .setExpiresIn(604800L); // 7天
 
-            // 9. 构建用户信息
+            // 10. 构建用户信息
             LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
             userInfo.setId(admin.getId())
                     .setUsername(admin.getUsername())

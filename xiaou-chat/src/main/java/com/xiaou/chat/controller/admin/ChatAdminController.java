@@ -11,7 +11,7 @@ import com.xiaou.common.annotation.Log;
 import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +34,6 @@ public class ChatAdminController {
     private final ChatUserBanService chatUserBanService;
     private final ChatRoomService chatRoomService;
     private final ChatWebSocketHandler chatWebSocketHandler;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取消息列表（管理端）

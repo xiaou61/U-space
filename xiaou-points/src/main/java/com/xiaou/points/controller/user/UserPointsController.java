@@ -2,7 +2,7 @@ package com.xiaou.points.controller.user;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.points.dto.*;
 import com.xiaou.points.service.PointsService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserPointsController {
     
     private final PointsService pointsService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取用户积分余额信息
@@ -29,16 +28,12 @@ public class UserPointsController {
     @GetMapping("/balance")
     public Result<PointsBalanceResponse> getPointsBalance() {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
-            
-            PointsBalanceResponse response = pointsService.getPointsBalance(currentUser.getId());
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            PointsBalanceResponse response = pointsService.getPointsBalance(userId);
             return Result.success("获取成功", response);
             
         } catch (Exception e) {
@@ -53,21 +48,17 @@ public class UserPointsController {
     @PostMapping("/checkin")
     public Result<CheckinResponse> checkin() {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
-            
-            CheckinResponse response = pointsService.checkin(currentUser.getId());
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            CheckinResponse response = pointsService.checkin(userId);
             return Result.success("打卡成功", response);
             
         } catch (Exception e) {
             log.error("用户打卡失败，用户ID: {}", 
-                    userContextUtil.getCurrentUser() != null ? userContextUtil.getCurrentUser().getId() : null, e);
+                    StpUserUtil.isLogin() ? StpUserUtil.getLoginIdAsLong() : null, e);
             return Result.error(e.getMessage());
         }
     }
@@ -78,17 +69,13 @@ public class UserPointsController {
     @PostMapping("/detail")
     public Result<PageResult<PointsDetailResponse>> getPointsDetailList(@RequestBody PointsDetailQueryRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
-            
+            Long userId = StpUserUtil.getLoginIdAsLong();
             // 设置当前用户ID，防止查询其他用户的数据
-            request.setUserId(currentUser.getId());
+            request.setUserId(userId);
             
             PageResult<PointsDetailResponse> response = pointsService.getPointsDetailList(request);
             return Result.success("获取成功", response);

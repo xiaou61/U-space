@@ -8,7 +8,7 @@ spring:
   # Redis配置（适用于Redisson）
   data:
     redis:
-      # 使用Redisson配置
+      # 使用Redisson配置（业务数据使用 database 3）
       redisson:
         config: |
           singleServerConfig:
@@ -31,3 +31,26 @@ spring:
       name: disabled
       password: disabled
       roles: disabled
+
+# Sa-Token 独立 Redis 配置（开发环境）
+sa-token:
+  alone-redis:
+    # Redis 服务器地址
+    host: 127.0.0.1
+    # Redis 端口
+    port: 6379
+    # Redis 数据库索引（使用 database 4，与业务数据隔离）
+    database: 4
+    # Redis 连接超时时间（毫秒）
+    timeout: 10000
+    # 连接池配置
+    jedis:
+      pool:
+        # 连接池最大连接数
+        max-active: 8
+        # 连接池最大空闲连接数
+        max-idle: 8
+        # 连接池最小空闲连接数
+        min-idle: 0
+        # 连接池最大阻塞等待时间（毫秒）
+        max-wait: 3000

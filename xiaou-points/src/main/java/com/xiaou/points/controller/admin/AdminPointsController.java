@@ -3,7 +3,7 @@ package com.xiaou.points.controller.admin;
 import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.points.dto.*;
 import com.xiaou.points.service.PointsService;
 import jakarta.validation.Valid;
@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 public class AdminPointsController {
     
     private final PointsService pointsService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 管理员发放积分
@@ -32,12 +31,12 @@ public class AdminPointsController {
     @PostMapping("/grant")
     public Result<AdminGrantPointsResponse> grantPoints(@Valid @RequestBody AdminGrantPointsRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
-            AdminGrantPointsResponse response = pointsService.grantPoints(request, currentUser.getId());
+            AdminGrantPointsResponse response = pointsService.grantPoints(request, adminId);
             
             log.info("管理员{}为用户{}发放{}积分成功，原因：{}", 
-                    currentUser.getUsername(), request.getUserId(), request.getPoints(), request.getReason());
+                    adminId, request.getUserId(), request.getPoints(), request.getReason());
             
             return Result.success("积分发放成功", response);
             

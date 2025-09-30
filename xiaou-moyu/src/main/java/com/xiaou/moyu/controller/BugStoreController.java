@@ -2,7 +2,7 @@ package com.xiaou.moyu.controller;
 
 import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.moyu.dto.BugItemDto;
 import com.xiaou.moyu.service.BugStoreService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class BugStoreController {
     
     private final BugStoreService bugStoreService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 随机获取一个Bug
@@ -30,12 +29,12 @@ public class BugStoreController {
     @PostMapping("/random")
     public Result<BugItemDto> getRandomBug() {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("请先登录");
             }
             
-            BugItemDto bugItem = bugStoreService.getRandomBug(currentUser.getId());
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            BugItemDto bugItem = bugStoreService.getRandomBug(userId);
             
             if (bugItem == null) {
                 return Result.error("暂无可用的Bug内容");

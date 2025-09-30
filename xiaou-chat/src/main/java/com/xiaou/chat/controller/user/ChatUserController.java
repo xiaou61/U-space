@@ -10,7 +10,7 @@ import com.xiaou.chat.service.ChatRoomService;
 import com.xiaou.chat.websocket.ChatWebSocketHandler;
 import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +32,6 @@ public class ChatUserController {
     private final ChatOnlineUserService chatOnlineUserService;
     private final ChatRoomService chatRoomService;
     private final ChatWebSocketHandler chatWebSocketHandler;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取历史消息
@@ -74,7 +73,7 @@ public class ChatUserController {
     @Log(module = "聊天室", type = Log.OperationType.DELETE, description = "撤回消息")
     @PostMapping("/message/recall")
     public Result<Void> recallMessage(@RequestBody ChatRecallRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         chatMessageService.recallMessage(request.getMessageId(), userId);
         
         // 通过WebSocket通知所有用户

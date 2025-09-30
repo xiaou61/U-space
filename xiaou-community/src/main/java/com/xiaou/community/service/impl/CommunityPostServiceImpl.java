@@ -3,10 +3,10 @@ package com.xiaou.community.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.DateHelper;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.domain.CommunityPost;
 import com.xiaou.community.domain.CommunityPostCollect;
@@ -43,7 +43,6 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     private final CommunityPostMapper communityPostMapper;
     private final CommunityPostLikeMapper communityPostLikeMapper;
     private final CommunityPostCollectMapper communityPostCollectMapper;
-    private final UserContextUtil userContextUtil;
     private final CommunityUserStatusService communityUserStatusService;
     private final CommunityCategoryService communityCategoryService;
     
@@ -171,10 +170,10 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 如果指定了分类ID，需要验证分类是否存在且启用
         if (request.getCategoryId() != null) {
@@ -188,8 +187,11 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setCategoryId(request.getCategoryId());
-        post.setAuthorId(currentUser.getId());
-        post.setAuthorName(currentUser.getUsername());
+        post.setAuthorId(currentUserId);
+        // Sa-Token: 从 Session 获取用户名，如果没有则使用默认值
+        Object userInfo = StpUserUtil.getSession().get("userInfo");
+        String username = userInfo != null ? userInfo.toString() : "用户" + currentUserId;
+        post.setAuthorName(username);
         post.setViewCount(0);
         post.setLikeCount(0);
         post.setCommentCount(0);
@@ -203,14 +205,14 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         }
         
         // 更新用户发帖数
-        communityUserStatusService.incrementPostCount(currentUser.getId());
+        communityUserStatusService.incrementPostCount(currentUserId);
         
         // 更新分类下的帖子数量
         if (request.getCategoryId() != null) {
             communityCategoryService.updatePostCount(request.getCategoryId(), 1);
         }
         
-        log.info("用户发布帖子成功，用户ID: {}, 帖子ID: {}, 分类ID: {}", currentUser.getId(), post.getId(), request.getCategoryId());
+        log.info("用户发布帖子成功，用户ID: {}, 帖子ID: {}, 分类ID: {}", currentUserId, post.getId(), request.getCategoryId());
     }
     
     @Override
@@ -219,16 +221,16 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
         CommunityPost post = getById(id);
         
         // 检查是否已点赞
-        CommunityPostLike existingLike = communityPostLikeMapper.selectByPostIdAndUserId(id, currentUser.getId());
+        CommunityPostLike existingLike = communityPostLikeMapper.selectByPostIdAndUserId(id, currentUserId);
         if (existingLike != null) {
             throw new BusinessException("已经点赞过了");
         }
@@ -236,8 +238,10 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 添加点赞记录
         CommunityPostLike like = new CommunityPostLike();
         like.setPostId(id);
-        like.setUserId(currentUser.getId());
-        like.setUserName(currentUser.getUsername());
+        like.setUserId(currentUserId);
+        Object userInfo = StpUserUtil.getSession().get("userInfo");
+        String username = userInfo != null ? userInfo.toString() : "用户" + currentUserId;
+        like.setUserName(username);
         
         int result = communityPostLikeMapper.insert(like);
         if (result <= 0) {
@@ -248,45 +252,45 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         communityPostMapper.updateLikeCount(id, 1);
         
         // 更新用户点赞数统计
-        communityUserStatusService.incrementLikeCount(currentUser.getId());
+        communityUserStatusService.incrementLikeCount(currentUserId);
         
         // 发送消息通知：通知帖子作者
-        if (!currentUser.getId().equals(post.getAuthorId())) {
+        if (!currentUserId.equals(post.getAuthorId())) {
             try {
                 NotificationUtil.sendCommunityMessage(
                     post.getAuthorId(),
                     "您的帖子收到新点赞",
-                    "用户 " + currentUser.getUsername() + " 点赞了您的帖子《" + post.getTitle() + "》",
+                    "用户 " + username + " 点赞了您的帖子《" + post.getTitle() + "》",
                     id.toString()
                 );
             } catch (Exception e) {
                 log.warn("发送帖子点赞通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
-                        currentUser.getId(), id, e.getMessage());
+                        currentUserId, id, e.getMessage());
             }
         }
         
-        log.info("用户点赞帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
+        log.info("用户点赞帖子成功，用户ID: {}, 帖子ID: {}", currentUserId, id);
     }
     
     @Override
     @Transactional
     public void unlikePost(Long id) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
         CommunityPost post = getById(id);
         
         // 检查是否已点赞
-        CommunityPostLike existingLike = communityPostLikeMapper.selectByPostIdAndUserId(id, currentUser.getId());
+        CommunityPostLike existingLike = communityPostLikeMapper.selectByPostIdAndUserId(id, currentUserId);
         if (existingLike == null) {
             throw new BusinessException("还没有点赞");
         }
         
         // 删除点赞记录
-        int result = communityPostLikeMapper.delete(id, currentUser.getId());
+        int result = communityPostLikeMapper.delete(id, currentUserId);
         if (result <= 0) {
             throw new BusinessException("取消点赞失败");
         }
@@ -295,9 +299,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         communityPostMapper.updateLikeCount(id, -1);
         
         // 更新用户点赞数统计
-        communityUserStatusService.decrementLikeCount(currentUser.getId());
+        communityUserStatusService.decrementLikeCount(currentUserId);
         
-        log.info("用户取消点赞帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
+        log.info("用户取消点赞帖子成功，用户ID: {}, 帖子ID: {}", currentUserId, id);
     }
     
     @Override
@@ -306,16 +310,16 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
         CommunityPost post = getById(id);
         
         // 检查是否已收藏
-        CommunityPostCollect existingCollect = communityPostCollectMapper.selectByPostIdAndUserId(id, currentUser.getId());
+        CommunityPostCollect existingCollect = communityPostCollectMapper.selectByPostIdAndUserId(id, currentUserId);
         if (existingCollect != null) {
             throw new BusinessException("已经收藏过了");
         }
@@ -323,8 +327,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 添加收藏记录
         CommunityPostCollect collect = new CommunityPostCollect();
         collect.setPostId(id);
-        collect.setUserId(currentUser.getId());
-        collect.setUserName(currentUser.getUsername());
+        collect.setUserId(currentUserId);
+        collect.setUserName(username);
         
         int result = communityPostCollectMapper.insert(collect);
         if (result <= 0) {
@@ -335,45 +339,45 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         communityPostMapper.updateCollectCount(id, 1);
         
         // 更新用户收藏数
-        communityUserStatusService.incrementCollectCount(currentUser.getId());
+        communityUserStatusService.incrementCollectCount(currentUserId);
         
         // 发送消息通知：通知帖子作者
-        if (!currentUser.getId().equals(post.getAuthorId())) {
+        if (!currentUserId.equals(post.getAuthorId())) {
             try {
                 NotificationUtil.sendCommunityMessage(
                     post.getAuthorId(),
                     "您的帖子被收藏",
-                    "用户 " + currentUser.getUsername() + " 收藏了您的帖子《" + post.getTitle() + "》",
+                    "用户 " + username + " 收藏了您的帖子《" + post.getTitle() + "》",
                     id.toString()
                 );
             } catch (Exception e) {
                 log.warn("发送帖子收藏通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
-                        currentUser.getId(), id, e.getMessage());
+                        currentUserId, id, e.getMessage());
             }
         }
         
-        log.info("用户收藏帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
+        log.info("用户收藏帖子成功，用户ID: {}, 帖子ID: {}", currentUserId, id);
     }
     
     @Override
     @Transactional
     public void uncollectPost(Long id) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
         CommunityPost post = getById(id);
         
         // 检查是否已收藏
-        CommunityPostCollect existingCollect = communityPostCollectMapper.selectByPostIdAndUserId(id, currentUser.getId());
+        CommunityPostCollect existingCollect = communityPostCollectMapper.selectByPostIdAndUserId(id, currentUserId);
         if (existingCollect == null) {
             throw new BusinessException("还没有收藏");
         }
         
         // 删除收藏记录
-        int result = communityPostCollectMapper.delete(id, currentUser.getId());
+        int result = communityPostCollectMapper.delete(id, currentUserId);
         if (result <= 0) {
             throw new BusinessException("取消收藏失败");
         }
@@ -382,21 +386,21 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         communityPostMapper.updateCollectCount(id, -1);
         
         // 更新用户收藏数
-        communityUserStatusService.decrementCollectCount(currentUser.getId());
+        communityUserStatusService.decrementCollectCount(currentUserId);
         
-        log.info("用户取消收藏帖子成功，用户ID: {}, 帖子ID: {}", currentUser.getId(), id);
+        log.info("用户取消收藏帖子成功，用户ID: {}, 帖子ID: {}", currentUserId, id);
     }
     
     @Override
     public PageResult<CommunityPostResponse> getUserCollections(CommunityPostQueryRequest request) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
         PageResult<CommunityPost> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            return communityPostMapper.selectUserCollectionList(currentUser.getId(), request);
+            return communityPostMapper.selectUserCollectionList(currentUserId, request);
         });
         
         // 在分页外进行DTO转换，避免额外查询干扰分页计数
@@ -415,14 +419,14 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getUserPosts(CommunityPostQueryRequest request) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
         PageResult<CommunityPost> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            return communityPostMapper.selectUserPostList(currentUser.getId(), request);
+            return communityPostMapper.selectUserPostList(currentUserId, request);
         });
         
         // 在分页外进行DTO转换，避免额外查询干扰分页计数
@@ -450,11 +454,11 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
         if (currentUser != null) {
             // 检查是否点赞
-            CommunityPostLike like = communityPostLikeMapper.selectByPostIdAndUserId(post.getId(), currentUser.getId());
+            CommunityPostLike like = communityPostLikeMapper.selectByPostIdAndUserId(post.getId(), currentUserId);
             response.setIsLiked(like != null);
             
             // 检查是否收藏
-            CommunityPostCollect collect = communityPostCollectMapper.selectByPostIdAndUserId(post.getId(), currentUser.getId());
+            CommunityPostCollect collect = communityPostCollectMapper.selectByPostIdAndUserId(post.getId(), currentUserId);
             response.setIsCollected(collect != null);
         } else {
             response.setIsLiked(false);

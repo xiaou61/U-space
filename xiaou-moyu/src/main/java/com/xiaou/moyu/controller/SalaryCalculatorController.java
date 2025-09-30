@@ -3,7 +3,7 @@ package com.xiaou.moyu.controller;
 import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.exception.BusinessException;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.moyu.dto.SalaryCalculatorDto;
 import com.xiaou.moyu.dto.SalaryConfigRequest;
 import com.xiaou.moyu.dto.WorkTimeRequest;
@@ -26,7 +26,6 @@ import jakarta.validation.Valid;
 public class SalaryCalculatorController {
     
     private final SalaryCalculatorService salaryCalculatorService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取时薪计算器数据
@@ -93,10 +92,9 @@ public class SalaryCalculatorController {
      * 获取当前用户ID
      */
     private Long getCurrentUserId() {
-        Long userId = userContextUtil.getCurrentUserId();
-        if (userId == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
-        return userId;
+        return StpUserUtil.getLoginIdAsLong();
     }
 }

@@ -1,10 +1,8 @@
 package com.xiaou.user.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.PasswordUtil;
@@ -37,9 +35,6 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     private final UserInfoMapper userInfoMapper;
     private final CaptchaService captchaService;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final TokenService tokenService;
-    private final ObjectMapper objectMapper;
     private final PointsService pointsService;
 
     @Override
@@ -156,19 +151,20 @@ public class UserInfoServiceImpl implements UserInfoService {
             // 更新最后登录信息
             updateLastLoginInfo(user.getId(), clientIp);
 
-            // 生成JWT Token
-            String accessToken = jwtTokenUtil.generateAccessToken(user.getUsername(), user.getId(), "user");
-            String refreshToken = jwtTokenUtil.generateRefreshToken(user.getUsername(), user.getId(), "user");
-
-            // 将用户信息存储到Redis
-            String userInfoJson = objectMapper.writeValueAsString(user);
-            tokenService.storeUserInToken(accessToken, userInfoJson, "user");
+            // 使用 Sa-Token 进行登录（自动生成 Token 并存储到 Redis）
+            StpUserUtil.login(user.getId());
+            
+            // 存储用户信息到 Sa-Token Session
+            StpUserUtil.set("userInfo", user);
+            
+            // 获取 Token 值
+            String accessToken = StpUserUtil.getTokenValue();
 
             // 构建响应
             UserLoginResponse response = new UserLoginResponse();
             response.setAccessToken(accessToken);
             response.setTokenType("Bearer");
-            response.setExpiresIn(jwtTokenUtil.getTokenRemainingTime(accessToken));
+            response.setExpiresIn(604800L); // 7天
 
             // 设置用户信息
             UserLoginResponse.UserInfo userInfo = new UserLoginResponse.UserInfo();

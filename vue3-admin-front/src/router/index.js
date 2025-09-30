@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import Layout from '@/layout/index.vue'
 
 const routes = [
@@ -6,7 +8,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/Login.vue'),
-    meta: { title: '登录' }
+    meta: { title: '登录', requiresAuth: false }
   },
   {
     path: '/',
@@ -360,9 +362,32 @@ const router = createRouter({
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  
   // 设置页面标题
   if (to.meta?.title) {
     document.title = `${to.meta.title} - Code Nest 管理后台`
+  }
+  
+  // 检查是否需要登录（除了登录页，其他页面都需要登录）
+  const requiresAuth = to.meta?.requiresAuth !== false // 默认需要登录
+  
+  if (requiresAuth && to.path !== '/login') {
+    // 检查是否已登录
+    if (!userStore.token || !userStore.isLogin) {
+      ElMessage.warning('请先登录')
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath } // 保存目标路径，登录后跳转回去
+      })
+      return
+    }
+  }
+  
+  // 如果已登录，访问登录页面时跳转到首页
+  if (to.path === '/login' && userStore.token && userStore.isLogin) {
+    next('/')
+    return
   }
   
   next()

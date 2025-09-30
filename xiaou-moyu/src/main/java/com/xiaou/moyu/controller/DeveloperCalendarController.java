@@ -4,7 +4,7 @@ import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.utils.JsonUtils;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.moyu.domain.DeveloperCalendarEvent;
 import com.xiaou.moyu.domain.UserCalendarPreference;
 import com.xiaou.moyu.dto.CalendarEventDto;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 public class DeveloperCalendarController {
     
     private final DeveloperCalendarService developerCalendarService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取今日推荐
@@ -234,11 +233,10 @@ public class DeveloperCalendarController {
      * 获取当前用户ID
      */
     private Long getCurrentUserId() {
-        Long userId = userContextUtil.getCurrentUserId();
-        if (userId == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
-        return userId;
+        return StpUserUtil.getLoginIdAsLong();
     }
     
     /**

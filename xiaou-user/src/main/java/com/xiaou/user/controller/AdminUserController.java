@@ -3,7 +3,7 @@ package com.xiaou.user.controller;
 import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.AdminContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.user.dto.AdminCreateUserRequest;
 import com.xiaou.user.dto.UserInfoResponse;
 import com.xiaou.user.dto.UserQueryRequest;
@@ -28,7 +28,6 @@ import java.util.List;
 public class AdminUserController {
 
     private final UserInfoService userInfoService;
-    private final AdminContextUtil adminContextUtil;
 
     /**
      * 分页查询用户列表
@@ -102,8 +101,8 @@ public class AdminUserController {
     public Result<UserInfoResponse> createUser(
             @Valid @RequestBody AdminCreateUserRequest request) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员创建用户，用户名: {}, 管理员ID: {}", request.getUsername(), adminId);
             
@@ -127,8 +126,8 @@ public class AdminUserController {
             @PathVariable Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员更新用户，用户ID: {}, 管理员ID: {}", userId, adminId);
             
@@ -150,8 +149,8 @@ public class AdminUserController {
     @DeleteMapping("/{userId}")
     public Result<Void> deleteUser(@PathVariable Long userId) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员删除用户，用户ID: {}, 管理员ID: {}", userId, adminId);
             
@@ -173,8 +172,8 @@ public class AdminUserController {
     @DeleteMapping("/batch")
     public Result<Void> deleteUsers(@RequestBody List<Long> userIds) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员批量删除用户，用户数量: {}, 管理员ID: {}", userIds.size(), adminId);
             
@@ -198,8 +197,8 @@ public class AdminUserController {
             @PathVariable Long userId,
             @RequestParam Integer status) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员修改用户状态，用户ID: {}, 状态: {}, 管理员ID: {}", userId, status, adminId);
             
@@ -224,8 +223,8 @@ public class AdminUserController {
             @PathVariable Long userId,
             @RequestParam(defaultValue = "123456") String newPassword) {
         try {
-            // 获取当前管理员ID
-            Long adminId = adminContextUtil.getCurrentAdminId();
+            // 获取当前管理员ID（使用 Sa-Token）
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
             log.info("管理员重置用户密码，用户ID: {}, 管理员ID: {}", userId, adminId);
             

@@ -1,10 +1,8 @@
 package com.xiaou.user.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
+import com.xiaou.common.satoken.SaTokenUserUtil;
 import com.xiaou.user.domain.UserInfo;
 import com.xiaou.user.dto.UserInfoResponse;
 import com.xiaou.user.dto.UserLoginRequest;
@@ -31,10 +29,6 @@ import java.util.Map;
 public class UserAuthController {
 
     private final UserInfoService userInfoService;
-    private final TokenService tokenService;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final ObjectMapper objectMapper;
-    private final UserContextUtil userContextUtil;
 
     /**
      * 用户注册
@@ -79,18 +73,14 @@ public class UserAuthController {
      * 用户登出
      */
     @PostMapping("/logout")
-    public Result<Void> logout(@RequestHeader("Authorization") String authHeader) {
+    public Result<Void> logout() {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token != null) {
-                // 将Token加入黑名单
-                tokenService.addToBlacklist(token, "user");
-                // 删除Redis中的用户信息
-                tokenService.deleteToken(token, "user");
-                
-                String username = tokenService.getUsernameFromToken(token);
-                log.info("用户登出成功，用户: {}", username);
-            }
+            // 获取当前用户ID
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            log.info("用户登出成功，用户ID: {}", userId);
+            
+            // 使用 Sa-Token 登出（自动清除 Session 和 Token）
+            StpUserUtil.logout();
             
             return Result.success("登出成功", null);
             
@@ -101,25 +91,22 @@ public class UserAuthController {
     }
 
     /**
-     * 刷新Token
+     * 刷新Token（Sa-Token 自动续签，此接口可选）
      */
     @PostMapping("/refresh")
-    public Result<Map<String, Object>> refresh(@RequestHeader("Authorization") String authHeader) {
+    public Result<Map<String, Object>> refresh() {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error("Token无效");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("Token无效或已过期，请重新登录");
             }
             
-            String newToken = tokenService.refreshToken(token, "user");
-            if (newToken == null) {
-                return Result.error("Token已过期，请重新登录");
-            }
+            // Sa-Token 会自动续签，这里直接返回当前 Token
+            String token = StpUserUtil.getTokenValue();
             
             Map<String, Object> result = new HashMap<>();
-            result.put("accessToken", newToken);
+            result.put("accessToken", token);
             result.put("tokenType", "Bearer");
-            result.put("expiresIn", jwtTokenUtil.getTokenRemainingTime(newToken));
+            result.put("expiresIn", 604800L); // 7天
             
             log.info("Token刷新成功");
             return Result.success("Token刷新成功", result);
@@ -136,20 +123,15 @@ public class UserAuthController {
     @GetMapping("/info")
     public Result<UserInfoResponse> getUserInfo() {
         try {
-            // 使用 UserContextUtil 获取当前用户信息
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            // 使用 Sa-Token 获取当前用户ID
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            // 验证是否为普通用户
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            UserInfoResponse userInfo = userInfoService.getUserInfoById(userId);
             
-            UserInfoResponse userInfo = userInfoService.getUserInfoById(currentUser.getId());
-            
-            log.debug("获取用户信息成功: {}", currentUser.getUsername());
+            log.debug("获取用户信息成功，用户ID: {}", userId);
             return Result.success("获取成功", userInfo);
             
         } catch (Exception e) {
