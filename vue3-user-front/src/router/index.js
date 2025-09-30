@@ -152,6 +152,16 @@ const routes = [
     }
   },
   {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('@/views/chat/Index.vue'),
+    meta: {
+      title: '聊天室',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),

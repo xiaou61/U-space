@@ -160,6 +160,21 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/chat">
+            <template #title>
+              <el-icon><Message /></el-icon>
+              <span>聊天室管理</span>
+            </template>
+            <el-menu-item index="/chat/messages">
+              <el-icon><ChatDotRound /></el-icon>
+              <span>消息管理</span>
+            </el-menu-item>
+            <el-menu-item index="/chat/users">
+              <el-icon><User /></el-icon>
+              <span>在线用户</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -441,6 +456,8 @@ const getIconByPath = (path, title = '') => {
     'posts': 'Document',
     'comments': 'ChatLineRound',
     'moments': 'Picture',
+    'chat': 'Message',
+    'messages': 'ChatDotRound',
     'statistics': 'DataAnalysis',
     'logs': 'Document',
     'login': 'UserFilled',
@@ -490,6 +507,9 @@ const getIconByPath = (path, title = '') => {
     '评论': 'ChatLineRound',
     '朋友圈': 'Picture',
     '动态': 'Picture',
+    '聊天室': 'Message',
+    '消息': 'ChatDotRound',
+    '在线': 'User',
     '统计': 'DataAnalysis',
     '日志': 'Document',
     '登录': 'UserFilled',
@@ -546,6 +566,7 @@ const generateBreadcrumb = (path, title) => {
     'knowledge': '知识图谱管理', 
     'community': '社区管理',
     'moments': '朋友圈管理',
+    'chat': '聊天室管理',
     'logs': '日志管理',
     'sensitive': '敏感词管理',
     'filestorage': '文件存储管理',

@@ -139,6 +139,26 @@ const routes = [
     ]
   },
   {
+    path: '/chat',
+    component: Layout,
+    redirect: '/chat/messages',
+    meta: { title: '聊天室管理' },
+    children: [
+      {
+        path: 'messages',
+        name: 'ChatMessages',
+        component: () => import('@/views/chat/messages/index.vue'),
+        meta: { title: '消息管理' }
+      },
+      {
+        path: 'users',
+        name: 'ChatUsers',
+        component: () => import('@/views/chat/users/index.vue'),
+        meta: { title: '在线用户' }
+      }
+    ]
+  },
+  {
     path: '/logs',
     component: Layout,
     redirect: '/logs/login',

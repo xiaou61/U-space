@@ -109,12 +109,18 @@
             <artifactId>xiaou-moyu</artifactId>
             <version>${revision}</version>
         </dependency>
+
         <dependency>
             <groupId>com.xiaou</groupId>
             <artifactId>xiaou-points</artifactId>
             <version>${revision}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-chat</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>

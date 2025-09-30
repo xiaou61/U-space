@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.chat.mapper.ChatUserBanMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.chat.domain.ChatUserBan">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="room_id" property="roomId"/>
+        <result column="ban_reason" property="banReason"/>
+        <result column="ban_start_time" property="banStartTime"/>
+        <result column="ban_end_time" property="banEndTime"/>
+        <result column="operator_id" property="operatorId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, room_id, ban_reason, ban_start_time, ban_end_time, operator_id, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.chat.domain.ChatUserBan" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_user_bans (user_id, room_id, ban_reason, ban_start_time, ban_end_time, 
+        operator_id, status, create_time, update_time)
+        VALUES (#{userId}, #{roomId}, #{banReason}, #{banStartTime}, #{banEndTime}, 
+        #{operatorId}, #{status}, NOW(), NOW())
+    </insert>
+
+    <select id="selectActiveByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_user_bans
+        WHERE user_id = #{userId} AND room_id = #{roomId} AND status = 1
+        AND (ban_end_time IS NULL OR ban_end_time &gt; NOW())
+        LIMIT 1
+    </select>
+
+    <update id="unban" parameterType="java.lang.Long">
+        UPDATE chat_user_bans 
+        SET status = 0, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectExpiredBans" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_user_bans
+        WHERE status = 1 AND ban_end_time IS NOT NULL AND ban_end_time &lt;= NOW()
+    </select>
+
+    <update id="batchUnban">
+        UPDATE chat_user_bans 
+        SET status = 0, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

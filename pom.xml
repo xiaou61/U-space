@@ -26,6 +26,7 @@
         <module>xiaou-version</module>
         <module>xiaou-moyu</module>
         <module>xiaou-points</module>
+        <module>xiaou-chat</module>
     </modules>
 
     <properties>
