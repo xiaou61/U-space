@@ -32,8 +32,13 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await authApi.login(loginForm)
       
+      // Sa-Token: 计算过期时间（当前时间 + expiresIn秒数）
+      const expireTime = response.expiresIn 
+        ? new Date(Date.now() + response.expiresIn * 1000).toISOString()
+        : null
+      
       // 保存token和过期时间
-      setToken(response.accessToken, response.expireTime)
+      setToken(response.accessToken, expireTime)
       
       // 保存用户信息
       setUserInfo(response.userInfo)
@@ -101,7 +106,8 @@ export const useUserStore = defineStore('user', () => {
     
     Cookies.set('token', newToken, { expires: cookieExpireDays })
     
-    if (expireTime) {
+    // 只有在 expireTime 有效时才存储
+    if (expireTime && expireTime !== 'undefined' && expireTime !== 'null') {
       localStorage.setItem('tokenExpireTime', expireTime)
     }
   }
@@ -129,12 +135,23 @@ export const useUserStore = defineStore('user', () => {
       const savedUserInfo = localStorage.getItem('userInfo')
       const savedExpireTime = localStorage.getItem('tokenExpireTime')
       
-      if (savedUserInfo) {
-        const info = JSON.parse(savedUserInfo)
-        setUserInfo(info)
+      // 检查并解析用户信息（排除无效值）
+      if (savedUserInfo && savedUserInfo !== 'undefined' && savedUserInfo !== 'null') {
+        try {
+          const info = JSON.parse(savedUserInfo)
+          if (info && typeof info === 'object') {
+            setUserInfo(info)
+          } else {
+            localStorage.removeItem('userInfo')
+          }
+        } catch (parseError) {
+          console.error('解析用户信息失败:', parseError)
+          localStorage.removeItem('userInfo')
+        }
       }
       
-      if (savedExpireTime) {
+      // 检查并处理过期时间
+      if (savedExpireTime && savedExpireTime !== 'undefined' && savedExpireTime !== 'null') {
         tokenExpireTime.value = savedExpireTime
         
         // 检查token是否已过期

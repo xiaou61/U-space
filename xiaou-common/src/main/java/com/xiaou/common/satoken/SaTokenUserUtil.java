@@ -17,6 +17,11 @@ public class SaTokenUserUtil {
     private static final String USER_INFO_KEY = "userInfo";
     
     /**
+     * Session 中存储用户名的 key
+     */
+    private static final String USERNAME_KEY = "username";
+    
+    /**
      * 获取当前登录的管理员信息（泛型方法）
      * 
      * @param clazz 返回类型
@@ -140,5 +145,63 @@ public class SaTokenUserUtil {
      */
     public static boolean isUser() {
         return StpUserUtil.isLogin();
+    }
+    
+    /**
+     * 获取当前登录管理员的用户名
+     * 
+     * @return 用户名，未登录或获取失败返回 null
+     */
+    public static String getCurrentAdminUsername() {
+        try {
+            if (!StpAdminUtil.isLogin()) {
+                return null;
+            }
+            Object username = StpAdminUtil.get(USERNAME_KEY);
+            return username != null ? username.toString() : null;
+        } catch (Exception e) {
+            log.error("获取当前管理员用户名失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 获取当前登录用户的用户名
+     * 
+     * @return 用户名，未登录或获取失败返回 null
+     */
+    public static String getCurrentUserUsername() {
+        try {
+            if (!StpUserUtil.isLogin()) {
+                return null;
+            }
+            Object username = StpUserUtil.get(USERNAME_KEY);
+            return username != null ? username.toString() : null;
+        } catch (Exception e) {
+            log.error("获取当前用户用户名失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 获取当前登录管理员的用户名（带默认值）
+     * 
+     * @param defaultValue 默认值
+     * @return 用户名，未登录或获取失败返回默认值
+     */
+    public static String getCurrentAdminUsername(String defaultValue) {
+        String username = getCurrentAdminUsername();
+        return username != null ? username : defaultValue;
+    }
+    
+    /**
+     * 获取当前登录用户的用户名（带默认值）
+     * 
+     * @param defaultValue 默认值
+     * @return 用户名，未登录或获取失败返回默认值
+     */
+    public static String getCurrentUserUsername(String defaultValue) {
+        String username = getCurrentUserUsername();
+        return username != null ? username : defaultValue;
     }
 }

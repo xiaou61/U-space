@@ -3,6 +3,7 @@ package com.xiaou.community.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.SaTokenUserUtil;
 import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.DateHelper;
 import com.xiaou.common.utils.NotificationUtil;
@@ -23,9 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,7 +62,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public void topPost(Long id, Integer duration) {
-        CommunityPost post = getById(id);
+        // 检查帖子是否存在
+        getById(id);
         
         // 计算置顶过期时间
         Date expireTime = DateHelper.addHoursFromNow(duration);
@@ -80,7 +79,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public void cancelTop(Long id) {
-        CommunityPost post = getById(id);
+        // 检查帖子是否存在
+        getById(id);
         
         int result = communityPostMapper.cancelTop(id);
         if (result <= 0) {
@@ -92,7 +92,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public void disablePost(Long id) {
-        CommunityPost post = getById(id);
+        // 检查帖子是否存在
+        getById(id);
         
         int result = communityPostMapper.disablePost(id);
         if (result <= 0) {
@@ -188,9 +189,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         post.setContent(request.getContent());
         post.setCategoryId(request.getCategoryId());
         post.setAuthorId(currentUserId);
-        // Sa-Token: 从 Session 获取用户名，如果没有则使用默认值
-        Object userInfo = StpUserUtil.getSession().get("userInfo");
-        String username = userInfo != null ? userInfo.toString() : "用户" + currentUserId;
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
         post.setAuthorName(username);
         post.setViewCount(0);
         post.setLikeCount(0);
@@ -239,8 +239,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         CommunityPostLike like = new CommunityPostLike();
         like.setPostId(id);
         like.setUserId(currentUserId);
-        Object userInfo = StpUserUtil.getSession().get("userInfo");
-        String username = userInfo != null ? userInfo.toString() : "用户" + currentUserId;
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
         like.setUserName(username);
         
         int result = communityPostLikeMapper.insert(like);
@@ -281,7 +281,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
-        CommunityPost post = getById(id);
+        getById(id);
         
         // 检查是否已点赞
         CommunityPostLike existingLike = communityPostLikeMapper.selectByPostIdAndUserId(id, currentUserId);
@@ -328,6 +328,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         CommunityPostCollect collect = new CommunityPostCollect();
         collect.setPostId(id);
         collect.setUserId(currentUserId);
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
         collect.setUserName(username);
         
         int result = communityPostCollectMapper.insert(collect);
@@ -368,7 +370,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
-        CommunityPost post = getById(id);
+        getById(id);
         
         // 检查是否已收藏
         CommunityPostCollect existingCollect = communityPostCollectMapper.selectByPostIdAndUserId(id, currentUserId);
@@ -451,14 +453,14 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         response.setIsTop(post.getIsTop() != null && post.getIsTop() == 1);
         
         // 设置用户相关状态
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser != null) {
+        if (StpUserUtil.isLogin()) {
+            Long userId = StpUserUtil.getLoginIdAsLong();
             // 检查是否点赞
-            CommunityPostLike like = communityPostLikeMapper.selectByPostIdAndUserId(post.getId(), currentUserId);
+            CommunityPostLike like = communityPostLikeMapper.selectByPostIdAndUserId(post.getId(), userId);
             response.setIsLiked(like != null);
             
             // 检查是否收藏
-            CommunityPostCollect collect = communityPostCollectMapper.selectByPostIdAndUserId(post.getId(), currentUserId);
+            CommunityPostCollect collect = communityPostCollectMapper.selectByPostIdAndUserId(post.getId(), userId);
             response.setIsCollected(collect != null);
         } else {
             response.setIsLiked(false);

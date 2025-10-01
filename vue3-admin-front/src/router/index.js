@@ -374,7 +374,7 @@ router.beforeEach((to, from, next) => {
   
   if (requiresAuth && to.path !== '/login') {
     // 检查是否已登录
-    if (!userStore.token || !userStore.isLogin) {
+    if (!userStore.token || !userStore.isLoggedIn) {
       ElMessage.warning('请先登录')
       next({
         path: '/login',
@@ -385,7 +385,7 @@ router.beforeEach((to, from, next) => {
   }
   
   // 如果已登录，访问登录页面时跳转到首页
-  if (to.path === '/login' && userStore.token && userStore.isLogin) {
+  if (to.path === '/login' && userStore.token && userStore.isLoggedIn) {
     next('/')
     return
   }

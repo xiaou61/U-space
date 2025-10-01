@@ -4,9 +4,9 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.domain.Notification;
 import com.xiaou.common.enums.NotificationStatusEnum;
 import com.xiaou.common.mapper.NotificationMapper;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.service.NotificationService;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.notification.dto.DeleteMessageRequest;
 import com.xiaou.notification.dto.MarkReadRequest;
 import com.xiaou.notification.dto.NotificationQueryRequest;
@@ -26,13 +26,12 @@ public class NotificationUserService {
     
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 获取用户消息列表
      */
     public PageResult<Notification> getMessageList(NotificationQueryRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         
         // 使用PageHelper分页插件
         return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
@@ -47,7 +46,7 @@ public class NotificationUserService {
      * 获取用户未读消息数量
      */
     public int getUnreadCount() {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         return notificationService.getUnreadCount(userId);
     }
     
@@ -57,7 +56,7 @@ public class NotificationUserService {
     public Notification getMessageDetail(Long messageId) {
         Notification notification = notificationService.getMessageById(messageId);
         if (notification != null) {
-            Long userId = userContextUtil.getCurrentUserId();
+            Long userId = StpUserUtil.getLoginIdAsLong();
             // 检查权限：只能查看自己的消息或公告
             if (notification.getReceiverId() == null || notification.getReceiverId().equals(userId)) {
                 // 如果是未读消息，自动标记为已读
@@ -74,7 +73,7 @@ public class NotificationUserService {
      * 标记消息已读
      */
     public boolean markAsRead(MarkReadRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         
         if (Boolean.TRUE.equals(request.getMarkAllRead())) {
             // 标记全部已读
@@ -94,7 +93,7 @@ public class NotificationUserService {
      * 全部标记已读
      */
     public boolean markAllAsRead() {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         // 这里可以实现更高效的全部标记已读逻辑
         // 简化实现：获取所有未读消息ID后批量标记
         List<Notification> unreadMessages = notificationService.getUserMessages(
@@ -115,7 +114,7 @@ public class NotificationUserService {
      * 删除消息
      */
     public boolean deleteMessage(DeleteMessageRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         return notificationService.deleteMessage(request.getMessageId(), userId);
     }
 } 

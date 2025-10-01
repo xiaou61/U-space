@@ -114,7 +114,7 @@ public class ChatAdminController {
     @Log(module = "聊天室管理", type = Log.OperationType.UPDATE, description = "禁言用户")
     @PostMapping("/users/ban")
     public Result<Void> banUser(@RequestBody ChatBanUserRequest request) {
-        Long operatorId = userContextUtil.getCurrentUserId();
+        Long operatorId = StpAdminUtil.getLoginIdAsLong();
         chatUserBanService.banUser(request, operatorId);
         
         log.info("管理员禁言用户，用户ID: {}, 时长: {}秒, 原因: {}", 

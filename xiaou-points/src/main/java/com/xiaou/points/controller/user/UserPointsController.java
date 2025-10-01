@@ -92,17 +92,13 @@ public class UserPointsController {
     @PostMapping("/checkin-calendar")
     public Result<CheckinCalendarResponse> getCheckinCalendar(@RequestBody(required = false) CheckinCalendarRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("Token无效或已过期");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("请先登录");
             }
-            
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
             
             String yearMonth = request != null ? request.getYearMonth() : null;
-            CheckinCalendarResponse response = pointsService.getCheckinCalendar(currentUser.getId(), yearMonth);
+            CheckinCalendarResponse response = pointsService.getCheckinCalendar(userId, yearMonth);
             return Result.success("获取成功", response);
             
         } catch (Exception e) {
@@ -117,20 +113,16 @@ public class UserPointsController {
     @PostMapping("/checkin-statistics")
     public Result<CheckinStatisticsResponse> getCheckinStatistics(@RequestBody(required = false) CheckinStatisticsRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("Token无效或已过期");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("请先登录");
             }
-            
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
             
             Integer months = request != null ? request.getMonths() : 3;
             if (months == null || months <= 0) {
                 months = 3;
             }
-            CheckinStatisticsResponse response = pointsService.getCheckinStatistics(currentUser.getId(), months);
+            CheckinStatisticsResponse response = pointsService.getCheckinStatistics(userId, months);
             return Result.success("获取成功", response);
             
         } catch (Exception e) {

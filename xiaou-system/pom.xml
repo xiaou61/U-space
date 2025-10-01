@@ -21,13 +21,7 @@
             <version>${revision}</version>
         </dependency>
         
-        <!-- Spring Security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        
-        <!-- JWT -->
+        <!-- JWT（保留兼容旧代码，已由 Sa-Token 替代） -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>

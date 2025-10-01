@@ -17,6 +17,7 @@ export default defineConfig({
         target: 'http://localhost:9999',
         changeOrigin: true,
         secure: false,
+        // 不使用 rewrite，因为后端 context-path 已经有 /api 前缀
       },
     },
   },

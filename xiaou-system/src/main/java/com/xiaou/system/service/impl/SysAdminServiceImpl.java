@@ -6,6 +6,7 @@ import cn.hutool.http.useragent.UserAgentUtil;
 import com.xiaou.common.core.domain.ResultCode;
 import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.satoken.StpAdminUtil;
+import com.xiaou.common.utils.PasswordUtil;
 import com.xiaou.system.domain.SysAdmin;
 import com.xiaou.system.domain.SysLoginLog;
 import com.xiaou.system.dto.LoginRequest;
@@ -19,7 +20,6 @@ import com.xiaou.system.mapper.SysRoleMapper;
 import com.xiaou.system.service.SysAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -44,7 +44,6 @@ public class SysAdminServiceImpl implements SysAdminService {
     private final SysRoleMapper roleMapper;
     private final SysPermissionMapper permissionMapper;
     private final SysLoginLogMapper loginLogMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -91,7 +90,7 @@ public class SysAdminServiceImpl implements SysAdminService {
 
 
             // 3. 验证密码
-            if (!passwordEncoder.matches(loginRequest.getPassword(), admin.getPassword())) {
+            if (!PasswordUtil.matches(loginRequest.getPassword(), admin.getPassword())) {
                 log.warn("❌ 登录失败");
                 log.warn("原因: 密码错误");
                 log.warn("用户: {}", loginRequest.getUsername());
@@ -113,6 +112,8 @@ public class SysAdminServiceImpl implements SysAdminService {
             
             // 6. 存储用户信息到 Sa-Token Session
             StpAdminUtil.set("userInfo", admin);
+            // 单独存储用户名，方便快速获取
+            StpAdminUtil.set("username", admin.getUsername());
             
             // 7. 获取 Token 值
             String accessToken = StpAdminUtil.getTokenValue();
@@ -198,7 +199,7 @@ public class SysAdminServiceImpl implements SysAdminService {
 
         // 加密密码
         if (StrUtil.isNotBlank(admin.getPassword())) {
-            admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+            admin.setPassword(PasswordUtil.encode(admin.getPassword()));
         }
 
         // 设置默认值
@@ -261,12 +262,12 @@ public class SysAdminServiceImpl implements SysAdminService {
         }
 
         // 验证旧密码
-        if (!passwordEncoder.matches(oldPassword, admin.getPassword())) {
+        if (!PasswordUtil.matches(oldPassword, admin.getPassword())) {
             throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "原密码错误");
         }
 
         // 加密新密码
-        String encryptedPassword = passwordEncoder.encode(newPassword);
+        String encryptedPassword = PasswordUtil.encode(newPassword);
         return adminMapper.updatePassword(id, encryptedPassword) > 0;
     }
 
@@ -278,7 +279,7 @@ public class SysAdminServiceImpl implements SysAdminService {
         }
 
         // 加密新密码
-        String encryptedPassword = passwordEncoder.encode(newPassword);
+        String encryptedPassword = PasswordUtil.encode(newPassword);
         return adminMapper.updatePassword(id, encryptedPassword) > 0;
     }
 
@@ -425,17 +426,17 @@ public class SysAdminServiceImpl implements SysAdminService {
         }
 
         // 验证原密码
-        if (!passwordEncoder.matches(request.getOldPassword(), currentAdmin.getPassword())) {
+        if (!PasswordUtil.matches(request.getOldPassword(), currentAdmin.getPassword())) {
             throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "原密码错误");
         }
 
         // 新密码不能与原密码相同
-        if (passwordEncoder.matches(request.getNewPassword(), currentAdmin.getPassword())) {
+        if (PasswordUtil.matches(request.getNewPassword(), currentAdmin.getPassword())) {
             throw new BusinessException(ResultCode.PARAM_VALIDATE_ERROR, "新密码不能与原密码相同");
         }
 
         // 加密新密码
-        String encryptedPassword = passwordEncoder.encode(request.getNewPassword());
+        String encryptedPassword = PasswordUtil.encode(request.getNewPassword());
         
         log.info("🔐 修改用户密码");
         log.info("用户ID: {}", currentUserId);

@@ -156,6 +156,8 @@ public class UserInfoServiceImpl implements UserInfoService {
             
             // 存储用户信息到 Sa-Token Session
             StpUserUtil.set("userInfo", user);
+            // 单独存储用户名，方便快速获取
+            StpUserUtil.set("username", user.getUsername());
             
             // 获取 Token 值
             String accessToken = StpUserUtil.getTokenValue();

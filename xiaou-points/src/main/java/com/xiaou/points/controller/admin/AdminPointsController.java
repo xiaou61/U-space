@@ -101,11 +101,11 @@ public class AdminPointsController {
     @PostMapping("/batch-grant")
     public Result<BatchGrantPointsResponse> batchGrantPoints(@Valid @RequestBody BatchGrantPointsRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            BatchGrantPointsResponse response = pointsService.batchGrantPoints(request, currentUser.getId());
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
+            BatchGrantPointsResponse response = pointsService.batchGrantPoints(request, adminId);
             
             log.info("管理员{}批量发放积分完成，成功{}人，失败{}人，总计发放{}积分", 
-                    currentUser.getUsername(), response.getSuccessCount(), 
+                    adminId, response.getSuccessCount(), 
                     response.getFailCount(), response.getTotalPointsGranted());
             
             return Result.success("批量发放完成", response);

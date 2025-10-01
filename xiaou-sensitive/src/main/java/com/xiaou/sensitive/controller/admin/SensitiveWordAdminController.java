@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.sensitive.api.SensitiveCheckService;
 import com.xiaou.sensitive.domain.SensitiveCategory;
 import com.xiaou.sensitive.domain.SensitiveWord;
@@ -36,7 +36,6 @@ public class SensitiveWordAdminController {
 
     private final SensitiveWordService sensitiveWordService;
     private final SensitiveCheckService sensitiveCheckService;
-    private final UserContextUtil userContextUtil;
 
     /**
      * 分页查询敏感词列表
@@ -83,7 +82,7 @@ public class SensitiveWordAdminController {
             }
 
             // 设置创建人
-            word.setCreatorId(userContextUtil.getCurrentUserId());
+            word.setCreatorId(StpAdminUtil.getLoginIdAsLong());
 
             boolean success = sensitiveWordService.addWord(word);
             if (success) {
@@ -194,7 +193,7 @@ public class SensitiveWordAdminController {
                 return Result.error("文件内容为空");
             }
 
-            Long creatorId = userContextUtil.getCurrentUserId();
+            Long creatorId = StpAdminUtil.getLoginIdAsLong();
             SensitiveWordService.ImportResult result = sensitiveWordService.importWords(words, creatorId);
             
             return Result.success(result);

@@ -2,7 +2,7 @@ package com.xiaou.interview.controller.pub;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.dto.RandomQuestionRequest;
@@ -29,7 +29,6 @@ public class InterviewQuestionSetPublicController {
 
     private final InterviewQuestionSetService questionSetService;
     private final InterviewQuestionService questionService;
-    private final UserContextUtil userContextUtil;
 
     @Operation(summary = "获取公开题单列表")
     @GetMapping
@@ -55,7 +54,7 @@ public class InterviewQuestionSetPublicController {
     @GetMapping("/{id}/questions")
     public Result<List<InterviewQuestion>> getQuestions(@PathVariable Long id) {
         // 检查权限
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId != null && !questionSetService.hasAccessPermission(id, userId)) {
             return Result.error("无权限访问该题单");
         }
@@ -69,7 +68,7 @@ public class InterviewQuestionSetPublicController {
     public Result<InterviewQuestion> getQuestion(@PathVariable Long setId, 
                                                   @PathVariable Long questionId) {
         // 检查权限
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId != null && !questionSetService.hasAccessPermission(setId, userId)) {
             return Result.error("无权限访问该题单");
         }
@@ -86,7 +85,7 @@ public class InterviewQuestionSetPublicController {
     public Result<InterviewQuestion> getNextQuestion(@PathVariable Long setId, 
                                                      @PathVariable Long questionId) {
         // 检查权限
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId != null && !questionSetService.hasAccessPermission(setId, userId)) {
             return Result.error("无权限访问该题单");
         }
@@ -106,7 +105,7 @@ public class InterviewQuestionSetPublicController {
     public Result<InterviewQuestion> getPrevQuestion(@PathVariable Long setId, 
                                                      @PathVariable Long questionId) {
         // 检查权限
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId != null && !questionSetService.hasAccessPermission(setId, userId)) {
             return Result.error("无权限访问该题单");
         }

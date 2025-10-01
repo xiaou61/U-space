@@ -2,7 +2,7 @@ package com.xiaou.interview.controller.pub;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.interview.domain.InterviewFavorite;
 import com.xiaou.interview.service.InterviewFavoriteService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +25,6 @@ import java.util.List;
 public class InterviewFavoriteController {
 
     private final InterviewFavoriteService favoriteService;
-    private final UserContextUtil userContextUtil;
 
     /**
      * 收藏操作请求参数
@@ -49,7 +48,7 @@ public class InterviewFavoriteController {
     @Operation(summary = "添加收藏")
     @PostMapping("/add")
     public Result<Void> addFavorite(@RequestBody FavoriteRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId == null) {
             return Result.error("请先登录");
         }
@@ -61,7 +60,7 @@ public class InterviewFavoriteController {
     @Operation(summary = "取消收藏")
     @PostMapping("/remove")
     public Result<Void> removeFavorite(@RequestBody FavoriteRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId == null) {
             return Result.error("请先登录");
         }
@@ -73,7 +72,7 @@ public class InterviewFavoriteController {
     @Operation(summary = "检查是否已收藏")
     @PostMapping("/check")
     public Result<Boolean> isFavorited(@RequestBody FavoriteRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId == null) {
             return Result.success(false);
         }
@@ -85,7 +84,7 @@ public class InterviewFavoriteController {
     @Operation(summary = "获取我的收藏列表")
     @PostMapping("/my")
     public Result<List<InterviewFavorite>> getMyFavorites(@RequestBody FavoriteRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId == null) {
             return Result.error("请先登录");
         }
@@ -97,7 +96,7 @@ public class InterviewFavoriteController {
     @Operation(summary = "分页获取我的收藏列表")
     @PostMapping("/my/page")
     public Result<PageResult<InterviewFavorite>> getMyFavoritePage(@RequestBody FavoritePageRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
+        Long userId = StpUserUtil.getLoginIdAsLong();
         if (userId == null) {
             return Result.error("请先登录");
         }

@@ -29,16 +29,16 @@ public class SaTokenConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 注册 Sa-Token 拦截器
         registry.addInterceptor(new SaInterceptor(handler -> {
-            // 管理端路由认证
-            SaRouter.match("/admin/**")
-                .notMatch("/admin/auth/login", "/admin/auth/register", "/admin/auth/refresh")  // 排除登录注册
-                .check(r -> StpAdminUtil.checkLogin());  // 检查管理员登录
+            // 管理端路由认证（路径是 /auth/**）
+            SaRouter.match("/auth/**")
+                .notMatch("/auth/login", "/auth/register", "/auth/refresh")
+                .check(r -> StpAdminUtil.checkLogin());
             
-            // 用户端路由认证
+            // 用户端路由认证（路径是 /user/**）
             SaRouter.match("/user/**")
-                .notMatch("/user/auth/login", "/user/auth/register", "/user/auth/refresh")  // 排除登录注册
-                .notMatch("/user/auth/check-username", "/user/auth/check-email")  // 排除用户名和邮箱检查
-                .check(r -> StpUserUtil.checkLogin());  // 检查用户登录
+                .notMatch("/user/auth/login", "/user/auth/register", "/user/auth/refresh")
+                .notMatch("/user/auth/check-username", "/user/auth/check-email")
+                .check(r -> StpUserUtil.checkLogin());
             
             // 验证码接口无需认证
             SaRouter.match("/captcha/**").stop();
@@ -46,7 +46,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
             // Swagger 和 API 文档接口无需认证
             SaRouter.match("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").stop();
             
-        })).addPathPatterns("/**")  // 拦截所有路由
+        })).addPathPatterns("/**")
           .excludePathPatterns(
               "/error",
               "/favicon.ico"

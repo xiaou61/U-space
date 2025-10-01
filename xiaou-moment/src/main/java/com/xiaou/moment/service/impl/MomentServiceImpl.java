@@ -7,9 +7,9 @@ import cn.hutool.json.JSONUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.SensitiveWordUtils;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.moment.domain.Moment;
 import com.xiaou.moment.domain.MomentComment;
 import com.xiaou.moment.domain.MomentLike;
@@ -40,15 +40,14 @@ public class MomentServiceImpl implements MomentService {
     private final MomentMapper momentMapper;
     private final MomentLikeMapper momentLikeMapper;
     private final MomentCommentMapper momentCommentMapper;
-    private final UserContextUtil userContextUtil;
     
     @Override
     @Transactional
     public Long publishMoment(MomentPublishRequest request) {
-                Long currentUserId = userContextUtil.getCurrentUserId();
-        if (currentUserId == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查发布频率限制 - 5分钟内最多3条
         checkPublishFrequency(currentUserId);
@@ -85,7 +84,7 @@ public class MomentServiceImpl implements MomentService {
     @Override
         @Transactional
     public void deleteMoment(Long momentId) {
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
             throw new BusinessException("请先登录");
         }
@@ -110,7 +109,7 @@ public class MomentServiceImpl implements MomentService {
     @Override
     @Transactional
     public Boolean toggleLike(Long momentId) {
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
             throw new BusinessException("请先登录");
         }
@@ -140,8 +139,7 @@ public class MomentServiceImpl implements MomentService {
             // 发送消息通知：通知动态作者
             if (!currentUserId.equals(moment.getUserId())) {
                 try {
-                    UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-                    String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                    String userName = "用户" + currentUserId;
                     
                     NotificationUtil.sendPersonalMessage(
                         moment.getUserId(),
@@ -161,7 +159,7 @@ public class MomentServiceImpl implements MomentService {
     @Override
     @Transactional
     public Long publishComment(CommentPublishRequest request) {
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
             throw new BusinessException("请先登录");
         }
@@ -206,8 +204,7 @@ public class MomentServiceImpl implements MomentService {
         // 发送消息通知：通知动态作者
         if (!currentUserId.equals(moment.getUserId())) {
             try {
-                UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-                String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                String userName = "用户" + currentUserId;
                 
                 NotificationUtil.sendPersonalMessage(
                     moment.getUserId(),
@@ -226,7 +223,7 @@ public class MomentServiceImpl implements MomentService {
     @Override
     @Transactional
     public void deleteComment(Long commentId) {
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
             throw new BusinessException("请先登录");
         }
@@ -314,7 +311,7 @@ public class MomentServiceImpl implements MomentService {
         response.setUserAvatar("");
         
         // 设置是否已点赞
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId != null) {
             MomentLike like = momentLikeMapper.selectByMomentIdAndUserId(moment.getId(), currentUserId);
             response.setIsLiked(like != null);
@@ -376,7 +373,7 @@ public class MomentServiceImpl implements MomentService {
         response.setUserAvatar("");
         
         // 设置是否可删除
-        Long currentUserId = userContextUtil.getCurrentUserId();
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId != null) {
             // 评论者本人或动态发布者可删除
             Moment moment = momentMapper.selectById(comment.getMomentId());
