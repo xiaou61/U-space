@@ -24,7 +24,17 @@
         </dependency>
         <dependency>
             <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-user-api</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
             <artifactId>xiaou-filestorage</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-points</artifactId>
             <version>${revision}</version>
         </dependency>
         
@@ -52,14 +62,6 @@
             <artifactId>hutool-captcha</artifactId>
             <version>${hutool.version}</version>
         </dependency>
-        
-        <!-- Spring Security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        
-
         
         <!-- Lombok -->
         <dependency>

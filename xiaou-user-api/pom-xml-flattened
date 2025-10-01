@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xiaou</groupId>
+    <artifactId>Code-Nest</artifactId>
+    <version>1.3.0</version>
+  </parent>
+  <groupId>com.xiaou</groupId>
+  <artifactId>xiaou-user-api</artifactId>
+  <version>1.3.0</version>
+  <name>xiaou-user-api</name>
+  <description>用户服务API模块 - 提供用户相关接口和DTO</description>
+  <dependencies>
+    <dependency>
+      <groupId>com.xiaou</groupId>
+      <artifactId>xiaou-common</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+</project>

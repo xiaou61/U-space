@@ -3,10 +3,11 @@ package com.xiaou.community.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.SaTokenUserUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.common.utils.SensitiveWordUtils;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityComment;
 import com.xiaou.community.domain.CommunityCommentLike;
 import com.xiaou.community.domain.CommunityPost;
@@ -40,7 +41,6 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     private final CommunityCommentMapper communityCommentMapper;
     private final CommunityCommentLikeMapper communityCommentLikeMapper;
     private final CommunityPostMapper communityPostMapper;
-    private final UserContextUtil userContextUtil;
     private final CommunityUserStatusService communityUserStatusService;
     
     @Override
@@ -108,10 +108,10 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
         if (communityPostMapper.selectById(postId) == null) {
@@ -122,7 +122,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         String content = request.getContent();
         try {
             SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
-                SensitiveWordUtils.checkText(content, "community", postId, currentUser.getId());
+                SensitiveWordUtils.checkText(content, "community", postId, currentUserId);
             
             if (!sensitiveResult.getAllowed()) {
                 throw new BusinessException("评论包含违规内容，禁止发布");
@@ -142,8 +142,10 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         comment.setPostId(postId);
         comment.setParentId(request.getParentId());
         comment.setContent(content); // 使用处理后的内容
-        comment.setAuthorId(currentUser.getId());
-        comment.setAuthorName(currentUser.getUsername());
+        comment.setAuthorId(currentUserId);
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
+        comment.setAuthorName(username);
         comment.setLikeCount(0);
         comment.setStatus(1);  // 正常状态
         
@@ -156,40 +158,40 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         communityPostMapper.updateCommentCount(postId, 1);
         
         // 更新用户评论数
-        communityUserStatusService.incrementCommentCount(currentUser.getId());
+        communityUserStatusService.incrementCommentCount(currentUserId);
         
         // 发送消息通知
         try {
             if (request.getParentId() == null) {
                 // 对帖子的评论，通知帖子作者
                 CommunityPost post = communityPostMapper.selectById(postId);
-                if (post != null && !currentUser.getId().equals(post.getAuthorId())) {
+                if (post != null && !currentUserId.equals(post.getAuthorId())) {
                     NotificationUtil.sendCommunityMessage(
                         post.getAuthorId(),
                         "您的帖子收到新评论",
-                        "用户 " + currentUser.getUsername() + " 评论了您的帖子《" + post.getTitle() + "》",
+                        "用户 " + username + " 评论了您的帖子《" + post.getTitle() + "》",
                         postId.toString()
                     );
                 }
             } else {
                 // 对评论的回复，通知被回复的评论作者
                 CommunityComment parentComment = communityCommentMapper.selectById(request.getParentId());
-                if (parentComment != null && !currentUser.getId().equals(parentComment.getAuthorId())) {
+                if (parentComment != null && !currentUserId.equals(parentComment.getAuthorId())) {
                     NotificationUtil.sendCommunityMessage(
                         parentComment.getAuthorId(),
                         "您的评论收到新回复",
-                        "用户 " + currentUser.getUsername() + " 回复了您的评论",
+                        "用户 " + username + " 回复了您的评论",
                         comment.getId().toString()
                     );
                 }
             }
         } catch (Exception e) {
             log.warn("发送评论通知失败，用户ID: {}, 帖子ID: {}, 错误: {}", 
-                    currentUser.getId(), postId, e.getMessage());
+                    currentUserId, postId, e.getMessage());
         }
         
         log.info("用户发表评论成功，用户ID: {}, 帖子ID: {}, 评论ID: {}", 
-                currentUser.getId(), postId, comment.getId());
+                currentUserId, postId, comment.getId());
     }
     
     @Override
@@ -198,16 +200,16 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查评论是否存在
         CommunityComment comment = getById(commentId);
         
         // 检查是否已点赞
-        CommunityCommentLike existingLike = communityCommentLikeMapper.selectByCommentIdAndUserId(commentId, currentUser.getId());
+        CommunityCommentLike existingLike = communityCommentLikeMapper.selectByCommentIdAndUserId(commentId, currentUserId);
         if (existingLike != null) {
             throw new BusinessException("已经点赞过了");
         }
@@ -215,8 +217,10 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 添加点赞记录
         CommunityCommentLike like = new CommunityCommentLike();
         like.setCommentId(commentId);
-        like.setUserId(currentUser.getId());
-        like.setUserName(currentUser.getUsername());
+        like.setUserId(currentUserId);
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
+        like.setUserName(username);
         
         int result = communityCommentLikeMapper.insert(like);
         if (result <= 0) {
@@ -227,45 +231,45 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         communityCommentMapper.updateLikeCount(commentId, 1);
 
         // 更新用户点赞数统计
-        communityUserStatusService.incrementLikeCount(currentUser.getId());
+        communityUserStatusService.incrementLikeCount(currentUserId);
 
         // 发送消息通知：通知评论作者
-        if (!currentUser.getId().equals(comment.getAuthorId())) {
+        if (!currentUserId.equals(comment.getAuthorId())) {
             try {
                 NotificationUtil.sendCommunityMessage(
                     comment.getAuthorId(),
                     "您的评论收到新点赞",
-                    "用户 " + currentUser.getUsername() + " 点赞了您的评论",
+                    "用户 " + username + " 点赞了您的评论",
                     commentId.toString()
                 );
             } catch (Exception e) {
                 log.warn("发送评论点赞通知失败，用户ID: {}, 评论ID: {}, 错误: {}", 
-                        currentUser.getId(), commentId, e.getMessage());
+                        currentUserId, commentId, e.getMessage());
             }
         }
 
-        log.info("用户点赞评论成功，用户ID: {}, 评论ID: {}", currentUser.getId(), commentId);
+        log.info("用户点赞评论成功，用户ID: {}, 评论ID: {}", currentUserId, commentId);
     }
     
     @Override
     @Transactional
     public void unlikeComment(Long commentId) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查评论是否存在
-        CommunityComment comment = getById(commentId);
+        getById(commentId);
         
         // 检查是否已点赞
-        CommunityCommentLike existingLike = communityCommentLikeMapper.selectByCommentIdAndUserId(commentId, currentUser.getId());
+        CommunityCommentLike existingLike = communityCommentLikeMapper.selectByCommentIdAndUserId(commentId, currentUserId);
         if (existingLike == null) {
             throw new BusinessException("还没有点赞");
         }
         
         // 删除点赞记录
-        int result = communityCommentLikeMapper.delete(commentId, currentUser.getId());
+        int result = communityCommentLikeMapper.delete(commentId, currentUserId);
         if (result <= 0) {
             throw new BusinessException("取消点赞失败");
         }
@@ -274,21 +278,21 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         communityCommentMapper.updateLikeCount(commentId, -1);
 
         // 更新用户点赞数统计
-        communityUserStatusService.decrementLikeCount(currentUser.getId());
+        communityUserStatusService.decrementLikeCount(currentUserId);
 
-        log.info("用户取消点赞评论成功，用户ID: {}, 评论ID: {}", currentUser.getId(), commentId);
+        log.info("用户取消点赞评论成功，用户ID: {}, 评论ID: {}", currentUserId, commentId);
     }
     
     @Override
     public PageResult<CommunityCommentResponse> getUserComments(CommunityCommentQueryRequest request) {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始评论数据
         PageResult<CommunityComment> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
-            return communityCommentMapper.selectUserCommentList(currentUser.getId(), request);
+            return communityCommentMapper.selectUserCommentList(currentUserId, request);
         });
         
         // 在分页外进行DTO转换，避免额外查询干扰分页计数
@@ -312,9 +316,9 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         CommunityCommentResponse response = BeanUtil.copyProperties(comment, CommunityCommentResponse.class);
         
         // 设置用户点赞状态
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser != null) {
-            CommunityCommentLike like = communityCommentLikeMapper.selectByCommentIdAndUserId(comment.getId(), currentUser.getId());
+        if (StpUserUtil.isLogin()) {
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            CommunityCommentLike like = communityCommentLikeMapper.selectByCommentIdAndUserId(comment.getId(), userId);
             response.setIsLiked(like != null);
         } else {
             response.setIsLiked(false);

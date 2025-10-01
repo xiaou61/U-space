@@ -1,7 +1,8 @@
 package com.xiaou.monitor.interceptor;
 
 import cn.hutool.core.util.ReUtil;
-import com.xiaou.common.security.JwtTokenUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.monitor.context.SqlCallTreeContext;
 import com.xiaou.monitor.domain.SqlNode;
 import lombok.extern.slf4j.Slf4j;
@@ -49,9 +50,6 @@ public class SqlInterceptor implements Interceptor, ApplicationContextAware {
     
     @Autowired
     private SqlCallTreeContext sqlCallTreeContext;
-    
-    @Autowired(required = false)
-    private JwtTokenUtil jwtTokenUtil;
     
     private ApplicationContext applicationContext;
     
@@ -427,26 +425,24 @@ public class SqlInterceptor implements Interceptor, ApplicationContextAware {
     }
     
     /**
-     * 从Token中提取用户信息
+     * 从Token中提取用户信息（使用 Sa-Token）
      */
     private void extractUserInfoFromToken(HttpServletRequest request, RequestContextInfo contextInfo) {
         try {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ") && jwtTokenUtil != null) {
-                String token = authHeader.substring(7);
-                
-                if (jwtTokenUtil.validateToken(token)) {
-                    String username = jwtTokenUtil.getUsernameFromToken(token);
-                    Long userId = jwtTokenUtil.getUserIdFromToken(token);
-                    String userType = jwtTokenUtil.getUserTypeFromToken(token);
-                    
-                    contextInfo.username = username;
-                    contextInfo.userId = userId;
-                    contextInfo.userType = userType;
-                }
+            // 优先尝试获取用户登录信息
+            if (StpUserUtil.isLogin()) {
+                contextInfo.userId = StpUserUtil.getLoginIdAsLong();
+                contextInfo.userType = "user";
+                contextInfo.username = "用户" + contextInfo.userId;
+            } 
+            // 其次尝试获取管理员登录信息
+            else if (StpAdminUtil.isLogin()) {
+                contextInfo.userId = StpAdminUtil.getLoginIdAsLong();
+                contextInfo.userType = "admin";
+                contextInfo.username = "管理员" + contextInfo.userId;
             }
         } catch (Exception e) {
-            log.debug("从Token中提取用户信息失败: {}", e.getMessage());
+            log.debug("从Sa-Token中提取用户信息失败: {}", e.getMessage());
         }
     }
     

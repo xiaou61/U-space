@@ -160,6 +160,21 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/chat">
+            <template #title>
+              <el-icon><Message /></el-icon>
+              <span>聊天室管理</span>
+            </template>
+            <el-menu-item index="/chat/messages">
+              <el-icon><ChatDotRound /></el-icon>
+              <span>消息管理</span>
+            </el-menu-item>
+            <el-menu-item index="/chat/users">
+              <el-icon><User /></el-icon>
+              <span>在线用户</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/logs">
             <template #title>
               <el-icon><Document /></el-icon>
@@ -234,6 +249,29 @@
             <el-menu-item index="/moyu/bug-store">
               <el-icon><Warning /></el-icon>
               <span>Bug商店管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
+          <el-sub-menu index="/points">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>积分管理</span>
+            </template>
+            <el-menu-item index="/points/index">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>积分概览</span>
+            </el-menu-item>
+            <el-menu-item index="/points/users">
+              <el-icon><Trophy /></el-icon>
+              <span>积分排行</span>
+            </el-menu-item>
+            <el-menu-item index="/points/details">
+              <el-icon><Document /></el-icon>
+              <span>积分明细</span>
+            </el-menu-item>
+            <el-menu-item index="/points/grant">
+              <el-icon><Plus /></el-icon>
+              <span>积分发放</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -360,7 +398,12 @@ import {
   Warning,
   EditPen,
   Share,
-  Search
+  Search,
+  Coin,
+  Trophy,
+  Plus,
+  Coffee,
+  Calendar
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -413,6 +456,8 @@ const getIconByPath = (path, title = '') => {
     'posts': 'Document',
     'comments': 'ChatLineRound',
     'moments': 'Picture',
+    'chat': 'Message',
+    'messages': 'ChatDotRound',
     'statistics': 'DataAnalysis',
     'logs': 'Document',
     'login': 'UserFilled',
@@ -428,6 +473,8 @@ const getIconByPath = (path, title = '') => {
     'moyu': 'Coffee',
     'calendar-events': 'Calendar',
     'daily-content': 'Document',
+    'points': 'Coin',
+    'grant': 'Plus',
     'system': 'Setting',
     'version': 'Document',
     'monitor': 'Monitor',
@@ -460,6 +507,9 @@ const getIconByPath = (path, title = '') => {
     '评论': 'ChatLineRound',
     '朋友圈': 'Picture',
     '动态': 'Picture',
+    '聊天室': 'Message',
+    '消息': 'ChatDotRound',
+    '在线': 'User',
     '统计': 'DataAnalysis',
     '日志': 'Document',
     '登录': 'UserFilled',
@@ -471,6 +521,11 @@ const getIconByPath = (path, title = '') => {
     '配置': 'SetUp',
     '迁移': 'Sort',
     '设置': 'Tools',
+    '积分': 'Coin',
+    '排行': 'Trophy',
+    '发放': 'Plus',
+    '明细': 'Document',
+    '概览': 'DataAnalysis',
     '系统': 'Setting',
     '版本': 'Document',
     '监控': 'Monitor',
@@ -511,9 +566,12 @@ const generateBreadcrumb = (path, title) => {
     'knowledge': '知识图谱管理', 
     'community': '社区管理',
     'moments': '朋友圈管理',
+    'chat': '聊天室管理',
     'logs': '日志管理',
     'sensitive': '敏感词管理',
     'filestorage': '文件存储管理',
+    'moyu': '摸鱼工具管理',
+    'points': '积分管理',
     'system': '系统管理',
     'profile': '个人中心'
   }

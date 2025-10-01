@@ -4,8 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.dto.InterviewQuestionSetQueryRequest;
@@ -40,7 +40,6 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
     private final InterviewQuestionMapper questionMapper;
     private final InterviewCategoryMapper categoryMapper;
     private final InterviewCategoryService categoryService;
-    private final UserContextUtil userContextUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -61,8 +60,8 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
                 .setViewCount(0)
                 .setFavoriteCount(0)
                 .setStatus(request.getStatus() != null ? request.getStatus() : 0) // 默认草稿
-                .setCreatorId(userContextUtil.getCurrentUserId())
-                .setCreatorName(userContextUtil.getCurrentUser() != null ? userContextUtil.getCurrentUser().getRealName() : "系统")
+                .setCreatorId(StpUserUtil.getLoginIdAsLong())
+                .setCreatorName("系统")
                 .setCreateTime(LocalDateTime.now())
                 .setUpdateTime(LocalDateTime.now());
 

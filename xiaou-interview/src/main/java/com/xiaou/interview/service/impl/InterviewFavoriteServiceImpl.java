@@ -2,9 +2,9 @@ package com.xiaou.interview.service.impl;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.interview.domain.InterviewFavorite;
 import com.xiaou.interview.domain.InterviewQuestionSet;
 import com.xiaou.interview.mapper.InterviewFavoriteMapper;
@@ -33,7 +33,6 @@ public class InterviewFavoriteServiceImpl implements InterviewFavoriteService {
     private final InterviewFavoriteMapper favoriteMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewQuestionSetMapper questionSetMapper;
-    private final UserContextUtil userContextUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -66,8 +65,7 @@ public class InterviewFavoriteServiceImpl implements InterviewFavoriteService {
                 InterviewQuestionSet questionSet = questionSetMapper.selectById(targetId);
                 if (questionSet != null && !userId.equals(questionSet.getCreatorId())) {
                     // 获取当前用户信息
-                    UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-                    String userName = currentUser != null ? currentUser.getUsername() : "某用户";
+                    String userName = "用户" + userId;
                     
                     NotificationUtil.sendInterviewMessage(
                         questionSet.getCreatorId(),

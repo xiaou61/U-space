@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.chat.mapper.ChatMessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.chat.domain.ChatMessage">
+        <id column="id" property="id"/>
+        <result column="room_id" property="roomId"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_nickname" property="userNickname"/>
+        <result column="user_avatar" property="userAvatar"/>
+        <result column="message_type" property="messageType"/>
+        <result column="content" property="content"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="is_deleted" property="isDeleted"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="device_info" property="deviceInfo"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        m.id, m.room_id, m.user_id, u.nickname as user_nickname, u.avatar as user_avatar,
+        m.message_type, m.content, m.image_url, m.is_deleted, m.ip_address, m.device_info, m.create_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.chat.domain.ChatMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_messages (room_id, user_id, message_type, content, image_url, is_deleted, 
+        ip_address, device_info, create_time)
+        VALUES (#{roomId}, #{userId}, #{messageType}, #{content}, #{imageUrl}, #{isDeleted}, 
+        #{ipAddress}, #{deviceInfo}, NOW())
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_messages m
+        LEFT JOIN user_info u ON m.user_id = u.id
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="selectHistory" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_messages m
+        LEFT JOIN user_info u ON m.user_id = u.id
+        WHERE m.room_id = #{roomId} AND m.is_deleted = 0
+        <if test="lastMessageId != null and lastMessageId > 0">
+            AND m.id &lt; #{lastMessageId}
+        </if>
+        ORDER BY m.id DESC
+        LIMIT #{pageSize}
+    </select>
+
+    <update id="deleteById" parameterType="java.lang.Long">
+        UPDATE chat_messages SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+    <update id="deleteBatch">
+        UPDATE chat_messages SET is_deleted = 1 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="selectAdminMessageCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM chat_messages m
+        <where>
+            m.is_deleted = 0
+            <if test="request.userId != null">
+                AND m.user_id = #{request.userId}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND m.content LIKE CONCAT('%', #{request.keyword}, '%')
+            </if>
+            <if test="request.startTime != null and request.startTime != ''">
+                AND m.create_time &gt;= #{request.startTime}
+            </if>
+            <if test="request.endTime != null and request.endTime != ''">
+                AND m.create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAdminMessageList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_messages m
+        LEFT JOIN user_info u ON m.user_id = u.id
+        <where>
+            m.is_deleted = 0
+            <if test="request.userId != null">
+                AND m.user_id = #{request.userId}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND m.content LIKE CONCAT('%', #{request.keyword}, '%')
+            </if>
+            <if test="request.startTime != null and request.startTime != ''">
+                AND m.create_time &gt;= #{request.startTime}
+            </if>
+            <if test="request.endTime != null and request.endTime != ''">
+                AND m.create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+        ORDER BY m.create_time DESC
+    </select>
+
+</mapper>

@@ -5,7 +5,7 @@ import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.exception.BusinessException;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.moyu.domain.BugItem;
 import com.xiaou.moyu.dto.AdminBugItemRequest;
 import com.xiaou.moyu.dto.BugItemQueryRequest;
@@ -29,7 +29,6 @@ import java.util.List;
 public class AdminBugStoreController {
     
     private final BugStoreService bugStoreService;
-    private final UserContextUtil userContextUtil;
     
     /**
      * 分页查询Bug列表
@@ -76,12 +75,9 @@ public class AdminBugStoreController {
     @RequireAdmin
     public Result<Long> addBug(@Valid @RequestBody AdminBugItemRequest request) {
         try {
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("请先登录");
-            }
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
-            Long bugId = bugStoreService.addBug(request, currentUser.getId());
+            Long bugId = bugStoreService.addBug(request, adminId);
             
             if (bugId == null) {
                 throw new BusinessException("添加Bug失败");
@@ -155,12 +151,9 @@ public class AdminBugStoreController {
                 return Result.error("导入数据不能为空");
             }
             
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("请先登录");
-            }
+            Long adminId = StpAdminUtil.getLoginIdAsLong();
             
-            boolean success = bugStoreService.batchImportBugs(requests, currentUser.getId());
+            boolean success = bugStoreService.batchImportBugs(requests, adminId);
             
             if (!success) {
                 throw new BusinessException("批量导入Bug失败");

@@ -152,12 +152,32 @@ const routes = [
     }
   },
   {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('@/views/chat/Index.vue'),
+    meta: {
+      title: '聊天室',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
     meta: {
       title: '个人中心',
       requiresAuth: true
+    }
+  },
+  {
+    path: '/points',
+    name: 'Points',
+    component: () => import('@/views/points/Index.vue'),
+    meta: {
+      title: '我的积分',
+      requiresAuth: true,
+      keepAlive: true
     }
   },
   {
@@ -319,7 +339,7 @@ router.beforeEach(async (to, from, next) => {
   
   // 检查是否需要登录
   if (to.meta.requiresAuth) {
-    if (!userStore.isLogin()) {
+    if (!userStore.token || !userStore.isLoggedIn) {
       ElMessage.warning('请先登录')
       next('/login')
       return
@@ -327,7 +347,7 @@ router.beforeEach(async (to, from, next) => {
   }
   
   // 如果已登录，访问登录或注册页面时跳转到首页
-  if ((to.path === '/login' || to.path === '/register') && userStore.isLogin()) {
+  if ((to.path === '/login' || to.path === '/register') && userStore.token && userStore.isLoggedIn) {
     next('/')
     return
   }

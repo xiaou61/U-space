@@ -6,8 +6,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.version.domain.VersionHistory;
 import com.xiaou.version.dto.VersionHistoryCreateRequest;
 import com.xiaou.version.dto.VersionHistoryQueryRequest;
@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 public class VersionHistoryServiceImpl implements VersionHistoryService {
     
     private final VersionHistoryMapper versionHistoryMapper;
-
-    private final UserContextUtil userContextUtil;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -59,7 +57,7 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         }
         
         // 设置创建信息
-        versionHistory.setCreatedBy(userContextUtil.getCurrentUserId());
+        versionHistory.setCreatedBy(StpAdminUtil.getLoginIdAsLong());
         versionHistory.setViewCount(0);
         
         // 插入数据库
@@ -68,7 +66,7 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
             throw new BusinessException("创建版本历史记录失败");
         }
         
-        log.info("用户[{}]创建版本历史记录成功，版本号: {}", userContextUtil.getCurrentUserId(), request.getVersionNumber());
+        log.info("管理员[{}]创建版本历史记录成功，版本号: {}", StpAdminUtil.getLoginIdAsLong(), request.getVersionNumber());
         return versionHistory.getId();
     }
     
@@ -98,7 +96,7 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         }
         
         // 设置更新信息
-        versionHistory.setUpdatedBy(userContextUtil.getCurrentUserId());
+        versionHistory.setUpdatedBy(StpAdminUtil.getLoginIdAsLong());
         
         // 更新数据库
         int result = versionHistoryMapper.updateById(versionHistory);
@@ -106,7 +104,7 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
             throw new BusinessException("更新版本历史记录失败");
         }
         
-        log.info("用户[{}]更新版本历史记录成功，ID: {}, 版本号: {}", userContextUtil.getCurrentUserId(), request.getId(), request.getVersionNumber());
+        log.info("用户[{}]更新版本历史记录成功，ID: {}, 版本号: {}", StpAdminUtil.getLoginIdAsLong(), request.getId(), request.getVersionNumber());
         return true;
     }
     
@@ -120,12 +118,12 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         }
         
         // 逻辑删除
-        int result = versionHistoryMapper.logicalDeleteById(id, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.logicalDeleteById(id, StpAdminUtil.getLoginIdAsLong());
         if (result <= 0) {
             throw new BusinessException("删除版本历史记录失败");
         }
         
-        log.info("用户[{}]删除版本历史记录成功，ID: {}, 版本号: {}", userContextUtil.getCurrentUserId(), id, existingVersion.getVersionNumber());
+        log.info("用户[{}]删除版本历史记录成功，ID: {}, 版本号: {}", StpAdminUtil.getLoginIdAsLong(), id, existingVersion.getVersionNumber());
         return true;
     }
     
@@ -169,9 +167,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean publishVersion(Long id) {
-        int result = versionHistoryMapper.updateStatus(id, 1, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.updateStatus(id, 1, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]发布版本历史记录成功，ID: {}", userContextUtil.getCurrentUserId(), id);
+            log.info("用户[{}]发布版本历史记录成功，ID: {}", StpAdminUtil.getLoginIdAsLong(), id);
             return true;
         }
         return false;
@@ -180,9 +178,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean hideVersion(Long id) {
-        int result = versionHistoryMapper.updateStatus(id, 2, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.updateStatus(id, 2, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]隐藏版本历史记录成功，ID: {}", userContextUtil.getCurrentUserId(), id);
+            log.info("用户[{}]隐藏版本历史记录成功，ID: {}", StpAdminUtil.getLoginIdAsLong(), id);
             return true;
         }
         return false;
@@ -191,9 +189,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean unpublishVersion(Long id) {
-        int result = versionHistoryMapper.updateStatus(id, 0, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.updateStatus(id, 0, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]取消发布版本历史记录成功，ID: {}", userContextUtil.getCurrentUserId(), id);
+            log.info("用户[{}]取消发布版本历史记录成功，ID: {}", StpAdminUtil.getLoginIdAsLong(), id);
             return true;
         }
         return false;
@@ -205,9 +203,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         if (CollUtil.isEmpty(ids)) {
             return false;
         }
-        int result = versionHistoryMapper.batchUpdateStatus(ids, 1, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.batchUpdateStatus(ids, 1, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]批量发布版本历史记录成功，数量: {}", userContextUtil.getCurrentUserId(), ids.size());
+            log.info("用户[{}]批量发布版本历史记录成功，数量: {}", StpAdminUtil.getLoginIdAsLong(), ids.size());
             return true;
         }
         return false;
@@ -219,9 +217,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         if (CollUtil.isEmpty(ids)) {
             return false;
         }
-        int result = versionHistoryMapper.batchUpdateStatus(ids, 2, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.batchUpdateStatus(ids, 2, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]批量隐藏版本历史记录成功，数量: {}", userContextUtil.getCurrentUserId(), ids.size());
+            log.info("用户[{}]批量隐藏版本历史记录成功，数量: {}", StpAdminUtil.getLoginIdAsLong(), ids.size());
             return true;
         }
         return false;
@@ -233,9 +231,9 @@ public class VersionHistoryServiceImpl implements VersionHistoryService {
         if (CollUtil.isEmpty(ids)) {
             return false;
         }
-        int result = versionHistoryMapper.batchLogicalDelete(ids, userContextUtil.getCurrentUserId());
+        int result = versionHistoryMapper.batchLogicalDelete(ids, StpAdminUtil.getLoginIdAsLong());
         if (result > 0) {
-            log.info("用户[{}]批量删除版本历史记录成功，数量: {}", userContextUtil.getCurrentUserId(), ids.size());
+            log.info("用户[{}]批量删除版本历史记录成功，数量: {}", StpAdminUtil.getLoginIdAsLong(), ids.size());
             return true;
         }
         return false;

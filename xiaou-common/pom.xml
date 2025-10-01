@@ -67,7 +67,7 @@
             <artifactId>lombok</artifactId>
         </dependency>
         
-        <!-- JWT -->
+        <!-- JWT（保留兼容旧代码） -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -81,6 +81,26 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        
+        <!-- Sa-Token 核心依赖 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <version>1.44.0</version>
+        </dependency>
+        
+        <!-- Sa-Token 独立 Redis 插件（使用独立的 Redis 连接池，不影响现有 Redisson 配置） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-alone-redis</artifactId>
+            <version>1.44.0</version>
+        </dependency>
+        
+        <!-- Jackson 数据绑定（Sa-Token 序列化需要） -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         
         <!-- Hutool工具类 -->

@@ -11,6 +11,7 @@
     <modules>
         <module>xiaou-common</module>
         <module>xiaou-system</module>
+        <module>xiaou-user-api</module>
         <module>xiaou-user</module>
         <module>xiaou-monitor</module>
         <module>xiaou-application</module>
@@ -24,11 +25,13 @@
         <module>xiaou-knowledge</module>
         <module>xiaou-version</module>
         <module>xiaou-moyu</module>
+        <module>xiaou-points</module>
+        <module>xiaou-chat</module>
     </modules>
 
     <properties>
         <!-- 统一版本管理 -->
-        <revision>1.3.0</revision>
+        <revision>1.4.0</revision>
         
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>

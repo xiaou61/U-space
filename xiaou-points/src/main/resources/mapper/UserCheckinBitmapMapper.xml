@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.UserCheckinBitmapMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.UserCheckinBitmap">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="year_month" property="yearMonth" jdbcType="VARCHAR"/>
+        <result column="checkin_bitmap" property="checkinBitmap" jdbcType="BIGINT"/>
+        <result column="continuous_days" property="continuousDays" jdbcType="INTEGER"/>
+        <result column="last_checkin_date" property="lastCheckinDate" jdbcType="DATE"/>
+        <result column="total_checkin_days" property="totalCheckinDays" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, `year_month`, checkin_bitmap, continuous_days, 
+        last_checkin_date, total_checkin_days, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID和年月查询位图记录 -->
+    <select id="selectByUserIdAndYearMonth" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_checkin_bitmap
+        WHERE user_id = #{userId} AND `year_month` = #{yearMonth}
+    </select>
+
+    <!-- 插入位图记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_checkin_bitmap (
+            user_id, `year_month`, checkin_bitmap, continuous_days, 
+            last_checkin_date, total_checkin_days, create_time, update_time
+        ) VALUES (
+            #{userId}, #{yearMonth}, #{checkinBitmap}, #{continuousDays}, 
+            #{lastCheckinDate}, #{totalCheckinDays}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新位图记录 -->
+    <update id="updateBitmap">
+        UPDATE user_checkin_bitmap 
+        SET checkin_bitmap = #{checkinBitmap},
+            continuous_days = #{continuousDays},
+            last_checkin_date = #{lastCheckinDate},
+            total_checkin_days = #{totalCheckinDays},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询用户指定月份范围的位图记录 -->
+    <select id="selectByUserIdAndMonthRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_checkin_bitmap
+        WHERE user_id = #{userId}
+        AND `year_month` BETWEEN #{startYearMonth} AND #{endYearMonth}
+        ORDER BY `year_month` DESC
+    </select>
+
+    <!-- 查询用户最近的位图记录 -->
+    <select id="selectLatestByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_checkin_bitmap
+        WHERE user_id = #{userId}
+        ORDER BY `year_month` DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询用户所有位图记录 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_checkin_bitmap
+        WHERE user_id = #{userId}
+        ORDER BY `year_month` DESC
+    </select>
+
+    <!-- 统计用户总打卡天数 -->
+    <select id="selectTotalCheckinDays" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(total_checkin_days), 0)
+        FROM user_checkin_bitmap
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 查询活跃用户统计（有打卡记录的用户） -->
+    <select id="selectActiveCheckinUserCount" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT user_id)
+        FROM user_checkin_bitmap
+        WHERE checkin_bitmap > 0
+    </select>
+
+    <!-- 查询指定日期的打卡用户数 -->
+    <select id="selectCheckinUserCountByDate" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_checkin_bitmap
+        WHERE `year_month` = DATE_FORMAT(#{date}, '%Y-%m')
+        AND (checkin_bitmap &amp; (1 &lt;&lt; (DAY(#{date}) - 1))) > 0
+    </select>
+
+</mapper>

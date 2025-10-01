@@ -1,5 +1,9 @@
 package com.xiaou.common.exception;
 
+import cn.dev33.satoken.exception.DisableServiceException;
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.ResultCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +44,73 @@ public class GlobalExceptionHandler {
     public Result<Void> handleBusinessException(BusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * Sa-Token 未登录异常处理
+     */
+    @ExceptionHandler(NotLoginException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleNotLoginException(NotLoginException e, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        log.warn("请求地址'{}',Token验证失败: {}", requestURI, e.getMessage());
+        
+        // 根据不同的异常类型返回不同的消息
+        String message;
+        switch (e.getType()) {
+            case NotLoginException.NOT_TOKEN:
+                message = "未提供Token，请先登录";
+                break;
+            case NotLoginException.INVALID_TOKEN:
+                message = "Token无效，请重新登录";
+                break;
+            case NotLoginException.TOKEN_TIMEOUT:
+                message = "Token已过期，请重新登录";
+                break;
+            case NotLoginException.BE_REPLACED:
+                message = "Token已被顶替，请重新登录";
+                break;
+            case NotLoginException.KICK_OUT:
+                message = "已被踢下线，请重新登录";
+                break;
+            default:
+                message = "登录状态已失效，请重新登录";
+        }
+        
+        return Result.error(ResultCode.TOKEN_INVALID.getCode(), message);
+    }
+
+    /**
+     * Sa-Token 权限不足异常处理
+     */
+    @ExceptionHandler(NotPermissionException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleNotPermissionException(NotPermissionException e, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        log.warn("请求地址'{}',权限不足: 缺少权限[{}]", requestURI, e.getPermission());
+        return Result.error(ResultCode.FORBIDDEN.getCode(), "权限不足，无法访问");
+    }
+
+    /**
+     * Sa-Token 角色权限不足异常处理
+     */
+    @ExceptionHandler(NotRoleException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleNotRoleException(NotRoleException e, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        log.warn("请求地址'{}',角色权限不足: 缺少角色[{}]", requestURI, e.getRole());
+        return Result.error(ResultCode.FORBIDDEN.getCode(), "角色权限不足，无法访问");
+    }
+
+    /**
+     * Sa-Token 服务封禁异常处理
+     */
+    @ExceptionHandler(DisableServiceException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleDisableServiceException(DisableServiceException e, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        log.warn("请求地址'{}',服务已被封禁: {}", requestURI, e.getMessage());
+        return Result.error(ResultCode.ACCOUNT_DISABLED.getCode(), "账号已被封禁，请联系管理员");
     }
 
     /**

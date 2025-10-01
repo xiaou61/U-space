@@ -2,9 +2,10 @@ package com.xiaou.community.service.impl;
 
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
+import com.xiaou.common.satoken.SaTokenUserUtil;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.DateHelper;
 import com.xiaou.common.utils.PageHelper;
-import com.xiaou.common.utils.UserContextUtil;
 import com.xiaou.community.domain.CommunityUserStatus;
 import com.xiaou.community.dto.AdminUserQueryRequest;
 import com.xiaou.community.mapper.CommunityUserStatusMapper;
@@ -12,10 +13,8 @@ import com.xiaou.community.service.CommunityUserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * 用户社区状态Service实现类
@@ -28,7 +27,6 @@ import java.util.List;
 public class CommunityUserStatusServiceImpl implements CommunityUserStatusService {
     
     private final CommunityUserStatusMapper communityUserStatusMapper;
-    private final UserContextUtil userContextUtil;
     
     @Override
     public PageResult<CommunityUserStatus> getAdminUserList(AdminUserQueryRequest request) {
@@ -99,25 +97,30 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
     
     @Override
     public CommunityUserStatus getCurrentUserStatus() {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
-        return ensureUserExists(currentUser.getId(), currentUser.getUsername());
+        // Sa-Token: 从工具类获取用户名
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
+        
+        return ensureUserExists(currentUserId, username);
     }
     
     @Override
     public void checkUserBanStatus() {
-        UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (!StpUserUtil.isLogin()) {
             throw new BusinessException("请先登录");
         }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
-        CommunityUserStatus userStatus = getByUserId(currentUser.getId());
+        CommunityUserStatus userStatus = getByUserId(currentUserId);
         if (userStatus == null) {
             // 用户不存在则自动创建
-            ensureUserExists(currentUser.getId(), currentUser.getUsername());
+            // Sa-Token: 从工具类获取用户名
+            String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
+            ensureUserExists(currentUserId, username);
             return;
         }
         
@@ -126,7 +129,7 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
             // 检查封禁是否过期
             if (userStatus.getBanExpireTime() != null && userStatus.getBanExpireTime().before(new Date())) {
                 // 封禁已过期，自动解封
-                unbanUser(currentUser.getId());
+                unbanUser(currentUserId);
                 return;
             }
             

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.chat.mapper.ChatOnlineUserMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.chat.domain.ChatOnlineUser">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="room_id" property="roomId"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="device_info" property="deviceInfo"/>
+        <result column="connect_time" property="connectTime"/>
+        <result column="last_heartbeat_time" property="lastHeartbeatTime"/>
+    </resultMap>
+
+    <resultMap id="OnlineUserWithInfoMap" type="com.xiaou.chat.dto.ChatOnlineUserResponse">
+        <result column="user_id" property="userId"/>
+        <result column="user_nickname" property="userNickname"/>
+        <result column="user_avatar" property="userAvatar"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="device_info" property="deviceInfo"/>
+        <result column="connect_time" property="connectTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, room_id, session_id, ip_address, device_info, connect_time, last_heartbeat_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.chat.domain.ChatOnlineUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_online_users (user_id, room_id, session_id, ip_address, device_info, 
+        connect_time, last_heartbeat_time)
+        VALUES (#{userId}, #{roomId}, #{sessionId}, #{ipAddress}, #{deviceInfo}, NOW(), NOW())
+    </insert>
+
+    <select id="selectBySessionId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM chat_online_users
+        WHERE session_id = #{sessionId}
+    </select>
+
+    <delete id="deleteBySessionId" parameterType="java.lang.String">
+        DELETE FROM chat_online_users WHERE session_id = #{sessionId}
+    </delete>
+
+    <delete id="deleteByUserId" parameterType="java.lang.Long">
+        DELETE FROM chat_online_users WHERE user_id = #{userId}
+    </delete>
+
+    <update id="updateHeartbeat" parameterType="java.lang.String">
+        UPDATE chat_online_users 
+        SET last_heartbeat_time = NOW()
+        WHERE session_id = #{sessionId}
+    </update>
+
+    <select id="countOnlineUsers" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT user_id) FROM chat_online_users WHERE room_id = #{roomId}
+    </select>
+
+    <select id="selectOnlineUsers" resultMap="OnlineUserWithInfoMap">
+        SELECT o.user_id, u.nickname as user_nickname, u.avatar as user_avatar,
+               o.ip_address, o.device_info, o.connect_time
+        FROM chat_online_users o
+        LEFT JOIN user_info u ON o.user_id = u.id
+        WHERE o.room_id = #{roomId}
+        ORDER BY o.connect_time DESC
+    </select>
+
+    <delete id="deleteTimeoutUsers">
+        DELETE FROM chat_online_users 
+        WHERE last_heartbeat_time &lt; DATE_SUB(NOW(), INTERVAL #{timeoutSeconds} SECOND)
+    </delete>
+
+</mapper>

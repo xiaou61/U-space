@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import Layout from '@/layout/index.vue'
 
 const routes = [
@@ -6,7 +8,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/Login.vue'),
-    meta: { title: '登录' }
+    meta: { title: '登录', requiresAuth: false }
   },
   {
     path: '/',
@@ -135,6 +137,26 @@ const routes = [
         name: 'MomentsStatistics',
         component: () => import('@/views/moments/statistics/index.vue'),
         meta: { title: '数据统计' }
+      }
+    ]
+  },
+  {
+    path: '/chat',
+    component: Layout,
+    redirect: '/chat/messages',
+    meta: { title: '聊天室管理' },
+    children: [
+      {
+        path: 'messages',
+        name: 'ChatMessages',
+        component: () => import('@/views/chat/messages/index.vue'),
+        meta: { title: '消息管理' }
+      },
+      {
+        path: 'users',
+        name: 'ChatUsers',
+        component: () => import('@/views/chat/users/index.vue'),
+        meta: { title: '在线用户' }
       }
     ]
   },
@@ -294,6 +316,38 @@ const routes = [
     ]
   },
   {
+    path: '/points',
+    component: Layout,
+    redirect: '/points/index',
+    meta: { title: '积分管理' },
+    children: [
+      {
+        path: 'index',
+        name: 'PointsOverview',
+        component: () => import('@/views/points/index.vue'),
+        meta: { title: '积分概览' }
+      },
+      {
+        path: 'users',
+        name: 'PointsUsers',
+        component: () => import('@/views/points/users.vue'),
+        meta: { title: '积分排行' }
+      },
+      {
+        path: 'details',
+        name: 'PointsDetails',
+        component: () => import('@/views/points/details.vue'),
+        meta: { title: '积分明细' }
+      },
+      {
+        path: 'grant',
+        name: 'PointsGrant',
+        component: () => import('@/views/points/grant.vue'),
+        meta: { title: '积分发放' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
@@ -308,9 +362,32 @@ const router = createRouter({
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  
   // 设置页面标题
   if (to.meta?.title) {
     document.title = `${to.meta.title} - Code Nest 管理后台`
+  }
+  
+  // 检查是否需要登录（除了登录页，其他页面都需要登录）
+  const requiresAuth = to.meta?.requiresAuth !== false // 默认需要登录
+  
+  if (requiresAuth && to.path !== '/login') {
+    // 检查是否已登录
+    if (!userStore.token || !userStore.isLoggedIn) {
+      ElMessage.warning('请先登录')
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath } // 保存目标路径，登录后跳转回去
+      })
+      return
+    }
+  }
+  
+  // 如果已登录，访问登录页面时跳转到首页
+  if (to.path === '/login' && userStore.token && userStore.isLoggedIn) {
+    next('/')
+    return
   }
   
   next()

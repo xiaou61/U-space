@@ -1,18 +1,13 @@
 package com.xiaou.user.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.security.JwtTokenUtil;
-import com.xiaou.common.security.TokenService;
-import com.xiaou.common.utils.UserContextUtil;
-import com.xiaou.user.domain.UserInfo;
+import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.user.dto.UserChangePasswordRequest;
 import com.xiaou.user.dto.UserInfoResponse;
 import com.xiaou.user.dto.UserUpdateRequest;
 import com.xiaou.user.service.UserInfoService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,19 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 @RestController
 @RequestMapping("/user")
-
 public class UserController {
 
     @Resource
-    private  UserInfoService userInfoService;
-    @Resource
-    private  TokenService tokenService;
-    @Resource
-    private  JwtTokenUtil jwtTokenUtil;
-    @Resource
-    private  ObjectMapper objectMapper;
-    @Resource
-    private UserContextUtil userContextUtil;
+    private UserInfoService userInfoService;
 
     @Autowired
     private FileStorageService fileStorageService;
@@ -70,22 +56,17 @@ public class UserController {
     @GetMapping("/profile")
     public Result<UserInfoResponse> getCurrentUserInfo() {
         try {
-            // 使用 UserContextUtil 获取当前用户信息
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
+            // 使用 Sa-Token 获取当前用户ID
+            if (!StpUserUtil.isLogin()) {
                 return Result.error("Token无效或已过期");
             }
             
-            // 验证是否为普通用户
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
+            log.info("获取当前用户信息，用户ID: {}", userId);
             
-            log.info("获取当前用户信息，用户ID: {}", currentUser.getId());
+            UserInfoResponse userInfo = userInfoService.getUserInfoById(userId);
             
-            UserInfoResponse userInfo = userInfoService.getUserInfoById(currentUser.getId());
-            
-            log.info("获取当前用户信息成功，用户ID: {}", currentUser.getId());
+            log.info("获取当前用户信息成功，用户ID: {}", userId);
             return Result.success("获取用户信息成功", userInfo);
             
         } catch (Exception e) {
@@ -121,22 +102,16 @@ public class UserController {
     @PutMapping("/profile")
     public Result<UserInfoResponse> updateCurrentUserInfo(@Valid @RequestBody UserUpdateRequest request) {
         try {
-            // 使用 UserContextUtil 获取当前用户信息
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("Token无效或已过期");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("请先登录");
             }
+            Long userId = StpUserUtil.getLoginIdAsLong();
             
-            // 验证是否为普通用户
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            log.info("更新当前用户信息，用户ID: {}", userId);
             
-            log.info("更新当前用户信息，用户ID: {}", currentUser.getId());
+            UserInfoResponse userInfo = userInfoService.updateUserInfo(userId, request);
             
-            UserInfoResponse userInfo = userInfoService.updateUserInfo(currentUser.getId(), request);
-            
-            log.info("更新当前用户信息成功，用户ID: {}", currentUser.getId());
+            log.info("更新当前用户信息成功，用户ID: {}", userId);
             return Result.success("用户信息更新成功", userInfo);
             
         } catch (Exception e) {
@@ -170,31 +145,21 @@ public class UserController {
      * 修改当前用户密码（通过token获取用户ID）
      */
     @PutMapping("/password")
-    public Result<Void> changeCurrentUserPassword(
-            @Valid @RequestBody UserChangePasswordRequest request,
-            @RequestHeader("Authorization") String authHeader) {
+    public Result<Void> changeCurrentUserPassword(@Valid @RequestBody UserChangePasswordRequest request) {
         try {
-            String token = jwtTokenUtil.getTokenFromHeader(authHeader);
-            if (token == null) {
-                return Result.error("Token无效");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("请先登录");
             }
+            Long userId = StpUserUtil.getLoginIdAsLong();
             
-            // 从Redis中获取用户信息
-            String userInfoJson = tokenService.getUserFromToken(token, "user");
-            if (userInfoJson == null) {
-                return Result.error("用户信息已过期，请重新登录");
-            }
+            log.info("修改当前用户密码，用户ID: {}", userId);
             
-            UserInfo user = objectMapper.readValue(userInfoJson, UserInfo.class);
-            log.info("修改当前用户密码，用户ID: {}", user.getId());
+            userInfoService.changePassword(userId, request);
             
-            userInfoService.changePassword(user.getId(), request);
+            // 密码修改后，退出当前登录，强制重新登录
+            StpUserUtil.logout();
             
-            // 密码修改后，将当前Token加入黑名单，强制重新登录
-            tokenService.addToBlacklist(token, "user");
-            tokenService.deleteToken(token, "user");
-            
-            log.info("修改当前用户密码成功，用户ID: {}", user.getId());
+            log.info("修改当前用户密码成功，用户ID: {}", userId);
             return Result.success("密码修改成功，请重新登录", null);
             
         } catch (Exception e) {
@@ -209,16 +174,10 @@ public class UserController {
     @PostMapping("/avatar/upload")
     public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
         try {
-            // 使用 UserContextUtil 获取当前用户信息
-            UserContextUtil.UserInfo currentUser = userContextUtil.getCurrentUser();
-            if (currentUser == null) {
-                return Result.error("Token无效或已过期");
+            if (!StpUserUtil.isLogin()) {
+                return Result.error("请先登录");
             }
-            
-            // 验证是否为普通用户
-            if (!currentUser.isUser()) {
-                return Result.error("权限不足");
-            }
+            Long userId = StpUserUtil.getLoginIdAsLong();
 
             // 文件校验
             if (file == null || file.isEmpty()) {
@@ -242,7 +201,7 @@ public class UserController {
             }
 
             log.info("用户上传头像，用户ID: {}, 文件名: {}, 大小: {}KB", 
-                currentUser.getId(), originalName, file.getSize() / 1024);
+                userId, originalName, file.getSize() / 1024);
 
             // 上传文件
             FileUploadResult uploadResult = fileStorageService.uploadSingle(file, "user", "avatar");
@@ -255,10 +214,10 @@ public class UserController {
             UserUpdateRequest updateRequest = new UserUpdateRequest();
             updateRequest.setAvatar(uploadResult.getAccessUrl());
             
-            userInfoService.updateUserInfo(currentUser.getId(), updateRequest);
+            userInfoService.updateUserInfo(userId, updateRequest);
 
             log.info("用户头像上传成功，用户ID: {}, 头像URL: {}", 
-                currentUser.getId(), uploadResult.getAccessUrl());
+                userId, uploadResult.getAccessUrl());
             
             return Result.success("头像上传成功", uploadResult.getAccessUrl());
             

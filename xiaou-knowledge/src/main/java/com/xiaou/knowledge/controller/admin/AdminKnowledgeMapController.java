@@ -4,7 +4,7 @@ import com.xiaou.common.annotation.RequireAdmin;
 import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.core.domain.PageResult;
-import com.xiaou.common.utils.UserContextUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.knowledge.domain.KnowledgeMap;
 import com.xiaou.knowledge.dto.request.CreateKnowledgeMapRequest;
 import com.xiaou.knowledge.dto.request.UpdateKnowledgeMapRequest;
@@ -36,7 +36,6 @@ import java.util.List;
 public class AdminKnowledgeMapController {
     
     private final KnowledgeMapService knowledgeMapService;
-    private final UserContextUtil userContextUtil;
     
     @Operation(summary = "获取知识图谱列表")
     @Log(module = "知识图谱", type = Log.OperationType.SELECT, description = "分页查询知识图谱列表")
@@ -63,8 +62,8 @@ public class AdminKnowledgeMapController {
     @PostMapping
     @RequireAdmin
     public Result<Long> createMap(@Valid @RequestBody CreateKnowledgeMapRequest request) {
-        Long userId = userContextUtil.getCurrentUserId();
-        Long mapId = knowledgeMapService.createMap(request, userId);
+        Long adminId = StpAdminUtil.getLoginIdAsLong();
+        Long mapId = knowledgeMapService.createMap(request, adminId);
         return Result.success(mapId);
     }
     
