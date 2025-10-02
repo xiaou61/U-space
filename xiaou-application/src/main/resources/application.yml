@@ -55,7 +55,10 @@ sa-token:
   token-name: Authorization
   # Token 有效期（单位：秒）-1表示永不过期，7天
   timeout: 604800
-  # Token 临时有效期（指定时间内无操作就视为Token过期）（单位：秒）30分钟
+  # Token 临时有效期（指定时间内无操作就视为Token过期）（单位：秒）
+  # -1 表示不启用临时过期机制，即在 timeout 时间内一直有效
+  # 如果设置为正数（如1800），则30分钟无操作会过期
+  activity-timeout: -1
   # 是否允许同一账号并发登录（为true时允许一起登录，为false时新登录挤掉旧登录）
   is-concurrent: true
   # 在多人登录同一账号时，是否共用一个Token（为true时所有登录共用一个Token，为false时每次登录新建一个Token）
@@ -72,7 +75,6 @@ sa-token:
   token-prefix: Bearer
   # 是否在初始化配置时打印版本字符画
   is-print: true
-  active-timeout: 1800
 
 # MyBatis 配置
 mybatis:
@@ -132,19 +134,40 @@ springdoc:
       display-name: 'Code-Nest API'
       paths-to-match: '/**'
 
-# ===== 重要提示：登录状态持久化 =====
-# 为了确保重启后登录状态不失效，建议启用Redis持久化：
+# ==================== Redis 持久化配置说明 ====================
+# 为了确保重启后登录状态不丢失，必须启用 Redis 持久化！
 # 
-# 方法1：RDB持久化（推荐）
-# 在redis.conf中添加：
-# save 900 1    # 900秒内至少1个key变化时保存
-# save 300 10   # 300秒内至少10个key变化时保存
-# save 60 10000 # 60秒内至少10000个key变化时保存
+# 方法1：RDB持久化（推荐，性能好）
+# 在 redis.conf 中添加或确认以下配置：
+# save 900 1      # 900秒内至少1个key变化时保存
+# save 300 10     # 300秒内至少10个key变化时保存
+# save 60 10000   # 60秒内至少10000个key变化时保存
+# dbfilename dump.rdb      # RDB文件名
+# dir ./                    # RDB文件存储目录
 #
-# 方法2：AOF持久化（更安全）
-# 在redis.conf中添加：
-# appendonly yes
-# appendfsync everysec
+# 方法2：AOF持久化（更安全，数据不易丢失）
+# 在 redis.conf 中添加：
+# appendonly yes           # 启用AOF
+# appendfilename "appendonly.aof"
+# appendfsync everysec     # 每秒同步一次（推荐）
+# auto-aof-rewrite-percentage 100
+# auto-aof-rewrite-min-size 64mb
+#
+# 推荐方案：同时启用 RDB + AOF（最安全）
+# 重启 Redis 后，Sa-Token 的登录状态会从持久化文件中恢复
+# 
+# Windows 用户注意：
+# 1. 找到 Redis 安装目录下的 redis.windows.conf
+# 2. 使用文本编辑器打开并修改上述配置
+# 3. 重启 Redis 服务使配置生效
+# 
+# Linux 用户注意：
+# 1. 编辑 /etc/redis/redis.conf 或 /usr/local/etc/redis.conf
+# 2. 修改上述配置后执行：sudo systemctl restart redis
+#
+# Docker 用户注意：
+# 1. 在 docker-compose.yml 中挂载自定义 redis.conf
+# 2. 挂载数据目录，确保持久化文件不会因容器重启而丢失
 
 # ==================== 监控配置 ====================
 xiaou:
