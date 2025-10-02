@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>Code-Nest</artifactId>
+        <groupId>com.xiaou</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>xiaou-blog</artifactId>
+    <name>xiaou-blog</name>
+    <description>个人博客模块</description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- 公共模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-common</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        
+        <!-- 用户API模块（用于获取用户信息） -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-user-api</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        
+        <!-- 积分模块（用于扣除积分） -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-points</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        
+        <!-- 敏感词API模块（用于内容审核） -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-sensitive-api</artifactId>
+            <version>${revision}</version>
+        </dependency>
+    </dependencies>
+
+</project>
+

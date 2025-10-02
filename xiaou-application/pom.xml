@@ -122,6 +122,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 引入blog模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-blog</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

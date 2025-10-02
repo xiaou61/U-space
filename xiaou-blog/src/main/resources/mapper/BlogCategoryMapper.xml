@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.blog.mapper.BlogCategoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.blog.domain.BlogCategory">
+        <id column="id" property="id"/>
+        <result column="category_name" property="categoryName"/>
+        <result column="category_icon" property="categoryIcon"/>
+        <result column="category_description" property="categoryDescription"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="article_count" property="articleCount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, category_name, category_icon, category_description, sort_order, article_count, status,
+        create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.blog.domain.BlogCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blog_category (
+            category_name, category_icon, category_description, sort_order, article_count, status,
+            create_time, update_time
+        ) VALUES (
+            #{categoryName}, #{categoryIcon}, #{categoryDescription}, #{sortOrder}, 0, 1,
+            NOW(), NOW()
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_category
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.blog.domain.BlogCategory">
+        UPDATE blog_category
+        <set>
+            <if test="categoryName != null">category_name = #{categoryName},</if>
+            <if test="categoryIcon != null">category_icon = #{categoryIcon},</if>
+            <if test="categoryDescription != null">category_description = #{categoryDescription},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM blog_category
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_category
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <select id="selectEnabled" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_category
+        WHERE status = 1
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <update id="updateArticleCount">
+        UPDATE blog_category
+        SET article_count = article_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementArticleCount">
+        UPDATE blog_category
+        SET article_count = article_count + 1,
+            update_time = NOW()
+        WHERE id = #{categoryId}
+    </update>
+
+    <select id="selectByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_category
+        WHERE category_name = #{categoryName}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE blog_category
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
+
+

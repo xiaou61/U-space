@@ -8,10 +8,9 @@
     <version>1.4.0</version>
   </parent>
   <groupId>com.xiaou</groupId>
-  <artifactId>xiaou-user-api</artifactId>
+  <artifactId>xiaou-interview</artifactId>
   <version>1.4.0</version>
-  <name>xiaou-user-api</name>
-  <description>用户服务API模块 - 提供用户相关接口和DTO</description>
+  <description>面试题管理模块</description>
   <dependencies>
     <dependency>
       <groupId>com.xiaou</groupId>
@@ -19,9 +18,29 @@
       <version>${revision}</version>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>cn.hutool</groupId>
+      <artifactId>hutool-all</artifactId>
+    </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

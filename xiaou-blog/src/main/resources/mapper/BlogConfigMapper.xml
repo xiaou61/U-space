@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.blog.mapper.BlogConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.blog.domain.BlogConfig">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="blog_name" property="blogName"/>
+        <result column="blog_description" property="blogDescription"/>
+        <result column="blog_avatar" property="blogAvatar"/>
+        <result column="blog_cover" property="blogCover"/>
+        <result column="blog_notice" property="blogNotice"/>
+        <result column="personal_tags" property="personalTags"/>
+        <result column="social_links" property="socialLinks"/>
+        <result column="is_public" property="isPublic"/>
+        <result column="total_articles" property="totalArticles"/>
+        <result column="points_cost" property="pointsCost"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, blog_name, blog_description, blog_avatar, blog_cover, blog_notice,
+        personal_tags, social_links, is_public, total_articles, points_cost, status,
+        create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.blog.domain.BlogConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blog_config (
+            user_id, blog_name, blog_description, blog_avatar, blog_cover, blog_notice,
+            personal_tags, social_links, is_public, total_articles, points_cost, status,
+            create_time, update_time
+        ) VALUES (
+            #{userId}, #{blogName}, #{blogDescription}, #{blogAvatar}, #{blogCover}, #{blogNotice},
+            #{personalTags}, #{socialLinks}, #{isPublic}, 0, 50, 1,
+            NOW(), NOW()
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_config
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_config
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.blog.domain.BlogConfig">
+        UPDATE blog_config
+        <set>
+            <if test="blogName != null">blog_name = #{blogName},</if>
+            <if test="blogDescription != null">blog_description = #{blogDescription},</if>
+            <if test="blogAvatar != null">blog_avatar = #{blogAvatar},</if>
+            <if test="blogCover != null">blog_cover = #{blogCover},</if>
+            <if test="blogNotice != null">blog_notice = #{blogNotice},</if>
+            <if test="personalTags != null">personal_tags = #{personalTags},</if>
+            <if test="socialLinks != null">social_links = #{socialLinks},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateTotalArticles">
+        UPDATE blog_config
+        SET total_articles = total_articles + #{increment},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <select id="selectTotalCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM blog_config
+        WHERE status = 1
+    </select>
+
+    <select id="selectActiveBloggersCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT bc.user_id)
+        FROM blog_config bc
+        INNER JOIN blog_article ba ON bc.user_id = ba.user_id
+        WHERE bc.status = 1
+          AND ba.status = 1
+          AND ba.publish_time &gt;= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    </select>
+
+</mapper>
+

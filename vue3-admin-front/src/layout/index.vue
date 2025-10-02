@@ -275,6 +275,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/blog">
+            <template #title>
+              <el-icon><Reading /></el-icon>
+              <span>博客管理</span>
+            </template>
+            <el-menu-item index="/blog/articles">
+              <el-icon><Document /></el-icon>
+              <span>文章管理</span>
+            </el-menu-item>
+            <el-menu-item index="/blog/categories">
+              <el-icon><FolderOpened /></el-icon>
+              <span>分类管理</span>
+            </el-menu-item>
+            <el-menu-item index="/blog/tags">
+              <el-icon><PriceTag /></el-icon>
+              <span>标签管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/system">
             <template #title>
               <el-icon><Setting /></el-icon>

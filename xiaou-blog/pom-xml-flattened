@@ -8,10 +8,10 @@
     <version>1.4.0</version>
   </parent>
   <groupId>com.xiaou</groupId>
-  <artifactId>xiaou-points</artifactId>
+  <artifactId>xiaou-blog</artifactId>
   <version>1.4.0</version>
-  <name>xiaou-points</name>
-  <description>积分系统模块</description>
+  <name>xiaou-blog</name>
+  <description>个人博客模块</description>
   <properties>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.source>17</maven.compiler.source>
@@ -26,6 +26,16 @@
     <dependency>
       <groupId>com.xiaou</groupId>
       <artifactId>xiaou-user-api</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.xiaou</groupId>
+      <artifactId>xiaou-points</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.xiaou</groupId>
+      <artifactId>xiaou-sensitive-api</artifactId>
       <version>${revision}</version>
     </dependency>
   </dependencies>

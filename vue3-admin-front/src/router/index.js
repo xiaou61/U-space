@@ -348,6 +348,32 @@ const routes = [
     ]
   },
   {
+    path: '/blog',
+    component: Layout,
+    redirect: '/blog/articles',
+    meta: { title: '博客管理' },
+    children: [
+      {
+        path: 'articles',
+        name: 'BlogArticles',
+        component: () => import('@/views/blog/articles/index.vue'),
+        meta: { title: '文章管理' }
+      },
+      {
+        path: 'categories',
+        name: 'BlogCategories',
+        component: () => import('@/views/blog/categories/index.vue'),
+        meta: { title: '分类管理' }
+      },
+      {
+        path: 'tags',
+        name: 'BlogTags',
+        component: () => import('@/views/blog/tags/index.vue'),
+        meta: { title: '标签管理' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

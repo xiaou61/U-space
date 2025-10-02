@@ -8,25 +8,22 @@
     <version>1.4.0</version>
   </parent>
   <groupId>com.xiaou</groupId>
-  <artifactId>xiaou-points</artifactId>
+  <artifactId>xiaou-sensitive-api</artifactId>
   <version>1.4.0</version>
-  <name>xiaou-points</name>
-  <description>积分系统模块</description>
-  <properties>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.source>17</maven.compiler.source>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+  <name>xiaou-sensitive-api</name>
+  <description>敏感词模块API接口</description>
   <dependencies>
     <dependency>
-      <groupId>com.xiaou</groupId>
-      <artifactId>xiaou-common</artifactId>
-      <version>${revision}</version>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.xiaou</groupId>
-      <artifactId>xiaou-user-api</artifactId>
-      <version>${revision}</version>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
     </dependency>
   </dependencies>
 </project>

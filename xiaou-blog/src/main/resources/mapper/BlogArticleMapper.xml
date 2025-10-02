@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.blog.mapper.BlogArticleMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.blog.domain.BlogArticle">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="title" property="title"/>
+        <result column="cover_image" property="coverImage"/>
+        <result column="summary" property="summary"/>
+        <result column="content" property="content"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="tags" property="tags"/>
+        <result column="status" property="status"/>
+        <result column="is_original" property="isOriginal"/>
+        <result column="is_top" property="isTop"/>
+        <result column="top_expire_time" property="topExpireTime"/>
+        <result column="points_cost" property="pointsCost"/>
+        <result column="publish_time" property="publishTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <!-- 扩展字段 -->
+        <result column="user_nickname" property="userNickname"/>
+        <result column="user_avatar" property="userAvatar"/>
+        <result column="category_name" property="categoryName"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        a.id, a.user_id, a.title, a.cover_image, a.summary, a.content, a.category_id, a.tags,
+        a.status, a.is_original, a.is_top, a.top_expire_time, a.points_cost, a.publish_time,
+        a.create_time, a.update_time
+    </sql>
+
+    <sql id="Extended_Column_List">
+        <include refid="Base_Column_List"/>,
+        c.category_name
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.blog.domain.BlogArticle" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blog_article (
+            user_id, title, cover_image, summary, content, category_id, tags,
+            status, is_original, is_top, top_expire_time, points_cost, publish_time,
+            create_time, update_time
+        ) VALUES (
+            #{userId}, #{title}, #{coverImage}, #{summary}, #{content}, #{categoryId}, #{tags},
+            #{status}, #{isOriginal}, 0, NULL, #{pointsCost}, #{publishTime},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        WHERE a.id = #{id}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.blog.domain.BlogArticle">
+        UPDATE blog_article
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isOriginal != null">is_original = #{isOriginal},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="topExpireTime != null">top_expire_time = #{topExpireTime},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserIdAndStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        WHERE a.user_id = #{userId}
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="selectUserArticleList" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        WHERE a.user_id = #{userId}
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="categoryId != null">
+            AND a.category_id = #{categoryId}
+        </if>
+        <if test="tags != null and tags != ''">
+            AND a.tags LIKE CONCAT('%', #{tags}, '%')
+        </if>
+        ORDER BY a.is_top DESC, a.publish_time DESC
+    </select>
+
+    <select id="selectTotalCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM blog_article
+        WHERE status = 1
+    </select>
+
+    <select id="selectCountByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM blog_article a
+        <where>
+            <if test="userId != null">
+                AND a.user_id = #{userId}
+            </if>
+            <if test="categoryId != null">
+                AND a.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND a.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (a.title LIKE CONCAT('%', #{keyword}, '%') OR a.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND a.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND a.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAdminArticleList" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        <where>
+            <if test="userId != null">
+                AND a.user_id = #{userId}
+            </if>
+            <if test="categoryId != null">
+                AND a.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND a.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (a.title LIKE CONCAT('%', #{keyword}, '%') OR a.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND a.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND a.create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY a.is_top DESC, a.create_time DESC
+    </select>
+
+    <update id="topArticle">
+        UPDATE blog_article
+        SET is_top = 1,
+            top_expire_time = #{topExpireTime},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancelTop">
+        UPDATE blog_article
+        SET is_top = 0,
+            top_expire_time = NULL,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE blog_article
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByCategoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        WHERE a.category_id = #{categoryId}
+          AND a.status = 1
+        ORDER BY a.publish_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectRelatedByTags" resultMap="BaseResultMap">
+        SELECT <include refid="Extended_Column_List"/>
+        FROM blog_article a
+        LEFT JOIN blog_category c ON a.category_id = c.id
+        WHERE a.status = 1
+          AND a.id != #{excludeId}
+          AND a.tags LIKE CONCAT('%', #{tags}, '%')
+        ORDER BY a.publish_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>
+
+

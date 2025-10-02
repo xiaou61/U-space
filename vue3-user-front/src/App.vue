@@ -42,6 +42,10 @@
             <el-icon><Coffee /></el-icon>
             <span>摸鱼工具</span>
           </router-link>
+          <router-link to="/blog" class="nav-item" active-class="active">
+            <el-icon><Reading /></el-icon>
+            <span>我的博客</span>
+          </router-link>
           <router-link to="/version-history" class="nav-item" active-class="active">
             <el-icon><Calendar /></el-icon>
             <span>版本历史</span>
