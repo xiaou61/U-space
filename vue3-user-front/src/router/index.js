@@ -132,6 +132,16 @@ const routes = [
     }
   },
   {
+    path: '/community/users/:userId',
+    name: 'CommunityUserProfile',
+    component: () => import('@/views/community/UserProfile.vue'),
+    meta: {
+      title: '用户主页',
+      requiresAuth: true,
+      keepAlive: false // 不缓存，确保数据实时
+    }
+  },
+  {
     path: '/notification',
     name: 'Notification',
     component: () => import('@/views/notification/index.vue'),

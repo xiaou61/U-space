@@ -281,7 +281,7 @@ community:
   # AI摘要配置
   ai:
     # 是否启用AI摘要功能
-    enabled: false
+    enabled: true
     # Coze工作流ID
     coze-workflow-id: 7556892077167673394
     # 自动生成摘要的最小字数

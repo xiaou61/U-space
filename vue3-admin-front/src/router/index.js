@@ -95,6 +95,12 @@ const routes = [
         meta: { title: '分类管理' }
       },
       {
+        path: 'tags',
+        name: 'CommunityTags',
+        component: () => import('@/views/community/tags/index.vue'),
+        meta: { title: '标签管理' }
+      },
+      {
         path: 'posts',
         name: 'CommunityPosts',
         component: () => import('@/views/community/posts/index.vue'),

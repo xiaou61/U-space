@@ -30,6 +30,7 @@
               maxlength="200"
               show-word-limit
               clearable
+              @input="saveDraft"
             />
           </el-col>
           <el-col :span="8">
@@ -39,6 +40,7 @@
               size="large"
               clearable
               style="width: 100%"
+              @change="saveDraft"
             >
               <template #prefix>
                 <el-icon><Flag /></el-icon>
@@ -55,8 +57,89 @@
             </el-select>
           </el-col>
         </el-row>
+
+        <!-- 标签选择区域 -->
+        <div style="margin-top: 16px">
+          <div style="margin-bottom: 8px">
+            <span style="font-weight: 500; color: #606266">选择标签（最多5个）：</span>
+            <el-button 
+              v-if="draftSavedAt" 
+              text 
+              size="small" 
+              type="success"
+              style="margin-left: 16px"
+            >
+              <el-icon><CircleCheck /></el-icon>
+              草稿已保存于 {{ draftSavedAt }}
+            </el-button>
+            <el-button 
+              v-if="postForm.title || postForm.content"
+              text 
+              size="small" 
+              type="danger"
+              @click="clearDraft"
+              style="margin-left: 8px"
+            >
+              <el-icon><Delete /></el-icon>
+              清空草稿
+            </el-button>
+          </div>
+          <div class="tags-selection">
+            <el-tag
+              v-for="tagId in postForm.tagIds"
+              :key="tagId"
+              closable
+              type="success"
+              @close="removeTag(tagId)"
+              style="margin-right: 8px; margin-bottom: 8px"
+            >
+              # {{ getTagName(tagId) }}
+            </el-tag>
+            <el-button 
+              v-if="postForm.tagIds.length < 5"
+              size="small"
+              type="success"
+              plain
+              @click="showTagSelector = true"
+            >
+              <el-icon><Plus /></el-icon>
+              添加标签
+            </el-button>
+            <span v-if="postForm.tagIds.length >= 5" style="color: #909399; font-size: 13px; margin-left: 8px">
+              已达到标签数量上限
+            </span>
+          </div>
+        </div>
       </el-card>
     </div>
+
+    <!-- 标签选择对话框 -->
+    <el-dialog
+      v-model="showTagSelector"
+      title="选择标签"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div class="tag-selector-content">
+        <el-tag
+          v-for="tag in availableTags"
+          :key="tag.id"
+          :type="postForm.tagIds.includes(tag.id) ? 'success' : ''"
+          :effect="postForm.tagIds.includes(tag.id) ? 'dark' : 'plain'"
+          class="tag-selector-item"
+          @click="toggleTag(tag.id)"
+        >
+          # {{ tag.name }}
+          <el-icon v-if="postForm.tagIds.includes(tag.id)" style="margin-left: 4px"><Check /></el-icon>
+        </el-tag>
+        <div v-if="availableTags.length === 0" class="empty-tags">
+          暂无可用标签
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showTagSelector = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 编辑器主体 -->
     <div class="editor-section">
@@ -118,7 +201,7 @@ console.log('Hello World!');
               :rows="25"
               maxlength="5000"
               show-word-limit
-              @input="updatePreview"
+              @input="handleContentInput"
             />
           </div>
 
@@ -137,11 +220,11 @@ console.log('Hello World!');
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Back, Edit, EditPen, More, Flag, Menu
+  Back, Edit, EditPen, More, Flag, Menu, Plus, Check, CircleCheck, Delete
 } from '@element-plus/icons-vue'
 import { communityApi } from '@/api/community'
 import { renderMarkdown } from '@/utils/markdown'
@@ -150,16 +233,26 @@ const router = useRouter()
 
 // 响应式数据
 const publishLoading = ref(false)
+const showTagSelector = ref(false)
+const draftSavedAt = ref('')
 
 // 表单数据
 const postForm = reactive({
   title: '',
   content: '',
-  categoryId: null
+  categoryId: null,
+  tagIds: []
 })
 
 // 分类列表
 const categoryList = ref([])
+// 标签列表
+const tagList = ref([])
+
+// 草稿保存的key
+const DRAFT_KEY = 'community_post_draft'
+// 防抖定时器
+let draftTimer = null
 
 // 计算属性 - 预览内容
 const previewHtml = computed(() => {
@@ -173,6 +266,111 @@ const previewHtml = computed(() => {
 const previewWordCount = computed(() => {
   return postForm.content.length
 })
+
+// 计算属性 - 可用标签（过滤掉已选标签）
+const availableTags = computed(() => {
+  return tagList.value.filter(tag => !postForm.tagIds.includes(tag.id))
+})
+
+// 获取标签名称
+const getTagName = (tagId) => {
+  const tag = tagList.value.find(t => t.id === tagId)
+  return tag ? tag.name : ''
+}
+
+// 切换标签
+const toggleTag = (tagId) => {
+  const index = postForm.tagIds.indexOf(tagId)
+  if (index > -1) {
+    postForm.tagIds.splice(index, 1)
+  } else {
+    if (postForm.tagIds.length < 5) {
+      postForm.tagIds.push(tagId)
+    } else {
+      ElMessage.warning('最多只能选择5个标签')
+    }
+  }
+  saveDraft()
+}
+
+// 移除标签
+const removeTag = (tagId) => {
+  const index = postForm.tagIds.indexOf(tagId)
+  if (index > -1) {
+    postForm.tagIds.splice(index, 1)
+    saveDraft()
+  }
+}
+
+// 保存草稿（防抖）
+const saveDraft = () => {
+  if (draftTimer) {
+    clearTimeout(draftTimer)
+  }
+  draftTimer = setTimeout(() => {
+    try {
+      const draft = {
+        title: postForm.title,
+        content: postForm.content,
+        categoryId: postForm.categoryId,
+        tagIds: postForm.tagIds,
+        savedAt: new Date().getTime()
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      draftSavedAt.value = new Date().toLocaleTimeString('zh-CN')
+    } catch (error) {
+      console.error('保存草稿失败:', error)
+    }
+  }, 1000)
+}
+
+// 清空草稿
+const clearDraft = () => {
+  ElMessageBox.confirm(
+    '确定要清空当前草稿吗？此操作不可恢复。',
+    '清空草稿',
+    {
+      confirmButtonText: '确认清空',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    postForm.title = ''
+    postForm.content = ''
+    postForm.categoryId = null
+    postForm.tagIds = []
+    localStorage.removeItem(DRAFT_KEY)
+    draftSavedAt.value = ''
+    ElMessage.success('草稿已清空')
+  }).catch(() => {})
+}
+
+// 加载草稿
+const loadDraft = () => {
+  try {
+    const draftStr = localStorage.getItem(DRAFT_KEY)
+    if (draftStr) {
+      const draft = JSON.parse(draftStr)
+      postForm.title = draft.title || ''
+      postForm.content = draft.content || ''
+      postForm.categoryId = draft.categoryId || null
+      postForm.tagIds = draft.tagIds || []
+      if (draft.savedAt) {
+        draftSavedAt.value = new Date(draft.savedAt).toLocaleTimeString('zh-CN')
+      }
+      if (postForm.title || postForm.content) {
+        ElMessage.info('已恢复上次编辑的草稿')
+      }
+    }
+  } catch (error) {
+    console.error('加载草稿失败:', error)
+  }
+}
+
+// 处理内容输入
+const handleContentInput = () => {
+  saveDraft()
+}
 
 // 更新预览 (这个函数现在由computed自动处理，保留是为了未来扩展)
 const updatePreview = () => {
@@ -234,6 +432,10 @@ const handlePublish = async () => {
     publishLoading.value = true
     
     await communityApi.createPost(postForm)
+    
+    // 清除草稿
+    localStorage.removeItem(DRAFT_KEY)
+    
     ElMessage.success('发表成功！')
     
     // 跳转到社区首页
@@ -279,9 +481,28 @@ const loadCategories = async () => {
   }
 }
 
+// 加载标签列表
+const loadTags = async () => {
+  try {
+    const response = await communityApi.getTags()
+    tagList.value = response || []
+  } catch (error) {
+    console.error('加载标签列表失败:', error)
+  }
+}
+
 // 初始化
 onMounted(() => {
   loadCategories()
+  loadTags()
+  loadDraft()
+})
+
+// 组件卸载前清理定时器
+onBeforeUnmount(() => {
+  if (draftTimer) {
+    clearTimeout(draftTimer)
+  }
 })
 </script>
 
@@ -331,6 +552,40 @@ onMounted(() => {
 .title-card {
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tags-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-selector-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.tag-selector-item {
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.tag-selector-item:hover {
+  transform: scale(1.05);
+}
+
+.empty-tags {
+  width: 100%;
+  text-align: center;
+  padding: 40px;
+  color: #909399;
 }
 
 .editor-section {

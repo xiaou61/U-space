@@ -127,6 +127,10 @@
               <el-icon><Files /></el-icon>
               <span>分类管理</span>
             </el-menu-item>
+            <el-menu-item index="/community/tags">
+              <el-icon><PriceTag /></el-icon>
+              <span>标签管理</span>
+            </el-menu-item>
             <el-menu-item index="/community/posts">
               <el-icon><Document /></el-icon>
               <span>帖子管理</span>
@@ -407,6 +411,7 @@ import {
   ChatDotRound,
   ChatLineRound,
   Files,
+  PriceTag,
   SetUp,
   Sort,
   Tools,
@@ -467,6 +472,7 @@ const getIconByPath = (path, title = '') => {
     'user': 'Avatar', 
     'interview': 'Document',
     'categories': 'FolderOpened',
+    'tags': 'PriceTag',
     'question-sets': 'Collection',
     'questions': 'Edit',
     'knowledge': 'DataAnalysis',
@@ -517,6 +523,7 @@ const getIconByPath = (path, title = '') => {
     '用户': 'Avatar',
     '管理': 'Setting',
     '分类': 'FolderOpened',
+    '标签': 'PriceTag',
     '题目': 'Edit',
     '题单': 'Collection',
     '知识': 'DataAnalysis',
