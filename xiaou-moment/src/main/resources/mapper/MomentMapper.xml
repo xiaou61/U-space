@@ -9,18 +9,20 @@
         <result column="images" property="images" />
         <result column="like_count" property="likeCount" />
         <result column="comment_count" property="commentCount" />
+        <result column="view_count" property="viewCount" />
+        <result column="favorite_count" property="favoriteCount" />
         <result column="status" property="status" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, content, images, like_count, comment_count, status, create_time, update_time
+        id, user_id, content, images, like_count, comment_count, view_count, favorite_count, status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.xiaou.moment.domain.Moment" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO moments (user_id, content, images, like_count, comment_count, status)
-        VALUES (#{userId}, #{content}, #{images}, #{likeCount}, #{commentCount}, #{status})
+        INSERT INTO moments (user_id, content, images, like_count, comment_count, view_count, favorite_count, status)
+        VALUES (#{userId}, #{content}, #{images}, #{likeCount}, #{commentCount}, #{viewCount}, #{favoriteCount}, #{status})
     </insert>
 
     <delete id="deleteById" parameterType="long">
@@ -135,6 +137,85 @@
         <if test="endDate != null">
             AND m.create_time &lt;= #{endDate}
         </if>
+    </select>
+
+    <!-- 查询热门动态 -->
+    <select id="selectHotMoments" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        WHERE status = 1
+        AND create_time &gt;= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        ORDER BY (like_count * 2 + comment_count * 3 + view_count * 0.1) DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 搜索动态 -->
+    <select id="searchMoments" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        WHERE status = 1
+        AND (content LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID查询动态列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        WHERE user_id = #{userId}
+        AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户动态总数 -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM moments
+        WHERE user_id = #{userId}
+        AND status = 1
+    </select>
+
+    <!-- 统计用户获赞总数 -->
+    <select id="countTotalLikesByUserId" resultType="long">
+        SELECT COALESCE(SUM(like_count), 0)
+        FROM moments
+        WHERE user_id = #{userId}
+        AND status = 1
+    </select>
+
+    <!-- 统计用户评论总数 -->
+    <select id="countTotalCommentsByUserId" resultType="long">
+        SELECT COALESCE(SUM(comment_count), 0)
+        FROM moments
+        WHERE user_id = #{userId}
+        AND status = 1
+    </select>
+
+    <!-- 增加浏览数 -->
+    <update id="incrementViewCount">
+        UPDATE moments SET view_count = view_count + 1 WHERE id = #{momentId}
+    </update>
+
+    <!-- 增加收藏数 -->
+    <update id="incrementFavoriteCount">
+        UPDATE moments SET favorite_count = favorite_count + 1 WHERE id = #{momentId}
+    </update>
+
+    <!-- 减少收藏数 -->
+    <update id="decrementFavoriteCount">
+        UPDATE moments SET favorite_count = favorite_count - 1 WHERE id = #{momentId} AND favorite_count &gt; 0
+    </update>
+
+    <!-- 根据ID列表批量查询动态 -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM moments
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND status = 1
+        ORDER BY create_time DESC
     </select>
 
 </mapper> 

@@ -72,4 +72,55 @@ public interface MomentMapper {
      * 统计活跃用户数
      */
     Long selectActiveUsersCount(Map<String, Object> params);
+    
+    /**
+     * 查询热门动态（按热度排序）
+     */
+    List<Moment> selectHotMoments(@Param("limit") Integer limit);
+    
+    /**
+     * 搜索动态（按关键词）
+     * 注意：使用PageHelper分页，不需要offset和limit参数
+     */
+    List<Moment> searchMoments(@Param("keyword") String keyword);
+    
+    /**
+     * 根据用户ID查询动态列表
+     */
+    List<Moment> selectByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 统计用户动态总数
+     */
+    Long countByUserId(Long userId);
+    
+    /**
+     * 统计用户获赞总数
+     */
+    Long countTotalLikesByUserId(Long userId);
+    
+    /**
+     * 统计用户评论总数
+     */
+    Long countTotalCommentsByUserId(Long userId);
+    
+    /**
+     * 增加浏览数
+     */
+    int incrementViewCount(Long momentId);
+    
+    /**
+     * 增加收藏数
+     */
+    int incrementFavoriteCount(Long momentId);
+    
+    /**
+     * 减少收藏数
+     */
+    int decrementFavoriteCount(Long momentId);
+    
+    /**
+     * 根据ID列表批量查询动态
+     */
+    List<Moment> selectByIds(@Param("ids") List<Long> ids);
 } 

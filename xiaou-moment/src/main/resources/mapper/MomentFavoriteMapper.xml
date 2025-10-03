@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.moment.mapper.MomentFavoriteMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.moment.domain.MomentFavorite">
+        <id column="id" property="id"/>
+        <result column="moment_id" property="momentId"/>
+        <result column="user_id" property="userId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 插入收藏记录 -->
+    <insert id="insert" parameterType="com.xiaou.moment.domain.MomentFavorite" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO moment_favorites (moment_id, user_id, create_time)
+        VALUES (#{momentId}, #{userId}, NOW())
+    </insert>
+
+    <!-- 删除收藏记录 -->
+    <delete id="delete">
+        DELETE FROM moment_favorites
+        WHERE moment_id = #{momentId} AND user_id = #{userId}
+    </delete>
+
+    <!-- 根据ID删除收藏记录 -->
+    <delete id="deleteById">
+        DELETE FROM moment_favorites
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 查询用户是否收藏了该动态 -->
+    <select id="selectByMomentIdAndUserId" resultMap="BaseResultMap">
+        SELECT id, moment_id, user_id, create_time
+        FROM moment_favorites
+        WHERE moment_id = #{momentId} AND user_id = #{userId}
+    </select>
+
+    <!-- 批量查询用户对多个动态的收藏状态 -->
+    <select id="selectFavoritedMomentIds" resultType="java.lang.Long">
+        SELECT moment_id
+        FROM moment_favorites
+        WHERE user_id = #{userId}
+        AND moment_id IN
+        <foreach collection="momentIds" item="momentId" open="(" separator="," close=")">
+            #{momentId}
+        </foreach>
+    </select>
+
+    <!-- 查询用户的收藏列表 -->
+    <select id="selectFavoriteMomentIdsByUserId" resultType="java.lang.Long">
+        SELECT moment_id
+        FROM moment_favorites
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户收藏总数 -->
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM moment_favorites
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>
+

@@ -39,4 +39,15 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 批量查询用户对多个动态的点赞状态 -->
+    <select id="selectLikedMomentIds" resultType="java.lang.Long">
+        SELECT moment_id
+        FROM moment_likes
+        WHERE user_id = #{userId}
+        AND moment_id IN
+        <foreach collection="momentIds" item="momentId" open="(" separator="," close=")">
+            #{momentId}
+        </foreach>
+    </select>
+
 </mapper> 

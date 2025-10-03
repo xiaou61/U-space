@@ -12,6 +12,11 @@ import lombok.EqualsAndHashCode;
 public class UserMomentListRequest implements PageRequest {
     
     /**
+     * 用户ID（用于查询特定用户的动态）
+     */
+    private Long userId;
+    
+    /**
      * 页码
      */
     private Integer pageNum = 1;

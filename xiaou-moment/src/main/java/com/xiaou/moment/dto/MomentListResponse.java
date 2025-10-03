@@ -53,9 +53,24 @@ public class MomentListResponse {
     private Integer commentCount;
     
     /**
+     * 浏览数
+     */
+    private Integer viewCount;
+    
+    /**
+     * 收藏数
+     */
+    private Integer favoriteCount;
+    
+    /**
      * 当前用户是否已点赞
      */
     private Boolean isLiked;
+    
+    /**
+     * 当前用户是否已收藏
+     */
+    private Boolean isFavorited;
     
     /**
      * 当前用户是否可删除

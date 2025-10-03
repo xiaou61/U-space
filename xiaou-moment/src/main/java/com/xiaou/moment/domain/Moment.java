@@ -42,6 +42,16 @@ public class Moment {
     private Integer commentCount;
     
     /**
+     * 浏览数
+     */
+    private Integer viewCount;
+    
+    /**
+     * 收藏数
+     */
+    private Integer favoriteCount;
+    
+    /**
      * 状态：1正常 0删除 2审核中
      */
     private Integer status;
