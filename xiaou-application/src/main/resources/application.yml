@@ -253,3 +253,38 @@ coze:
     ttl: 3600
     # 缓存Key前缀
     key-prefix: "coze:"
+
+# ==================== 社区模块配置 ====================
+community:
+  # 缓存配置
+  cache:
+    # 热门帖子缓存时间（秒），默认10分钟
+    hot-posts-ttl: 600
+    # 帖子详情缓存时间（秒），默认30分钟
+    post-detail-ttl: 1800
+    # 用户信息缓存时间（秒），默认1小时
+    user-info-ttl: 3600
+    # 标签列表缓存时间（秒），默认1天
+    tags-ttl: 86400
+  
+  # 热门帖子配置
+  hot:
+    # 热门帖子时间范围（小时），默认72小时（3天）
+    time-range: 72
+    # 最低热度分数，默认30
+    min-score: 30
+    # 热门帖子数量限制，默认10
+    limit: 10
+    # 定时任务执行间隔（分钟），默认10分钟
+    refresh-interval: 10
+  
+  # AI摘要配置
+  ai:
+    # 是否启用AI摘要功能
+    enabled: false
+    # Coze工作流ID
+    coze-workflow-id: 7556892077167673394
+    # 自动生成摘要的最小字数
+    min-content-length: 500
+    # 摘要缓存时间（秒），默认30天
+    summary-cache-ttl: 2592000

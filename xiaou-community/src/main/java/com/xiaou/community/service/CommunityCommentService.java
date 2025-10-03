@@ -6,6 +6,7 @@ import com.xiaou.community.dto.AdminCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentResponse;
 import com.xiaou.community.dto.CommunityCommentCreateRequest;
 import com.xiaou.community.dto.CommunityCommentQueryRequest;
+import com.xiaou.community.dto.CommunityCommentReplyRequest;
 
 import java.util.List;
 
@@ -62,4 +63,14 @@ public interface CommunityCommentService {
      * 获取用户的评论列表
      */
     PageResult<CommunityCommentResponse> getUserComments(CommunityCommentQueryRequest request);
+    
+    /**
+     * 回复评论
+     */
+    void replyComment(Long commentId, CommunityCommentReplyRequest request);
+    
+    /**
+     * 获取评论的回复列表（分页）
+     */
+    PageResult<CommunityCommentResponse> getCommentReplies(Long commentId, CommunityCommentQueryRequest request);
 } 

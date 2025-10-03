@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityTagMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityTag">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="color" column="color"/>
+        <result property="icon" column="icon"/>
+        <result property="postCount" column="post_count"/>
+        <result property="followCount" column="follow_count"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, color, icon, post_count, follow_count,
+        sort_order, status, create_time, update_time
+    </sql>
+
+    <!-- 插入标签 -->
+    <insert id="insert" parameterType="com.xiaou.community.domain.CommunityTag" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO community_tag (
+            name, description, color, icon, post_count, follow_count,
+            sort_order, status, create_time, update_time
+        ) VALUES (
+            #{name}, #{description}, #{color}, #{icon}, #{postCount}, #{followCount},
+            #{sortOrder}, #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新标签 -->
+    <update id="update" parameterType="com.xiaou.community.domain.CommunityTag">
+        UPDATE community_tag
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="color != null">color = #{color},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除标签 -->
+    <delete id="deleteById">
+        DELETE FROM community_tag WHERE id = #{id}
+    </delete>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        WHERE name = #{name}
+        LIMIT 1
+    </select>
+
+    <!-- 查询启用的标签列表 -->
+    <select id="selectEnabledList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        WHERE status = 1
+        ORDER BY sort_order ASC, post_count DESC
+    </select>
+
+    <!-- 查询热门标签列表 -->
+    <select id="selectHotList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        WHERE status = 1
+        ORDER BY post_count DESC, sort_order ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 后台分页查询标签列表 -->
+    <select id="selectAdminList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') 
+                OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 更新标签帖子数量 -->
+    <update id="updatePostCount">
+        UPDATE community_tag
+        SET post_count = post_count + #{increment}
+        WHERE id = #{tagId}
+    </update>
+
+</mapper>
+

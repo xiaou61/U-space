@@ -201,4 +201,15 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
             log.warn("减少用户收藏数失败，用户ID: {}", userId);
         }
     }
+    
+    @Override
+    public CommunityUserStatus getUserStatusByUserId(Long userId) {
+        CommunityUserStatus userStatus = communityUserStatusMapper.selectByUserId(userId);
+        if (userStatus == null) {
+            // 用户不存在，创建默认记录
+            String username = SaTokenUserUtil.getUsernameById(userId, "用户" + userId);
+            return ensureUserExists(userId, username);
+        }
+        return userStatus;
+    }
 } 

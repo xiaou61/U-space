@@ -146,6 +146,13 @@
             <artifactId>coze-api</artifactId>
             <version>0.4.2</version>
         </dependency>
+
+        <!-- FastJson2 -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.43</version>
+        </dependency>
     </dependencies>
 
 </project>

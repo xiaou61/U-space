@@ -10,20 +10,28 @@
         <result column="author_id" property="authorId"/>
         <result column="author_name" property="authorName"/>
         <result column="like_count" property="likeCount"/>
+        <result column="reply_to_id" property="replyToId"/>
+        <result column="reply_to_user_id" property="replyToUserId"/>
+        <result column="reply_to_user_name" property="replyToUserName"/>
+        <result column="reply_count" property="replyCount"/>
         <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, post_id, parent_id, content, author_id, author_name, like_count, status, create_time, update_time
+        id, post_id, parent_id, content, author_id, author_name, like_count, 
+        reply_to_id, reply_to_user_id, reply_to_user_name, reply_count,
+        status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.xiaou.community.domain.CommunityComment" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO community_comment (post_id, parent_id, content, author_id, author_name, 
-        like_count, status, create_time, update_time)
+        like_count, reply_to_id, reply_to_user_id, reply_to_user_name, reply_count,
+        status, create_time, update_time)
         VALUES (#{postId}, #{parentId}, #{content}, #{authorId}, #{authorName}, 
-        #{likeCount}, #{status}, NOW(), NOW())
+        #{likeCount}, #{replyToId}, #{replyToUserId}, #{replyToUserName}, #{replyCount},
+        #{status}, NOW(), NOW())
     </insert>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
@@ -160,5 +168,33 @@
         WHERE c.author_id = #{userId} AND c.status = 1
         ORDER BY c.create_time DESC
     </select>
+
+    <!-- 查询评论的回复列表（最多N条） -->
+    <select id="selectRepliesByCommentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_comment
+        WHERE reply_to_id = #{commentId}
+        AND status = 1
+        ORDER BY create_time ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 分页查询评论的所有回复 -->
+    <select id="selectAllRepliesByCommentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_comment
+        WHERE reply_to_id = #{commentId}
+        AND status = 1
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 更新评论回复数 -->
+    <update id="updateReplyCount">
+        UPDATE community_comment
+        SET reply_count = reply_count + #{count}
+        WHERE id = #{id}
+    </update>
 
 </mapper> 

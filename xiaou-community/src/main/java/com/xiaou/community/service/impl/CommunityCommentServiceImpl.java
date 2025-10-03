@@ -11,9 +11,11 @@ import com.xiaou.common.utils.SensitiveWordUtils;
 import com.xiaou.community.domain.CommunityComment;
 import com.xiaou.community.domain.CommunityCommentLike;
 import com.xiaou.community.domain.CommunityPost;
+import com.xiaou.community.domain.CommunityUserStatus;
 import com.xiaou.community.dto.AdminCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentCreateRequest;
+import com.xiaou.community.dto.CommunityCommentReplyRequest;
 import com.xiaou.community.dto.CommunityCommentResponse;
 import com.xiaou.community.mapper.CommunityCommentMapper;
 import com.xiaou.community.mapper.CommunityCommentLikeMapper;
@@ -83,14 +85,14 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     
     @Override
     public PageResult<CommunityCommentResponse> getPostComments(Long postId, CommunityCommentQueryRequest request) {
-        // 先获取分页的原始评论数据
+        // 先获取分页的原始评论数据（只查询一级评论）
         PageResult<CommunityComment> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
             return communityCommentMapper.selectPostCommentList(postId, request);
         });
         
-        // 在分页外进行DTO转换，避免额外查询干扰分页计数
+        // 在分页外进行DTO转换，并加载二级回复
         List<CommunityCommentResponse> responseList = pageResult.getRecords().stream()
-            .map(this::convertToResponse)
+            .map(this::convertToResponseWithReplies)  // 使用新方法加载二级回复
             .collect(Collectors.toList());
         
         // 构造返回结果，保持分页信息
@@ -147,6 +149,10 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
         comment.setAuthorName(username);
         comment.setLikeCount(0);
+        comment.setReplyToId(null);  // 一级评论没有回复对象
+        comment.setReplyToUserId(null);
+        comment.setReplyToUserName(null);
+        comment.setReplyCount(0);  // 初始回复数为0
         comment.setStatus(1);  // 正常状态
         
         int result = communityCommentMapper.insert(comment);
@@ -309,6 +315,122 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         );
     }
     
+    @Override
+    @Transactional
+    public void replyComment(Long commentId, CommunityCommentReplyRequest request) {
+        // 检查用户是否被封禁
+        communityUserStatusService.checkUserBanStatus();
+        
+        if (!StpUserUtil.isLogin()) {
+            throw new BusinessException("请先登录");
+        }
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
+        
+        // 检查被回复的评论是否存在
+        CommunityComment parentComment = getById(commentId);
+        
+        // 敏感词检测
+        String content = request.getContent();
+        try {
+            SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
+                SensitiveWordUtils.checkText(content, "community", parentComment.getPostId(), currentUserId);
+            
+            if (!sensitiveResult.getAllowed()) {
+                throw new BusinessException("回复包含违规内容，禁止发布");
+            }
+            
+            content = sensitiveResult.getProcessedText();
+            
+        } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            log.warn("敏感词检测异常，使用原始内容：{}", e.getMessage());
+        }
+        
+        // 创建回复
+        CommunityComment reply = new CommunityComment();
+        reply.setPostId(parentComment.getPostId());
+        reply.setParentId(parentComment.getParentId() == 0 ? commentId : parentComment.getParentId()); // 都挂在一级评论下
+        reply.setContent(content);
+        reply.setAuthorId(currentUserId);
+        String username = SaTokenUserUtil.getCurrentUserUsername("用户" + currentUserId);
+        reply.setAuthorName(username);
+        reply.setReplyToId(commentId);
+        reply.setReplyToUserId(request.getReplyToUserId());
+        
+        // 查询被回复用户的用户名（从数据库中获取）
+        String replyToUserName = "用户" + request.getReplyToUserId(); // 默认值
+        try {
+            // 从用户状态表获取用户名
+            CommunityUserStatus targetUserStatus = communityUserStatusService.getByUserId(request.getReplyToUserId());
+            if (targetUserStatus != null && targetUserStatus.getUserName() != null) {
+                replyToUserName = targetUserStatus.getUserName();
+            }
+        } catch (Exception e) {
+            log.warn("获取被回复用户名失败，使用默认值。用户ID: {}", request.getReplyToUserId());
+        }
+        reply.setReplyToUserName(replyToUserName);
+        reply.setLikeCount(0);
+        reply.setReplyCount(0);
+        reply.setStatus(1);
+        
+        int result = communityCommentMapper.insert(reply);
+        if (result <= 0) {
+            throw new BusinessException("回复评论失败");
+        }
+        
+        // 更新一级评论的回复数
+        Long parentCommentId = parentComment.getParentId() == 0 ? commentId : parentComment.getParentId();
+        communityCommentMapper.updateReplyCount(parentCommentId, 1);
+        
+        // 更新帖子评论数
+        communityPostMapper.updateCommentCount(parentComment.getPostId(), 1);
+        
+        // 更新用户评论数统计
+        communityUserStatusService.incrementCommentCount(currentUserId);
+        
+        // 发送消息通知：通知被回复的用户
+        if (!currentUserId.equals(request.getReplyToUserId())) {
+            try {
+                NotificationUtil.sendCommunityMessage(
+                    request.getReplyToUserId(),
+                    "您的评论收到新回复",
+                    "用户 " + username + " 回复了您：" + content,
+                    parentComment.getPostId().toString()
+                );
+            } catch (Exception e) {
+                log.warn("发送评论回复通知失败，用户ID: {}, 评论ID: {}, 错误: {}", 
+                        currentUserId, commentId, e.getMessage());
+            }
+        }
+        
+        log.info("用户回复评论成功，用户ID: {}, 评论ID: {}", currentUserId, commentId);
+    }
+    
+    @Override
+    public PageResult<CommunityCommentResponse> getCommentReplies(Long commentId, CommunityCommentQueryRequest request) {
+        // 检查评论是否存在
+        getById(commentId);
+        
+        // 分页查询回复列表
+        PageResult<CommunityComment> pageResult = PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            return communityCommentMapper.selectAllRepliesByCommentId(commentId);
+        });
+        
+        // 转换为响应DTO
+        List<CommunityCommentResponse> responseList = pageResult.getRecords().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        return PageResult.of(
+            pageResult.getPageNum(),
+            pageResult.getPageSize(),
+            pageResult.getTotal(),
+            responseList
+        );
+    }
+    
     /**
      * 转换为响应DTO
      */
@@ -322,6 +444,27 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             response.setIsLiked(like != null);
         } else {
             response.setIsLiked(false);
+        }
+        
+        return response;
+    }
+    
+    /**
+     * 转换为带回复的响应DTO（用于一级评论）
+     */
+    private CommunityCommentResponse convertToResponseWithReplies(CommunityComment comment) {
+        CommunityCommentResponse response = convertToResponse(comment);
+        
+        // 查询最多2条回复
+        List<CommunityComment> replies = communityCommentMapper.selectRepliesByCommentId(comment.getId(), 2);
+        if (replies != null && !replies.isEmpty()) {
+            List<CommunityCommentResponse> replyResponses = replies.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+            response.setReplies(replyResponses);
+            
+            // 检查是否有更多回复
+            response.setHasMoreReplies(comment.getReplyCount() != null && comment.getReplyCount() > 2);
         }
         
         return response;

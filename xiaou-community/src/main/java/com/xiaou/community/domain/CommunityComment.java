@@ -49,6 +49,26 @@ public class CommunityComment {
     private Integer likeCount;
     
     /**
+     * 回复的评论ID
+     */
+    private Long replyToId;
+    
+    /**
+     * 回复的用户ID
+     */
+    private Long replyToUserId;
+    
+    /**
+     * 回复的用户名
+     */
+    private String replyToUserName;
+    
+    /**
+     * 回复数量（仅一级评论有效）
+     */
+    private Integer replyCount;
+    
+    /**
      * 状态：1-正常，2-删除
      */
     private Integer status;

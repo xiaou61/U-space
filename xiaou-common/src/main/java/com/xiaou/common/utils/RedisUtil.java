@@ -688,4 +688,151 @@ public class RedisUtil {
             return 0;
         }
     }
+    
+    // ================================ZSet（有序集合）=================================
+    
+    /**
+     * ZSet添加元素
+     *
+     * @param key   键
+     * @param value 值
+     * @param score 分数
+     * @return true成功 false失败
+     */
+    public boolean zAdd(String key, Object value, double score) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.add(score, value);
+        } catch (Exception e) {
+            log.error("ZSet添加元素失败", e);
+            return false;
+        }
+    }
+    
+    /**
+     * ZSet获取指定范围的元素（按分数从小到大）
+     *
+     * @param key   键
+     * @param start 开始位置
+     * @param end   结束位置
+     * @return 元素集合
+     */
+    public Collection<Object> zRange(String key, int start, int end) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.valueRange(start, end);
+        } catch (Exception e) {
+            log.error("ZSet获取范围元素失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * ZSet获取指定范围的元素（按分数从大到小）
+     *
+     * @param key   键
+     * @param start 开始位置
+     * @param end   结束位置
+     * @return 元素集合
+     */
+    public Collection<Object> zRevRange(String key, int start, int end) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.valueRangeReversed(start, end);
+        } catch (Exception e) {
+            log.error("ZSet倒序获取范围元素失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * ZSet获取指定范围的元素及分数（按分数从大到小）
+     *
+     * @param key   键
+     * @param start 开始位置
+     * @param end   结束位置
+     * @return 元素和分数的Map
+     */
+    public Map<Object, Double> zRevRangeWithScores(String key, int start, int end) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            Collection<Object> values = sortedSet.valueRangeReversed(start, end);
+            Map<Object, Double> result = new java.util.LinkedHashMap<>();
+            for (Object value : values) {
+                Double score = sortedSet.getScore(value);
+                result.put(value, score);
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("ZSet倒序获取元素和分数失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * ZSet获取元素的分数
+     *
+     * @param key   键
+     * @param value 值
+     * @return 分数
+     */
+    public Double zScore(String key, Object value) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.getScore(value);
+        } catch (Exception e) {
+            log.error("ZSet获取分数失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * ZSet获取集合大小
+     *
+     * @param key 键
+     * @return 大小
+     */
+    public long zSize(String key) {
+        try {
+            return redissonClient.getScoredSortedSet(key).size();
+        } catch (Exception e) {
+            log.error("ZSet获取大小失败", e);
+            return 0;
+        }
+    }
+    
+    /**
+     * ZSet移除元素
+     *
+     * @param key    键
+     * @param values 值
+     * @return 移除的个数
+     */
+    public long zRemove(String key, Object... values) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.removeAll(List.of(values)) ? values.length : 0;
+        } catch (Exception e) {
+            log.error("ZSet移除元素失败", e);
+            return 0;
+        }
+    }
+    
+    /**
+     * ZSet移除指定排名范围的元素
+     *
+     * @param key   键
+     * @param start 开始排名
+     * @param end   结束排名
+     * @return 移除的个数
+     */
+    public long zRemoveRange(String key, int start, int end) {
+        try {
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            return sortedSet.removeRangeByRank(start, end);
+        } catch (Exception e) {
+            log.error("ZSet移除范围元素失败", e);
+            return 0;
+        }
+    }
 } 

@@ -84,4 +84,19 @@ public interface CommunityCommentMapper {
      */
     List<CommunityComment> selectUserCommentList(@Param("userId") Long userId, 
                                                 @Param("request") CommunityCommentQueryRequest request);
+    
+    /**
+     * 查询评论的回复列表（最多2条）
+     */
+    List<CommunityComment> selectRepliesByCommentId(@Param("commentId") Long commentId, @Param("limit") Integer limit);
+    
+    /**
+     * 分页查询评论的所有回复
+     */
+    List<CommunityComment> selectAllRepliesByCommentId(@Param("commentId") Long commentId);
+    
+    /**
+     * 更新评论回复数
+     */
+    int updateReplyCount(@Param("id") Long id, @Param("count") int count);
 } 

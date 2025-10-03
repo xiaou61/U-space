@@ -5,6 +5,7 @@ import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
 import com.xiaou.community.dto.CommunityCommentQueryRequest;
 import com.xiaou.community.dto.CommunityCommentCreateRequest;
+import com.xiaou.community.dto.CommunityCommentReplyRequest;
 import com.xiaou.community.dto.CommunityCommentResponse;
 import com.xiaou.community.service.CommunityCommentService;
 import lombok.RequiredArgsConstructor;
@@ -67,5 +68,29 @@ public class CommunityCommentController {
     public Result<Void> unlikeComment(@PathVariable Long id) {
         communityCommentService.unlikeComment(id);
         return Result.success();
+    }
+    
+    /**
+     * 回复评论
+     */
+    @Log(module = "社区", type = Log.OperationType.INSERT, description = "回复评论")
+    @PostMapping("/comments/{id}/reply")
+    public Result<Void> replyComment(
+            @PathVariable Long id,
+            @Validated @RequestBody CommunityCommentReplyRequest request) {
+        communityCommentService.replyComment(id, request);
+        return Result.success();
+    }
+    
+    /**
+     * 获取评论的回复列表
+     */
+    @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询评论回复列表")
+    @PostMapping("/comments/{id}/replies")
+    public Result<PageResult<CommunityCommentResponse>> getCommentReplies(
+            @PathVariable Long id,
+            @RequestBody CommunityCommentQueryRequest request) {
+        PageResult<CommunityCommentResponse> result = communityCommentService.getCommentReplies(id, request);
+        return Result.success(result);
     }
 } 

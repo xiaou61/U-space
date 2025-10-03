@@ -4,42 +4,32 @@ import com.xiaou.common.core.domain.PageRequest;
 import lombok.Data;
 
 /**
- * 前台帖子查询请求DTO
+ * 标签查询请求（后台管理）
  * 
  * @author xiaou
  */
 @Data
-public class CommunityPostQueryRequest implements PageRequest {
-    
-    /**
-     * 分类ID筛选
-     */
-    private Long categoryId;
-    
-    /**
-     * 标签ID筛选
-     */
-    private Long tagId;
-    
-    /**
-     * 关键词搜索
-     */
-    private String keyword;
-    
-    /**
-     * 排序方式：hot-热度排序，time-时间排序，默认时间排序
-     */
-    private String sortBy = "time";
+public class CommunityTagQueryRequest implements PageRequest {
     
     /**
      * 页码
      */
-    private Integer pageNum = 1;
+    private Integer pageNum;
     
     /**
      * 每页大小
      */
-    private Integer pageSize = 10;
+    private Integer pageSize;
+    
+    /**
+     * 关键词（名称或描述）
+     */
+    private String keyword;
+    
+    /**
+     * 状态：1-启用，0-禁用
+     */
+    private Integer status;
     
     @Override
     public PageRequest setPageNum(Integer pageNum) {
@@ -52,4 +42,5 @@ public class CommunityPostQueryRequest implements PageRequest {
         this.pageSize = pageSize;
         return this;
     }
-} 
+}
+

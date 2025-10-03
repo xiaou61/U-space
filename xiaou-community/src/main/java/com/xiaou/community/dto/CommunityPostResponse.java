@@ -1,9 +1,11 @@
 package com.xiaou.community.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xiaou.community.domain.CommunityTag;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 前台帖子响应DTO
@@ -88,4 +90,19 @@ public class CommunityPostResponse {
      * 当前用户是否收藏
      */
     private Boolean isCollected;
+    
+    /**
+     * 标签列表
+     */
+    private List<CommunityTag> tags;
+    
+    /**
+     * AI生成的摘要
+     */
+    private String aiSummary;
+    
+    /**
+     * 热度分数（用于排序）
+     */
+    private Double hotScore;
 } 

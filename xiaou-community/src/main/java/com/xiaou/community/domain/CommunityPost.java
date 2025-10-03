@@ -29,6 +29,22 @@ public class CommunityPost {
     private String content;
     
     /**
+     * AI生成的摘要
+     */
+    private String aiSummary;
+    
+    /**
+     * AI提取的关键词，逗号分隔
+     */
+    private String aiKeywords;
+    
+    /**
+     * AI生成时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date aiGenerateTime;
+    
+    /**
      * 分类ID
      */
     private Long categoryId;

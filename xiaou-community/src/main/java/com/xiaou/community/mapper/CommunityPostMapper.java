@@ -6,6 +6,7 @@ import com.xiaou.community.dto.CommunityPostQueryRequest;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -119,4 +120,23 @@ public interface CommunityPostMapper {
      */
     List<CommunityPost> selectUserPostList(@Param("userId") Long userId, 
                                           @Param("request") CommunityPostQueryRequest request);
+    
+    /**
+     * 查询热门帖子（用于热门推荐）
+     */
+    List<CommunityPost> selectHotPosts(@Param("startTime") Date startTime, 
+                                       @Param("minScore") Double minScore,
+                                       @Param("limit") Integer limit);
+    
+    /**
+     * 查询用户最近的帖子
+     */
+    List<CommunityPost> selectRecentPostsByUserId(@Param("userId") Long userId, @Param("limit") Integer limit);
+    
+    /**
+     * 更新AI摘要信息
+     */
+    int updateAiSummary(@Param("postId") Long postId, 
+                       @Param("aiSummary") String aiSummary, 
+                       @Param("aiKeywords") String aiKeywords);
 } 

@@ -3,15 +3,26 @@ package com.xiaou.community.controller.pub;
 import com.xiaou.common.annotation.Log;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.core.domain.Result;
-import com.xiaou.community.dto.CommunityPostQueryRequest;
-import com.xiaou.community.dto.CommunityCommentQueryRequest;
-import com.xiaou.community.dto.CommunityPostResponse;
-import com.xiaou.community.dto.CommunityCommentResponse;
-import com.xiaou.community.service.CommunityPostService;
+import com.xiaou.common.satoken.SaTokenUserUtil;
+import com.xiaou.community.domain.CommunityPost;
+import com.xiaou.community.domain.CommunityTag;
+import com.xiaou.community.domain.CommunityUserStatus;
+import com.xiaou.community.dto.*;
+import com.xiaou.community.mapper.CommunityPostMapper;
+import com.xiaou.community.mapper.CommunityPostTagMapper;
+import com.xiaou.community.mapper.CommunityTagMapper;
 import com.xiaou.community.service.CommunityCommentService;
+import com.xiaou.community.service.CommunityPostService;
+import com.xiaou.community.service.CommunityUserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 前台用户个人中心控制器
@@ -26,6 +37,10 @@ public class CommunityUserController {
     
     private final CommunityPostService communityPostService;
     private final CommunityCommentService communityCommentService;
+    private final CommunityUserStatusService communityUserStatusService;
+    private final CommunityPostMapper communityPostMapper;
+    private final CommunityPostTagMapper communityPostTagMapper;
+    private final CommunityTagMapper communityTagMapper;
     
     /**
      * 我的收藏列表
@@ -56,4 +71,5 @@ public class CommunityUserController {
         PageResult<CommunityPostResponse> result = communityPostService.getUserPosts(request);
         return Result.success(result);
     }
-} 
+}
+ 
