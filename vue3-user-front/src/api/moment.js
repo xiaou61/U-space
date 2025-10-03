@@ -37,4 +37,36 @@ export function deleteComment(id) {
 // 获取动态的完整评论列表
 export function getMomentComments(data) {
   return request.post('/user/moments/comments', data)
+}
+
+// ========== v1.1.0 新增接口 ==========
+
+// 获取热门动态
+export function getHotMoments(data) {
+  return request.post('/user/moments/hot', data)
+}
+
+// 搜索动态
+export function searchMoments(data) {
+  return request.post('/user/moments/search', data)
+}
+
+// 获取用户个人动态列表
+export function getUserMomentList(data) {
+  return request.post('/user/moments/user-list', data)
+}
+
+// 获取用户动态信息
+export function getUserMomentInfo(data) {
+  return request.post('/user/moments/user-info', data)
+}
+
+// 收藏/取消收藏
+export function toggleFavorite(momentId) {
+  return request.post(`/user/moments/${momentId}/favorite`)
+}
+
+// 获取我的收藏列表
+export function getMyFavorites(data) {
+  return request.post('/user/moments/my-favorites', data)
 } 

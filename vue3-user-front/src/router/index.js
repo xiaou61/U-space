@@ -152,6 +152,26 @@ const routes = [
     }
   },
   {
+    path: '/moments/user/:userId',
+    name: 'MomentUserProfile',
+    component: () => import('@/views/moments/UserProfile.vue'),
+    meta: {
+      title: '用户主页',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/moments/my-favorites',
+    name: 'MomentFavorites',
+    component: () => import('@/views/moments/MyFavorites.vue'),
+    meta: {
+      title: '我的收藏',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/chat/Index.vue'),
