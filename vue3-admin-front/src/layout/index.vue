@@ -279,6 +279,11 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-menu-item index="/lottery">
+            <el-icon><Trophy /></el-icon>
+            <span>抽奖管理</span>
+          </el-menu-item>
+          
           <el-sub-menu index="/blog">
             <template #title>
               <el-icon><Reading /></el-icon>
@@ -427,7 +432,8 @@ import {
   Trophy,
   Plus,
   Coffee,
-  Calendar
+  Calendar,
+  Reading
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -500,6 +506,7 @@ const getIconByPath = (path, title = '') => {
     'daily-content': 'Document',
     'points': 'Coin',
     'grant': 'Plus',
+    'lottery': 'Trophy',
     'system': 'Setting',
     'version': 'Document',
     'monitor': 'Monitor',
@@ -552,6 +559,7 @@ const getIconByPath = (path, title = '') => {
     '发放': 'Plus',
     '明细': 'Document',
     '概览': 'DataAnalysis',
+    '抽奖': 'Trophy',
     '系统': 'Setting',
     '版本': 'Document',
     '监控': 'Monitor',

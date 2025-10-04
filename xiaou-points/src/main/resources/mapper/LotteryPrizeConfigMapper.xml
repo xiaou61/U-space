@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.LotteryPrizeConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.LotteryPrizeConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="prize_name" property="prizeName" jdbcType="VARCHAR"/>
+        <result column="prize_level" property="prizeLevel" jdbcType="TINYINT"/>
+        <result column="prize_points" property="prizePoints" jdbcType="INTEGER"/>
+        <result column="base_probability" property="baseProbability" jdbcType="DECIMAL"/>
+        <result column="current_probability" property="currentProbability" jdbcType="DECIMAL"/>
+        <result column="target_return_rate" property="targetReturnRate" jdbcType="DECIMAL"/>
+        <result column="max_return_rate" property="maxReturnRate" jdbcType="DECIMAL"/>
+        <result column="min_return_rate" property="minReturnRate" jdbcType="DECIMAL"/>
+        <result column="actual_return_rate" property="actualReturnRate" jdbcType="DECIMAL"/>
+        <result column="total_draw_count" property="totalDrawCount" jdbcType="INTEGER"/>
+        <result column="total_win_count" property="totalWinCount" jdbcType="INTEGER"/>
+        <result column="today_draw_count" property="todayDrawCount" jdbcType="INTEGER"/>
+        <result column="today_win_count" property="todayWinCount" jdbcType="INTEGER"/>
+        <result column="daily_stock" property="dailyStock" jdbcType="INTEGER"/>
+        <result column="total_stock" property="totalStock" jdbcType="INTEGER"/>
+        <result column="current_stock" property="currentStock" jdbcType="INTEGER"/>
+        <result column="display_order" property="displayOrder" jdbcType="INTEGER"/>
+        <result column="prize_icon" property="prizeIcon" jdbcType="VARCHAR"/>
+        <result column="prize_desc" property="prizeDesc" jdbcType="VARCHAR"/>
+        <result column="is_active" property="isActive" jdbcType="TINYINT"/>
+        <result column="is_suspended" property="isSuspended" jdbcType="TINYINT"/>
+        <result column="suspend_reason" property="suspendReason" jdbcType="VARCHAR"/>
+        <result column="suspend_until" property="suspendUntil" jdbcType="TIMESTAMP"/>
+        <result column="adjust_strategy" property="adjustStrategy" jdbcType="VARCHAR"/>
+        <result column="last_adjust_time" property="lastAdjustTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, prize_name, prize_level, prize_points, base_probability, current_probability,
+        target_return_rate, max_return_rate, min_return_rate, actual_return_rate,
+        total_draw_count, total_win_count, today_draw_count, today_win_count,
+        daily_stock, total_stock, current_stock, display_order, prize_icon, prize_desc,
+        is_active, is_suspended, suspend_reason, suspend_until, adjust_strategy,
+        last_adjust_time, create_time, update_time
+    </sql>
+
+    <!-- 查询所有启用的奖品 -->
+    <select id="selectAllActive" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_prize_config
+        WHERE is_active = 1 AND is_suspended = 0
+        ORDER BY display_order ASC
+    </select>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_prize_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询所有奖品 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_prize_config
+        ORDER BY display_order ASC
+    </select>
+
+    <!-- 插入奖品配置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lottery_prize_config (
+            prize_name, prize_level, prize_points, base_probability, current_probability,
+            target_return_rate, max_return_rate, min_return_rate,
+            daily_stock, total_stock, display_order, prize_icon, prize_desc,
+            adjust_strategy, is_active
+        ) VALUES (
+            #{prizeName}, #{prizeLevel}, #{prizePoints}, #{baseProbability}, #{currentProbability},
+            #{targetReturnRate}, #{maxReturnRate}, #{minReturnRate},
+            #{dailyStock}, #{totalStock}, #{displayOrder}, #{prizeIcon}, #{prizeDesc},
+            #{adjustStrategy}, #{isActive}
+        )
+    </insert>
+
+    <!-- 更新奖品配置 -->
+    <update id="updateById">
+        UPDATE lottery_prize_config
+        SET prize_name = #{prizeName},
+            prize_points = #{prizePoints},
+            base_probability = #{baseProbability},
+            current_probability = #{currentProbability},
+            target_return_rate = #{targetReturnRate},
+            max_return_rate = #{maxReturnRate},
+            min_return_rate = #{minReturnRate},
+            daily_stock = #{dailyStock},
+            total_stock = #{totalStock},
+            display_order = #{displayOrder},
+            prize_icon = #{prizeIcon},
+            prize_desc = #{prizeDesc},
+            adjust_strategy = #{adjustStrategy},
+            is_active = #{isActive},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除奖品配置 -->
+    <delete id="deleteById">
+        DELETE FROM lottery_prize_config WHERE id = #{id}
+    </delete>
+
+    <!-- 更新当前概率 -->
+    <update id="updateCurrentProbability">
+        UPDATE lottery_prize_config
+        SET current_probability = #{probability},
+            last_adjust_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新实际回报率 -->
+    <update id="updateActualReturnRate">
+        UPDATE lottery_prize_config
+        SET actual_return_rate = #{returnRate},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新中奖次数 -->
+    <update id="updateWinCount">
+        UPDATE lottery_prize_config
+        SET total_win_count = total_win_count + 1,
+            today_win_count = today_win_count + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新抽奖次数 -->
+    <update id="updateDrawCount">
+        UPDATE lottery_prize_config
+        SET total_draw_count = total_draw_count + 1,
+            today_draw_count = today_draw_count + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加抽取次数 -->
+    <update id="incrementDrawCount">
+        UPDATE lottery_prize_config
+        SET total_draw_count = total_draw_count + 1,
+            today_draw_count = today_draw_count + 1,
+            update_time = NOW()
+        WHERE id = #{prizeId}
+    </update>
+
+    <!-- 增加中奖次数 -->
+    <update id="incrementWinCount">
+        UPDATE lottery_prize_config
+        SET total_win_count = total_win_count + 1,
+            today_win_count = today_win_count + 1,
+            update_time = NOW()
+        WHERE id = #{prizeId}
+    </update>
+
+    <!-- 暂停奖品 -->
+    <update id="suspendPrize">
+        UPDATE lottery_prize_config
+        SET is_suspended = 1,
+            suspend_reason = #{reason},
+            suspend_until = #{suspendUntil},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 恢复奖品 -->
+    <update id="resumePrize">
+        UPDATE lottery_prize_config
+        SET is_suspended = 0,
+            suspend_reason = NULL,
+            suspend_until = NULL,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 重置今日数据 -->
+    <update id="resetTodayData">
+        UPDATE lottery_prize_config
+        SET today_draw_count = 0,
+            today_win_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 查询所有暂停的奖品 -->
+    <select id="selectSuspended" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_prize_config
+        WHERE is_suspended = 1
+    </select>
+
+    <!-- 重置每日统计 -->
+    <update id="resetDailyStats">
+        UPDATE lottery_prize_config
+        SET today_draw_count = 0,
+            today_win_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 扣减库存 -->
+    <update id="deductStock">
+        UPDATE lottery_prize_config
+        SET current_stock = current_stock - 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND current_stock &gt; 0
+    </update>
+
+    <!-- 增加库存（回滚用） -->
+    <update id="increaseStock">
+        UPDATE lottery_prize_config
+        SET current_stock = current_stock + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新库存 -->
+    <update id="updateStock">
+        UPDATE lottery_prize_config
+        SET current_stock = #{stock},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
+

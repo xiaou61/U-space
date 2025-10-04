@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.UserLotteryLimitMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.UserLotteryLimit">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="today_draw_count" property="todayDrawCount" jdbcType="INTEGER"/>
+        <result column="week_draw_count" property="weekDrawCount" jdbcType="INTEGER"/>
+        <result column="month_draw_count" property="monthDrawCount" jdbcType="INTEGER"/>
+        <result column="total_draw_count" property="totalDrawCount" jdbcType="INTEGER"/>
+        <result column="today_win_count" property="todayWinCount" jdbcType="INTEGER"/>
+        <result column="total_win_count" property="totalWinCount" jdbcType="INTEGER"/>
+        <result column="max_continuous_no_win" property="maxContinuousNoWin" jdbcType="INTEGER"/>
+        <result column="current_continuous_no_win" property="currentContinuousNoWin" jdbcType="INTEGER"/>
+        <result column="last_draw_time" property="lastDrawTime" jdbcType="TIMESTAMP"/>
+        <result column="last_win_time" property="lastWinTime" jdbcType="TIMESTAMP"/>
+        <result column="is_blacklist" property="isBlacklist" jdbcType="TINYINT"/>
+        <result column="risk_level" property="riskLevel" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, today_draw_count, week_draw_count, month_draw_count, total_draw_count,
+        today_win_count, total_win_count, max_continuous_no_win, current_continuous_no_win,
+        last_draw_time, last_win_time, is_blacklist, risk_level, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_lottery_limit
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 插入记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_lottery_limit (
+            user_id, today_draw_count, week_draw_count, month_draw_count, total_draw_count,
+            today_win_count, total_win_count, max_continuous_no_win, current_continuous_no_win,
+            last_draw_time, last_win_time, is_blacklist, risk_level
+        ) VALUES (
+            #{userId}, #{todayDrawCount}, #{weekDrawCount}, #{monthDrawCount}, #{totalDrawCount},
+            #{todayWinCount}, #{totalWinCount}, #{maxContinuousNoWin}, #{currentContinuousNoWin},
+            #{lastDrawTime}, #{lastWinTime}, #{isBlacklist}, #{riskLevel}
+        )
+    </insert>
+
+    <!-- 更新记录 -->
+    <update id="updateById">
+        UPDATE user_lottery_limit
+        SET today_draw_count = #{todayDrawCount},
+            week_draw_count = #{weekDrawCount},
+            month_draw_count = #{monthDrawCount},
+            total_draw_count = #{totalDrawCount},
+            today_win_count = #{todayWinCount},
+            total_win_count = #{totalWinCount},
+            max_continuous_no_win = #{maxContinuousNoWin},
+            current_continuous_no_win = #{currentContinuousNoWin},
+            last_draw_time = #{lastDrawTime},
+            last_win_time = #{lastWinTime},
+            is_blacklist = #{isBlacklist},
+            risk_level = #{riskLevel},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加抽奖次数 -->
+    <update id="incrementDrawCount">
+        UPDATE user_lottery_limit
+        SET today_draw_count = today_draw_count + 1,
+            week_draw_count = week_draw_count + 1,
+            month_draw_count = month_draw_count + 1,
+            total_draw_count = total_draw_count + 1,
+            last_draw_time = NOW(),
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加中奖次数 -->
+    <update id="incrementWinCount">
+        UPDATE user_lottery_limit
+        SET today_win_count = today_win_count + 1,
+            total_win_count = total_win_count + 1,
+            last_win_time = NOW(),
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新连续未中奖次数 -->
+    <update id="updateContinuousNoWin">
+        UPDATE user_lottery_limit
+        SET current_continuous_no_win = #{count},
+            max_continuous_no_win = CASE 
+                WHEN #{count} &gt; max_continuous_no_win THEN #{count}
+                ELSE max_continuous_no_win
+            END,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 重置今日数据 -->
+    <update id="resetTodayData">
+        UPDATE user_lottery_limit
+        SET today_draw_count = 0,
+            today_win_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 重置所有用户的每日抽奖次数 -->
+    <update id="resetDailyCount">
+        UPDATE user_lottery_limit
+        SET today_draw_count = 0,
+            today_win_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 重置所有用户的周抽奖次数 -->
+    <update id="resetWeeklyCount">
+        UPDATE user_lottery_limit
+        SET week_draw_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 重置所有用户的月抽奖次数 -->
+    <update id="resetMonthlyCount">
+        UPDATE user_lottery_limit
+        SET month_draw_count = 0,
+            update_time = NOW()
+    </update>
+
+    <!-- 查询风险用户列表 -->
+    <select id="selectRiskUsers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_lottery_limit
+        WHERE 1=1
+        <if test="request.riskLevel != null">
+            AND risk_level = #{request.riskLevel}
+        </if>
+        <if test="request.isBlacklist != null">
+            AND is_blacklist = #{request.isBlacklist}
+        </if>
+        <if test="request.minContinuousNoWin != null">
+            AND current_continuous_no_win &gt;= #{request.minContinuousNoWin}
+        </if>
+        ORDER BY risk_level DESC, today_draw_count DESC
+    </select>
+
+</mapper>
+

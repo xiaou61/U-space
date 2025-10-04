@@ -211,6 +211,16 @@ const routes = [
     }
   },
   {
+    path: '/lottery',
+    name: 'Lottery',
+    component: () => import('@/views/lottery/index.vue'),
+    meta: {
+      title: '幸运抽奖',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/knowledge',
     name: 'Knowledge',
     component: () => import('@/views/knowledge/Index.vue'),

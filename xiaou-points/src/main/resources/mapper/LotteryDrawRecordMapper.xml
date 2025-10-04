@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.LotteryDrawRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.LotteryDrawRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="prize_id" property="prizeId" jdbcType="BIGINT"/>
+        <result column="prize_level" property="prizeLevel" jdbcType="TINYINT"/>
+        <result column="prize_points" property="prizePoints" jdbcType="INTEGER"/>
+        <result column="cost_points" property="costPoints" jdbcType="INTEGER"/>
+        <result column="actual_probability" property="actualProbability" jdbcType="DECIMAL"/>
+        <result column="draw_strategy" property="drawStrategy" jdbcType="VARCHAR"/>
+        <result column="draw_ip" property="drawIp" jdbcType="VARCHAR"/>
+        <result column="draw_device" property="drawDevice" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="cost_detail_id" property="costDetailId" jdbcType="BIGINT"/>
+        <result column="reward_detail_id" property="rewardDetailId" jdbcType="BIGINT"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, prize_id, prize_level, prize_points, cost_points, actual_probability,
+        draw_strategy, draw_ip, draw_device, status, cost_detail_id, reward_detail_id,
+        remark, create_time
+    </sql>
+
+    <!-- 插入抽奖记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lottery_draw_record (
+            user_id, prize_id, prize_level, prize_points, cost_points, actual_probability,
+            draw_strategy, draw_ip, draw_device, status, cost_detail_id, reward_detail_id, remark
+        ) VALUES (
+            #{userId}, #{prizeId}, #{prizeLevel}, #{prizePoints}, #{costPoints}, #{actualProbability},
+            #{drawStrategy}, #{drawIp}, #{drawDevice}, #{status}, #{costDetailId}, #{rewardDetailId}, #{remark}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_draw_record
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询用户抽奖记录（分页） -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_draw_record
+        WHERE user_id = #{userId}
+        <if test="request.prizeLevel != null">
+            AND prize_level = #{request.prizeLevel}
+        </if>
+        <if test="request.startTime != null">
+            AND create_time &gt;= #{request.startTime}
+        </if>
+        <if test="request.endTime != null">
+            AND create_time &lt;= #{request.endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户抽奖次数 -->
+    <select id="countByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM lottery_draw_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计用户中奖次数 -->
+    <select id="countWinByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM lottery_draw_record
+        WHERE user_id = #{userId} AND prize_level &lt; 8
+    </select>
+
+    <!-- 查询所有记录（管理端分页） -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_draw_record
+        <where>
+            <if test="request.prizeLevel != null">
+                AND prize_level = #{request.prizeLevel}
+            </if>
+            <if test="request.startTime != null">
+                AND create_time &gt;= #{request.startTime}
+            </if>
+            <if test="request.endTime != null">
+                AND create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计总记录数 -->
+    <select id="countAll" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM lottery_draw_record
+    </select>
+
+    <!-- 查询今日抽奖记录 -->
+    <select id="selectTodayRecords" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_draw_record
+        WHERE DATE(create_time) = CURDATE()
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询用户最近N次抽奖时间 -->
+    <select id="selectRecentDrawTimes" resultType="java.time.LocalDateTime">
+        SELECT create_time
+        FROM lottery_draw_record
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询用户最近N次抽奖设备 -->
+    <select id="selectRecentDevices" resultType="java.lang.String">
+        SELECT draw_device
+        FROM lottery_draw_record
+        WHERE user_id = #{userId}
+          AND draw_device IS NOT NULL
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
+

@@ -288,3 +288,4 @@ community:
     min-content-length: 500
     # 摘要缓存时间（秒），默认30天
     summary-cache-ttl: 2592000
+

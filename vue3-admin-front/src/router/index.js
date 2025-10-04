@@ -380,6 +380,18 @@ const routes = [
     ]
   },
   {
+    path: '/lottery',
+    component: Layout,
+    children: [
+      {
+        path: '',
+        name: 'LotteryManagement',
+        component: () => import('@/views/lottery/index.vue'),
+        meta: { title: '抽奖管理' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

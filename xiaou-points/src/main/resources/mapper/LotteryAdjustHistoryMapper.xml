@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.LotteryAdjustHistoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.LotteryAdjustHistory">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="prize_id" property="prizeId" jdbcType="BIGINT"/>
+        <result column="adjust_type" property="adjustType" jdbcType="VARCHAR"/>
+        <result column="old_probability" property="oldProbability" jdbcType="DECIMAL"/>
+        <result column="new_probability" property="newProbability" jdbcType="DECIMAL"/>
+        <result column="old_return_rate" property="oldReturnRate" jdbcType="DECIMAL"/>
+        <result column="new_return_rate" property="newReturnRate" jdbcType="DECIMAL"/>
+        <result column="adjust_reason" property="adjustReason" jdbcType="VARCHAR"/>
+        <result column="operator" property="operator" jdbcType="VARCHAR"/>
+        <result column="operator_id" property="operatorId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, prize_id, adjust_type, old_probability, new_probability, old_return_rate, 
+        new_return_rate, adjust_reason, operator, operator_id, create_time
+    </sql>
+
+    <!-- 插入调整历史 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lottery_adjust_history (
+            prize_id, adjust_type, old_probability, new_probability, old_return_rate, 
+            new_return_rate, adjust_reason, operator, operator_id
+        ) VALUES (
+            #{prizeId}, #{adjustType}, #{oldProbability}, #{newProbability}, #{oldReturnRate}, 
+            #{newReturnRate}, #{adjustReason}, #{operator}, #{operatorId}
+        )
+    </insert>
+
+    <!-- 查询指定奖品的调整历史 -->
+    <select id="selectByPrizeId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_adjust_history
+        WHERE prize_id = #{prizeId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有调整历史 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_adjust_history
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
+
