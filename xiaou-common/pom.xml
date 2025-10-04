@@ -97,6 +97,12 @@
             <version>1.44.0</version>
         </dependency>
         
+        <!-- Jedis（sa-token-alone-redis 需要） -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+        
         <!-- Jackson 数据绑定（Sa-Token 序列化需要） -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

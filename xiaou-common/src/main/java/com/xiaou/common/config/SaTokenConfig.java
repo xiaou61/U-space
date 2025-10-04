@@ -12,9 +12,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Sa-Token 配置类
  * 
- * 使用 Sa-Token 独立 Redis 插件（sa-token-alone-redis）
+ * 使用 Sa-Token 独立 Redis 插件（sa-token-alone-redis + Jedis）
  * 配置在 application.yml 中的 sa-token.alone-redis 节点
  * 这样可以让 Sa-Token 使用独立的 Redis 连接池，不影响现有的 Redisson 配置
+ * 
+ * 重要说明：
+ * 1. 需要同时引入 sa-token-alone-redis 和 jedis 依赖
+ * 2. 项目重启后，只要 Redis 服务不重启，Token 数据不会丢失
+ * 3. SaToken 会自动将 Token 数据持久化到 Redis
  * 
  * @author xiaou
  */
@@ -53,6 +58,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
           );
         
         log.info("✅ Sa-Token 拦截器注册成功");
-        log.info("✅ Sa-Token 使用独立 Redis 连接池（database: 4），不影响业务 Redisson 配置");
+        log.info("✅ Sa-Token 使用独立 Redis 连接池（sa-token-alone-redis + Jedis），不影响业务 Redisson 配置");
     }
 }

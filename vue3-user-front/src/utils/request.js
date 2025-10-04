@@ -76,6 +76,12 @@ service.interceptors.response.use(
         return Promise.reject(new Error(message))
       }
       
+      // 权限不足（业务状态码 703）
+      if (code === 703) {
+        ElMessage.error(message || '权限不足')
+        return Promise.reject(new Error(message || '权限不足'))
+      }
+      
       // 账户被禁用
       if (code === 704) {
         ElMessage.error(message)

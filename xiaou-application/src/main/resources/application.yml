@@ -134,40 +134,14 @@ springdoc:
       display-name: 'Code-Nest API'
       paths-to-match: '/**'
 
-# ==================== Redis 持久化配置说明 ====================
-# 为了确保重启后登录状态不丢失，必须启用 Redis 持久化！
+# ==================== SaToken Redis 配置说明 ====================
+# SaToken 使用 sa-token-alone-redis 插件 + Jedis 实现 Redis 持久化
+# 配置位置：application-dev.yml 中的 sa-token.alone-redis 节点
 # 
-# 方法1：RDB持久化（推荐，性能好）
-# 在 redis.conf 中添加或确认以下配置：
-# save 900 1      # 900秒内至少1个key变化时保存
-# save 300 10     # 300秒内至少10个key变化时保存
-# save 60 10000   # 60秒内至少10000个key变化时保存
-# dbfilename dump.rdb      # RDB文件名
-# dir ./                    # RDB文件存储目录
-#
-# 方法2：AOF持久化（更安全，数据不易丢失）
-# 在 redis.conf 中添加：
-# appendonly yes           # 启用AOF
-# appendfilename "appendonly.aof"
-# appendfsync everysec     # 每秒同步一次（推荐）
-# auto-aof-rewrite-percentage 100
-# auto-aof-rewrite-min-size 64mb
-#
-# 推荐方案：同时启用 RDB + AOF（最安全）
-# 重启 Redis 后，Sa-Token 的登录状态会从持久化文件中恢复
-# 
-# Windows 用户注意：
-# 1. 找到 Redis 安装目录下的 redis.windows.conf
-# 2. 使用文本编辑器打开并修改上述配置
-# 3. 重启 Redis 服务使配置生效
-# 
-# Linux 用户注意：
-# 1. 编辑 /etc/redis/redis.conf 或 /usr/local/etc/redis.conf
-# 2. 修改上述配置后执行：sudo systemctl restart redis
-#
-# Docker 用户注意：
-# 1. 在 docker-compose.yml 中挂载自定义 redis.conf
-# 2. 挂载数据目录，确保持久化文件不会因容器重启而丢失
+# 重要说明：
+# 1. 项目重启后，只要 Redis 服务不重启，Token 数据就不会丢失
+# 2. Redis 本身是内存数据库，只有 Redis 服务重启时才需要考虑持久化（RDB/AOF）
+# 3. 如果需要 Redis 重启后也保留数据，请在 redis.conf 中配置 RDB 或 AOF 持久化
 
 # ==================== 监控配置 ====================
 xiaou:

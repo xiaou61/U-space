@@ -102,6 +102,12 @@
         <logger name="org.springframework" level="INFO" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
+        
+        <!-- WebSocket 日志 - 过滤客户端正常断连的 DEBUG 日志 -->
+        <logger name="org.springframework.web.socket" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT" />
+        </logger>
+        
         <logger name="org.redisson" level="INFO" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
