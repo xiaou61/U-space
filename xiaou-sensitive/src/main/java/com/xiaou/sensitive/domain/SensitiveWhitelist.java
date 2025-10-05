@@ -6,49 +6,42 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 敏感词实体类
+ * 敏感词白名单实体
+ *
+ * @author xiaou
  */
 @Data
-public class SensitiveWord {
+public class SensitiveWhitelist {
+
     /**
      * 主键ID
      */
     private Long id;
 
     /**
-     * 敏感词
+     * 白名单词汇
      */
     private String word;
 
     /**
-     * 词类型 1-普通词 2-正则表达式
+     * 分类（专业术语/成语/人名/品牌等）
      */
-    private Integer wordType;
+    private String category;
 
     /**
-     * 拼音（用于拼音检测）
+     * 加入白名单的原因
      */
-    private String pinyin;
+    private String reason;
 
     /**
-     * 分类ID
+     * 作用范围（global-全局/module-模块级）
      */
-    private Integer categoryId;
+    private String scope;
 
     /**
-     * 风险等级 1-低 2-中 3-高
+     * 模块名称（scope=module时有效）
      */
-    private Integer level;
-
-    /**
-     * 处理动作 1-替换 2-拒绝 3-审核
-     */
-    private Integer action;
-
-    /**
-     * 启用变形词检测 0-否 1-是
-     */
-    private Integer enableVariantCheck;
+    private String moduleName;
 
     /**
      * 状态 0-禁用 1-启用
@@ -61,11 +54,6 @@ public class SensitiveWord {
     private Long creatorId;
 
     /**
-     * 备注
-     */
-    private String remark;
-
-    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -76,4 +64,4 @@ public class SensitiveWord {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
-} 
+}

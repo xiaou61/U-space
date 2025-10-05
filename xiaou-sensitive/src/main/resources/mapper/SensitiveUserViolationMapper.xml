@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveUserViolationMapper">
+
+    <resultMap id="ViolationResult" type="com.xiaou.sensitive.domain.SensitiveUserViolation">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="statDate" column="stat_date"/>
+        <result property="violationCount" column="violation_count"/>
+        <result property="lastViolationTime" column="last_violation_time"/>
+        <result property="isRestricted" column="is_restricted"/>
+        <result property="restrictEndTime" column="restrict_end_time"/>
+    </resultMap>
+
+    <select id="selectByUserAndDate" resultMap="ViolationResult">
+        SELECT id, user_id, stat_date, violation_count, last_violation_time, 
+               is_restricted, restrict_end_time
+        FROM sensitive_user_violation
+        WHERE user_id = #{userId}
+          AND stat_date = #{statDate}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_user_violation (
+            user_id, stat_date, violation_count, last_violation_time, 
+            is_restricted, restrict_end_time
+        ) VALUES (
+            #{userId}, #{statDate}, #{violationCount}, #{lastViolationTime}, 
+            #{isRestricted}, #{restrictEndTime}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE sensitive_user_violation
+        <set>
+            <if test="violationCount != null">violation_count = #{violationCount},</if>
+            <if test="lastViolationTime != null">last_violation_time = #{lastViolationTime},</if>
+            <if test="isRestricted != null">is_restricted = #{isRestricted},</if>
+            <if test="restrictEndTime != null">restrict_end_time = #{restrictEndTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectViolationUsers" resultMap="ViolationResult">
+        SELECT user_id, SUM(violation_count) as violation_count, 
+               MAX(last_violation_time) as last_violation_time,
+               MAX(is_restricted) as is_restricted
+        FROM sensitive_user_violation
+        <where>
+            <if test="startDate != null">
+                AND stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND stat_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY user_id
+        ORDER BY violation_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="countRestrictedUsers" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT user_id)
+        FROM sensitive_user_violation
+        WHERE is_restricted = 1
+          AND restrict_end_time &gt; NOW()
+    </select>
+
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveSourceMapper">
+
+    <resultMap id="SourceResult" type="com.xiaou.sensitive.domain.SensitiveSource">
+        <id property="id" column="id"/>
+        <result property="sourceName" column="source_name"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="apiUrl" column="api_url"/>
+        <result property="apiKey" column="api_key"/>
+        <result property="syncInterval" column="sync_interval"/>
+        <result property="lastSyncTime" column="last_sync_time"/>
+        <result property="syncStatus" column="sync_status"/>
+        <result property="wordCount" column="word_count"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectSourceVo">
+        SELECT id, source_name, source_type, api_url, api_key, sync_interval, 
+               last_sync_time, sync_status, word_count, status, create_time
+        FROM sensitive_source
+    </sql>
+
+    <select id="selectSourceList" resultMap="SourceResult">
+        <include refid="selectSourceVo"/>
+        <where>
+            <if test="sourceName != null and sourceName != ''">
+                AND source_name LIKE CONCAT('%', #{sourceName}, '%')
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                AND source_type = #{sourceType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectSourceById" resultMap="SourceResult">
+        <include refid="selectSourceVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectEnabledSources" resultMap="SourceResult">
+        <include refid="selectSourceVo"/>
+        WHERE status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insertSource" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_source (
+            source_name, source_type, api_url, api_key, sync_interval, 
+            last_sync_time, sync_status, word_count, status, create_time
+        ) VALUES (
+            #{sourceName}, #{sourceType}, #{apiUrl}, #{apiKey}, #{syncInterval}, 
+            #{lastSyncTime}, #{syncStatus}, #{wordCount}, #{status}, NOW()
+        )
+    </insert>
+
+    <update id="updateSource">
+        UPDATE sensitive_source
+        <set>
+            <if test="sourceName != null">source_name = #{sourceName},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="apiUrl != null">api_url = #{apiUrl},</if>
+            <if test="apiKey != null">api_key = #{apiKey},</if>
+            <if test="syncInterval != null">sync_interval = #{syncInterval},</if>
+            <if test="lastSyncTime != null">last_sync_time = #{lastSyncTime},</if>
+            <if test="syncStatus != null">sync_status = #{syncStatus},</if>
+            <if test="wordCount != null">word_count = #{wordCount},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteSourceById">
+        DELETE FROM sensitive_source WHERE id = #{id}
+    </delete>
+
+</mapper>

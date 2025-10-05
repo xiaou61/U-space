@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveHitStatisticsMapper">
+
+    <resultMap id="StatisticsResult" type="com.xiaou.sensitive.domain.SensitiveHitStatistics">
+        <id property="id" column="id"/>
+        <result property="statDate" column="stat_date"/>
+        <result property="word" column="word"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="hitCount" column="hit_count"/>
+        <result property="module" column="module"/>
+    </resultMap>
+
+    <resultMap id="HotWordResult" type="com.xiaou.sensitive.dto.HotWordVO">
+        <result property="word" column="word"/>
+        <result property="hitCount" column="hit_count"/>
+        <result property="category" column="category"/>
+        <result property="module" column="module"/>
+    </resultMap>
+
+    <resultMap id="TrendDataResult" type="com.xiaou.sensitive.dto.TrendDataVO">
+        <result property="date" column="stat_date"/>
+        <result property="hitCount" column="hit_count"/>
+        <result property="module" column="module"/>
+    </resultMap>
+
+    <!-- 根据日期和词查询统计 -->
+    <select id="selectByDateAndWord" resultMap="StatisticsResult">
+        SELECT id, stat_date, word, category_id, hit_count, module
+        FROM sensitive_hit_statistics
+        WHERE stat_date = #{statDate}
+          AND word = #{word}
+          AND module = #{module}
+        LIMIT 1
+    </select>
+
+    <!-- 新增统计记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_hit_statistics (stat_date, word, category_id, hit_count, module)
+        VALUES (#{statDate}, #{word}, #{categoryId}, #{hitCount}, #{module})
+    </insert>
+
+    <!-- 增加命中次数 -->
+    <update id="incrementHitCount">
+        UPDATE sensitive_hit_statistics
+        SET hit_count = hit_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询命中趋势 -->
+    <select id="selectTrend" resultMap="TrendDataResult">
+        SELECT 
+            stat_date,
+            SUM(hit_count) as hit_count,
+            module
+        FROM sensitive_hit_statistics
+        <where>
+            <if test="startDate != null">
+                AND stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND stat_date &lt;= #{endDate}
+            </if>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+        </where>
+        GROUP BY stat_date, module
+        ORDER BY stat_date ASC
+    </select>
+
+    <!-- 查询热门敏感词 -->
+    <select id="selectHotWords" resultMap="HotWordResult">
+        SELECT 
+            shs.word,
+            SUM(shs.hit_count) as hit_count,
+            sc.name as category,
+            shs.module
+        FROM sensitive_hit_statistics shs
+        LEFT JOIN sensitive_category sc ON shs.category_id = sc.id
+        <where>
+            <if test="startDate != null">
+                AND shs.stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND shs.stat_date &lt;= #{endDate}
+            </if>
+            <if test="module != null and module != ''">
+                AND shs.module = #{module}
+            </if>
+            <if test="categoryId != null">
+                AND shs.category_id = #{categoryId}
+            </if>
+        </where>
+        GROUP BY shs.word, sc.name, shs.module
+        ORDER BY hit_count DESC
+        <if test="topN != null">
+            LIMIT #{topN}
+        </if>
+    </select>
+
+    <!-- 查询分类分布 -->
+    <select id="selectCategoryDistribution" resultType="java.util.HashMap">
+        SELECT 
+            sc.name as category,
+            SUM(shs.hit_count) as count
+        FROM sensitive_hit_statistics shs
+        LEFT JOIN sensitive_category sc ON shs.category_id = sc.id
+        <where>
+            <if test="startDate != null">
+                AND shs.stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND shs.stat_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY sc.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询模块分布 -->
+    <select id="selectModuleDistribution" resultType="java.util.HashMap">
+        SELECT 
+            module,
+            SUM(hit_count) as count
+        FROM sensitive_hit_statistics
+        <where>
+            <if test="startDate != null">
+                AND stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND stat_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY module
+        ORDER BY count DESC
+    </select>
+
+    <!-- 查询总命中数 -->
+    <select id="selectTotalHitCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(hit_count), 0)
+        FROM sensitive_hit_statistics
+        <where>
+            <if test="startDate != null">
+                AND stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND stat_date &lt;= #{endDate}
+            </if>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+        </where>
+    </select>
+
+</mapper>

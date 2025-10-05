@@ -208,7 +208,43 @@ const routes = [
         path: 'words',
         name: 'SensitiveWords',
         component: () => import('@/views/sensitive/words/index.vue'),
-        meta: { title: '敏感词管理' }
+        meta: { title: '词库管理' }
+      },
+      {
+        path: 'whitelist',
+        name: 'SensitiveWhitelist',
+        component: () => import('@/views/sensitive/whitelist/index.vue'),
+        meta: { title: '白名单管理' }
+      },
+      {
+        path: 'strategy',
+        name: 'SensitiveStrategy',
+        component: () => import('@/views/sensitive/strategy/index.vue'),
+        meta: { title: '策略配置' }
+      },
+      {
+        path: 'statistics',
+        name: 'SensitiveStatistics',
+        component: () => import('@/views/sensitive/statistics/index.vue'),
+        meta: { title: '统计分析' }
+      },
+      {
+        path: 'source',
+        name: 'SensitiveSource',
+        component: () => import('@/views/sensitive/source/index.vue'),
+        meta: { title: '词库来源' }
+      },
+      {
+        path: 'version',
+        name: 'SensitiveVersion',
+        component: () => import('@/views/sensitive/version/index.vue'),
+        meta: { title: '版本历史' }
+      },
+      {
+        path: 'config',
+        name: 'SensitiveConfig',
+        component: () => import('@/views/sensitive/config/index.vue'),
+        meta: { title: '配置管理' }
       }
     ]
   },

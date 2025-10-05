@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveSimilarCharMapper">
+
+    <resultMap id="SimilarCharResult" type="com.xiaou.sensitive.domain.SensitiveSimilarChar">
+        <id property="id" column="id"/>
+        <result property="originalChar" column="original_char"/>
+        <result property="similarChars" column="similar_chars"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectSimilarCharVo">
+        SELECT id, original_char, similar_chars, status, create_time
+        FROM sensitive_similar_char
+    </sql>
+
+    <select id="selectSimilarCharList" resultMap="SimilarCharResult">
+        <include refid="selectSimilarCharVo"/>
+        <where>
+            <if test="originalChar != null and originalChar != ''">
+                AND original_char LIKE CONCAT('%', #{originalChar}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectSimilarCharById" resultMap="SimilarCharResult">
+        <include refid="selectSimilarCharVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectEnabledSimilarChars" resultMap="SimilarCharResult">
+        <include refid="selectSimilarCharVo"/>
+        WHERE status = 1
+    </select>
+
+    <insert id="insertSimilarChar" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_similar_char (original_char, similar_chars, status, create_time)
+        VALUES (#{originalChar}, #{similarChars}, #{status}, NOW())
+    </insert>
+
+    <insert id="batchInsertSimilarChar">
+        INSERT INTO sensitive_similar_char (original_char, similar_chars, status, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.originalChar}, #{item.similarChars}, #{item.status}, NOW())
+        </foreach>
+    </insert>
+
+    <update id="updateSimilarChar">
+        UPDATE sensitive_similar_char
+        <set>
+            <if test="originalChar != null">original_char = #{originalChar},</if>
+            <if test="similarChars != null">similar_chars = #{similarChars},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteSimilarCharById">
+        DELETE FROM sensitive_similar_char WHERE id = #{id}
+    </delete>
+
+</mapper>

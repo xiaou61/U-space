@@ -206,7 +206,31 @@
             </template>
             <el-menu-item index="/sensitive/words">
               <el-icon><EditPen /></el-icon>
-              <span>敏感词管理</span>
+              <span>词库管理</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/whitelist">
+              <el-icon><Check /></el-icon>
+              <span>白名单管理</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/strategy">
+              <el-icon><SetUp /></el-icon>
+              <span>策略配置</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>统计分析</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/source">
+              <el-icon><FolderOpened /></el-icon>
+              <span>词库来源</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/version">
+              <el-icon><Document /></el-icon>
+              <span>版本历史</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/config">
+              <el-icon><Tools /></el-icon>
+              <span>配置管理</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -433,7 +457,8 @@ import {
   Plus,
   Coffee,
   Calendar,
-  Reading
+  Reading,
+  Check
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
