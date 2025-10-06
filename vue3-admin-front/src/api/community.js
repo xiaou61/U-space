@@ -107,6 +107,38 @@ export function toggleCategoryStatus(id) {
   return request.put(`/admin/community/categories/${id}/status`)
 }
 
+// ============ 标签管理接口（v1.1.0 新增）============
+
+// 获取标签列表
+export function getTagList(params) {
+  return request.post('/admin/community/tags/list', params)
+}
+
+// 获取标签详情
+export function getTagDetail(id) {
+  return request.get(`/admin/community/tags/${id}`)
+}
+
+// 创建标签
+export function createTag(data) {
+  return request.post('/admin/community/tags', data)
+}
+
+// 更新标签
+export function updateTag(id, data) {
+  return request.put(`/admin/community/tags/${id}`, data)
+}
+
+// 删除标签
+export function deleteTag(id) {
+  return request.delete(`/admin/community/tags/${id}`)
+}
+
+// 切换标签状态
+export function toggleTagStatus(id) {
+  return request.put(`/admin/community/tags/${id}/status`)
+}
+
 export const communityApi = {
   // 帖子相关
   getPostList,
@@ -135,5 +167,13 @@ export const communityApi = {
   createCategory,
   updateCategory,
   deleteCategory,
-  toggleCategoryStatus
+  toggleCategoryStatus,
+  
+  // 标签相关
+  getTagList,
+  getTagDetail,
+  createTag,
+  updateTag,
+  deleteTag,
+  toggleTagStatus
 } 

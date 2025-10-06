@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveWhitelistMapper">
+
+    <!-- 白名单结果映射 -->
+    <resultMap id="WhitelistResult" type="com.xiaou.sensitive.domain.SensitiveWhitelist">
+        <id property="id" column="id"/>
+        <result property="word" column="word"/>
+        <result property="category" column="category"/>
+        <result property="reason" column="reason"/>
+        <result property="scope" column="scope"/>
+        <result property="moduleName" column="module_name"/>
+        <result property="status" column="status"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 查询字段 -->
+    <sql id="selectWhitelistVo">
+        SELECT 
+            id, word, category, reason, scope, module_name, 
+            status, creator_id, create_time, update_time
+        FROM sensitive_whitelist
+    </sql>
+
+    <!-- 分页查询白名单列表 -->
+    <select id="selectWhitelistList" resultMap="WhitelistResult">
+        <include refid="selectWhitelistVo"/>
+        <where>
+            <if test="word != null and word != ''">
+                AND word LIKE CONCAT('%', #{word}, '%')
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="scope != null and scope != ''">
+                AND scope = #{scope}
+            </if>
+            <if test="moduleName != null and moduleName != ''">
+                AND module_name = #{moduleName}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据ID查询白名单 -->
+    <select id="selectWhitelistById" resultMap="WhitelistResult">
+        <include refid="selectWhitelistVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <!-- 检查白名单是否存在 -->
+    <select id="existsInWhitelist" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sensitive_whitelist
+        WHERE word = #{word}
+          AND scope = #{scope}
+          AND status = 1
+          <if test="moduleName != null">
+              AND (module_name = #{moduleName} OR scope = 'global')
+          </if>
+          <if test="moduleName == null">
+              AND scope = 'global'
+          </if>
+    </select>
+
+    <!-- 查询所有启用的白名单词汇 -->
+    <select id="selectEnabledWords" resultType="java.lang.String">
+        SELECT word
+        FROM sensitive_whitelist
+        WHERE status = 1
+    </select>
+
+    <!-- 新增白名单 -->
+    <insert id="insertWhitelist" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_whitelist (
+            word, category, reason, scope, module_name, 
+            status, creator_id, create_time, update_time
+        ) VALUES (
+            #{word}, #{category}, #{reason}, #{scope}, #{moduleName}, 
+            #{status}, #{creatorId}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量新增白名单 -->
+    <insert id="batchInsertWhitelist">
+        INSERT INTO sensitive_whitelist (
+            word, category, reason, scope, module_name, 
+            status, creator_id, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.word}, #{item.category}, #{item.reason}, #{item.scope}, #{item.moduleName}, 
+                #{item.status}, #{item.creatorId}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 更新白名单 -->
+    <update id="updateWhitelist">
+        UPDATE sensitive_whitelist
+        <set>
+            <if test="word != null and word != ''">word = #{word},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            <if test="scope != null">scope = #{scope},</if>
+            <if test="moduleName != null">module_name = #{moduleName},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除白名单 -->
+    <delete id="deleteWhitelistById">
+        DELETE FROM sensitive_whitelist WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除白名单 -->
+    <delete id="deleteWhitelistByIds">
+        DELETE FROM sensitive_whitelist
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

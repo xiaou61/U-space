@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.points.mapper.LotteryStatisticsDailyMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.points.domain.LotteryStatisticsDaily">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="stat_date" property="statDate" jdbcType="DATE"/>
+        <result column="total_draw_count" property="totalDrawCount" jdbcType="INTEGER"/>
+        <result column="total_cost_points" property="totalCostPoints" jdbcType="BIGINT"/>
+        <result column="total_reward_points" property="totalRewardPoints" jdbcType="BIGINT"/>
+        <result column="profit_points" property="profitPoints" jdbcType="BIGINT"/>
+        <result column="actual_return_rate" property="actualReturnRate" jdbcType="DECIMAL"/>
+        <result column="unique_user_count" property="uniqueUserCount" jdbcType="INTEGER"/>
+        <result column="special_prize_count" property="specialPrizeCount" jdbcType="INTEGER"/>
+        <result column="first_prize_count" property="firstPrizeCount" jdbcType="INTEGER"/>
+        <result column="second_prize_count" property="secondPrizeCount" jdbcType="INTEGER"/>
+        <result column="third_prize_count" property="thirdPrizeCount" jdbcType="INTEGER"/>
+        <result column="fourth_prize_count" property="fourthPrizeCount" jdbcType="INTEGER"/>
+        <result column="fifth_prize_count" property="fifthPrizeCount" jdbcType="INTEGER"/>
+        <result column="sixth_prize_count" property="sixthPrizeCount" jdbcType="INTEGER"/>
+        <result column="no_prize_count" property="noPrizeCount" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, stat_date, total_draw_count, total_cost_points, total_reward_points,
+        profit_points, actual_return_rate, unique_user_count,
+        special_prize_count, first_prize_count, second_prize_count, third_prize_count,
+        fourth_prize_count, fifth_prize_count, sixth_prize_count, no_prize_count,
+        create_time, update_time
+    </sql>
+
+    <!-- 查询今日统计 -->
+    <select id="selectToday" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_statistics_daily
+        WHERE stat_date = CURDATE()
+    </select>
+
+    <!-- 插入统计记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lottery_statistics_daily (
+            stat_date, total_draw_count, total_cost_points, total_reward_points,
+            profit_points, actual_return_rate, unique_user_count,
+            special_prize_count, first_prize_count, second_prize_count, third_prize_count,
+            fourth_prize_count, fifth_prize_count, sixth_prize_count, no_prize_count
+        ) VALUES (
+            #{statDate}, #{totalDrawCount}, #{totalCostPoints}, #{totalRewardPoints},
+            #{profitPoints}, #{actualReturnRate}, #{uniqueUserCount},
+            #{specialPrizeCount}, #{firstPrizeCount}, #{secondPrizeCount}, #{thirdPrizeCount},
+            #{fourthPrizeCount}, #{fifthPrizeCount}, #{sixthPrizeCount}, #{noPrizeCount}
+        )
+    </insert>
+
+    <!-- 增加今日抽奖次数 -->
+    <update id="incrementTodayDraw">
+        UPDATE lottery_statistics_daily
+        SET total_draw_count = total_draw_count + 1,
+            update_time = NOW()
+        WHERE stat_date = CURDATE()
+    </update>
+
+    <!-- 增加今日中奖次数（根据奖品等级） -->
+    <update id="incrementTodayWin">
+        UPDATE lottery_statistics_daily
+        SET special_prize_count = special_prize_count + IF(#{prizeLevel} = 1, 1, 0),
+            first_prize_count = first_prize_count + IF(#{prizeLevel} = 2, 1, 0),
+            second_prize_count = second_prize_count + IF(#{prizeLevel} = 3, 1, 0),
+            third_prize_count = third_prize_count + IF(#{prizeLevel} = 4, 1, 0),
+            fourth_prize_count = fourth_prize_count + IF(#{prizeLevel} = 5, 1, 0),
+            fifth_prize_count = fifth_prize_count + IF(#{prizeLevel} = 6, 1, 0),
+            sixth_prize_count = sixth_prize_count + IF(#{prizeLevel} = 7, 1, 0),
+            no_prize_count = no_prize_count + IF(#{prizeLevel} = 8, 1, 0),
+            update_time = NOW()
+        WHERE stat_date = CURDATE()
+    </update>
+
+    <!-- 查询历史统计（日期范围） -->
+    <select id="selectByDateRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_statistics_daily
+        WHERE stat_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stat_date DESC
+    </select>
+
+    <!-- 查询最近N天统计 -->
+    <select id="selectRecentDays" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_statistics_daily
+        WHERE stat_date &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY stat_date DESC
+    </select>
+
+</mapper>
+

@@ -95,6 +95,12 @@ const routes = [
         meta: { title: '分类管理' }
       },
       {
+        path: 'tags',
+        name: 'CommunityTags',
+        component: () => import('@/views/community/tags/index.vue'),
+        meta: { title: '标签管理' }
+      },
+      {
         path: 'posts',
         name: 'CommunityPosts',
         component: () => import('@/views/community/posts/index.vue'),
@@ -202,7 +208,43 @@ const routes = [
         path: 'words',
         name: 'SensitiveWords',
         component: () => import('@/views/sensitive/words/index.vue'),
-        meta: { title: '敏感词管理' }
+        meta: { title: '词库管理' }
+      },
+      {
+        path: 'whitelist',
+        name: 'SensitiveWhitelist',
+        component: () => import('@/views/sensitive/whitelist/index.vue'),
+        meta: { title: '白名单管理' }
+      },
+      {
+        path: 'strategy',
+        name: 'SensitiveStrategy',
+        component: () => import('@/views/sensitive/strategy/index.vue'),
+        meta: { title: '策略配置' }
+      },
+      {
+        path: 'statistics',
+        name: 'SensitiveStatistics',
+        component: () => import('@/views/sensitive/statistics/index.vue'),
+        meta: { title: '统计分析' }
+      },
+      {
+        path: 'source',
+        name: 'SensitiveSource',
+        component: () => import('@/views/sensitive/source/index.vue'),
+        meta: { title: '词库来源' }
+      },
+      {
+        path: 'version',
+        name: 'SensitiveVersion',
+        component: () => import('@/views/sensitive/version/index.vue'),
+        meta: { title: '版本历史' }
+      },
+      {
+        path: 'config',
+        name: 'SensitiveConfig',
+        component: () => import('@/views/sensitive/config/index.vue'),
+        meta: { title: '配置管理' }
       }
     ]
   },
@@ -241,15 +283,9 @@ const routes = [
   {
     path: '/system',
     component: Layout,
-    redirect: '/system/monitor/sql',
+    redirect: '/system/version',
     meta: { title: '系统管理' },
     children: [
-      {
-        path: 'monitor/sql',
-        name: 'SqlMonitor',
-        component: () => import('@/views/system/monitor/SqlMonitor.vue'),
-        meta: { title: 'SQL监控' }
-      },
       {
         path: 'version',
         name: 'VersionManagement',
@@ -344,6 +380,44 @@ const routes = [
         name: 'PointsGrant',
         component: () => import('@/views/points/grant.vue'),
         meta: { title: '积分发放' }
+      }
+    ]
+  },
+  {
+    path: '/blog',
+    component: Layout,
+    redirect: '/blog/articles',
+    meta: { title: '博客管理' },
+    children: [
+      {
+        path: 'articles',
+        name: 'BlogArticles',
+        component: () => import('@/views/blog/articles/index.vue'),
+        meta: { title: '文章管理' }
+      },
+      {
+        path: 'categories',
+        name: 'BlogCategories',
+        component: () => import('@/views/blog/categories/index.vue'),
+        meta: { title: '分类管理' }
+      },
+      {
+        path: 'tags',
+        name: 'BlogTags',
+        component: () => import('@/views/blog/tags/index.vue'),
+        meta: { title: '标签管理' }
+      }
+    ]
+  },
+  {
+    path: '/lottery',
+    component: Layout,
+    children: [
+      {
+        path: '',
+        name: 'LotteryManagement',
+        component: () => import('@/views/lottery/index.vue'),
+        meta: { title: '抽奖管理' }
       }
     ]
   },

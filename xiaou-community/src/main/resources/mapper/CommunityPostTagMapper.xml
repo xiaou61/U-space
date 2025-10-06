@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.community.mapper.CommunityPostTagMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.community.domain.CommunityPostTag">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="tagId" column="tag_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 批量插入帖子标签关联 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO community_post_tag (post_id, tag_id, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.postId}, #{item.tagId}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 根据帖子ID删除关联 -->
+    <delete id="deleteByPostId">
+        DELETE FROM community_post_tag WHERE post_id = #{postId}
+    </delete>
+
+    <!-- 根据帖子ID查询标签ID列表 -->
+    <select id="selectTagIdsByPostId" resultType="java.lang.Long">
+        SELECT tag_id
+        FROM community_post_tag
+        WHERE post_id = #{postId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据标签ID查询帖子数量 -->
+    <select id="countPostsByTagId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM community_post_tag
+        WHERE tag_id = #{tagId}
+    </select>
+
+    <!-- 查询用户的活跃标签（按使用次数排序） -->
+    <select id="selectUserActiveTagIds" resultType="java.lang.Long">
+        SELECT pt.tag_id, COUNT(*) as tag_count
+        FROM community_post_tag pt
+        INNER JOIN community_post p ON pt.post_id = p.id
+        WHERE p.author_id = #{userId}
+        AND p.status = 1
+        GROUP BY pt.tag_id
+        ORDER BY tag_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>
+

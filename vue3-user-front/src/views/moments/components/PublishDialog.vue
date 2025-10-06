@@ -9,13 +9,22 @@
       <!-- 文字内容 -->
       <el-form-item prop="content">
         <el-input
+          ref="textareaRef"
           v-model="form.content"
           type="textarea"
           placeholder="分享此刻的想法..."
           :rows="4"
           maxlength="100"
           show-word-limit
+          @input="handleContentInput"
         />
+      </el-form-item>
+
+      <!-- 工具栏 -->
+      <el-form-item>
+        <div class="toolbar">
+          <EmojiPicker @select="insertEmoji" />
+        </div>
       </el-form-item>
 
       <!-- 图片上传 -->
@@ -83,11 +92,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { publishMoment } from '@/api/moment'
 import { uploadSingle } from '@/api/upload'
+import EmojiPicker from '@/components/EmojiPicker.vue'
 
 const props = defineProps({
   modelValue: {
@@ -101,6 +111,7 @@ const emit = defineEmits(['update:modelValue', 'published'])
 // 响应式数据
 const formRef = ref(null)
 const fileInputRef = ref(null)
+const textareaRef = ref(null)
 const publishing = ref(false)
 
 // 表单数据
@@ -108,6 +119,11 @@ const form = reactive({
   content: '',
   images: []
 })
+
+// 草稿保存Key
+const DRAFT_KEY = 'moment_publish_draft'
+// 自动保存定时器
+let autoSaveTimer = null
 
 // 表单验证规则
 const rules = {
@@ -123,10 +139,39 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-// 监听对话框打开，重置表单
-watch(visible, (newVal) => {
+// 监听对话框打开，尝试恢复草稿
+watch(visible, async (newVal) => {
   if (newVal) {
-    resetForm()
+    // 检查是否有草稿
+    const draft = loadDraft()
+    if (draft) {
+      try {
+        await ElMessageBox.confirm(
+          '检测到未发布的草稿，是否恢复？',
+          '恢复草稿',
+          {
+            confirmButtonText: '恢复',
+            cancelButtonText: '放弃',
+            type: 'info'
+          }
+        )
+        // 恢复草稿
+        form.content = draft.content || ''
+        form.images = draft.images || []
+      } catch (error) {
+        // 用户选择放弃草稿
+        clearDraft()
+        resetForm()
+      }
+    } else {
+      resetForm()
+    }
+  } else {
+    // 关闭时清除自动保存定时器
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer)
+      autoSaveTimer = null
+    }
   }
 })
 
@@ -222,6 +267,8 @@ const handlePublish = async () => {
     await publishMoment(data)
     
     ElMessage.success('发布成功！')
+    // 清除草稿
+    clearDraft()
     emit('published')
     visible.value = false
   } catch (error) {
@@ -229,6 +276,80 @@ const handlePublish = async () => {
   } finally {
     publishing.value = false
   }
+}
+
+// 插入表情
+const insertEmoji = (emoji) => {
+  const textarea = textareaRef.value?.$refs?.textarea
+  if (textarea) {
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = form.content
+    
+    form.content = text.substring(0, start) + emoji + text.substring(end)
+    
+    // 恢复光标位置
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+      textarea.focus()
+    }, 10)
+  } else {
+    form.content += emoji
+  }
+}
+
+// 内容输入时自动保存草稿
+const handleContentInput = () => {
+  // 清除之前的定时器
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+  }
+  
+  // 5秒后自动保存
+  autoSaveTimer = setTimeout(() => {
+    saveDraft()
+  }, 5000)
+}
+
+// 保存草稿
+const saveDraft = () => {
+  if (!form.content && form.images.length === 0) {
+    return
+  }
+  
+  const draft = {
+    content: form.content,
+    images: form.images,
+    timestamp: Date.now()
+  }
+  
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  console.log('草稿已自动保存')
+}
+
+// 加载草稿
+const loadDraft = () => {
+  try {
+    const draftStr = localStorage.getItem(DRAFT_KEY)
+    if (!draftStr) return null
+    
+    const draft = JSON.parse(draftStr)
+    // 草稿超过24小时则丢弃
+    if (Date.now() - draft.timestamp > 24 * 60 * 60 * 1000) {
+      clearDraft()
+      return null
+    }
+    
+    return draft
+  } catch (error) {
+    console.error('加载草稿失败', error)
+    return null
+  }
+}
+
+// 清除草稿
+const clearDraft = () => {
+  localStorage.removeItem(DRAFT_KEY)
 }
 </script>
 
@@ -313,6 +434,10 @@ const handlePublish = async () => {
   font-size: 12px;
   color: #999;
   line-height: 1.4;
+}
+
+.toolbar {
+  margin-bottom: 10px;
 }
 
 :deep(.el-dialog__body) {

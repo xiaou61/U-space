@@ -42,6 +42,14 @@
             <el-icon><Coffee /></el-icon>
             <span>摸鱼工具</span>
           </router-link>
+          <router-link to="/lottery" class="nav-item" active-class="active">
+            <el-icon><Trophy /></el-icon>
+            <span>幸运抽奖</span>
+          </router-link>
+          <router-link to="/blog" class="nav-item" active-class="active">
+            <el-icon><Reading /></el-icon>
+            <span>我的博客</span>
+          </router-link>
           <router-link to="/version-history" class="nav-item" active-class="active">
             <el-icon><Calendar /></el-icon>
             <span>版本历史</span>
@@ -96,7 +104,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message
+  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

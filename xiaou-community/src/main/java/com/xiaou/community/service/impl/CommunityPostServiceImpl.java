@@ -12,10 +12,15 @@ import com.xiaou.community.domain.CommunityCategory;
 import com.xiaou.community.domain.CommunityPost;
 import com.xiaou.community.domain.CommunityPostCollect;
 import com.xiaou.community.domain.CommunityPostLike;
+import com.xiaou.community.domain.CommunityPostTag;
+import com.xiaou.community.domain.CommunityTag;
 import com.xiaou.community.dto.*;
 import com.xiaou.community.mapper.CommunityPostCollectMapper;
 import com.xiaou.community.mapper.CommunityPostLikeMapper;
 import com.xiaou.community.mapper.CommunityPostMapper;
+import com.xiaou.community.mapper.CommunityPostTagMapper;
+import com.xiaou.community.mapper.CommunityTagMapper;
+import com.xiaou.community.service.CommunityCacheService;
 import com.xiaou.community.service.CommunityCategoryService;
 import com.xiaou.community.service.CommunityPostService;
 import com.xiaou.community.service.CommunityUserStatusService;
@@ -43,6 +48,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     private final CommunityPostCollectMapper communityPostCollectMapper;
     private final CommunityUserStatusService communityUserStatusService;
     private final CommunityCategoryService communityCategoryService;
+    private final CommunityPostTagMapper communityPostTagMapper;
+    private final CommunityTagMapper communityTagMapper;
+    private final CommunityCacheService communityCacheService;
     
     @Override
     public PageResult<CommunityPost> getAdminPostList(AdminPostQueryRequest request) {
@@ -100,6 +108,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             throw new BusinessException("下架帖子失败");
         }
         
+        // 清除帖子缓存
+        communityCacheService.evictPost(id);
+        
         log.info("帖子下架成功，帖子ID: {}", id);
     }
     
@@ -111,6 +122,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         if (result <= 0) {
             throw new BusinessException("删除帖子失败");
         }
+        
+        // 清除帖子缓存
+        communityCacheService.evictPost(id);
         
         // 减少用户发帖数统计
         communityUserStatusService.decrementPostCount(post.getAuthorId());
@@ -128,6 +142,15 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     @Override
     public PageResult<CommunityPostResponse> getPostList(CommunityPostQueryRequest request) {
         log.info("分页查询帖子列表，查询条件: {}", request);
+        
+        // 记录搜索关键词
+        if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
+            try {
+                communityCacheService.recordSearchKeyword(request.getKeyword());
+            } catch (Exception e) {
+                log.warn("记录搜索关键词失败: {}", request.getKeyword(), e);
+            }
+        }
         
         try {
             // 先获取分页的原始帖子数据
@@ -157,9 +180,16 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public CommunityPostResponse getPostDetail(Long id) {
-        CommunityPost post = getById(id);
+        // 先尝试从缓存获取
+        CommunityPost post = communityCacheService.getCachedPost(id);
+        if (post == null) {
+            // 缓存未命中，从数据库查询
+            post = getById(id);
+            // 写入缓存
+            communityCacheService.cachePost(post);
+        }
         
-        // 增加浏览次数
+        // 增加浏览次数（异步或后台处理，不影响缓存）
         communityPostMapper.incrementViewCount(id);
         
         return convertToResponse(post);
@@ -210,6 +240,36 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 更新分类下的帖子数量
         if (request.getCategoryId() != null) {
             communityCategoryService.updatePostCount(request.getCategoryId(), 1);
+        }
+        
+        // 处理标签关联
+        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+            // 限制最多5个标签
+            List<Long> tagIds = request.getTagIds();
+            if (tagIds.size() > 5) {
+                tagIds = tagIds.subList(0, 5);
+            }
+            
+            // 验证标签是否存在且启用
+            List<CommunityPostTag> postTags = new java.util.ArrayList<>();
+            for (Long tagId : tagIds) {
+                CommunityTag tag = communityTagMapper.selectById(tagId);
+                if (tag != null && tag.getStatus() == 1) {
+                    CommunityPostTag postTag = new CommunityPostTag();
+                    postTag.setPostId(post.getId());
+                    postTag.setTagId(tagId);
+                    postTags.add(postTag);
+                }
+            }
+            
+            // 批量插入标签关联
+            if (!postTags.isEmpty()) {
+                communityPostTagMapper.batchInsert(postTags);
+                // 更新标签帖子数量
+                for (CommunityPostTag postTag : postTags) {
+                    communityTagMapper.updatePostCount(postTag.getTagId(), 1);
+                }
+            }
         }
         
         log.info("用户发布帖子成功，用户ID: {}, 帖子ID: {}, 分类ID: {}", currentUserId, post.getId(), request.getCategoryId());
@@ -451,6 +511,27 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     private CommunityPostResponse convertToResponse(CommunityPost post) {
         CommunityPostResponse response = BeanUtil.copyProperties(post, CommunityPostResponse.class);
         response.setIsTop(post.getIsTop() != null && post.getIsTop() == 1);
+        
+        // 查询帖子的标签列表
+        List<Long> tagIds = communityPostTagMapper.selectTagIdsByPostId(post.getId());
+        if (tagIds != null && !tagIds.isEmpty()) {
+            List<CommunityTag> tags = new java.util.ArrayList<>();
+            for (Long tagId : tagIds) {
+                CommunityTag tag = communityTagMapper.selectById(tagId);
+                if (tag != null) {
+                    tags.add(tag);
+                }
+            }
+            response.setTags(tags);
+        }
+        
+        // 设置AI摘要
+        response.setAiSummary(post.getAiSummary());
+        
+        // 计算热度分数
+        double hotScore = post.getLikeCount() * 3.0 + post.getCommentCount() * 5.0 
+                        + post.getCollectCount() * 8.0 + post.getViewCount() * 0.1;
+        response.setHotScore(hotScore);
         
         // 设置用户相关状态
         if (StpUserUtil.isLogin()) {

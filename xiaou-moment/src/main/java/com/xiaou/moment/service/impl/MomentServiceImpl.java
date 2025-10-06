@@ -10,13 +10,18 @@ import com.xiaou.common.exception.BusinessException;
 import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.common.utils.NotificationUtil;
 import com.xiaou.common.utils.SensitiveWordUtils;
+import com.xiaou.moment.service.MomentViewService;
+import com.xiaou.user.api.UserInfoApiService;
+import com.xiaou.user.api.dto.SimpleUserInfo;
 import com.xiaou.moment.domain.Moment;
 import com.xiaou.moment.domain.MomentComment;
+import com.xiaou.moment.domain.MomentFavorite;
 import com.xiaou.moment.domain.MomentLike;
 import com.xiaou.moment.dto.*;
 import com.xiaou.moment.enums.CommentStatus;
 import com.xiaou.moment.enums.MomentStatus;
 import com.xiaou.moment.mapper.MomentCommentMapper;
+import com.xiaou.moment.mapper.MomentFavoriteMapper;
 import com.xiaou.moment.mapper.MomentLikeMapper;
 import com.xiaou.moment.mapper.MomentMapper;
 import com.xiaou.moment.service.MomentService;
@@ -40,6 +45,9 @@ public class MomentServiceImpl implements MomentService {
     private final MomentMapper momentMapper;
     private final MomentLikeMapper momentLikeMapper;
     private final MomentCommentMapper momentCommentMapper;
+    private final MomentFavoriteMapper momentFavoriteMapper;
+    private final UserInfoApiService userInfoApiService;
+    private final MomentViewService momentViewService;
     
     @Override
     @Transactional
@@ -52,9 +60,22 @@ public class MomentServiceImpl implements MomentService {
         // 检查发布频率限制 - 5分钟内最多3条
         checkPublishFrequency(currentUserId);
         
+        // 敏感词检测
+        SensitiveWordUtils.SensitiveCheckResult checkResult = SensitiveWordUtils.checkText(
+            request.getContent(), 
+            "moment", 
+            null, 
+            currentUserId
+        );
+        
+        if (!checkResult.getAllowed()) {
+            throw new BusinessException("内容包含敏感词，禁止发布");
+        }
+        
         Moment moment = new Moment();
         moment.setUserId(currentUserId);
-        moment.setContent(request.getContent());
+        // 使用敏感词过滤后的内容
+        moment.setContent(checkResult.getProcessedText());
         
         // 处理图片URLs
         if (CollUtil.isNotEmpty(request.getImages())) {
@@ -75,9 +96,10 @@ public class MomentServiceImpl implements MomentService {
             Map<String, Object> params = new HashMap<>();
             List<Moment> moments = momentMapper.selectList(params);
             
-            return moments.stream()
-                    .map(this::convertToMomentListResponse)
-                    .collect(Collectors.toList());
+            // 记录浏览数
+            recordMomentViews(moments);
+            
+            return convertToMomentListResponseBatch(moments);
         });
     }
     
@@ -139,7 +161,8 @@ public class MomentServiceImpl implements MomentService {
             // 发送消息通知：通知动态作者
             if (!currentUserId.equals(moment.getUserId())) {
                 try {
-                    String userName = "用户" + currentUserId;
+                    SimpleUserInfo currentUser = userInfoApiService.getSimpleUserInfo(currentUserId);
+                    String userName = currentUser != null ? currentUser.getDisplayName() : "用户" + currentUserId;
                     
                     NotificationUtil.sendPersonalMessage(
                         moment.getUserId(),
@@ -148,7 +171,7 @@ public class MomentServiceImpl implements MomentService {
                     );
                 } catch (Exception e) {
                     log.warn("发送动态点赞通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
-                            currentUserId, momentId, e.getMessage());
+                            moment.getUserId(), momentId, e.getMessage());
                 }
             }
             
@@ -171,29 +194,21 @@ public class MomentServiceImpl implements MomentService {
         }
         
         // 敏感词检测
-        String content = request.getContent();
-        try {
-            SensitiveWordUtils.SensitiveCheckResult sensitiveResult = 
-                SensitiveWordUtils.checkText(content, "moment", request.getMomentId(), currentUserId);
-            
-            if (!sensitiveResult.getAllowed()) {
-                throw new BusinessException("评论包含违规内容，禁止发布");
-            }
-            
-            // 使用处理后的文本（替换敏感词）
-            content = sensitiveResult.getProcessedText();
-            
-        } catch (Exception e) {
-            if (e instanceof BusinessException) {
-                throw e;
-            }
-            log.warn("敏感词检测异常，使用原始内容：{}", e.getMessage());
+        SensitiveWordUtils.SensitiveCheckResult checkResult = SensitiveWordUtils.checkText(
+            request.getContent(), 
+            "moment_comment", 
+            request.getMomentId(), 
+            currentUserId
+        );
+        
+        if (!checkResult.getAllowed()) {
+            throw new BusinessException("评论内容包含敏感词，禁止发布");
         }
         
         MomentComment comment = new MomentComment();
         comment.setMomentId(request.getMomentId());
         comment.setUserId(currentUserId);
-        comment.setContent(content); // 使用处理后的内容
+        comment.setContent(checkResult.getProcessedText()); // 使用敏感词过滤后的内容
         comment.setStatus(CommentStatus.NORMAL.getCode());
         
         momentCommentMapper.insert(comment);
@@ -204,16 +219,17 @@ public class MomentServiceImpl implements MomentService {
         // 发送消息通知：通知动态作者
         if (!currentUserId.equals(moment.getUserId())) {
             try {
-                String userName = "用户" + currentUserId;
+                SimpleUserInfo currentUser = userInfoApiService.getSimpleUserInfo(currentUserId);
+                String userName = currentUser != null ? currentUser.getDisplayName() : "用户" + currentUserId;
                 
                 NotificationUtil.sendPersonalMessage(
                     moment.getUserId(),
                     "您的动态收到新评论",
-                    "用户 " + userName + " 评论了您的动态：" + request.getContent()
+                    "用户 " + userName + " 评论了您的动态：" + checkResult.getProcessedText()
                 );
             } catch (Exception e) {
                 log.warn("发送动态评论通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
-                        currentUserId, request.getMomentId(), e.getMessage());
+                        moment.getUserId(), request.getMomentId(), e.getMessage());
             }
         }
         
@@ -301,23 +317,39 @@ public class MomentServiceImpl implements MomentService {
         
         // 处理图片URLs
         if (StrUtil.isNotBlank(moment.getImages())) {
-            response.setImages(JSONUtil.toList(moment.getImages(), String.class));
+            List<String> imageList = JSONUtil.toList(moment.getImages(), String.class);
+            response.setImages(imageList);
         } else {
             response.setImages(new ArrayList<>());
         }
         
-        // 设置用户信息（这里需要查询用户表，暂时使用占位符）
-        response.setUserNickname("用户" + moment.getUserId());
-        response.setUserAvatar("");
+        // 设置用户信息
+        SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(moment.getUserId());
+        if (userInfo != null) {
+            response.setUserNickname(userInfo.getDisplayName());
+            response.setUserAvatar(userInfo.getAvatar());
+        } else {
+            response.setUserNickname("用户" + moment.getUserId());
+            response.setUserAvatar("");
+        }
         
-        // 设置是否已点赞
+        // 设置浏览数和收藏数
+        response.setViewCount(moment.getViewCount() != null ? moment.getViewCount() : 0);
+        response.setFavoriteCount(moment.getFavoriteCount() != null ? moment.getFavoriteCount() : 0);
+        
+        // 设置是否已点赞和是否已收藏
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId != null) {
             MomentLike like = momentLikeMapper.selectByMomentIdAndUserId(moment.getId(), currentUserId);
             response.setIsLiked(like != null);
+            
+            MomentFavorite favorite = momentFavoriteMapper.selectByMomentIdAndUserId(moment.getId(), currentUserId);
+            response.setIsFavorited(favorite != null);
+            
             response.setCanDelete(moment.getUserId().equals(currentUserId));
         } else {
             response.setIsLiked(false);
+            response.setIsFavorited(false);
             response.setCanDelete(false);
         }
         
@@ -369,8 +401,14 @@ public class MomentServiceImpl implements MomentService {
         CommentResponse response = BeanUtil.copyProperties(comment, CommentResponse.class);
         
         // 设置用户信息
-        response.setUserNickname("用户" + comment.getUserId());
-        response.setUserAvatar("");
+        SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(comment.getUserId());
+        if (userInfo != null) {
+            response.setUserNickname(userInfo.getDisplayName());
+            response.setUserAvatar(userInfo.getAvatar());
+        } else {
+            response.setUserNickname("用户" + comment.getUserId());
+            response.setUserAvatar("");
+        }
         
         // 设置是否可删除
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
@@ -582,5 +620,239 @@ public class MomentServiceImpl implements MomentService {
         }
         
         return dailyStats;
+    }
+    
+    @Override
+    public List<MomentListResponse> getHotMoments(HotMomentRequest request) {
+        List<Moment> moments = momentMapper.selectHotMoments(request.getLimit());
+        return convertToMomentListResponseBatch(moments);
+    }
+    
+    @Override
+    public PageResult<MomentListResponse> searchMoments(MomentSearchRequest request) {
+        return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
+            // PageHelper会自动处理分页，Mapper方法不需要offset和limit参数
+            List<Moment> moments = momentMapper.searchMoments(request.getKeyword());
+            
+            // 记录浏览数
+            recordMomentViews(moments);
+            
+            return convertToMomentListResponseBatch(moments);
+        });
+    }
+    
+    @Override
+    public PageResult<MomentListResponse> getUserMomentList(Long userId, Integer pageNum, Integer pageSize) {
+        return PageHelper.doPage(pageNum, pageSize, () -> {
+            // PageHelper会自动处理分页
+            List<Moment> moments = momentMapper.selectByUserId(userId);
+            
+            // 记录浏览数
+            recordMomentViews(moments);
+            
+            return convertToMomentListResponseBatch(moments);
+        });
+    }
+    
+    @Override
+    public UserMomentInfoResponse getUserMomentInfo(Long userId) {
+        UserMomentInfoResponse response = new UserMomentInfoResponse();
+        response.setUserId(userId);
+        
+        // 统计数据
+        response.setTotalMoments(momentMapper.countByUserId(userId));
+        response.setTotalLikes(momentMapper.countTotalLikesByUserId(userId));
+        response.setTotalComments(momentMapper.countTotalCommentsByUserId(userId));
+        
+        // 获取用户昵称和头像
+        SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(userId);
+        if (userInfo != null) {
+            response.setNickname(userInfo.getDisplayName());
+            response.setAvatar(userInfo.getAvatar());
+        } else {
+            response.setNickname("用户" + userId);
+            response.setAvatar("");
+        }
+        
+        return response;
+    }
+    
+    @Override
+    @Transactional
+    public Boolean toggleFavorite(Long momentId) {
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
+        if (currentUserId == null) {
+            throw new BusinessException("请先登录");
+        }
+        
+        // 检查动态是否存在
+        Moment moment = momentMapper.selectById(momentId);
+        if (moment == null) {
+            throw new BusinessException("动态不存在");
+        }
+        
+        // 检查是否已收藏
+        MomentFavorite existingFavorite =
+            momentFavoriteMapper.selectByMomentIdAndUserId(momentId, currentUserId);
+        
+        if (existingFavorite != null) {
+            // 取消收藏
+            momentFavoriteMapper.delete(momentId, currentUserId);
+            momentMapper.decrementFavoriteCount(momentId);
+            return false;
+        } else {
+            // 收藏
+            MomentFavorite favorite = new MomentFavorite();
+            favorite.setMomentId(momentId);
+            favorite.setUserId(currentUserId);
+            momentFavoriteMapper.insert(favorite);
+            momentMapper.incrementFavoriteCount(momentId);
+            
+            // 发送消息通知：通知动态作者
+            if (!currentUserId.equals(moment.getUserId())) {
+                try {
+                    SimpleUserInfo currentUser = userInfoApiService.getSimpleUserInfo(currentUserId);
+                    String userName = currentUser != null ? currentUser.getDisplayName() : "用户" + currentUserId;
+                    
+                    NotificationUtil.sendPersonalMessage(
+                        moment.getUserId(),
+                        "您的动态收到新收藏",
+                        "用户 " + userName + " 收藏了您的动态"
+                    );
+                } catch (Exception e) {
+                    log.warn("发送动态收藏通知失败，用户ID: {}, 动态ID: {}, 错误: {}", 
+                            moment.getUserId(), momentId, e.getMessage());
+                }
+            }
+            
+            return true;
+        }
+    }
+    
+    @Override
+    public PageResult<MomentListResponse> getMyFavorites(Integer pageNum, Integer pageSize) {
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
+        if (currentUserId == null) {
+            throw new BusinessException("请先登录");
+        }
+        
+        return PageHelper.doPage(pageNum, pageSize, () -> {
+            // 获取收藏的动态ID列表（PageHelper会自动分页）
+            List<Long> momentIds = momentFavoriteMapper.selectFavoriteMomentIdsByUserId(currentUserId);
+            
+            if (CollUtil.isEmpty(momentIds)) {
+                return Collections.emptyList();
+            }
+            
+            // 批量查询动态详情
+            List<Moment> moments = momentMapper.selectByIds(momentIds);
+            
+            // 记录浏览数
+            recordMomentViews(moments);
+            
+            return convertToMomentListResponseBatch(moments);
+        });
+    }
+    
+    /**
+     * 批量记录动态浏览数
+     */
+    private void recordMomentViews(List<Moment> moments) {
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
+        moments.forEach(moment -> {
+            try {
+                momentViewService.recordView(moment.getId(), currentUserId);
+            } catch (Exception e) {
+                log.debug("记录动态浏览失败: momentId={}", moment.getId(), e);
+            }
+        });
+    }
+    
+    /**
+     * 批量转换为动态列表响应（性能优化版本）
+     * 批量查询用户信息、点赞状态、收藏状态，避免N+1查询问题
+     */
+    private List<MomentListResponse> convertToMomentListResponseBatch(List<Moment> moments) {
+        if (CollUtil.isEmpty(moments)) {
+            return Collections.emptyList();
+        }
+        
+        // 1. 收集所有用户ID
+        Set<Long> userIds = moments.stream()
+                .map(Moment::getUserId)
+                .collect(Collectors.toSet());
+        
+        // 2. 批量查询用户信息（这里假设UserInfoApiService暂不支持批量查询，实际可扩展）
+        Map<Long, SimpleUserInfo> userInfoMap = new HashMap<>();
+        for (Long userId : userIds) {
+            SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(userId);
+            if (userInfo != null) {
+                userInfoMap.put(userId, userInfo);
+            }
+        }
+        
+        // 3. 获取当前用户ID
+        Long currentUserId = StpUserUtil.getLoginIdAsLong();
+        
+        // 4. 批量查询点赞状态
+        Set<Long> likedMomentIds = new HashSet<>();
+        if (currentUserId != null) {
+            List<Long> momentIds = moments.stream().map(Moment::getId).collect(Collectors.toList());
+            List<Long> liked = momentLikeMapper.selectLikedMomentIds(momentIds, currentUserId);
+            if (CollUtil.isNotEmpty(liked)) {
+                likedMomentIds.addAll(liked);
+            }
+        }
+        
+        // 5. 批量查询收藏状态
+        Set<Long> favoritedMomentIds = new HashSet<>();
+        if (currentUserId != null) {
+            List<Long> momentIds = moments.stream().map(Moment::getId).collect(Collectors.toList());
+            List<Long> favorited = momentFavoriteMapper.selectFavoritedMomentIds(momentIds, currentUserId);
+            if (CollUtil.isNotEmpty(favorited)) {
+                favoritedMomentIds.addAll(favorited);
+            }
+        }
+        
+        // 6. 批量转换
+        return moments.stream().map(moment -> {
+            MomentListResponse response = BeanUtil.copyProperties(moment, MomentListResponse.class);
+            
+            // 处理图片URLs
+            if (StrUtil.isNotBlank(moment.getImages())) {
+                List<String> imageList = JSONUtil.toList(moment.getImages(), String.class);
+                response.setImages(imageList);
+            } else {
+                response.setImages(new ArrayList<>());
+            }
+            
+            // 设置用户信息
+            SimpleUserInfo userInfo = userInfoMap.get(moment.getUserId());
+            if (userInfo != null) {
+                response.setUserNickname(userInfo.getDisplayName());
+                response.setUserAvatar(userInfo.getAvatar());
+            } else {
+                response.setUserNickname("用户" + moment.getUserId());
+                response.setUserAvatar("");
+            }
+            
+            // 设置浏览数和收藏数
+            response.setViewCount(moment.getViewCount() != null ? moment.getViewCount() : 0);
+            response.setFavoriteCount(moment.getFavoriteCount() != null ? moment.getFavoriteCount() : 0);
+            
+            // 设置是否已点赞和是否已收藏（未登录时，Set为空，contains自然返回false）
+            response.setIsLiked(likedMomentIds.contains(moment.getId()));
+            response.setIsFavorited(favoritedMomentIds.contains(moment.getId()));
+            response.setCanDelete(currentUserId != null && moment.getUserId().equals(currentUserId));
+            
+            // 获取最新3条评论
+            List<MomentComment> comments = momentCommentMapper.selectByMomentId(moment.getId(), 3);
+            List<CommentResponse> commentResponses = comments.stream()
+                    .map(this::convertToCommentResponse)
+                    .collect(Collectors.toList());
+            response.setRecentComments(commentResponses);
+            
+            return response;
+        }).collect(Collectors.toList());
     }
 } 

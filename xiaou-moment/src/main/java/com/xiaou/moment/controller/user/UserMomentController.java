@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 用户端动态Controller
  */
@@ -78,6 +80,67 @@ public class UserMomentController {
     @PostMapping("/comments")
     public Result<PageResult<CommentResponse>> getMomentComments(@RequestBody UserMomentCommentsRequest request) {
         PageResult<CommentResponse> response = momentService.getMomentComments(request);
+        return Result.success(response);
+    }
+    
+    /**
+     * 获取热门动态
+     */
+    @PostMapping("/hot")
+    public Result<List<MomentListResponse>> getHotMoments(@RequestBody HotMomentRequest request) {
+        List<MomentListResponse> response = momentService.getHotMoments(request);
+        return Result.success(response);
+    }
+    
+    /**
+     * 搜索动态
+     */
+    @PostMapping("/search")
+    public Result<PageResult<MomentListResponse>> searchMoments(@RequestBody MomentSearchRequest request) {
+        PageResult<MomentListResponse> response = momentService.searchMoments(request);
+        return Result.success(response);
+    }
+    
+    /**
+     * 获取用户个人动态列表
+     */
+    @PostMapping("/user-list")
+    public Result<PageResult<MomentListResponse>> getUserMomentList(@Valid @RequestBody UserMomentListRequest request) {
+        PageResult<MomentListResponse> response = momentService.getUserMomentList(
+            request.getUserId(), 
+            request.getPageNum(), 
+            request.getPageSize()
+        );
+        return Result.success(response);
+    }
+    
+    /**
+     * 获取用户动态信息
+     */
+    @PostMapping("/user-info")
+    public Result<UserMomentInfoResponse> getUserMomentInfo(@Valid @RequestBody UserMomentListRequest request) {
+        UserMomentInfoResponse response = momentService.getUserMomentInfo(request.getUserId());
+        return Result.success(response);
+    }
+    
+    /**
+     * 收藏/取消收藏
+     */
+    @PostMapping("/{momentId}/favorite")
+    public Result<Boolean> toggleFavorite(@PathVariable Long momentId) {
+        Boolean isFavorited = momentService.toggleFavorite(momentId);
+        return Result.success(isFavorited);
+    }
+    
+    /**
+     * 获取我的收藏列表
+     */
+    @PostMapping("/my-favorites")
+    public Result<PageResult<MomentListResponse>> getMyFavorites(@RequestBody UserMomentListRequest request) {
+        PageResult<MomentListResponse> response = momentService.getMyFavorites(
+            request.getPageNum(), 
+            request.getPageSize()
+        );
         return Result.success(response);
     }
 } 

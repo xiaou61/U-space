@@ -69,4 +69,34 @@ public interface MomentService {
      * 获取统计数据
      */
     MomentStatisticsResponse getStatistics(StatisticsRequest request);
+    
+    /**
+     * 获取热门动态
+     */
+    List<MomentListResponse> getHotMoments(HotMomentRequest request);
+    
+    /**
+     * 搜索动态
+     */
+    PageResult<MomentListResponse> searchMoments(MomentSearchRequest request);
+    
+    /**
+     * 获取用户个人动态列表
+     */
+    PageResult<MomentListResponse> getUserMomentList(Long userId, Integer pageNum, Integer pageSize);
+    
+    /**
+     * 获取用户动态信息
+     */
+    UserMomentInfoResponse getUserMomentInfo(Long userId);
+    
+    /**
+     * 收藏/取消收藏
+     */
+    Boolean toggleFavorite(Long momentId);
+    
+    /**
+     * 获取我的收藏列表
+     */
+    PageResult<MomentListResponse> getMyFavorites(Integer pageNum, Integer pageSize);
 } 

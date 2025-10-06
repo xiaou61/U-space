@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.blog.mapper.BlogTagMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.blog.domain.BlogTag">
+        <id column="id" property="id"/>
+        <result column="tag_name" property="tagName"/>
+        <result column="use_count" property="useCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, tag_name, use_count, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.blog.domain.BlogTag" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blog_tag (tag_name, use_count, create_time, update_time)
+        VALUES (#{tagName}, 0, NOW(), NOW())
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_tag
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByTagName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_tag
+        WHERE tag_name = #{tagName}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.blog.domain.BlogTag">
+        UPDATE blog_tag
+        <set>
+            <if test="tagName != null">tag_name = #{tagName},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM blog_tag
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_tag
+        ORDER BY use_count DESC, create_time DESC
+    </select>
+
+    <select id="selectHotTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM blog_tag
+        WHERE use_count > 0
+        ORDER BY use_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <update id="updateUseCount">
+        UPDATE blog_tag
+        SET use_count = use_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementUseCount">
+        UPDATE blog_tag
+        SET use_count = use_count + 1,
+            update_time = NOW()
+        WHERE tag_name = #{tagName}
+    </update>
+
+    <insert id="insertBatch">
+        INSERT INTO blog_tag (tag_name, use_count, create_time, update_time)
+        VALUES
+        <foreach collection="list" item="tagName" separator=",">
+            (#{tagName}, 0, NOW(), NOW())
+        </foreach>
+        ON DUPLICATE KEY UPDATE update_time = NOW()
+    </insert>
+
+</mapper>
+
+

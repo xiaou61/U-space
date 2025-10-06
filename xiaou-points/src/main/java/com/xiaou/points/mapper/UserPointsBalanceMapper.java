@@ -40,6 +40,11 @@ public interface UserPointsBalanceMapper {
     int subtractPoints(@Param("userId") Long userId, @Param("points") Integer points);
     
     /**
+     * 扣除用户积分（带余额检查）
+     */
+    int deductPoints(@Param("userId") Long userId, @Param("points") Integer points);
+    
+    /**
      * 查询积分排行榜
      */
     List<UserPointsBalance> selectTopUsers(@Param("limit") Integer limit);

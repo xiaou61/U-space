@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveVersionMapper">
+
+    <resultMap id="VersionResult" type="com.xiaou.sensitive.domain.SensitiveVersion">
+        <id property="id" column="id"/>
+        <result property="versionNo" column="version_no"/>
+        <result property="changeType" column="change_type"/>
+        <result property="changeCount" column="change_count"/>
+        <result property="changeDetail" column="change_detail"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectVersionVo">
+        SELECT id, version_no, change_type, change_count, change_detail, 
+               operator_id, create_time, remark
+        FROM sensitive_version
+    </sql>
+
+    <select id="selectVersionList" resultMap="VersionResult">
+        <include refid="selectVersionVo"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectVersionById" resultMap="VersionResult">
+        <include refid="selectVersionVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectLatestVersion" resultMap="VersionResult">
+        <include refid="selectVersionVo"/>
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertVersion" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_version (
+            version_no, change_type, change_count, change_detail, 
+            operator_id, create_time, remark
+        ) VALUES (
+            #{versionNo}, #{changeType}, #{changeCount}, #{changeDetail}, 
+            #{operatorId}, NOW(), #{remark}
+        )
+    </insert>
+
+</mapper>

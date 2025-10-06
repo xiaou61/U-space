@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.sensitive.mapper.SensitiveStrategyMapper">
+
+    <!-- 策略结果映射 -->
+    <resultMap id="StrategyResult" type="com.xiaou.sensitive.domain.SensitiveStrategy">
+        <id property="id" column="id"/>
+        <result property="strategyName" column="strategy_name"/>
+        <result property="module" column="module"/>
+        <result property="level" column="level"/>
+        <result property="action" column="action"/>
+        <result property="notifyAdmin" column="notify_admin"/>
+        <result property="limitUser" column="limit_user"/>
+        <result property="limitDuration" column="limit_duration"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 查询字段 -->
+    <sql id="selectStrategyVo">
+        SELECT 
+            id, strategy_name, module, level, action, notify_admin, 
+            limit_user, limit_duration, description, status, 
+            create_time, update_time
+        FROM sensitive_strategy
+    </sql>
+
+    <!-- 分页查询策略列表 -->
+    <select id="selectStrategyList" resultMap="StrategyResult">
+        <include refid="selectStrategyVo"/>
+        <where>
+            <if test="strategyName != null and strategyName != ''">
+                AND strategy_name LIKE CONCAT('%', #{strategyName}, '%')
+            </if>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+            <if test="level != null">
+                AND level = #{level}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY module, level
+    </select>
+
+    <!-- 根据ID查询策略 -->
+    <select id="selectStrategyById" resultMap="StrategyResult">
+        <include refid="selectStrategyVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据模块和等级查询策略 -->
+    <select id="selectByModuleAndLevel" resultMap="StrategyResult">
+        <include refid="selectStrategyVo"/>
+        WHERE module = #{module}
+          AND level = #{level}
+          AND status = 1
+        LIMIT 1
+    </select>
+
+    <!-- 查询所有启用的策略 -->
+    <select id="selectEnabledStrategies" resultMap="StrategyResult">
+        <include refid="selectStrategyVo"/>
+        WHERE status = 1
+        ORDER BY module, level
+    </select>
+
+    <!-- 新增策略 -->
+    <insert id="insertStrategy" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sensitive_strategy (
+            strategy_name, module, level, action, notify_admin, 
+            limit_user, limit_duration, description, status, 
+            create_time, update_time
+        ) VALUES (
+            #{strategyName}, #{module}, #{level}, #{action}, #{notifyAdmin}, 
+            #{limitUser}, #{limitDuration}, #{description}, #{status}, 
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新策略 -->
+    <update id="updateStrategy">
+        UPDATE sensitive_strategy
+        <set>
+            <if test="strategyName != null and strategyName != ''">strategy_name = #{strategyName},</if>
+            <if test="action != null and action != ''">action = #{action},</if>
+            <if test="notifyAdmin != null">notify_admin = #{notifyAdmin},</if>
+            <if test="limitUser != null">limit_user = #{limitUser},</if>
+            <if test="limitDuration != null">limit_duration = #{limitDuration},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除策略 -->
+    <delete id="deleteStrategyById">
+        DELETE FROM sensitive_strategy WHERE id = #{id}
+    </delete>
+
+</mapper>

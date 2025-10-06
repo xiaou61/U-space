@@ -6,11 +6,14 @@ import com.xiaou.common.core.domain.Result;
 import com.xiaou.community.dto.CommunityPostQueryRequest;
 import com.xiaou.community.dto.CommunityPostCreateRequest;
 import com.xiaou.community.dto.CommunityPostResponse;
+import com.xiaou.community.service.CommunityHotPostService;
 import com.xiaou.community.service.CommunityPostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 前台帖子控制器
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class CommunityPostController {
     
     private final CommunityPostService communityPostService;
+    private final CommunityHotPostService communityHotPostService;
     
     /**
      * 帖子列表查询
@@ -95,5 +99,15 @@ public class CommunityPostController {
     public Result<Void> uncollectPost(@PathVariable Long id) {
         communityPostService.uncollectPost(id);
         return Result.success();
+    }
+    
+    /**
+     * 获取热门帖子列表
+     */
+    @Log(module = "社区", type = Log.OperationType.SELECT, description = "查询热门帖子")
+    @GetMapping("/hot")
+    public Result<List<CommunityPostResponse>> getHotPosts(@RequestParam(defaultValue = "5") Integer limit) {
+        List<CommunityPostResponse> hotPosts = communityHotPostService.getHotPosts(limit);
+        return Result.success(hotPosts);
     }
 } 

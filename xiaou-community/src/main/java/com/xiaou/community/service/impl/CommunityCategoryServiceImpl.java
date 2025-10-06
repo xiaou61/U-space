@@ -9,6 +9,7 @@ import com.xiaou.community.dto.CommunityCategoryCreateRequest;
 import com.xiaou.community.dto.CommunityCategoryQueryRequest;
 import com.xiaou.community.dto.CommunityCategoryUpdateRequest;
 import com.xiaou.community.mapper.CommunityCategoryMapper;
+import com.xiaou.community.service.CommunityCacheService;
 import com.xiaou.community.service.CommunityCategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.List;
 public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     
     private final CommunityCategoryMapper communityCategoryMapper;
+    private final CommunityCacheService communityCacheService;
     
     @Override
     public PageResult<CommunityCategory> getAdminCategoryList(AdminCategoryQueryRequest request) {
@@ -71,6 +73,9 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
         if (result <= 0) {
             throw new BusinessException("创建分类失败");
         }
+        
+        // 清除分类缓存
+        communityCacheService.evictCategories();
         
         log.info("创建分类成功，分类ID: {}, 分类名称: {}", category.getId(), category.getName());
     }
@@ -139,7 +144,22 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     
     @Override
     public List<CommunityCategory> getEnabledCategories() {
-        return communityCategoryMapper.selectEnabledCategories();
+        // 先尝试从缓存获取
+        List<CommunityCategory> cachedCategories = communityCacheService.getCachedCategories();
+        if (cachedCategories != null) {
+            log.debug("从缓存获取分类列表");
+            return cachedCategories;
+        }
+        
+        // 缓存未命中，从数据库查询
+        List<CommunityCategory> categories = communityCategoryMapper.selectEnabledCategories();
+        
+        // 写入缓存
+        if (categories != null && !categories.isEmpty()) {
+            communityCacheService.cacheCategories(categories);
+        }
+        
+        return categories;
     }
     
     @Override

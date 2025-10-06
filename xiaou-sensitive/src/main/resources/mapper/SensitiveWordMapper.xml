@@ -6,11 +6,15 @@
     <resultMap id="SensitiveWordResult" type="com.xiaou.sensitive.domain.SensitiveWord">
         <id property="id" column="id"/>
         <result property="word" column="word"/>
+        <result property="wordType" column="word_type"/>
+        <result property="pinyin" column="pinyin"/>
         <result property="categoryId" column="category_id"/>
         <result property="level" column="level"/>
         <result property="action" column="action"/>
+        <result property="enableVariantCheck" column="enable_variant_check"/>
         <result property="status" column="status"/>
         <result property="creatorId" column="creator_id"/>
+        <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
@@ -33,8 +37,9 @@
     <!-- 查询字段 -->
     <sql id="selectSensitiveWordVo">
         SELECT 
-            sw.id, sw.word, sw.category_id, sw.level, sw.action, 
-            sw.status, sw.creator_id, sw.create_time, sw.update_time
+            sw.id, sw.word, sw.word_type, sw.pinyin, sw.category_id, sw.level, sw.action, 
+            sw.enable_variant_check, sw.status, sw.creator_id, sw.remark, 
+            sw.create_time, sw.update_time
         FROM sensitive_word sw
     </sql>
 

@@ -6,6 +6,9 @@
         <id column="id" property="id"/>
         <result column="title" property="title"/>
         <result column="content" property="content"/>
+        <result column="ai_summary" property="aiSummary"/>
+        <result column="ai_keywords" property="aiKeywords"/>
+        <result column="ai_generate_time" property="aiGenerateTime"/>
         <result column="category_id" property="categoryId"/>
         <result column="category_name" property="categoryName"/>
         <result column="author_id" property="authorId"/>
@@ -22,7 +25,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        p.id, p.title, p.content, p.category_id, cc.name as category_name, p.author_id, p.author_name, p.view_count, p.like_count, 
+        p.id, p.title, p.content, p.ai_summary, p.ai_keywords, p.ai_generate_time,
+        p.category_id, cc.name as category_name, p.author_id, p.author_name, p.view_count, p.like_count, 
         p.comment_count, p.collect_count, p.is_top, p.top_expire_time, p.status, p.create_time, p.update_time
     </sql>
 
@@ -171,15 +175,21 @@
 
     <!-- 前台查询帖子总数 -->
     <select id="selectPostCount" parameterType="com.xiaou.community.dto.CommunityPostQueryRequest" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM community_post
+        SELECT COUNT(DISTINCT p.id)
+        FROM community_post p
+        <if test="request.tagId != null">
+            INNER JOIN community_post_tag pt ON p.id = pt.post_id
+        </if>
         <where>
-            AND status = 1
+            AND p.status = 1
             <if test="request.categoryId != null">
-                AND category_id = #{request.categoryId}
+                AND p.category_id = #{request.categoryId}
+            </if>
+            <if test="request.tagId != null">
+                AND pt.tag_id = #{request.tagId}
             </if>
             <if test="request.keyword != null and request.keyword != ''">
-                AND (title LIKE CONCAT('%', #{request.keyword}, '%') OR content LIKE CONCAT('%', #{request.keyword}, '%'))
+                AND MATCH(p.title, p.content) AGAINST(#{request.keyword} IN NATURAL LANGUAGE MODE)
             </if>
         </where>
     </select>
@@ -187,19 +197,34 @@
     <!-- 前台查询帖子列表 -->
     <select id="selectPostList" parameterType="com.xiaou.community.dto.CommunityPostQueryRequest" 
             resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT DISTINCT <include refid="Base_Column_List"/>,
+        (p.like_count * 3 + p.comment_count * 5 + p.collect_count * 8 + p.view_count * 0.1) as hot_score
         FROM community_post p
         LEFT JOIN community_category cc ON p.category_id = cc.id
+        <if test="request.tagId != null">
+            INNER JOIN community_post_tag pt ON p.id = pt.post_id
+        </if>
         <where>
             AND p.status = 1  <!-- 只显示已发布的帖子 -->
             <if test="request.categoryId != null">
                 AND p.category_id = #{request.categoryId}
             </if>
+            <if test="request.tagId != null">
+                AND pt.tag_id = #{request.tagId}
+            </if>
             <if test="request.keyword != null and request.keyword != ''">
-                AND (p.title LIKE CONCAT('%', #{request.keyword}, '%') OR p.content LIKE CONCAT('%', #{request.keyword}, '%'))
+                AND MATCH(p.title, p.content) AGAINST(#{request.keyword} IN NATURAL LANGUAGE MODE)
             </if>
         </where>
-        ORDER BY p.is_top DESC, p.create_time DESC
+        ORDER BY p.is_top DESC,
+        <choose>
+            <when test="request.sortBy != null and request.sortBy == 'hot'">
+                hot_score DESC, p.create_time DESC
+            </when>
+            <otherwise>
+                p.create_time DESC
+            </otherwise>
+        </choose>
     </select>
 
     <!-- 查询用户收藏帖子总数 -->
@@ -241,5 +266,42 @@
         WHERE p.author_id = #{userId} AND p.status != 3  <!-- 排除已删除的帖子 -->
         ORDER BY p.create_time DESC
     </select>
+
+    <!-- 查询热门帖子 -->
+    <select id="selectHotPosts" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+        (p.like_count * 3 + p.comment_count * 5 + p.collect_count * 8 + p.view_count * 0.1) as hot_score
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.status = 1
+        AND p.create_time &gt;= #{startTime}
+        AND (p.like_count * 3 + p.comment_count * 5 + p.collect_count * 8 + p.view_count * 0.1) &gt;= #{minScore}
+        ORDER BY hot_score DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询用户最近的帖子 -->
+    <select id="selectRecentPostsByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.author_id = #{userId}
+        AND p.status = 1
+        ORDER BY p.create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 更新AI摘要信息 -->
+    <update id="updateAiSummary">
+        UPDATE community_post
+        SET ai_summary = #{aiSummary},
+            ai_keywords = #{aiKeywords},
+            ai_generate_time = NOW()
+        WHERE id = #{postId}
+    </update>
 
 </mapper> 

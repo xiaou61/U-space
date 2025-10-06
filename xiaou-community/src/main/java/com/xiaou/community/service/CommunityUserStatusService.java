@@ -85,4 +85,9 @@ public interface CommunityUserStatusService {
      * 减少用户收藏数
      */
     void decrementCollectCount(Long userId);
+    
+    /**
+     * 根据用户ID获取用户状态，如果不存在则自动创建
+     */
+    CommunityUserStatus getUserStatusByUserId(Long userId);
 } 

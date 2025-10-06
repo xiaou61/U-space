@@ -127,6 +127,10 @@
               <el-icon><Files /></el-icon>
               <span>分类管理</span>
             </el-menu-item>
+            <el-menu-item index="/community/tags">
+              <el-icon><PriceTag /></el-icon>
+              <span>标签管理</span>
+            </el-menu-item>
             <el-menu-item index="/community/posts">
               <el-icon><Document /></el-icon>
               <span>帖子管理</span>
@@ -202,7 +206,31 @@
             </template>
             <el-menu-item index="/sensitive/words">
               <el-icon><EditPen /></el-icon>
-              <span>敏感词管理</span>
+              <span>词库管理</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/whitelist">
+              <el-icon><Check /></el-icon>
+              <span>白名单管理</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/strategy">
+              <el-icon><SetUp /></el-icon>
+              <span>策略配置</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>统计分析</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/source">
+              <el-icon><FolderOpened /></el-icon>
+              <span>词库来源</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/version">
+              <el-icon><Document /></el-icon>
+              <span>版本历史</span>
+            </el-menu-item>
+            <el-menu-item index="/sensitive/config">
+              <el-icon><Tools /></el-icon>
+              <span>配置管理</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -272,6 +300,30 @@
             <el-menu-item index="/points/grant">
               <el-icon><Plus /></el-icon>
               <span>积分发放</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
+          <el-menu-item index="/lottery">
+            <el-icon><Trophy /></el-icon>
+            <span>抽奖管理</span>
+          </el-menu-item>
+          
+          <el-sub-menu index="/blog">
+            <template #title>
+              <el-icon><Reading /></el-icon>
+              <span>博客管理</span>
+            </template>
+            <el-menu-item index="/blog/articles">
+              <el-icon><Document /></el-icon>
+              <span>文章管理</span>
+            </el-menu-item>
+            <el-menu-item index="/blog/categories">
+              <el-icon><FolderOpened /></el-icon>
+              <span>分类管理</span>
+            </el-menu-item>
+            <el-menu-item index="/blog/tags">
+              <el-icon><PriceTag /></el-icon>
+              <span>标签管理</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -388,6 +440,7 @@ import {
   ChatDotRound,
   ChatLineRound,
   Files,
+  PriceTag,
   SetUp,
   Sort,
   Tools,
@@ -403,7 +456,9 @@ import {
   Trophy,
   Plus,
   Coffee,
-  Calendar
+  Calendar,
+  Reading,
+  Check
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -448,6 +503,7 @@ const getIconByPath = (path, title = '') => {
     'user': 'Avatar', 
     'interview': 'Document',
     'categories': 'FolderOpened',
+    'tags': 'PriceTag',
     'question-sets': 'Collection',
     'questions': 'Edit',
     'knowledge': 'DataAnalysis',
@@ -475,6 +531,7 @@ const getIconByPath = (path, title = '') => {
     'daily-content': 'Document',
     'points': 'Coin',
     'grant': 'Plus',
+    'lottery': 'Trophy',
     'system': 'Setting',
     'version': 'Document',
     'monitor': 'Monitor',
@@ -498,6 +555,7 @@ const getIconByPath = (path, title = '') => {
     '用户': 'Avatar',
     '管理': 'Setting',
     '分类': 'FolderOpened',
+    '标签': 'PriceTag',
     '题目': 'Edit',
     '题单': 'Collection',
     '知识': 'DataAnalysis',
@@ -526,6 +584,7 @@ const getIconByPath = (path, title = '') => {
     '发放': 'Plus',
     '明细': 'Document',
     '概览': 'DataAnalysis',
+    '抽奖': 'Trophy',
     '系统': 'Setting',
     '版本': 'Document',
     '监控': 'Monitor',

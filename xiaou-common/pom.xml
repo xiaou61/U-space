@@ -97,6 +97,12 @@
             <version>1.44.0</version>
         </dependency>
         
+        <!-- Jedis（sa-token-alone-redis 需要） -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+        
         <!-- Jackson 数据绑定（Sa-Token 序列化需要） -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -133,6 +139,18 @@
             <artifactId>pagehelper-spring-boot-starter</artifactId>
         </dependency>
         
+        <!-- Spring Boot Actuator - 提供生产就绪特性（健康检查、指标监控等） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        
+        <!-- Micrometer Prometheus Registry - 将指标导出为Prometheus格式 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        
         <!-- 敏感词API模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>
@@ -145,6 +163,13 @@
             <groupId>com.coze</groupId>
             <artifactId>coze-api</artifactId>
             <version>0.4.2</version>
+        </dependency>
+
+        <!-- FastJson2 -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.43</version>
         </dependency>
     </dependencies>
 

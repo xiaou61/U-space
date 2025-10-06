@@ -36,4 +36,12 @@ public interface MomentLikeMapper {
      * 根据动态ID查询点赞列表
      */
     List<MomentLike> selectByMomentId(Long momentId);
+    
+    /**
+     * 批量查询用户对多个动态的点赞状态
+     * @param momentIds 动态ID列表
+     * @param userId 用户ID
+     * @return 用户已点赞的动态ID列表
+     */
+    List<Long> selectLikedMomentIds(@Param("momentIds") List<Long> momentIds, @Param("userId") Long userId);
 } 

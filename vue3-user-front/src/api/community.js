@@ -79,5 +79,64 @@ export const communityApi = {
   // 社区初始化
   init() {
     return request.get('/community/init')
+  },
+
+  // ==================== v1.1.0 新增接口 ====================
+
+  // 获取热门帖子
+  getHotPosts(limit = 5) {
+    return request.get('/community/posts/hot', { params: { limit } })
+  },
+
+  // 获取启用的标签列表
+  getTags() {
+    return request.get('/community/tags')
+  },
+
+  // 获取热门标签
+  getHotTags(limit = 10) {
+    return request.get('/community/tags/hot', { params: { limit } })
+  },
+
+  // 获取标签下的帖子
+  getTagPosts(tagId, params) {
+    return request.post(`/community/tags/${tagId}/posts`, params)
+  },
+
+  // 回复评论
+  replyComment(commentId, data) {
+    return request.post(`/community/comments/${commentId}/reply`, data)
+  },
+
+  // 获取评论的回复列表
+  getCommentReplies(commentId, params) {
+    return request.post(`/community/comments/${commentId}/replies`, params)
+  },
+
+  // 获取用户主页信息
+  getUserProfile(userId) {
+    return request.get(`/community/users/${userId}/profile`)
+  },
+
+  // 获取用户帖子列表
+  getUserPostList(userId, params) {
+    return request.post(`/community/users/${userId}/posts`, params)
+  },
+
+  // 生成AI摘要
+  generateSummary(postId, forceRefresh = false) {
+    return request.post(`/community/posts/${postId}/generate-summary`, null, {
+      params: { forceRefresh }
+    })
+  },
+
+  // 获取帖子摘要
+  getPostSummary(postId) {
+    return request.get(`/community/posts/${postId}/summary`)
+  },
+
+  // 获取热门搜索词
+  getHotKeywords(limit = 10) {
+    return request.get('/community/hot-keywords', { params: { limit } })
   }
 } 

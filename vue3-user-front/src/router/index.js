@@ -132,6 +132,16 @@ const routes = [
     }
   },
   {
+    path: '/community/users/:userId',
+    name: 'CommunityUserProfile',
+    component: () => import('@/views/community/UserProfile.vue'),
+    meta: {
+      title: '用户主页',
+      requiresAuth: true,
+      keepAlive: false // 不缓存，确保数据实时
+    }
+  },
+  {
     path: '/notification',
     name: 'Notification',
     component: () => import('@/views/notification/index.vue'),
@@ -147,6 +157,26 @@ const routes = [
     component: () => import('@/views/moments/Index.vue'),
     meta: {
       title: '朋友圈',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/moments/user/:userId',
+    name: 'MomentUserProfile',
+    component: () => import('@/views/moments/UserProfile.vue'),
+    meta: {
+      title: '用户主页',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/moments/my-favorites',
+    name: 'MomentFavorites',
+    component: () => import('@/views/moments/MyFavorites.vue'),
+    meta: {
+      title: '我的收藏',
       requiresAuth: true,
       keepAlive: true
     }
@@ -178,6 +208,16 @@ const routes = [
       title: '我的积分',
       requiresAuth: true,
       keepAlive: true
+    }
+  },
+  {
+    path: '/lottery',
+    name: 'Lottery',
+    component: () => import('@/views/lottery/index.vue'),
+    meta: {
+      title: '幸运抽奖',
+      requiresAuth: true,
+      keepAlive: false
     }
   },
   {
@@ -308,6 +348,56 @@ const routes = [
     meta: {
       title: 'Bug商店',
       requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/blog',
+    name: 'MyBlog',
+    component: () => import('@/views/blog/Index.vue'),
+    meta: {
+      title: '我的博客',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/blog/editor',
+    name: 'BlogEditor',
+    component: () => import('@/views/blog/Editor.vue'),
+    meta: {
+      title: '写文章',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/blog/editor/:id',
+    name: 'BlogEditorEdit',
+    component: () => import('@/views/blog/Editor.vue'),
+    meta: {
+      title: '编辑文章',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/blog/:userId',
+    name: 'BlogHome',
+    component: () => import('@/views/blog/BlogHome.vue'),
+    meta: {
+      title: '博客主页',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/blog/:userId/article/:articleId',
+    name: 'ArticleDetail',
+    component: () => import('@/views/blog/ArticleDetail.vue'),
+    meta: {
+      title: '文章详情',
+      requiresAuth: false,
       keepAlive: false
     }
   },

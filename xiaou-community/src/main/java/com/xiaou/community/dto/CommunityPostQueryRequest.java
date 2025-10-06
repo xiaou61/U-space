@@ -17,9 +17,19 @@ public class CommunityPostQueryRequest implements PageRequest {
     private Long categoryId;
     
     /**
+     * 标签ID筛选
+     */
+    private Long tagId;
+    
+    /**
      * 关键词搜索
      */
     private String keyword;
+    
+    /**
+     * 排序方式：hot-热度排序，time-时间排序，默认时间排序
+     */
+    private String sortBy = "time";
     
     /**
      * 页码

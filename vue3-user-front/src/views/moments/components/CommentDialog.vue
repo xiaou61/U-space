@@ -25,6 +25,7 @@
     <el-form :model="form" :rules="rules" ref="formRef" label-width="0">
       <el-form-item prop="content">
         <el-input
+          ref="textareaRef"
           v-model="form.content"
           type="textarea"
           placeholder="写下你的评论..."
@@ -33,6 +34,11 @@
           show-word-limit
           autofocus
         />
+      </el-form-item>
+
+      <!-- 表情选择器 -->
+      <el-form-item>
+        <EmojiPicker @select="insertEmoji" />
       </el-form-item>
     </el-form>
 
@@ -49,6 +55,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { publishComment } from '@/api/moment'
+import EmojiPicker from '@/components/EmojiPicker.vue'
 
 const props = defineProps({
   modelValue: {
@@ -65,6 +72,7 @@ const emit = defineEmits(['update:modelValue', 'commented'])
 
 // 响应式数据
 const formRef = ref(null)
+const textareaRef = ref(null)
 const commenting = ref(false)
 
 // 表单数据
@@ -140,6 +148,26 @@ const handleComment = async () => {
     }
   } finally {
     commenting.value = false
+  }
+}
+
+// 插入表情
+const insertEmoji = (emoji) => {
+  const textarea = textareaRef.value?.$refs?.textarea
+  if (textarea) {
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = form.content
+    
+    form.content = text.substring(0, start) + emoji + text.substring(end)
+    
+    // 恢复光标位置
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+      textarea.focus()
+    }, 10)
+  } else {
+    form.content += emoji
   }
 }
 </script>

@@ -57,6 +57,15 @@
         AND total_points >= #{points}
     </update>
 
+    <!-- 扣除用户积分（带余额检查） -->
+    <update id="deductPoints">
+        UPDATE user_points_balance 
+        SET total_points = total_points - #{points}, 
+            update_time = NOW()
+        WHERE user_id = #{userId} 
+        AND total_points &gt;= #{points}
+    </update>
+
     <!-- 查询积分排行榜 -->
     <select id="selectTopUsers" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>

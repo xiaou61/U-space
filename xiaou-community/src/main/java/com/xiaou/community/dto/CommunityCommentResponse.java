@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 评论响应DTO
@@ -58,4 +59,34 @@ public class CommunityCommentResponse {
      * 当前用户是否点赞此评论
      */
     private Boolean isLiked;
+    
+    /**
+     * 回复的评论ID
+     */
+    private Long replyToId;
+    
+    /**
+     * 回复的用户ID
+     */
+    private Long replyToUserId;
+    
+    /**
+     * 回复的用户名
+     */
+    private String replyToUserName;
+    
+    /**
+     * 回复数量（仅一级评论有效）
+     */
+    private Integer replyCount;
+    
+    /**
+     * 二级回复列表（最多展示2条）
+     */
+    private List<CommunityCommentResponse> replies;
+    
+    /**
+     * 是否有更多回复
+     */
+    private Boolean hasMoreReplies;
 } 

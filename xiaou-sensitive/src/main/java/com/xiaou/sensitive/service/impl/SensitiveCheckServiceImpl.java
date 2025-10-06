@@ -32,6 +32,12 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
     private final SensitiveEngine sensitiveEngine;
     private final SensitiveWordMapper sensitiveWordMapper;
     private final SensitiveLogMapper sensitiveLogMapper;
+    private final com.xiaou.sensitive.service.SensitiveWhitelistService whitelistService;
+    private final com.xiaou.sensitive.service.SensitiveStrategyService strategyService;
+    private final com.xiaou.sensitive.service.SensitiveStatisticsService statisticsService;
+    private final com.xiaou.sensitive.engine.TextPreprocessor textPreprocessor;
+    private final com.xiaou.sensitive.mapper.SensitiveHomophoneMapper homophoneMapper;
+    private final com.xiaou.sensitive.mapper.SensitiveSimilarCharMapper similarCharMapper;
     
     // 性能保护参数
     private static final int MAX_TEXT_LENGTH = 10000; // 最大文本长度
@@ -62,6 +68,23 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
         );
         
         refreshWordLibrary();
+        
+        // 加载同音字和形似字映射
+        loadVariantMappings();
+    }
+    
+    /**
+     * 加载变形词映射
+     */
+    private void loadVariantMappings() {
+        try {
+            List<com.xiaou.sensitive.domain.SensitiveHomophone> homophones = homophoneMapper.selectEnabledHomophones();
+            List<com.xiaou.sensitive.domain.SensitiveSimilarChar> similarChars = similarCharMapper.selectEnabledSimilarChars();
+            textPreprocessor.refreshMappings(homophones, similarChars);
+            log.info("变形词映射加载完成");
+        } catch (Exception e) {
+            log.warn("加载变形词映射失败，将使用默认配置：{}", e.getMessage());
+        }
     }
     
     @PreDestroy
@@ -106,8 +129,31 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
             // 添加处理超时控制
             long startTime = System.currentTimeMillis();
             
-            // 检测敏感词
+            // 1. 文本预处理（变形词检测）
+            String preprocessedText = textPreprocessor.preprocess(text, true, true, true, true);
+            
+            // 2. 检测敏感词
             List<String> hitWords = sensitiveEngine.findSensitiveWords(text);
+            // 也检测预处理后的文本
+            List<String> variantHitWords = sensitiveEngine.findSensitiveWords(preprocessedText);
+            // 合并结果
+            if (!variantHitWords.isEmpty()) {
+                for (String variantWord : variantHitWords) {
+                    if (!hitWords.contains(variantWord)) {
+                        hitWords.add(variantWord);
+                    }
+                }
+            }
+            
+            // 3. 白名单过滤
+            String module = request.getModule();
+            List<String> filteredHitWords = new ArrayList<>();
+            for (String word : hitWords) {
+                if (!whitelistService.isInWhitelist(word, module)) {
+                    filteredHitWords.add(word);
+                }
+            }
+            hitWords = filteredHitWords;
             boolean hit = !hitWords.isEmpty();
             
             // 检查处理时间
@@ -121,16 +167,16 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
                     .hitWords(hitWords);
 
             if (hit) {
-                // 计算风险等级（简化逻辑：根据命中敏感词数量）
+                // 4. 根据策略计算风险等级和动作
                 int riskLevel = calculateRiskLevel(hitWords.size());
+                com.xiaou.sensitive.domain.SensitiveStrategy strategy = strategyService.getStrategy(module, riskLevel);
                 
-                // 确定处理动作
-                String action = determineAction(riskLevel);
+                String action = strategy != null ? strategy.getAction() : determineAction(riskLevel);
                 
-                // 处理文本
+                // 5. 处理文本
                 String processedText = processText(text, action);
                 
-                // 确定是否允许通过
+                // 6. 确定是否允许通过
                 boolean allowed = isAllowed(action);
                 
                 responseBuilder
@@ -139,8 +185,9 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
                         .action(action)
                         .allowed(allowed);
 
-                // 异步记录日志，避免影响主流程性能
+                // 7. 异步记录统计和日志
                 logSensitiveDetectionAsync(request, hitWords, action);
+                recordStatisticsAsync(request, hitWords, strategy);
             } else {
                 responseBuilder
                         .processedText(text)
@@ -325,7 +372,7 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
             case 1:
                 return "replace"; // 替换
             case 2:
-                return "review";  // 审核
+                return "replace"; // 替换（已移除审核功能）
             case 3:
                 return "reject";  // 拒绝
             default:
@@ -383,6 +430,30 @@ public class SensitiveCheckServiceImpl implements SensitiveCheckService {
             } catch (Exception e) {
                 // 日志记录失败不影响主流程
                 SensitiveCheckServiceImpl.log.warn("记录敏感词检测日志失败：{}", e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * 异步记录统计信息
+     */
+    private void recordStatisticsAsync(SensitiveCheckRequest request, List<String> hitWords, com.xiaou.sensitive.domain.SensitiveStrategy strategy) {
+        batchExecutor.submit(() -> {
+            try {
+                String module = request.getModule() != null ? request.getModule() : "unknown";
+                Integer categoryId = strategy != null ? strategy.getId() : null;
+                
+                // 记录每个命中词的统计
+                for (String word : hitWords) {
+                    statisticsService.recordHit(word, module, categoryId);
+                }
+                
+                // 记录用户违规
+                if (request.getUserId() != null) {
+                    statisticsService.recordUserViolation(request.getUserId());
+                }
+            } catch (Exception e) {
+                SensitiveCheckServiceImpl.log.warn("记录统计信息失败：{}", e.getMessage());
             }
         });
     }

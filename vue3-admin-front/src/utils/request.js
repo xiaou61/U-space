@@ -36,6 +36,9 @@ service.interceptors.request.use(
   }
 )
 
+// 标记是否正在处理token过期，避免重复弹窗
+let isHandlingTokenExpired = false
+
 // 响应拦截器
 service.interceptors.response.use(
   (response) => {
@@ -58,11 +61,16 @@ service.interceptors.response.use(
         return responseData
       }
       
-      // Token相关错误 - 直接登出，不显示确认框
+      // Token相关错误 - 弹出提示后跳转登录页
       if (code === 701 || code === 702) {
-        ElMessage.error(message || '登录已过期，请重新登录')
-        handleLogout()
+        handleTokenError(message || '登录已过期，请重新登录')
         return Promise.reject(new Error(message))
+      }
+      
+      // 权限不足（业务状态码 703）
+      if (code === 703) {
+        ElMessage.error(message || '权限不足')
+        return Promise.reject(new Error(message || '权限不足'))
       }
       
       // 账户被禁用
@@ -70,12 +78,6 @@ service.interceptors.response.use(
         ElMessage.error(message)
         handleLogout()
         return Promise.reject(new Error(message))
-      }
-      
-      // 权限不足
-      if (code === 403) {
-        ElMessage.error(message || '权限不足')
-        return Promise.reject(new Error(message || '权限不足'))
       }
       
       // 其他业务错误
@@ -95,8 +97,7 @@ service.interceptors.response.use(
       
       switch (status) {
         case 401:
-          ElMessage.error('登录已过期，请重新登录')
-          handleLogout()
+          handleTokenError('登录已过期，请重新登录')
           break
         case 403:
           ElMessage.error('权限不足')
@@ -127,10 +128,25 @@ service.interceptors.response.use(
   }
 )
 
-// 处理Token错误 - 已废弃，直接使用handleLogout
+// 处理Token错误 - 弹出提示后跳转登录页
 function handleTokenError(message) {
-  ElMessage.error(message || '登录已过期，请重新登录')
-  handleLogout()
+  // 防止重复弹窗
+  if (isHandlingTokenExpired) {
+    return
+  }
+  isHandlingTokenExpired = true
+  
+  ElMessageBox.alert(message, '登录过期', {
+    confirmButtonText: '重新登录',
+    type: 'warning',
+    showClose: false,
+    closeOnClickModal: false,
+    closeOnPressEscape: false,
+  }).then(() => {
+    handleLogout()
+  }).finally(() => {
+    isHandlingTokenExpired = false
+  })
 }
 
 // 处理登出

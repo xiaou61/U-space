@@ -178,7 +178,23 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
      */
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        log.error("WebSocket传输异常，会话ID: {}", session.getId(), exception);
+        String sessionId = session.getId();
+        String exceptionMsg = exception.getMessage();
+        
+        // 判断是否为客户端正常断开连接（浏览器关闭、刷新等）
+        if (exception instanceof java.io.IOException && 
+            (exceptionMsg != null && (
+                exceptionMsg.contains("你的主机中的软件中止了一个已建立的连接") ||
+                exceptionMsg.contains("Connection reset") ||
+                exceptionMsg.contains("Broken pipe")
+            ))) {
+            // 客户端正常断开，使用 debug 级别，不打印堆栈
+            log.debug("WebSocket连接断开（客户端关闭），会话ID: {}", sessionId);
+        } else {
+            // 其他异常，使用 error 级别，打印堆栈
+            log.error("WebSocket传输异常，会话ID: {}", sessionId, exception);
+        }
+        
         if (session.isOpen()) {
             session.close();
         }

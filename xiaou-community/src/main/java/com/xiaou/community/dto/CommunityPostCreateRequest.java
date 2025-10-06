@@ -30,4 +30,9 @@ public class CommunityPostCreateRequest {
      * 分类ID（可选）
      */
     private Long categoryId;
+    
+    /**
+     * 标签ID列表（可选，最多5个）
+     */
+    private java.util.List<Long> tagIds;
 } 

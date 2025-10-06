@@ -21,6 +21,16 @@ public class SensitiveWord {
     private String word;
 
     /**
+     * 词类型 1-普通词 2-正则表达式
+     */
+    private Integer wordType;
+
+    /**
+     * 拼音（用于拼音检测）
+     */
+    private String pinyin;
+
+    /**
      * 分类ID
      */
     private Integer categoryId;
@@ -36,6 +46,11 @@ public class SensitiveWord {
     private Integer action;
 
     /**
+     * 启用变形词检测 0-否 1-是
+     */
+    private Integer enableVariantCheck;
+
+    /**
      * 状态 0-禁用 1-启用
      */
     private Integer status;
@@ -44,6 +59,11 @@ public class SensitiveWord {
      * 创建人ID
      */
     private Long creatorId;
+
+    /**
+     * 备注
+     */
+    private String remark;
 
     /**
      * 创建时间

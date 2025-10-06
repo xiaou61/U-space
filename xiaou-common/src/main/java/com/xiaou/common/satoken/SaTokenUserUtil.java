@@ -204,4 +204,61 @@ public class SaTokenUserUtil {
         String username = getCurrentUserUsername();
         return username != null ? username : defaultValue;
     }
+    
+    /**
+     * 根据用户ID获取用户名（带默认值）
+     * 注意：此方法仅返回默认值，具体用户名需要从用户服务或数据库获取
+     * 
+     * @param userId 用户ID
+     * @param defaultValue 默认值
+     * @return 用户名，获取失败返回默认值
+     */
+    public static String getUsernameById(Long userId, String defaultValue) {
+        try {
+            // TODO: 如果有用户服务API，可以在这里调用获取真实用户名
+            // 目前直接返回默认值，由调用方从数据库获取
+            return defaultValue;
+        } catch (Exception e) {
+            log.error("获取用户名失败，用户ID: {}", userId, e);
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * 根据用户ID获取用户头像（带默认值）
+     * 注意：此方法仅返回默认值，具体头像需要从用户服务或数据库获取
+     * 
+     * @param userId 用户ID
+     * @param defaultValue 默认值
+     * @return 用户头像URL，获取失败返回默认值
+     */
+    public static String getUserAvatarById(Long userId, String defaultValue) {
+        try {
+            // TODO: 如果有用户服务API，可以在这里调用获取真实头像
+            // 目前直接返回默认值
+            return defaultValue;
+        } catch (Exception e) {
+            log.error("获取用户头像失败，用户ID: {}", userId, e);
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * 根据用户ID获取用户简介（带默认值）
+     * 注意：此方法仅返回默认值，具体简介需要从用户服务或数据库获取
+     * 
+     * @param userId 用户ID
+     * @param defaultValue 默认值
+     * @return 用户简介，获取失败返回默认值
+     */
+    public static String getUserBioById(Long userId, String defaultValue) {
+        try {
+            // TODO: 如果有用户服务API，可以在这里调用获取真实简介
+            // 目前直接返回默认值
+            return defaultValue;
+        } catch (Exception e) {
+            log.error("获取用户简介失败，用户ID: {}", userId, e);
+            return defaultValue;
+        }
+    }
 }
