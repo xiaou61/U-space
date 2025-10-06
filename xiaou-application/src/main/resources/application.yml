@@ -143,60 +143,59 @@ springdoc:
 # 2. Redis 本身是内存数据库，只有 Redis 服务重启时才需要考虑持久化（RDB/AOF）
 # 3. 如果需要 Redis 重启后也保留数据，请在 redis.conf 中配置 RDB 或 AOF 持久化
 
-# ==================== 监控配置 ====================
-xiaou:
-  monitor:
-    # 是否启用SQL监控 (默认true)
-    enabled: true
-    # 慢SQL阈值(毫秒) - 超过此阈值的SQL将被标记为慢SQL (默认1000ms)
-    slow-sql-threshold: 1000
-    # 是否启用调试日志 (默认false)
-    debug-enabled: false
-    
-    # ========== SQL调用树追踪配置 ==========
-    # 是否启用SQL调用树追踪 (默认true)
-    tree-trace-enabled: true
-    # 最大会话数量 - 内存中最多保存多少个调用树会话 (默认100)
-    max-session-count: 100
-    # 会话过期时间(分钟) - 超过此时间的会话将被自动清理 (默认60分钟)
-    session-expire-minutes: 60
-    
-    # ========== 排除配置 ==========
-    # 排除监控的mapper包路径
-    exclude-mapper-packages:
-      - com.xiaou.monitor.mapper
-      - com.xiaou.system.mapper.SysLoginLogMapper
-      - com.xiaou.system.mapper.SysOperationLogMapper
-    
-    # 排除监控的请求路径
-    exclude-request-paths:
-      - /monitor/
-      - /auth/login-logs
-      - /logs/
-      - /api/sql-tree/
-    
-    # 排除监控的模块名称
-    exclude-modules:
-      - SqlMonitor
-      - SqlTreeController
-      - LogController
-      - AuthController
-    
-    # 排除监控的方法名后缀
-    exclude-method-suffixes:
-      - selectPage
-      - selectList
-      - selectCount
-      - selectById
-      - selectByIds
-    
-    # 排除监控的mapper关键字
-    exclude-mapper-keywords:
-      - Admin
-      - Log
-      - Monitor
-      - Permission
-      - Role
+# ==================== Prometheus 监控配置 ====================
+# Spring Boot Actuator + Micrometer Prometheus 集成
+# 提供生产级应用监控能力，包括：JVM、数据库连接池、HTTP请求、自定义业务指标等
+# 
+# 使用说明：
+# 1. Prometheus 指标端点：http://localhost:9999/api/actuator/prometheus
+# 2. 健康检查端点：http://localhost:9999/api/actuator/health
+# 3. 所有指标端点：http://localhost:9999/api/actuator/metrics
+# 
+# Prometheus 配置示例（prometheus.yml）：
+# scrape_configs:
+#   - job_name: 'code-nest'
+#     metrics_path: '/api/actuator/prometheus'
+#     static_configs:
+#       - targets: ['localhost:9999']
+#
+# Grafana Dashboard 推荐：
+# - Spring Boot 2.1 Statistics (ID: 11378)
+# - JVM (Micrometer) (ID: 4701)
+# - Spring Boot Statistics (ID: 6756)
+management:
+  endpoints:
+    web:
+      # 端点基础路径，默认为 /actuator
+      base-path: /actuator
+      exposure:
+        # 暴露的端点，* 表示全部，生产环境建议只暴露必要的端点
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      # 显示健康检查详细信息
+      show-details: always
+    prometheus:
+      # 启用 Prometheus 端点
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        # 启用 Prometheus 指标导出
+        enabled: true
+    tags:
+      # 添加全局标签，用于在 Prometheus 中标识应用
+      application: ${spring.application.name}
+    distribution:
+      # HTTP 请求延迟直方图配置
+      percentiles-histogram:
+        http.server.requests: true
+      # 自定义百分位数统计
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+      # SLA 边界配置（用于生成 _bucket 指标）
+      sla:
+        http.server.requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s
 
 # ==================== Coze工作流配置 ====================
 coze:

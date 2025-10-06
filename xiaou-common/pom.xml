@@ -139,6 +139,18 @@
             <artifactId>pagehelper-spring-boot-starter</artifactId>
         </dependency>
         
+        <!-- Spring Boot Actuator - 提供生产就绪特性（健康检查、指标监控等） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        
+        <!-- Micrometer Prometheus Registry - 将指标导出为Prometheus格式 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        
         <!-- 敏感词API模块 -->
         <dependency>
             <groupId>com.xiaou</groupId>

@@ -13,7 +13,6 @@
         <module>xiaou-system</module>
         <module>xiaou-user-api</module>
         <module>xiaou-user</module>
-        <module>xiaou-monitor</module>
         <module>xiaou-application</module>
         <module>xiaou-interview</module>
         <module>xiaou-community</module>

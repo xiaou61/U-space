@@ -283,15 +283,9 @@ const routes = [
   {
     path: '/system',
     component: Layout,
-    redirect: '/system/monitor/sql',
+    redirect: '/system/version',
     meta: { title: '系统管理' },
     children: [
-      {
-        path: 'monitor/sql',
-        name: 'SqlMonitor',
-        component: () => import('@/views/system/monitor/SqlMonitor.vue'),
-        meta: { title: 'SQL监控' }
-      },
       {
         path: 'version',
         name: 'VersionManagement',

@@ -1,0 +1,44 @@
+# Prometheus 配置文件
+global:
+  # 全局采集间隔（默认1分钟）
+  scrape_interval: 15s
+  # 采集超时时间
+  scrape_timeout: 10s
+  # 评估规则间隔
+  evaluation_interval: 15s
+  # 添加到所有时间序列的外部标签
+  external_labels:
+    monitor: 'code-nest-monitor'
+    env: 'dev'
+
+# 告警管理器配置（可选）
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# 规则文件（用于告警规则）
+# rule_files:
+#   - 'alert_rules.yml'
+
+# 采集配置
+scrape_configs:
+  # Prometheus 自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Code-Nest 应用监控
+  - job_name: 'code-nest'
+    # 指标采集路径
+    metrics_path: '/api/actuator/prometheus'
+    # 采集间隔（覆盖全局配置）
+    scrape_interval: 10s
+    static_configs:
+      # Windows 本机：使用 host.docker.internal
+      # Linux 本机：使用 172.17.0.1 或 宿主机IP
+      - targets: ['host.docker.internal:9999']
+        labels:
+          application: 'code-nest'
+          env: 'dev'
+
