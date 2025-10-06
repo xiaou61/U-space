@@ -1,7 +1,7 @@
 # Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -182,7 +182,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.4.0.jar
+java -jar target/xiaou-application-1.5.0.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -277,14 +277,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.4.0 .
+docker build -t code-nest:1.5.0 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.4.0
+  code-nest:1.5.0
 ```
 
 ### Nginx配置
@@ -320,6 +320,79 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.5.0 🎉
+
+#### 📝 博客系统模块
+- **博客功能完整实现** - 全新的博客创作和管理系统
+  - 博客文章发布和管理
+  - Markdown编辑器支持
+  - 文章分类和标签
+  - 文章搜索和筛选
+  - 评论互动功能
+
+#### 🎲 抽奖系统模块
+- **抽奖管理功能** - 完整的抽奖活动管理
+  - 抽奖活动创建和配置
+  - 奖品设置和库存管理
+  - 中奖记录和统计
+  - 后台抽奖管理界面
+
+#### 🏷️ 社区增强功能
+- **标签管理系统** - 社区内容分类和组织
+  - 标签创建和管理
+  - 标签关联和搜索
+  - 热门标签统计
+  - 标签云展示
+
+#### ✨ 动态功能增强
+- **动态收藏和搜索** - 丰富的动态互动功能
+  - 动态收藏功能
+  - 动态搜索和筛选
+  - 用户动态列表
+  - 个人收藏列表
+  
+- **热门动态算法** - 智能推荐系统
+  - 热度分数计算（点赞×2 + 评论×3 + 浏览×0.1）
+  - 定时任务更新热门动态（每10分钟）
+  - 动态浏览统计和防重复记录
+  - 批量获取优化性能
+  
+- **动态安全机制** - 内容审核和过滤
+  - 敏感词检测和过滤
+  - 内容安全性提升
+  - 违规内容拦截
+
+#### 🛡️ 敏感词系统增强
+- **统计分析功能** - 敏感词监控和分析
+  - 敏感词命中统计
+  - 数据分析报表
+  - 趋势分析和预警
+  - 过滤效果评估
+
+#### 📊 监控系统重构
+- **Prometheus监控集成** - 现代化监控方案
+  - 集成Prometheus和Grafana
+  - Spring Boot Actuator配置
+  - Micrometer Prometheus Registry
+  - JVM、HTTP、数据库连接池监控
+  - 预定义告警规则
+  - 完整的监控部署文档
+  - 移除旧的SQL调用树监控模块
+
+#### 🔧 认证系统优化
+- **Token管理优化** - 更好的用户体验
+  - 优化Token过期处理逻辑
+  - 改进Token续签机制
+  - 统一Sa-Token权限认证
+  - 管理员权限验证增强
+
+#### 📦 数据库更新
+- 新增博客相关表（blog_posts、blog_categories、blog_tags等）
+- 新增抽奖系统表（lottery_activities、lottery_prizes、lottery_records）
+- 新增社区标签表（community_tags）
+- 新增动态收藏表（moment_favorites、moment_views）
+- 新增敏感词统计表优化
 
 ### v1.4.0 🚀
 
