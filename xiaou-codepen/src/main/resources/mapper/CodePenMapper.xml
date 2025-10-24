@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.codepen.mapper.CodePenMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.codepen.domain.CodePen">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="html_code" property="htmlCode"/>
+        <result column="css_code" property="cssCode"/>
+        <result column="js_code" property="jsCode"/>
+        <result column="preview_image" property="previewImage"/>
+        <result column="external_css" property="externalCss"/>
+        <result column="external_js" property="externalJs"/>
+        <result column="preprocessor_config" property="preprocessorConfig"/>
+        <result column="tags" property="tags"/>
+        <result column="category" property="category"/>
+        <result column="is_public" property="isPublic"/>
+        <result column="is_free" property="isFree"/>
+        <result column="fork_price" property="forkPrice"/>
+        <result column="is_template" property="isTemplate"/>
+        <result column="status" property="status"/>
+        <result column="is_recommend" property="isRecommend"/>
+        <result column="recommend_expire_time" property="recommendExpireTime"/>
+        <result column="forked_from" property="forkedFrom"/>
+        <result column="fork_count" property="forkCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="points_reward" property="pointsReward"/>
+        <result column="total_income" property="totalIncome"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="publish_time" property="publishTime"/>
+    </resultMap>
+
+    <resultMap id="WithoutCodeResultMap" type="com.xiaou.codepen.domain.CodePen">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="preview_image" property="previewImage"/>
+        <result column="tags" property="tags"/>
+        <result column="category" property="category"/>
+        <result column="is_public" property="isPublic"/>
+        <result column="is_free" property="isFree"/>
+        <result column="fork_price" property="forkPrice"/>
+        <result column="status" property="status"/>
+        <result column="is_recommend" property="isRecommend"/>
+        <result column="forked_from" property="forkedFrom"/>
+        <result column="fork_count" property="forkCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="total_income" property="totalIncome"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="publish_time" property="publishTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, title, description, html_code, css_code, js_code, preview_image,
+        external_css, external_js, preprocessor_config, tags, category, is_public, is_free, fork_price,
+        is_template, status, is_recommend, recommend_expire_time, forked_from, fork_count,
+        like_count, comment_count, collect_count, view_count, points_reward, total_income,
+        create_time, update_time, publish_time
+    </sql>
+
+    <sql id="Without_Code_Column_List">
+        id, user_id, title, description, preview_image, tags, category, is_public, is_free, fork_price,
+        status, is_recommend, forked_from, fork_count, like_count, comment_count, collect_count,
+        view_count, total_income, create_time, update_time, publish_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xiaou.codepen.domain.CodePen" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO code_pen (
+            user_id, title, description, html_code, css_code, js_code, preview_image,
+            external_css, external_js, preprocessor_config, tags, category, is_public, is_free, fork_price,
+            is_template, status, forked_from, points_reward,
+            create_time, update_time
+            <if test="publishTime != null">, publish_time</if>
+        ) VALUES (
+            #{userId}, #{title}, #{description}, #{htmlCode}, #{cssCode}, #{jsCode}, #{previewImage},
+            #{externalCss}, #{externalJs}, #{preprocessorConfig}, #{tags}, #{category}, #{isPublic}, #{isFree}, #{forkPrice},
+            #{isTemplate}, #{status}, #{forkedFrom}, #{pointsReward},
+            NOW(), NOW()
+            <if test="publishTime != null">, #{publishTime}</if>
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM code_pen
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByIdWithoutCode" parameterType="java.lang.Long" resultMap="WithoutCodeResultMap">
+        SELECT <include refid="Without_Code_Column_List"/>
+        FROM code_pen
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.codepen.domain.CodePen">
+        UPDATE code_pen
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="htmlCode != null">html_code = #{htmlCode},</if>
+            <if test="cssCode != null">css_code = #{cssCode},</if>
+            <if test="jsCode != null">js_code = #{jsCode},</if>
+            <if test="previewImage != null">preview_image = #{previewImage},</if>
+            <if test="externalCss != null">external_css = #{externalCss},</if>
+            <if test="externalJs != null">external_js = #{externalJs},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="isFree != null">is_free = #{isFree},</if>
+            <if test="forkPrice != null">fork_price = #{forkPrice},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById" parameterType="java.lang.Long">
+        UPDATE code_pen
+        SET status = 3, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectList" parameterType="com.xiaou.codepen.dto.CodePenListRequest" resultMap="WithoutCodeResultMap">
+        SELECT <include refid="Without_Code_Column_List"/>
+        FROM code_pen
+        <where>
+            status = 1
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="isFree != null">
+                AND is_free = #{isFree}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="tags != null and tags.size() &gt; 0">
+                AND (
+                    <foreach collection="tags" item="tag" separator=" OR ">
+                        tags LIKE CONCAT('%', #{tag}, '%')
+                    </foreach>
+                )
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'hot'">
+                ORDER BY like_count DESC, create_time DESC
+            </when>
+            <when test="sortBy == 'most_liked'">
+                ORDER BY like_count DESC
+            </when>
+            <when test="sortBy == 'most_viewed'">
+                ORDER BY view_count DESC
+            </when>
+            <otherwise>
+                ORDER BY publish_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <update id="updateStatus">
+        UPDATE code_pen
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePublishTime">
+        UPDATE code_pen
+        SET publish_time = NOW(), update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementForkCount">
+        UPDATE code_pen
+        SET fork_count = fork_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementLikeCount">
+        UPDATE code_pen
+        SET like_count = like_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="decrementLikeCount">
+        UPDATE code_pen
+        SET like_count = like_count - 1
+        WHERE id = #{id} AND like_count &gt; 0
+    </update>
+
+    <update id="incrementCollectCount">
+        UPDATE code_pen
+        SET collect_count = collect_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="decrementCollectCount">
+        UPDATE code_pen
+        SET collect_count = collect_count - 1
+        WHERE id = #{id} AND collect_count &gt; 0
+    </update>
+
+    <update id="incrementCommentCount">
+        UPDATE code_pen
+        SET comment_count = comment_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="decrementCommentCount">
+        UPDATE code_pen
+        SET comment_count = comment_count - 1
+        WHERE id = #{id} AND comment_count &gt; 0
+    </update>
+
+    <update id="incrementViewCount">
+        UPDATE code_pen
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateIncome">
+        UPDATE code_pen
+        SET total_income = total_income + #{income}
+        WHERE id = #{id}
+    </update>
+
+    <update id="setRecommend">
+        UPDATE code_pen
+        SET is_recommend = 1, recommend_expire_time = #{expireTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancelRecommend">
+        UPDATE code_pen
+        SET is_recommend = 0, recommend_expire_time = NULL
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserId" resultMap="WithoutCodeResultMap">
+        SELECT <include refid="Without_Code_Column_List"/>
+        FROM code_pen
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectRecommendList" resultMap="WithoutCodeResultMap">
+        SELECT <include refid="Without_Code_Column_List"/>
+        FROM code_pen
+        WHERE status = 1
+          AND is_recommend = 1
+          AND (recommend_expire_time IS NULL OR recommend_expire_time &gt; NOW())
+        ORDER BY publish_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectHotList" resultMap="WithoutCodeResultMap">
+        SELECT <include refid="Without_Code_Column_List"/>
+        FROM code_pen
+        WHERE status = 1
+        ORDER BY like_count DESC, view_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectTemplateList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM code_pen
+        WHERE is_template = 1 AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectTotalCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM code_pen
+        WHERE status != 3
+    </select>
+
+    <select id="selectTodayCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM code_pen
+        WHERE status = 1
+          AND DATE(create_time) = CURDATE()
+    </select>
+
+    <select id="selectUserCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT user_id)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+    <select id="selectTotalViewCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(view_count), 0)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+    <select id="selectTotalLikeCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(like_count), 0)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+    <select id="selectTotalCommentCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(comment_count), 0)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+    <select id="selectTotalCollectCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(collect_count), 0)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+    <select id="selectTotalForkCount" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(fork_count), 0)
+        FROM code_pen
+        WHERE status = 1
+    </select>
+
+</mapper>
+

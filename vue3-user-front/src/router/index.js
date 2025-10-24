@@ -402,6 +402,56 @@ const routes = [
     }
   },
   {
+    path: '/codepen',
+    name: 'CodePenSquare',
+    component: () => import('@/views/codepen/Index.vue'),
+    meta: {
+      title: '代码广场',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/codepen/editor',
+    name: 'CodePenEditor',
+    component: () => import('@/views/codepen/Editor.vue'),
+    meta: {
+      title: '代码编辑器',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/codepen/editor/:id',
+    name: 'CodePenEditorEdit',
+    component: () => import('@/views/codepen/Editor.vue'),
+    meta: {
+      title: '编辑作品',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/codepen/my',
+    name: 'MyCodePens',
+    component: () => import('@/views/codepen/MyPens.vue'),
+    meta: {
+      title: '我的作品',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/codepen/:id',
+    name: 'CodePenDetail',
+    component: () => import('@/views/codepen/Detail.vue'),
+    meta: {
+      title: '作品详情',
+      requiresAuth: false,
+      keepAlive: false
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

@@ -27,6 +27,7 @@
         <module>xiaou-points</module>
         <module>xiaou-chat</module>
         <module>xiaou-blog</module>
+        <module>xiaou-codepen</module>
     </modules>
 
     <properties>

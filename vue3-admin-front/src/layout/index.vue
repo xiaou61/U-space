@@ -257,6 +257,29 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/codepen">
+            <template #title>
+              <el-icon><EditPen /></el-icon>
+              <span>代码共享器管理</span>
+            </template>
+            <el-menu-item index="/codepen/pens">
+              <el-icon><Document /></el-icon>
+              <span>作品管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/templates">
+              <el-icon><Files /></el-icon>
+              <span>模板管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/tags">
+              <el-icon><CollectionTag /></el-icon>
+              <span>标签管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据统计</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/moyu">
             <template #title>
               <el-icon><Coffee /></el-icon>
@@ -629,6 +652,7 @@ const generateBreadcrumb = (path, title) => {
     'logs': '日志管理',
     'sensitive': '敏感词管理',
     'filestorage': '文件存储管理',
+    'codepen': '代码共享器管理',
     'moyu': '摸鱼工具管理',
     'points': '积分管理',
     'system': '系统管理',

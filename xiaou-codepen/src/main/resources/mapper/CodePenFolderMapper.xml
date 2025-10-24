@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.codepen.mapper.CodePenFolderMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.codepen.domain.CodePenFolder">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="folder_name" property="folderName"/>
+        <result column="folder_description" property="folderDescription"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xiaou.codepen.domain.CodePenFolder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO code_pen_folder (user_id, folder_name, folder_description, collect_count, create_time)
+        VALUES (#{userId}, #{folderName}, #{folderDescription}, 0, NOW())
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, user_id, folder_name, folder_description, collect_count, create_time, update_time
+        FROM code_pen_folder
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT id, user_id, folder_name, folder_description, collect_count, create_time, update_time
+        FROM code_pen_folder
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateById" parameterType="com.xiaou.codepen.domain.CodePenFolder">
+        UPDATE code_pen_folder
+        <set>
+            <if test="folderName != null">folder_name = #{folderName},</if>
+            <if test="folderDescription != null">folder_description = #{folderDescription},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCollectCount">
+        UPDATE code_pen_folder
+        SET collect_count = collect_count + #{increment}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM code_pen_folder
+        WHERE id = #{id}
+    </delete>
+
+</mapper>
+

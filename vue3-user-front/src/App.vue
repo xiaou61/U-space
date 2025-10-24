@@ -14,14 +14,6 @@
             <el-icon><HomeFilled /></el-icon>
             <span>首页</span>
           </router-link>
-          <router-link to="/interview" class="nav-item" active-class="active">
-            <el-icon><Document /></el-icon>
-            <span>面试题库</span>
-          </router-link>
-          <router-link to="/knowledge" class="nav-item" active-class="active">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>知识图谱</span>
-          </router-link>
           <router-link to="/community" class="nav-item" active-class="active">
             <el-icon><ChatDotRound /></el-icon>
             <span>技术社区</span>
@@ -34,26 +26,73 @@
             <el-icon><Message /></el-icon>
             <span>聊天室</span>
           </router-link>
-          <router-link to="/dev-tools" class="nav-item" active-class="active">
-            <el-icon><Tools /></el-icon>
-            <span>程序员工具</span>
-          </router-link>
-          <router-link to="/moyu-tools" class="nav-item" active-class="active">
-            <el-icon><Coffee /></el-icon>
-            <span>摸鱼工具</span>
-          </router-link>
-          <router-link to="/lottery" class="nav-item" active-class="active">
-            <el-icon><Trophy /></el-icon>
-            <span>幸运抽奖</span>
-          </router-link>
-          <router-link to="/blog" class="nav-item" active-class="active">
-            <el-icon><Reading /></el-icon>
-            <span>我的博客</span>
-          </router-link>
-          <router-link to="/version-history" class="nav-item" active-class="active">
-            <el-icon><Calendar /></el-icon>
-            <span>版本历史</span>
-          </router-link>
+          
+          <!-- 学习工具下拉菜单 -->
+          <el-dropdown trigger="hover" @command="handleNavCommand">
+            <div class="nav-item nav-dropdown">
+              <el-icon><Document /></el-icon>
+              <span>学习</span>
+              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/interview">
+                  <el-icon><Document /></el-icon>
+                  面试题库
+                </el-dropdown-item>
+                <el-dropdown-item command="/knowledge">
+                  <el-icon><DataAnalysis /></el-icon>
+                  知识图谱
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          
+          <!-- 创作工具下拉菜单 -->
+          <el-dropdown trigger="hover" @command="handleNavCommand">
+            <div class="nav-item nav-dropdown">
+              <el-icon><Tools /></el-icon>
+              <span>创作</span>
+              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/codepen">
+                  <el-icon><Promotion /></el-icon>
+                  代码共享器
+                </el-dropdown-item>
+                <el-dropdown-item command="/blog">
+                  <el-icon><Reading /></el-icon>
+                  我的博客
+                </el-dropdown-item>
+                <el-dropdown-item command="/dev-tools">
+                  <el-icon><Tools /></el-icon>
+                  程序员工具
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          
+          <!-- 娱乐工具下拉菜单 -->
+          <el-dropdown trigger="hover" @command="handleNavCommand">
+            <div class="nav-item nav-dropdown">
+              <el-icon><Coffee /></el-icon>
+              <span>娱乐</span>
+              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/moyu-tools">
+                  <el-icon><Coffee /></el-icon>
+                  摸鱼工具
+                </el-dropdown-item>
+                <el-dropdown-item command="/lottery">
+                  <el-icon><Trophy /></el-icon>
+                  幸运抽奖
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
         
         <!-- 用户操作区域 -->
@@ -74,6 +113,14 @@
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>
                   个人中心
+                </el-dropdown-item>
+                <el-dropdown-item command="mypens">
+                  <el-icon><Promotion /></el-icon>
+                  我的作品
+                </el-dropdown-item>
+                <el-dropdown-item command="points">
+                  <el-icon><Trophy /></el-icon>
+                  积分中心
                 </el-dropdown-item>
                 <el-dropdown-item command="version">
                   <el-icon><Calendar /></el-icon>
@@ -104,7 +151,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading
+  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -129,11 +176,22 @@ const goToNotification = () => {
   router.push('/notification')
 }
 
+// 处理导航下拉菜单命令
+const handleNavCommand = (command) => {
+  router.push(command)
+}
+
 // 处理用户操作
 const handleUserAction = async (command) => {
   switch (command) {
     case 'profile':
       router.push('/profile')
+      break
+    case 'mypens':
+      router.push('/codepen/my')
+      break
+    case 'points':
+      router.push('/points')
       break
     case 'version':
       router.push('/version-history')
@@ -246,6 +304,32 @@ const handleUserAction = async (command) => {
 
 .nav-item .el-icon {
   font-size: 16px;
+}
+
+/* 导航下拉菜单样式 */
+.nav-dropdown {
+  cursor: pointer;
+  position: relative;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  margin-left: 2px;
+  transition: transform 0.3s ease;
+}
+
+.nav-dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单项样式 */
+:deep(.el-dropdown-menu__item) {
+  padding: 8px 16px;
+}
+
+:deep(.el-dropdown-menu__item .el-icon) {
+  margin-right: 8px;
+  font-size: 14px;
 }
 
 /* 用户操作区域样式 */

@@ -320,6 +320,38 @@ const routes = [
     ]
   },
   {
+    path: '/codepen',
+    component: Layout,
+    redirect: '/codepen/pens',
+    meta: { title: '代码共享器管理' },
+    children: [
+      {
+        path: 'pens',
+        name: 'CodePenManagement',
+        component: () => import('@/views/codepen/pens/index.vue'),
+        meta: { title: '作品管理' }
+      },
+      {
+        path: 'templates',
+        name: 'CodePenTemplates',
+        component: () => import('@/views/codepen/templates/index.vue'),
+        meta: { title: '模板管理' }
+      },
+      {
+        path: 'tags',
+        name: 'CodePenTags',
+        component: () => import('@/views/codepen/tags/index.vue'),
+        meta: { title: '标签管理' }
+      },
+      {
+        path: 'statistics',
+        name: 'CodePenStatistics',
+        component: () => import('@/views/codepen/statistics/index.vue'),
+        meta: { title: '数据统计' }
+      }
+    ]
+  },
+  {
     path: '/moyu',
     component: Layout,
     redirect: '/moyu/calendar-events',

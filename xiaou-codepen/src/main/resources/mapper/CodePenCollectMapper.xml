@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.codepen.mapper.CodePenCollectMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.codepen.domain.CodePenCollect">
+        <id column="id" property="id"/>
+        <result column="pen_id" property="penId"/>
+        <result column="user_id" property="userId"/>
+        <result column="folder_id" property="folderId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xiaou.codepen.domain.CodePenCollect">
+        INSERT INTO code_pen_collect (pen_id, user_id, folder_id, create_time)
+        VALUES (#{penId}, #{userId}, #{folderId}, NOW())
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM code_pen_collect
+        WHERE pen_id = #{penId} AND user_id = #{userId}
+    </delete>
+
+    <select id="selectByPenIdAndUserId" resultMap="BaseResultMap">
+        SELECT id, pen_id, user_id, folder_id, create_time
+        FROM code_pen_collect
+        WHERE pen_id = #{penId} AND user_id = #{userId}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT id, pen_id, user_id, folder_id, create_time
+        FROM code_pen_collect
+        WHERE user_id = #{userId}
+        <if test="folderId != null">
+            AND folder_id = #{folderId}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectCountByPenId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM code_pen_collect
+        WHERE pen_id = #{penId}
+    </select>
+
+    <select id="selectPenIdsByFolderId" resultType="java.lang.Long">
+        SELECT pen_id
+        FROM code_pen_collect
+        WHERE user_id = #{userId}
+        <if test="folderId != null">
+            AND folder_id = #{folderId}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
+
