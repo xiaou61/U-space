@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeTemplateMapper">
+
+    <resultMap id="ResumeTemplateMap" type="com.xiaou.resume.domain.ResumeTemplate">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="category" property="category"/>
+        <result column="description" property="description"/>
+        <result column="cover_url" property="coverUrl"/>
+        <result column="preview_url" property="previewUrl"/>
+        <result column="tags" property="tags"/>
+        <result column="tech_stack" property="techStack"/>
+        <result column="experience_level" property="experienceLevel"/>
+        <result column="rating" property="rating"/>
+        <result column="rating_count" property="ratingCount"/>
+        <result column="download_count" property="downloadCount"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, name, category, description, cover_url, preview_url,
+        tags, tech_stack, experience_level, rating, rating_count,
+        download_count, status, created_by, updated_by, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_templates (
+            name, category, description, cover_url, preview_url,
+            tags, tech_stack, experience_level, rating, rating_count,
+            download_count, status, created_by, updated_by, create_time, update_time
+        ) VALUES (
+            #{name}, #{category}, #{description}, #{coverUrl}, #{previewUrl},
+            #{tags}, #{techStack}, #{experienceLevel}, #{rating}, #{ratingCount},
+            #{downloadCount}, #{status}, #{createdBy}, #{updatedBy}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE resume_templates
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="coverUrl != null">cover_url = #{coverUrl},</if>
+            <if test="previewUrl != null">preview_url = #{previewUrl},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="techStack != null">tech_stack = #{techStack},</if>
+            <if test="experienceLevel != null">experience_level = #{experienceLevel},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM resume_templates WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" resultMap="ResumeTemplateMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_templates WHERE id = #{id}
+    </select>
+
+    <select id="selectList" resultMap="ResumeTemplateMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_templates
+        <where>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (name LIKE CONCAT('%', #{request.keyword}, '%')
+                OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+            <if test="request.category != null and request.category != ''">
+                AND category = #{request.category}
+            </if>
+            <if test="request.experienceLevel != null">
+                AND experience_level = #{request.experienceLevel}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.tags != null and request.tags.size() &gt; 0">
+                AND (
+                <foreach collection="request.tags" item="tag" separator=" OR ">
+                    FIND_IN_SET(#{tag}, tags)
+                </foreach>
+                )
+            </if>
+        </where>
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM resume_templates
+    </select>
+</mapper>

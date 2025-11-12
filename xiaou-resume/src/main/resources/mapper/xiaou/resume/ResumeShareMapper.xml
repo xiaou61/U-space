@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeShareMapper">
+
+    <resultMap id="ResumeShareMap" type="com.xiaou.resume.domain.ResumeShare">
+        <id column="id" property="id"/>
+        <result column="resume_id" property="resumeId"/>
+        <result column="share_code" property="shareCode"/>
+        <result column="share_url" property="shareUrl"/>
+        <result column="status" property="status"/>
+        <result column="access_count" property="accessCount"/>
+        <result column="expire_time" property="expireTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_shares (
+            resume_id, share_code, share_url, status, access_count,
+            expire_time, create_time, update_time
+        ) VALUES (
+            #{resumeId}, #{shareCode}, #{shareUrl}, #{status}, #{accessCount},
+            #{expireTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE resume_shares
+        <set>
+            <if test="shareCode != null">share_code = #{shareCode},</if>
+            <if test="shareUrl != null">share_url = #{shareUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="accessCount != null">access_count = #{accessCount},</if>
+            <if test="expireTime != null">expire_time = #{expireTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectActiveShare" resultMap="ResumeShareMap">
+        SELECT id, resume_id, share_code, share_url, status, access_count,
+               expire_time, create_time, update_time
+        FROM resume_shares
+        WHERE resume_id = #{resumeId}
+          AND status = 1
+          AND expire_time &gt; #{now}
+        ORDER BY update_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectExpiredShares" resultMap="ResumeShareMap">
+        SELECT id, resume_id, share_code, share_url, status, access_count,
+               expire_time, create_time, update_time
+        FROM resume_shares
+        WHERE status = 1
+          AND expire_time &lt;= #{now}
+    </select>
+
+    <delete id="deleteByResumeId">
+        DELETE FROM resume_shares WHERE resume_id = #{resumeId}
+    </delete>
+</mapper>

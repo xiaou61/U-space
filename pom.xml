@@ -28,6 +28,7 @@
         <module>xiaou-chat</module>
         <module>xiaou-blog</module>
         <module>xiaou-codepen</module>
+        <module>xiaou-resume</module>
     </modules>
 
     <properties>

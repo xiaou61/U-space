@@ -82,6 +82,46 @@ const routes = [
     }
   },
   {
+    path: '/resume',
+    name: 'ResumeHome',
+    component: () => import('@/views/resume/MyResumes.vue'),
+    meta: {
+      title: '简历管理',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/resume/templates',
+    name: 'ResumeTemplates',
+    component: () => import('@/views/resume/TemplateCenter.vue'),
+    meta: {
+      title: '简历模板',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/resume/editor',
+    name: 'ResumeCreate',
+    component: () => import('@/views/resume/Editor.vue'),
+    meta: {
+      title: '创建简历',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/resume/editor/:id',
+    name: 'ResumeEdit',
+    component: () => import('@/views/resume/Editor.vue'),
+    meta: {
+      title: '编辑简历',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/community',
     name: 'Community',
     component: () => import('@/views/community/Index.vue'),

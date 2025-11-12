@@ -65,6 +65,10 @@
                   <el-icon><Reading /></el-icon>
                   我的博客
                 </el-dropdown-item>
+                <el-dropdown-item command="/resume">
+                  <el-icon><EditPen /></el-icon>
+                  简历工坊
+                </el-dropdown-item>
                 <el-dropdown-item command="/dev-tools">
                   <el-icon><Tools /></el-icon>
                   程序员工具
@@ -151,7 +155,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown
+  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown, EditPen
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

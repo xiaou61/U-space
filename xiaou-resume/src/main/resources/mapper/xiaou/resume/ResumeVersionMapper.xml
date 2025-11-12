@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeVersionMapper">
+
+    <resultMap id="ResumeVersionMap" type="com.xiaou.resume.domain.ResumeVersion">
+        <id column="id" property="id"/>
+        <result column="resume_id" property="resumeId"/>
+        <result column="version_number" property="versionNumber"/>
+        <result column="snapshot" property="snapshot"/>
+        <result column="change_log" property="changeLog"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_versions (
+            resume_id, version_number, snapshot, change_log, created_by, create_time
+        ) VALUES (
+            #{resumeId}, #{versionNumber}, #{snapshot}, #{changeLog}, #{createdBy}, #{createTime}
+        )
+    </insert>
+
+    <select id="selectByResumeId" resultMap="ResumeVersionMap">
+        SELECT id, resume_id, version_number, snapshot, change_log, created_by, create_time
+        FROM resume_versions
+        WHERE resume_id = #{resumeId}
+        ORDER BY version_number DESC
+    </select>
+
+    <delete id="deleteByResumeId">
+        DELETE FROM resume_versions WHERE resume_id = #{resumeId}
+    </delete>
+</mapper>

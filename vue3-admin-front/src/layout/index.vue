@@ -107,6 +107,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/resume">
+            <template #title>
+              <el-icon><EditPen /></el-icon>
+              <span>简历中心</span>
+            </template>
+            <el-menu-item index="/resume/templates">
+              <el-icon><Document /></el-icon>
+              <span>模板管理</span>
+            </el-menu-item>
+            <el-menu-item index="/resume/analytics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据总览</span>
+            </el-menu-item>
+            <el-menu-item index="/resume/reports">
+              <el-icon><Warning /></el-icon>
+              <span>健康巡检</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/knowledge">
             <template #title>
               <el-icon><DataAnalysis /></el-icon>

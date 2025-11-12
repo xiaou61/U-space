@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeSectionMapper">
+
+    <resultMap id="ResumeSectionMap" type="com.xiaou.resume.domain.ResumeSection">
+        <id column="id" property="id"/>
+        <result column="resume_id" property="resumeId"/>
+        <result column="section_type" property="sectionType"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, resume_id, section_type, title, content,
+        sort_order, status, create_time, update_time
+    </sql>
+
+    <insert id="insertBatch" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_sections (
+            resume_id, section_type, title, content,
+            sort_order, status, create_time, update_time
+        ) VALUES
+        <foreach collection="sections" item="section" separator=",">
+            (#{section.resumeId}, #{section.sectionType}, #{section.title},
+            #{section.content}, #{section.sortOrder}, #{section.status},
+            #{section.createTime}, #{section.updateTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByResumeId">
+        DELETE FROM resume_sections WHERE resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectByResumeId" resultMap="ResumeSectionMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_sections
+        WHERE resume_id = #{resumeId}
+        ORDER BY sort_order ASC
+    </select>
+</mapper>

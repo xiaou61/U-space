@@ -62,6 +62,32 @@ const routes = [
     ]
   },
   {
+    path: '/resume',
+    component: Layout,
+    redirect: '/resume/templates',
+    meta: { title: '简历中心' },
+    children: [
+      {
+        path: 'templates',
+        name: 'ResumeTemplates',
+        component: () => import('@/views/resume/templates/index.vue'),
+        meta: { title: '模板管理' }
+      },
+      {
+        path: 'analytics',
+        name: 'ResumeAnalytics',
+        component: () => import('@/views/resume/analytics/index.vue'),
+        meta: { title: '数据总览' }
+      },
+      {
+        path: 'reports',
+        name: 'ResumeReports',
+        component: () => import('@/views/resume/reports/index.vue'),
+        meta: { title: '健康巡检' }
+      }
+    ]
+  },
+  {
     path: '/knowledge',
     component: Layout,
     redirect: '/knowledge/maps',
