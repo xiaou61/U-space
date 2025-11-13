@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.codepen.mapper.CodePenForkTransactionMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.codepen.domain.CodePenForkTransaction">
+        <id column="id" property="id"/>
+        <result column="original_pen_id" property="originalPenId"/>
+        <result column="forked_pen_id" property="forkedPenId"/>
+        <result column="original_author_id" property="originalAuthorId"/>
+        <result column="fork_user_id" property="forkUserId"/>
+        <result column="fork_price" property="forkPrice"/>
+        <result column="transaction_type" property="transactionType"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xiaou.codepen.domain.CodePenForkTransaction" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO code_pen_fork_transaction (
+            original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        ) VALUES (
+            #{originalPenId}, #{forkedPenId}, #{originalAuthorId}, #{forkUserId}, #{forkPrice}, #{transactionType}, NOW()
+        )
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        FROM code_pen_fork_transaction
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByAuthorId" resultMap="BaseResultMap">
+        SELECT id, original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        FROM code_pen_fork_transaction
+        WHERE original_author_id = #{authorId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByForkUserId" resultMap="BaseResultMap">
+        SELECT id, original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        FROM code_pen_fork_transaction
+        WHERE fork_user_id = #{forkUserId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByOriginalPenId" resultMap="BaseResultMap">
+        SELECT id, original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        FROM code_pen_fork_transaction
+        WHERE original_pen_id = #{originalPenId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByOriginalPenIdAndForkUserId" resultMap="BaseResultMap">
+        SELECT id, original_pen_id, forked_pen_id, original_author_id, fork_user_id, fork_price, transaction_type, create_time
+        FROM code_pen_fork_transaction
+        WHERE original_pen_id = #{originalPenId} AND fork_user_id = #{forkUserId}
+        LIMIT 1
+    </select>
+
+</mapper>
+

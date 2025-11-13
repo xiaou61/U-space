@@ -5,11 +5,11 @@
   <parent>
     <groupId>com.xiaou</groupId>
     <artifactId>Code-Nest</artifactId>
-    <version>1.4.0</version>
+    <version>1.6.0</version>
   </parent>
   <groupId>com.xiaou</groupId>
   <artifactId>xiaou-common</artifactId>
-  <version>1.4.0</version>
+  <version>1.6.0</version>
   <name>xiaou-common</name>
   <description>通用工具模块</description>
   <dependencies>
@@ -74,6 +74,10 @@
       <version>1.44.0</version>
     </dependency>
     <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
@@ -98,6 +102,14 @@
       <artifactId>pagehelper-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.xiaou</groupId>
       <artifactId>xiaou-sensitive-api</artifactId>
       <version>${revision}</version>
@@ -106,6 +118,11 @@
       <groupId>com.coze</groupId>
       <artifactId>coze-api</artifactId>
       <version>0.4.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba.fastjson2</groupId>
+      <artifactId>fastjson2</artifactId>
+      <version>2.0.43</version>
     </dependency>
   </dependencies>
 </project>

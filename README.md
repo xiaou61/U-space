@@ -1,7 +1,7 @@
-# Code Nest 
+﻿# Code Nest 
 
 
-![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -182,7 +182,7 @@ cd xiaou-application
 mvn spring-boot:run
 
 # 或者运行jar包
-java -jar target/xiaou-application-1.5.0.jar
+java -jar target/xiaou-application-1.6.0.jar
 ```
 
 服务启动后访问: http://localhost:9999/api
@@ -277,14 +277,14 @@ xiaou:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.5.0 .
+docker build -t code-nest:1.6.0 .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  code-nest:1.5.0
+  code-nest:1.6.0
 ```
 
 ### Nginx配置
@@ -320,6 +320,20 @@ server {
 5. 创建 Pull Request
 
 ## 📄 更新日志
+
+### v1.6.0 🚀
+
+#### 🆕 新增内容
+- **在线简历模块**：新增 xiaou-resume 服务，提供模板中心、简历管理、模块化内容、版本快照、分享与访问统计。
+- **代码共享中心**：CodePen 模块正式上线（前后台 + SQL），支持作品发布、Fork、收藏、评论与后台运营。
+- **监控体系升级**：接入 Prometheus + Grafana，结合 Actuator / Micrometer 指标与告警规则，替换旧 SQL 调用树监控。
+- **敏感词增强**：敏感词系统补充统计分析与配置项，管理端可视化能力同步完善。
+- **数据库脚本**：sql/v1.6.0 目录新增简历与 CodePen 建表脚本，升级一步到位。
+
+#### 🔧 优化与修复
+- 简历导出支持 PDF / Word / HTML，并与文件存储打通，自动上传至 COS 返回真实下载链接。
+- 用户端上线模板大厅、简历工作台与编辑器；管理端提供模板维护、数据总览、健康巡检页面。
+- README、导航、版本号等展示信息同步到 1.6.0，导出/分享交互体验全面升级。
 
 ### v1.5.0 🎉
 
@@ -611,3 +625,4 @@ server {
 ![image-20251001192320125](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923340.png)
 
 ![image-20251001192329371](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923495.png)
+

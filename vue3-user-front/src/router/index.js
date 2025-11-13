@@ -82,6 +82,46 @@ const routes = [
     }
   },
   {
+    path: '/resume',
+    name: 'ResumeHome',
+    component: () => import('@/views/resume/MyResumes.vue'),
+    meta: {
+      title: '简历管理',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/resume/templates',
+    name: 'ResumeTemplates',
+    component: () => import('@/views/resume/TemplateCenter.vue'),
+    meta: {
+      title: '简历模板',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/resume/editor',
+    name: 'ResumeCreate',
+    component: () => import('@/views/resume/Editor.vue'),
+    meta: {
+      title: '创建简历',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/resume/editor/:id',
+    name: 'ResumeEdit',
+    component: () => import('@/views/resume/Editor.vue'),
+    meta: {
+      title: '编辑简历',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
     path: '/community',
     name: 'Community',
     component: () => import('@/views/community/Index.vue'),
@@ -397,6 +437,56 @@ const routes = [
     component: () => import('@/views/blog/ArticleDetail.vue'),
     meta: {
       title: '文章详情',
+      requiresAuth: false,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/codepen',
+    name: 'CodePenSquare',
+    component: () => import('@/views/codepen/Index.vue'),
+    meta: {
+      title: '代码广场',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/codepen/editor',
+    name: 'CodePenEditor',
+    component: () => import('@/views/codepen/Editor.vue'),
+    meta: {
+      title: '代码编辑器',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/codepen/editor/:id',
+    name: 'CodePenEditorEdit',
+    component: () => import('@/views/codepen/Editor.vue'),
+    meta: {
+      title: '编辑作品',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/codepen/my',
+    name: 'MyCodePens',
+    component: () => import('@/views/codepen/MyPens.vue'),
+    meta: {
+      title: '我的作品',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/codepen/:id',
+    name: 'CodePenDetail',
+    component: () => import('@/views/codepen/Detail.vue'),
+    meta: {
+      title: '作品详情',
       requiresAuth: false,
       keepAlive: false
     }

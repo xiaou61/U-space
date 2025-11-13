@@ -41,3 +41,4 @@ build/
 /.idea/
 /vue3-admin-front/dist/
 /vue3-user-front/dist/
+/.claude/

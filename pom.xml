@@ -27,11 +27,13 @@
         <module>xiaou-points</module>
         <module>xiaou-chat</module>
         <module>xiaou-blog</module>
+        <module>xiaou-codepen</module>
+        <module>xiaou-resume</module>
     </modules>
 
     <properties>
         <!-- 统一版本管理 -->
-        <revision>1.5.0</revision>
+        <revision>1.6.0</revision>
         
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>

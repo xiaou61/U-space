@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeAnalyticsMapper">
+
+    <resultMap id="ResumeAnalyticsMap" type="com.xiaou.resume.domain.ResumeAnalytics">
+        <id column="id" property="id"/>
+        <result column="resume_id" property="resumeId"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="export_count" property="exportCount"/>
+        <result column="share_count" property="shareCount"/>
+        <result column="unique_visitors" property="uniqueVisitors"/>
+        <result column="last_access_time" property="lastAccessTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_analytics (
+            resume_id, view_count, export_count, share_count,
+            unique_visitors, last_access_time, create_time, update_time
+        ) VALUES (
+            #{resumeId}, #{viewCount}, #{exportCount}, #{shareCount},
+            #{uniqueVisitors}, #{lastAccessTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <select id="selectByResumeId" resultMap="ResumeAnalyticsMap">
+        SELECT id, resume_id, view_count, export_count, share_count,
+               unique_visitors, last_access_time, create_time, update_time
+        FROM resume_analytics
+        WHERE resume_id = #{resumeId}
+    </select>
+
+    <update id="increaseViewCount">
+        UPDATE resume_analytics
+        SET view_count = view_count + 1,
+            update_time = NOW()
+        WHERE resume_id = #{resumeId}
+    </update>
+
+    <update id="increaseExportCount">
+        UPDATE resume_analytics
+        SET export_count = export_count + 1,
+            update_time = NOW()
+        WHERE resume_id = #{resumeId}
+    </update>
+
+    <update id="increaseShareCount">
+        UPDATE resume_analytics
+        SET share_count = share_count + 1,
+            update_time = NOW()
+        WHERE resume_id = #{resumeId}
+    </update>
+
+    <update id="updateLastAccessTime">
+        UPDATE resume_analytics
+        SET last_access_time = #{lastAccessTime},
+            update_time = #{lastAccessTime}
+        WHERE resume_id = #{resumeId}
+    </update>
+
+    <delete id="deleteByResumeId">
+        DELETE FROM resume_analytics WHERE resume_id = #{resumeId}
+    </delete>
+
+    <select id="aggregateAll" resultMap="ResumeAnalyticsMap">
+        SELECT
+            NULL AS id,
+            NULL AS resume_id,
+            COALESCE(SUM(view_count), 0) AS view_count,
+            COALESCE(SUM(export_count), 0) AS export_count,
+            COALESCE(SUM(share_count), 0) AS share_count,
+            COALESCE(SUM(unique_visitors), 0) AS unique_visitors,
+            NULL AS last_access_time,
+            NULL AS create_time,
+            NULL AS update_time
+        FROM resume_analytics
+    </select>
+</mapper>

@@ -107,6 +107,25 @@
             </el-menu-item>
           </el-sub-menu>
           
+          <el-sub-menu index="/resume">
+            <template #title>
+              <el-icon><EditPen /></el-icon>
+              <span>简历中心</span>
+            </template>
+            <el-menu-item index="/resume/templates">
+              <el-icon><Document /></el-icon>
+              <span>模板管理</span>
+            </el-menu-item>
+            <el-menu-item index="/resume/analytics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据总览</span>
+            </el-menu-item>
+            <el-menu-item index="/resume/reports">
+              <el-icon><Warning /></el-icon>
+              <span>健康巡检</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/knowledge">
             <template #title>
               <el-icon><DataAnalysis /></el-icon>
@@ -254,6 +273,29 @@
             <el-menu-item index="/filestorage/system-settings">
               <el-icon><Tools /></el-icon>
               <span>系统设置</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
+          <el-sub-menu index="/codepen">
+            <template #title>
+              <el-icon><EditPen /></el-icon>
+              <span>代码共享器管理</span>
+            </template>
+            <el-menu-item index="/codepen/pens">
+              <el-icon><Document /></el-icon>
+              <span>作品管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/templates">
+              <el-icon><Files /></el-icon>
+              <span>模板管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/tags">
+              <el-icon><CollectionTag /></el-icon>
+              <span>标签管理</span>
+            </el-menu-item>
+            <el-menu-item index="/codepen/statistics">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>数据统计</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -629,6 +671,7 @@ const generateBreadcrumb = (path, title) => {
     'logs': '日志管理',
     'sensitive': '敏感词管理',
     'filestorage': '文件存储管理',
+    'codepen': '代码共享器管理',
     'moyu': '摸鱼工具管理',
     'points': '积分管理',
     'system': '系统管理',

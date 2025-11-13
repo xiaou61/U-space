@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.resume.mapper.ResumeInfoMapper">
+
+    <resultMap id="ResumeInfoMap" type="com.xiaou.resume.domain.ResumeInfo">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="resume_name" property="resumeName"/>
+        <result column="template_id" property="templateId"/>
+        <result column="summary" property="summary"/>
+        <result column="status" property="status"/>
+        <result column="visibility" property="visibility"/>
+        <result column="version" property="version"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, user_id, resume_name, template_id, summary,
+        status, visibility, version, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_info (
+            user_id, resume_name, template_id, summary,
+            status, visibility, version, create_time, update_time
+        ) VALUES (
+            #{userId}, #{resumeName}, #{templateId}, #{summary},
+            #{status}, #{visibility}, #{version}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE resume_info
+        <set>
+            <if test="resumeName != null">resume_name = #{resumeName},</if>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="visibility != null">visibility = #{visibility},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM resume_info WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" resultMap="ResumeInfoMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_info WHERE id = #{id}
+    </select>
+
+    <select id="selectByIdAndUserId" resultMap="ResumeInfoMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_info
+        WHERE id = #{id} AND user_id = #{userId}
+    </select>
+
+    <select id="selectByUserId" resultMap="ResumeInfoMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_info
+        <where>
+            user_id = #{userId}
+            <if test="request.keyword != null and request.keyword != ''">
+                AND resume_name LIKE CONCAT('%', #{request.keyword}, '%')
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+        </where>
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM resume_info
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM resume_info WHERE status = #{status}
+    </select>
+
+    <select id="selectResumesWithoutSections" resultMap="ResumeInfoMap">
+        SELECT <include refid="BaseColumns"/> FROM resume_info ri
+        WHERE NOT EXISTS (
+            SELECT 1 FROM resume_sections rs WHERE rs.resume_id = ri.id
+        )
+    </select>
+</mapper>

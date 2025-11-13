@@ -62,6 +62,32 @@ const routes = [
     ]
   },
   {
+    path: '/resume',
+    component: Layout,
+    redirect: '/resume/templates',
+    meta: { title: '简历中心' },
+    children: [
+      {
+        path: 'templates',
+        name: 'ResumeTemplates',
+        component: () => import('@/views/resume/templates/index.vue'),
+        meta: { title: '模板管理' }
+      },
+      {
+        path: 'analytics',
+        name: 'ResumeAnalytics',
+        component: () => import('@/views/resume/analytics/index.vue'),
+        meta: { title: '数据总览' }
+      },
+      {
+        path: 'reports',
+        name: 'ResumeReports',
+        component: () => import('@/views/resume/reports/index.vue'),
+        meta: { title: '健康巡检' }
+      }
+    ]
+  },
+  {
     path: '/knowledge',
     component: Layout,
     redirect: '/knowledge/maps',
@@ -316,6 +342,38 @@ const routes = [
         name: 'ChangePassword',
         component: () => import('@/views/profile/ChangePassword.vue'),
         meta: { title: '修改密码' }
+      }
+    ]
+  },
+  {
+    path: '/codepen',
+    component: Layout,
+    redirect: '/codepen/pens',
+    meta: { title: '代码共享器管理' },
+    children: [
+      {
+        path: 'pens',
+        name: 'CodePenManagement',
+        component: () => import('@/views/codepen/pens/index.vue'),
+        meta: { title: '作品管理' }
+      },
+      {
+        path: 'templates',
+        name: 'CodePenTemplates',
+        component: () => import('@/views/codepen/templates/index.vue'),
+        meta: { title: '模板管理' }
+      },
+      {
+        path: 'tags',
+        name: 'CodePenTags',
+        component: () => import('@/views/codepen/tags/index.vue'),
+        meta: { title: '标签管理' }
+      },
+      {
+        path: 'statistics',
+        name: 'CodePenStatistics',
+        component: () => import('@/views/codepen/statistics/index.vue'),
+        meta: { title: '数据统计' }
       }
     ]
   },

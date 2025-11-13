@@ -122,6 +122,20 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 引入codepen模�� -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-codepen</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!-- 引入resume模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-resume</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
