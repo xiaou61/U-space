@@ -1,6 +1,6 @@
 # Code Nest
 
-![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -87,6 +87,7 @@ Code Nest 是一个面向开发者的成长型社区与知识运营平台，采�
 | xiaou-version | 版本档案 | 版本时间线、发布记录、变更说明 |
 | xiaou-moyu | 摸鱼面板 | 日常任务、健康打卡、工作台 |
 | xiaou-points | 积分体系 | 积分规则、账户、排行榜、明细 |
+| xiaou-plan | 计划打卡 | 个人计划、每日打卡、连续统计、提醒通知 |
 | xiaou-monitor | SQL/监控 | SQL 采集、慢查询、日志审计、观测面板 |
 
 ### 前端应用
@@ -354,6 +355,15 @@ server {
 ## 📝 更新日志
 
 仅列出最近版本，更多历史可查看 `git log`。
+
+### v1.6.1 ✨
+
+- 🆕 **计划打卡模块**：`xiaou-plan` 支持个人计划创建、每日打卡、连续打卡统计、站内提醒通知、打卡记录查询等功能。
+- 🎨 **首页重新设计**：采用现代卡片式布局，新增 Hero 区域、核心功能展示、快速入口网格、特色亮点区域，提升视觉体验。
+- 📱 **面试详情页优化**：优化移动端适配与样式细节，提升手机端刷题体验。
+- 🗄️ **数据库脚本**：`sql/v1.6.1` 新增计划打卡相关表结构（user_plan、plan_checkin_record、plan_remind_task）。
+- 🔔 **定时任务**：计划模块集成提醒调度器，支持每日任务生成与站内通知推送。
+- 🔧 **导航优化**：首页快速入口新增「计划打卡」，顶部导航「学习」菜单新增入口。
 
 ### v1.6.0 🚀
 
