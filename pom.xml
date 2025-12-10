@@ -29,6 +29,7 @@
         <module>xiaou-blog</module>
         <module>xiaou-codepen</module>
         <module>xiaou-resume</module>
+        <module>xiaou-plan</module>
     </modules>
 
     <properties>
