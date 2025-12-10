@@ -149,7 +149,7 @@ import { ref } from 'vue'
 import { 
   Reading, ChatDotRound, ArrowRight, Document, Edit, 
   Monitor, Share, Bell, Trophy, Cpu, Connection,
-  Compass, Coffee, TrendCharts, Ticket, ChatLineSquare, DataAnalysis
+  Compass, Coffee, TrendCharts, Ticket, ChatLineSquare, DataAnalysis, Calendar
 } from '@element-plus/icons-vue'
 
 // 核心功能数据
@@ -203,6 +203,7 @@ const quickAccess = ref([
   { title: '朋友圈', icon: 'ChatLineSquare', path: '/moments', color: 'linear-gradient(135deg, #667eea, #764ba2)' },
   { title: '聊天室', icon: 'ChatDotRound', path: '/chat', color: 'linear-gradient(135deg, #f093fb, #f5576c)' },
   { title: '通知中心', icon: 'Bell', path: '/notification', color: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
+  { title: '计划打卡', icon: 'Calendar', path: '/plan', color: 'linear-gradient(135deg, #f5af19, #f12711)' },
   { title: '我的积分', icon: 'Trophy', path: '/points', color: 'linear-gradient(135deg, #43e97b, #38f9d7)' },
   { title: '幸运抽奖', icon: 'Ticket', path: '/lottery', color: 'linear-gradient(135deg, #fa709a, #fee140)' },
   { title: '摸鱼工具', icon: 'Coffee', path: '/moyu-tools', color: 'linear-gradient(135deg, #a18cd1, #fbc2eb)' },

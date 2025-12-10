@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.plan.mapper.PlanCheckinRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.plan.domain.PlanCheckinRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="plan_id" property="planId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="checkin_date" property="checkinDate" jdbcType="DATE"/>
+        <result column="checkin_time" property="checkinTime" jdbcType="TIMESTAMP"/>
+        <result column="complete_value" property="completeValue" jdbcType="INTEGER"/>
+        <result column="complete_content" property="completeContent" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="is_supplement" property="isSupplement" jdbcType="TINYINT"/>
+        <result column="points_earned" property="pointsEarned" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, plan_id, user_id, checkin_date, checkin_time, complete_value, complete_content,
+        remark, is_supplement, points_earned, create_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO plan_checkin_record (
+            plan_id, user_id, checkin_date, checkin_time, complete_value, complete_content,
+            remark, is_supplement, points_earned, create_time
+        ) VALUES (
+            #{planId}, #{userId}, #{checkinDate}, #{checkinTime}, #{completeValue}, #{completeContent},
+            #{remark}, #{isSupplement}, #{pointsEarned}, #{createTime}
+        )
+    </insert>
+
+    <select id="selectByPlanIdAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE plan_id = #{planId} AND checkin_date = #{checkinDate}
+    </select>
+
+    <select id="selectByPlanId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE plan_id = #{planId}
+        ORDER BY checkin_date DESC
+    </select>
+
+    <select id="selectByUserIdAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE user_id = #{userId}
+        ORDER BY checkin_date DESC, checkin_time DESC
+    </select>
+
+    <select id="countByPlanId" resultType="int">
+        SELECT COUNT(*)
+        FROM plan_checkin_record
+        WHERE plan_id = #{planId}
+    </select>
+
+    <select id="selectLatestByPlanId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE plan_id = #{planId}
+        ORDER BY checkin_date DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectByUserIdAndMonth" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_checkin_record
+        WHERE user_id = #{userId}
+          AND YEAR(checkin_date) = #{year}
+          AND MONTH(checkin_date) = #{month}
+        ORDER BY checkin_date ASC
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM plan_checkin_record
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>

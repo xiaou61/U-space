@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.plan.mapper.PlanRemindTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.plan.domain.PlanRemindTask">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="plan_id" property="planId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="remind_type" property="remindType" jdbcType="TINYINT"/>
+        <result column="remind_date" property="remindDate" jdbcType="DATE"/>
+        <result column="remind_time" property="remindTime" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="send_time" property="sendTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, plan_id, user_id, remind_type, remind_date, remind_time, status, send_time, create_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO plan_remind_task (
+            plan_id, user_id, remind_type, remind_date, remind_time, status, create_time
+        ) VALUES (
+            #{planId}, #{userId}, #{remindType}, #{remindDate}, #{remindTime}, #{status}, #{createTime}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO plan_remind_task (plan_id, user_id, remind_type, remind_date, remind_time, status, create_time)
+        VALUES
+        <foreach collection="tasks" item="task" separator=",">
+            (#{task.planId}, #{task.userId}, #{task.remindType}, #{task.remindDate}, #{task.remindTime}, #{task.status}, #{task.createTime})
+        </foreach>
+    </insert>
+
+    <select id="selectPendingTasks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM plan_remind_task
+        WHERE status = 0
+          AND remind_time &gt;= #{startTime}
+          AND remind_time &lt; #{endTime}
+        ORDER BY remind_time ASC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE plan_remind_task
+        SET status = #{status}, send_time = #{sendTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancelByPlanId">
+        UPDATE plan_remind_task
+        SET status = 2
+        WHERE plan_id = #{planId} AND status = 0
+    </update>
+
+    <select id="countByPlanIdAndDate" resultType="int">
+        SELECT COUNT(*)
+        FROM plan_remind_task
+        WHERE plan_id = #{planId} AND remind_date = #{remindDate}
+    </select>
+
+    <delete id="deleteOldTasks">
+        DELETE FROM plan_remind_task
+        WHERE status = 1 AND remind_date &lt; #{beforeDate}
+    </delete>
+
+</mapper>

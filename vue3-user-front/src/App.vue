@@ -44,6 +44,10 @@
                   <el-icon><DataAnalysis /></el-icon>
                   知识图谱
                 </el-dropdown-item>
+                <el-dropdown-item command="/plan">
+                  <el-icon><Calendar /></el-icon>
+                  计划打卡
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
