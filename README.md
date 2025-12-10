@@ -1,5 +1,4 @@
-﻿# Code Nest 
-
+# Code Nest
 
 ![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
@@ -7,121 +6,116 @@
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-
-
 ## 📖 项目简介
 
-Code Nest 是一个基于 Spring Boot + Vue3 的前后端分离的一个程序员社区系统。
+Code Nest 是一个面向开发者的成长型社区与知识运营平台，采用 Spring Boot 3.4.4 + Vue3 + Vite 的前后端分离架构，后台整合 Sa-Token 权限、Redisson 缓存、MySQL 题库/内容系统以及 Prometheus 监控指标，提供包含题库、面试辅导、知识图谱、博客、代码工坊、在线简历、IM 聊天、积分激励与抽奖等在内的多模块能力。
 
-### ✨ 主要特性
+### 平台定位
 
-- 🔐 **完善的权限管理** - Sa-Token认证系统，支持管理员和普通用户双重权限体系
-- 📚 **丰富的题库功能** - 支持题目分类、题单管理、随机抽题、收藏功能
-- 🎯 **智能抽题系统** - 可选择多个题单进行随机抽题，支持自定义抽题数量
-- 💫 **现代化UI** - 基于Element Plus的美观界面，支持响应式设计
-- 📊 **系统监控** - SQL监控、操作日志、登录日志等完整的监控体系
-- 🚀 **高性能架构** - Redis缓存、数据库连接池、异步处理等性能优化
+- **vue3-admin-front**：面向运营/管理员的后台，覆盖菜单/角色、内容审核、题库管理、版本追踪、任务配置、观测看板等能力。
+- **vue3-user-front**：面向开发者的用户端，提供刷题、简历制作、动态广场、博客阅读、代码分享、通知消息等场景。
+- **xiaou-application**：多模块聚合的 Spring Boot API，整合 `xiaou-*` 业务模块，对外暴露统一的 `/api` 网关、鉴权、日志与监控。
+
+## ✨ 功能亮点
+
+### 平台级能力
+
+- **细粒度鉴权**：基于 Sa-Token 构建双端（管理员/用户）登录域、权限树、会话隔离与 Token 签名机制，支持并发登录及多场景鉴权。
+- **智能题库体系**：`xiaou-interview` 内置题型分类、刷题记录、自动组卷、错题重练及统计报表，配合知识图谱实现学习闭环。
+- **内容创作矩阵**：博客系统、动态广场、Bug 趣味墙、代码工坊与在线简历模块组合为全栈内容生产链路。
+- **成长激励与运营**：积分体系、摸鱼任务、抽奖活动、版本发布墙、消息通知与活动打卡全面强化用户粘性。
+- **统一资产管理**：`xiaou-filestorage` 负责文件/附件/导出作品上传，多种存储适配；`xiaou-resume` 支持简历模板、模块化数据、版本历史与多格式导出。
+- **企业级可观测性**：SQL/行为审计、Redisson 限流、异步任务监控、Prometheus + Grafana 指标、Nginx/ Docker 部署脚本开箱即用。
+
+### 模块亮点
+
+- **在线简历（xiaou-resume）**：拖拽式编辑、模板市场、版本比对、PDF/Word/HTML 导出与分享统计。
+- **代码工坊（xiaou-codepen）**：内置前端 + 后端 + SQL 演示沙盒，支持作品发布、Fork、收藏及后台运营。
+- **知识图谱（xiaou-knowledge）**：以节点关系呈现技术体系，结合 Pinia/G6 构建交互式知识网络。
+- **动态/社区（xiaou-moment、xiaou-community）**：用户动态流、话题标签、点赞/收藏、内容推荐权重与违规审核。
+- **通知 & IM（xiaou-notification、xiaou-chat）**：系统/私信/群聊，WebSocket 实时消息、撤回、封禁、敏感词检测。
+- **敏感词/风控（xiaou-sensitive、xiaou-sensitive-api）**：分词匹配、命中日志、策略管理、WebHook 回调。
+- **版本与运营（xiaou-version、xiaou-moyu、xiaou-points、lottery）**：版本里程碑、摸鱼打卡、积分规则、抽奖活动与奖品管理。
+
+### 运维与安全
+
+- SQL 慢查询与操作审计、行为日志沉淀到 `xiaou.monitor`，支持异步写入与保留周期配置。
+- `docs/Prometheus运维部署指南.md` 提供 Prometheus + Grafana 一键部署说明，Actuator/Micrometer 暴露业务指标。
+- Dockerfile、Nginx 反向代理配置与多环境配置文件（dev/prod）一应俱全，便于快速上线。
 
 ## 🏗️ 技术架构
 
 ### 后端技术栈
 
-- **框架**: Spring Boot 3.4.4
-- **安全**: Sa-Token权限认证框架
-- **数据库**: MySQL 8.0 + MyBatis
-- **缓存**: Redis (Redisson)
-- **文档**: SpringDoc (OpenAPI 3.0)
-- **工具**: Hutool、Lombok
-- **监控**: 自研SQL监控系统
+- Spring Boot 3.4.4、Spring MVC、Spring Validation、Sa-Token 鉴权。
+- MySQL 8 + MyBatis（含 PageHelper）、多数据源、数据库脚本在 `sql/`。
+- Redis 6 + Redisson（分布式锁、延迟队列），异步任务/定时调度。
+- SpringDoc OpenAPI 3、Knife4j、Hutool、Lombok、MapStruct 等辅助库。
+- 日志监控：Micrometer、Prometheus Exporter、SQL/操作日志框架、自定义监控配置。
 
 ### 前端技术栈
 
-- **框架**: Vue 3 + Composition API
-- **构建工具**: Vite
-- **UI组件**: Element Plus
-- **状态管理**: Pinia
-- **路由**: Vue Router 4
-- **HTTP客户端**: Axios
-- **样式**: SCSS
+- Vue 3 + Composition API + TypeScript（可选），构建工具 Vite 5。
+- Element Plus 组件库、Pinia 状态、Vue Router 4、Axios 网络层、SCSS/Sass。
+- 可视化：ECharts、D3、@antv/g6、markdown-it、highlight.js、nprogress。
+- 代码规范：ESLint + eslint-plugin-vue + Prettier（可选），统一 `.editorconfig`。
 
-### 系统架构
+### 基础设施
 
-```
-┌─────────────────┐    ┌─────────────────┐
-│   管理员端       │    │     用户端       │
-│  (vue3-admin)   │    │  (vue3-user)    │
-└─────┬───────────┘    └─────┬───────────┘
-      │                      │
-      └──────────┬───────────┘
-                 │
-    ┌────────────▼─────────────┐
-    │      Nginx (可选)        │
-    └────────────┬─────────────┘
-                 │
-    ┌────────────▼─────────────┐
-    │     Spring Boot API      │
-    │    ┌─────────────────┐   │
-    │    │   xiaou-system    │   │
-    │    │   xiaou-user      │   │
-    │    │ xiaou-interview   │   │
-    │    │  xiaou-monitor    │   │
-    │    │  xiaou-moment     │   │
-    │    │ xiaou-notification│   │
-    │    │ xiaou-filestorage │   │
-    │    │  xiaou-knowledge  │   │
-    │    │   xiaou-version   │   │
-    │    │    xiaou-moyu     │   │
-    │    │    xiaou-points   │   │
-    │    │     xiaou-chat    │   │
-    │    │  xiaou-common     │   │
-    │    └─────────────────┘   │
-    └────────────┬─────────────┘
-                 │
-    ┌────────────▼─────────────┐
-    │      MySQL + Redis       │
-    └──────────────────────────┘
-```
+- MySQL、Redis、对象存储（本地/Tencent COS 等）、Nginx、Docker、GitHub Actions（可扩展）。
+- Prometheus + Grafana + Alertmanager、日志采集（logs/）、监控告警配置。
 
-## 📦 项目结构
+## 📦 模块一览
+
+| 模块 | 说明 | 关键功能 |
+| --- | --- | --- |
+| xiaou-application | 主 API 工程 | 聚合所有业务模块、统一配置、网关、鉴权与监控出口 |
+| xiaou-common | 通用基础库 | 自定义注解、AOP、统一返回体、异常、工具集 |
+| xiaou-system | 系统管理 | 组织、角色、菜单、字典、参数、审计日志 |
+| xiaou-user / xiaou-user-api | 用户中心 | 用户注册、认证、资料、登录态 API 隔离 |
+| xiaou-interview | 面试题库 | 题目、试卷、刷题记录、统计、推荐 |
+| xiaou-community | 社区/岗位 | 帖子、岗位、任务调度、运营后台 |
+| xiaou-moment | 动态广场 | 动态发布、点赞、收藏、推荐算法、审核 |
+| xiaou-blog | 博客 | Markdown 编辑、标签、归档、评论 |
+| xiaou-codepen | 代码工坊 | 代码模板、在线运行、作品管理、Fork/收藏 |
+| xiaou-resume | 在线简历 | 模板库、模块化填写、版本历史、多格式导出 |
+| xiaou-filestorage | 文件存储 | 本地/云存储、上传、分片、权限与统计 |
+| xiaou-notification | 消息中心 | 系统通知、私信、消息状态、推送 |
+| xiaou-chat | IM 聊天 | WebSocket 实时通信、撤回、禁言、房间 |
+| xiaou-sensitive / xiaou-sensitive-api | 敏感词 | 词库维护、命中记录、外部 API |
+| xiaou-knowledge | 知识图谱 | 节点管理、图谱渲染、知识库 |
+| xiaou-version | 版本档案 | 版本时间线、发布记录、变更说明 |
+| xiaou-moyu | 摸鱼面板 | 日常任务、健康打卡、工作台 |
+| xiaou-points | 积分体系 | 积分规则、账户、排行榜、明细 |
+| xiaou-monitor | SQL/监控 | SQL 采集、慢查询、日志审计、观测面板 |
+
+### 前端应用
+
+| 模块 | 说明 | 启动命令 |
+| --- | --- | --- |
+| vue3-admin-front | 管理后台，Element Plus + Pinia | `npm install && npm run dev`（端口 5173） |
+| vue3-user-front | 用户端，组件与依赖同后台 | `npm install && npm run dev`（端口 5174） |
+
+## 🗂️ 目录结构
 
 ```
 Code-Nest/
-├── docs/                           # 文档目录
-├── sql/                           # 数据库脚本
-│   ├── struct.sql                 # 表结构
-│   └── data.sql                   # 初始数据
-├── vue3-admin-front/              # 管理员前端
-├── vue3-user-front/               # 用户端前端
-├── xiaou-application/             # 启动模块
-├── xiaou-common/                  # 公共模块
-│   ├── annotation/                # 自定义注解
-│   ├── aspect/                    # 切面处理
-│   ├── config/                    # 配置类
-│   ├── core/                      # 核心类
-│   ├── enums/                     # 枚举类
-│   ├── exception/                 # 异常处理
-│   ├── security/                  # 安全相关
-│   └── utils/                     # 工具类
-├── xiaou-interview/               # 面试题模块
-│   ├── controller/                # 控制器
-│   │   ├── admin/                 # 管理员接口
-│   │   └── pub/                   # 公开接口
-│   ├── domain/                    # 实体类
-│   ├── dto/                       # 数据传输对象
-│   ├── mapper/                    # 数据映射
-│   └── service/                   # 业务逻辑
-├── xiaou-monitor/                 # 监控模块
-├── xiaou-system/                  # 系统模块
-├── xiaou-user/                    # 用户模块
-├── xiaou-moment/                  # 朋友圈模块
-├── xiaou-notification/            # 消息通知模块
-├── xiaou-filestorage/             # 文件存储模块
-├── xiaou-knowledge/               # 知识图谱模块
-├── xiaou-version/                 # 版本管理模块
-├── xiaou-moyu/                    # 摸鱼工具模块
-├── xiaou-points/                  # 积分系统模块
-├── xiaou-chat/                    # IM聊天室模块
-└── pom.xml                        # Maven主配置
+├── docker/                     # 后端 Dockerfile、compose 示例
+├── docs/
+│   ├── PRD/                    # 各业务模块 PRD/需求文档
+│   └── Prometheus运维部署指南.md
+├── logs/                       # 运行期日志（开发环境可忽略）
+├── sql/
+│   ├── struct.sql              # 数据库结构
+│   ├── data.sql                # 初始化数据
+│   └── v1.6.0/                 # 增量脚本（CodePen 等）
+├── vue3-admin-front/           # 管理端前端
+├── vue3-user-front/            # 用户端前端
+├── xiaou-common/               # 通用模块
+├── xiaou-application/          # Spring Boot 聚合工程（启动入口）
+├── xiaou-*/                    # 业务子模块（interview、blog、resume…）
+├── pom.xml                     # 多模块 Maven 配置
+└── README.md
 ```
 
 ## 🚀 Quick Start
@@ -129,10 +123,11 @@ Code-Nest/
 ### 环境要求
 
 - Java 17+
-- Node.js 16+
+- Node.js 18+（Vite 5 推荐）
+- Maven 3.8+
 - MySQL 8.0+
 - Redis 6.0+
-- Maven 3.8+
+- 可选：Docker、Nginx、Prometheus/Grafana
 
 ### 1. 克隆项目
 
@@ -141,27 +136,28 @@ git clone https://github.com/your-username/Code-Nest.git
 cd Code-Nest
 ```
 
-### 2. 数据库初始化
+### 2. 初始化数据库
 
 ```bash
-# 创建数据库
 mysql -u root -p
+
 CREATE DATABASE code_nest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# 导入表结构和数据
-
+USE code_nest;
+SOURCE sql/struct.sql;
+SOURCE sql/data.sql;
+-- 如需最新功能，请额外执行 sql/v1.6.0/*.sql
 ```
 
 ### 3. 配置文件
 
-修改 `xiaou-application/src/main/resources/application-dev.yml`:
+编辑 `xiaou-application/src/main/resources/application-dev.yml`（或新建 `application-local.yml`）：
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/code_nest?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
-    username: your_username
-    password: your_password
+    url: jdbc:mysql://localhost:3306/code_nest?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: your_mysql_user
+    password: your_mysql_password
   data:
     redis:
       redisson:
@@ -169,29 +165,42 @@ spring:
           singleServerConfig:
             address: "redis://127.0.0.1:6379"
             database: 3
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 604800
+  activity-timeout: 1800
+
+xiaou:
+  monitor:
+    enabled: true
+    slow-sql-threshold: 1000
+    async-save: true
+    retention-days: 30
 ```
+
+按需补充短信/OSS/COS 等密钥。
 
 ### 4. 启动后端
 
 ```bash
-# 编译项目
+# 一键编译
 mvn clean package -DskipTests
 
-# 启动服务
-cd xiaou-application
-mvn spring-boot:run
+# 开发模式启动（默认使用 dev 配置）
+mvn -pl xiaou-application -am spring-boot:run
 
-# 或者运行jar包
-java -jar target/xiaou-application-1.6.0.jar
+# 或直接运行打包后的 jar
+java -jar xiaou-application/target/xiaou-application-1.6.0.jar --spring.profiles.active=prod
 ```
 
-服务启动后访问: http://localhost:9999/api
-
-API文档: http://localhost:9999/api/swagger-ui.html
+- API 根地址：`http://localhost:9999/api`
+- Swagger / Knife4j：`http://localhost:9999/api/swagger-ui.html`
 
 ### 5. 启动前端
 
-#### 管理员端
+#### 管理后台
 
 ```bash
 cd vue3-admin-front
@@ -199,9 +208,7 @@ npm install
 npm run dev
 ```
 
-访问: http://localhost:5173
-
-默认管理员账号: `admin` / `123456`
+访问 `http://localhost:5173`
 
 #### 用户端
 
@@ -211,43 +218,46 @@ npm install
 npm run dev
 ```
 
-访问: http://localhost:5174
+访问 `http://localhost:5174`
 
-可注册新用户或使用测试账号
+### 6. 常用账号
 
-### 6. 构建部署
+| 端 | 账号 | 密码 | 备注 |
+| --- | --- | --- | --- |
+| 管理后台 | `admin` | `123456` | 可在用户管理中修改 |
+| 用户端 | 已内置演示数据 | `sql/data.sql` 中提供 | 也可自行注册 |
+
+### 7. 构建与部署产物
 
 ```bash
-# 后端打包
+# 后端
 mvn clean package -DskipTests
 
-# 前端打包
+# 前端
 cd vue3-admin-front && npm run build
 cd vue3-user-front && npm run build
 ```
 
-## 🔧 配置说明
+静态资源输出至 `dist/`，可由 Nginx 或对象存储托管。
 
-### Sa-Token配置
+## 🔧 配置与运维
+
+### Sa-Token 关键配置
 
 ```yaml
 sa-token:
   token-name: Authorization
-  timeout: 604800           # Token有效期 7天 (秒)
-  activity-timeout: 1800    # Token临时有效期 30分钟 (秒)
-  is-concurrent: true       # 允许同一账号并发登录
-  is-share: false          # 每次登录新建Token
-  token-style: uuid        # Token风格
-  token-prefix: Bearer     # Token前缀
-  
-  # Sa-Token 独立 Redis 配置
+  token-style: uuid
+  is-share: false
+  is-concurrent: true
+  token-prefix: Bearer
   alone-redis:
     host: 127.0.0.1
     port: 6379
-    database: 4            # 使用独立database
+    database: 4
 ```
 
-### Redis配置
+### Redis / Redisson
 
 ```yaml
 spring:
@@ -258,371 +268,175 @@ spring:
           singleServerConfig:
             address: "redis://127.0.0.1:6379"
             database: 3
+            password: your_redis_password
 ```
 
-### 监控配置
+### SQL 与监控
 
 ```yaml
 xiaou:
   monitor:
-    enabled: true                    # 启用SQL监控
-    slow-sql-threshold: 1000        # 慢SQL阈值(ms)
-    async-save: true                # 异步保存日志
-    retention-days: 30              # 日志保留天数
+    enabled: true
+    slow-sql-threshold: 800
+    async-save: true
+    retention-days: 30
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
 ```
 
-## 🚀 部署指南
+- Prometheus 抓取地址：`http://<host>:9999/api/actuator/prometheus`
+- Grafana Dashboard/报警配置参考 `docs/Prometheus运维部署指南.md`
 
-### Docker部署
+### 日志
+
+- 默认输出到 `logs/` 目录，按日期分片。
+- Sa-Token、SQL、操作日志支持异步保存，可在 `application-*.yml` 中自定义。
+
+## ☁️ 部署指南
+
+### Docker
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.6.0 .
+docker build -t code-nest:1.6.0 -f docker/Dockerfile .
 
 # 运行容器
 docker run -d \
   --name code-nest \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
+  --env-file docker/env/example.env \
   code-nest:1.6.0
 ```
 
-### Nginx配置
+可与 MySQL/Redis 容器组合，或使用 `docker-compose`.
+
+### Nginx
 
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
-    
-    # 前端静态文件
+
+    # 管理端静态资源
+    location /admin/ {
+        root /opt/code-nest/vue3-admin-front/dist;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    # 用户端静态资源
     location / {
-        root /usr/share/nginx/html;
+        root /opt/code-nest/vue3-user-front/dist;
         try_files $uri $uri/ /index.html;
     }
-    
-    # API代理
+
+    # API 转发
     location /api/ {
-        proxy_pass http://localhost:9999/api/;
+        proxy_pass http://127.0.0.1:9999/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 ```
 
-## 🤝 贡献指南
+## 📚 文档与资料
 
-欢迎贡献代码！请遵循以下步骤:
+- `docs/PRD/`：覆盖简历、代码工坊、IM、积分、抽奖、知识图谱、敏感词、SQL 优化等 20+ 模块的产品文档。
+- `docs/Prometheus运维部署指南.md`：Prometheus + Grafana 安装、指标、告警策略。
+- `sql/struct.sql` & `sql/data.sql`：完整结构与示例数据，`sql/v1.6.0/` 为增量脚本。
+- `pom.xml`：多模块管理、版本统一、Flatten 插件配置。
+- `docker/`：容器化部署示例。
 
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+## 📝 更新日志
 
-## 📄 更新日志
+仅列出最近版本，更多历史可查看 `git log`。
 
 ### v1.6.0 🚀
 
-#### 🆕 新增内容
-- **在线简历模块**：新增 xiaou-resume 服务，提供模板中心、简历管理、模块化内容、版本快照、分享与访问统计。
-- **代码共享中心**：CodePen 模块正式上线（前后台 + SQL），支持作品发布、Fork、收藏、评论与后台运营。
-- **监控体系升级**：接入 Prometheus + Grafana，结合 Actuator / Micrometer 指标与告警规则，替换旧 SQL 调用树监控。
-- **敏感词增强**：敏感词系统补充统计分析与配置项，管理端可视化能力同步完善。
-- **数据库脚本**：sql/v1.6.0 目录新增简历与 CodePen 建表脚本，升级一步到位。
-
-#### 🔧 优化与修复
-- 简历导出支持 PDF / Word / HTML，并与文件存储打通，自动上传至 COS 返回真实下载链接。
-- 用户端上线模板大厅、简历工作台与编辑器；管理端提供模板维护、数据总览、健康巡检页面。
-- README、导航、版本号等展示信息同步到 1.6.0，导出/分享交互体验全面升级。
+- 🆕 **在线简历模块**：`xiaou-resume` 支持模板市场、模块化数据、版本快照、拖拽编辑与 PDF/Word/HTML 导出。
+- 🆕 **代码工坊（CodePen）**：支持前端/后端/SQL 演示、作品发布、Fork/收藏/点赞、后台运营、商业化配置。
+- 🆕 **可观测中心**：Prometheus + Grafana 监控整合 Micrometer/Actuator 指标、SQL 观测、告警与文档。
+- 🆕 **刷题洞察**：题库模块新增统计面板、算法难度画像、错题同步订阅。
+- 🗄️ **数据库脚本**：`sql/v1.6.0` 目录补充 CodePen/简历相关表结构。
+- 🔧 **导出 & 存储**：简历导出自动上传至 `xiaou-filestorage`，新增 COS/MinIO 适配。
+- 🔧 **内容体验**：社区/简历模板支持用户端/后台协同维护，README 与版本说明全面升级。
 
 ### v1.5.0 🎉
 
-#### 📝 博客系统模块
-- **博客功能完整实现** - 全新的博客创作和管理系统
-  - 博客文章发布和管理
-  - Markdown编辑器支持
-  - 文章分类和标签
-  - 文章搜索和筛选
-  - 评论互动功能
-
-#### 🎲 抽奖系统模块
-- **抽奖管理功能** - 完整的抽奖活动管理
-  - 抽奖活动创建和配置
-  - 奖品设置和库存管理
-  - 中奖记录和统计
-  - 后台抽奖管理界面
-
-#### 🏷️ 社区增强功能
-- **标签管理系统** - 社区内容分类和组织
-  - 标签创建和管理
-  - 标签关联和搜索
-  - 热门标签统计
-  - 标签云展示
-
-#### ✨ 动态功能增强
-- **动态收藏和搜索** - 丰富的动态互动功能
-  - 动态收藏功能
-  - 动态搜索和筛选
-  - 用户动态列表
-  - 个人收藏列表
-  
-- **热门动态算法** - 智能推荐系统
-  - 热度分数计算（点赞×2 + 评论×3 + 浏览×0.1）
-  - 定时任务更新热门动态（每10分钟）
-  - 动态浏览统计和防重复记录
-  - 批量获取优化性能
-  
-- **动态安全机制** - 内容审核和过滤
-  - 敏感词检测和过滤
-  - 内容安全性提升
-  - 违规内容拦截
-
-#### 🛡️ 敏感词系统增强
-- **统计分析功能** - 敏感词监控和分析
-  - 敏感词命中统计
-  - 数据分析报表
-  - 趋势分析和预警
-  - 过滤效果评估
-
-#### 📊 监控系统重构
-- **Prometheus监控集成** - 现代化监控方案
-  - 集成Prometheus和Grafana
-  - Spring Boot Actuator配置
-  - Micrometer Prometheus Registry
-  - JVM、HTTP、数据库连接池监控
-  - 预定义告警规则
-  - 完整的监控部署文档
-  - 移除旧的SQL调用树监控模块
-
-#### 🔧 认证系统优化
-- **Token管理优化** - 更好的用户体验
-  - 优化Token过期处理逻辑
-  - 改进Token续签机制
-  - 统一Sa-Token权限认证
-  - 管理员权限验证增强
-
-#### 📦 数据库更新
-- 新增博客相关表（blog_posts、blog_categories、blog_tags等）
-- 新增抽奖系统表（lottery_activities、lottery_prizes、lottery_records）
-- 新增社区标签表（community_tags）
-- 新增动态收藏表（moment_favorites、moment_views）
-- 新增敏感词统计表优化
+- 🆕 **博客系统**：Markdown 编辑、分类/标签、草稿箱、全文检索与评论互动。
+- 🆕 **抽奖中心**：活动配置、奖品管理、概率算法、中奖记录及后台运营。
+- 🆕 **标签体系统一**：社区/博客/动态共用标签维度，提供榜单与统计。
+- ✨ **动态功能增强**：动态收藏夹、推荐算法（点赞/评论/权重）、违规拦截、可视化报表。
+- 🛡️ **敏感词系统**：词库批量导入、命中记录、任务调度、接入 IM/动态/博客。
+- 📊 **监控重构**：Prometheus 指标拆分、JVM/HTTP/DB 监控、告警模板。
+- 🔐 **认证优化**：Token 生命周期管理、登录流程、统一异常语义。
+- 📦 **数据库更新**：新增博客、抽奖、标签、动态收藏等表结构。
 
 ### v1.4.0 🚀
 
-#### 🔐 权限系统重构
-- **Sa-Token认证系统迁移** - 从JWT迁移到Sa-Token
-  - 使用Sa-Token独立Redis存储（database 4）
-  - 支持管理员和用户双账号体系（StpAdminUtil / StpUserUtil）
-  - 完善的Session管理和Token续签机制
-  - 路由级权限拦截配置
-  - 优化的异常处理（401/403状态码）
-  - WebSocket Token认证支持
-
-#### 💬 IM聊天室模块
-- **实时聊天功能** - 基于WebSocket的即时通讯
-  - WebSocket实时消息推送
-  - 支持文本、图片、系统消息
-  - 在线用户列表和人数统计
-  - 历史消息加载（分页）
-  - 消息撤回功能（2分钟内）
-  - 心跳检测和断线重连
-  - 管理员功能：
-    - 消息管理和删除
-    - 用户踢出功能
-    - 系统公告推送
-    - 在线用户监控
-
-#### ⭐ 积分系统模块
-- **用户积分管理** - 完整的积分体系
-  - 积分规则配置和管理
-  - 积分明细记录和查询
-  - 用户积分统计
-  - 积分排行榜
-  - 支持多种积分变动类型
-  - 积分日志追踪
-
-#### 🔧 技术架构优化
-- **全局异常处理增强**
-  - Sa-Token异常统一处理
-  - NotLoginException → 401 状态码
-  - NotPermissionException → 403 状态码
-  - 详细的异常类型区分和消息提示
-
-- **WebSocket安全认证**
-  - Sa-Token握手拦截器
-  - Token验证和用户信息提取
-  - Session数据同步到WebSocket attributes
-
-- **模块化架构**
-  - xiaou-chat 聊天室模块
-  - xiaou-points 积分系统模块
-  - 模块间依赖优化
-
-#### 📦 数据库更新
-- 新增聊天室相关表（chat_rooms、chat_messages、chat_user_bans、chat_online_users）
-- 新增积分系统表（points_rules、user_points、points_detail）
+- 🔐 **Sa-Token 全面接管**：JWT 全量迁移至 Sa-Token，双端账号体系、并发控制、路由鉴权、WebSocket 鉴权。
+- 💬 **IM 聊天模块**：WebSocket 实时通信，文本/图片/系统消息、撤回、禁言、封禁、后台管理。
+- ⭐ **积分系统**：积分规则、明细、排行榜、任务中心。
+- 🧱 **架构优化**：全局异常处理增强、模块解耦、WebSocket 鉴权同步、敏感词中台。
+- 📦 **数据库**：新增聊天、积分相关表。
 
 ### v1.3.0 🔥
 
-#### 🚀 重大功能新增
-- **🤖 Coze AI工作流集成** - 引入智能AI工作流平台
-  - 支持Coze平台工作流调用
-  - 提供统一工具类和配置管理
-  - 同步和异步两种调用方式
-  - 参数传递、结果缓存、异常处理等完整功能
-  - 通过枚举统一管理工作流信息
+- 🤖 **Coze AI 集成**：统一 AI 能力封装，支持同步/异步调用、限流、异常治理。
+- 🎯 **Bug 趣味墙**：Bug 题库、抓取、分享、历史记录与运营活动。
+- 🧘 **摸鱼工作台**：每日任务、时薪统计、排行榜、提醒。
+- 🧰 **效率工具集**：常用开发工具聚合、清晰的路径引导。
+- 🎨 **用户体验**：前台 UI 重构、响应式布局、主题优化。
+- 🧠 **知识图谱强化**：节点内容升级、图谱编辑、后台维护流程。
+- 📦 **模块化**：`xiaou-moyu`、`xiaou-version` 等独立为可复用模块。
 
-- **🐛 Bug商店功能模块** - 趣味化编程体验
-  - Bug条目展示和管理系统
-  - 随机Bug获取和浏览功能
-  - 用户Bug浏览历史记录
-  - Bug内容复制和切换浏览
-  - 批量导入和数据初始化
-  - 管理端完整的CRUD操作
+### v1.2.x
 
-- **🎮 摸鱼工具集** - 程序员专属工具箱
-  - 程序员日历和每日内容管理
-  - 时薪计算器功能
-  - 今日热榜数据展示
-  - 热榜数据初始化和管理
+- 🛠️ **在线工具/简历 2.0**：多格式导出、版本管理、实时协作。
+- 🔔 **通知中心**：系统消息、站内信、订阅提醒。
+- 📁 **文件存储**：本地/云存储适配、权限控制、统计。
+- ⚙️ **系统优化**：SQL 规范化、结构调整、性能提升。
 
-- **🛠️ 开发者工具模块** - 提升开发效率
-  - 程序员工具模块集成
-  - 完善的工具路由配置
-  - 统一的工具管理界面
+### v1.1.x
 
-#### 🎨 用户体验优化
-- **导航系统升级** - 全局导航栏设计
-  - 统一的页面布局优化
-  - 响应式导航交互
-  - 更好的用户体验流程
-
-- **版本管理功能** - 系统版本追踪
-  - 版本历史管理和展示
-  - 菜单搜索功能实现
-  - 版本信息统一管理
-
-#### 🔧 技术架构优化
-- **知识图谱增强** - 知识管理系统完善
-  - 知识节点内容改为飞书文档链接
-  - 管理员端知识图谱和节点管理
-  - 更好的知识内容组织方式
-
-- **模块化架构** - 新增多个功能模块
-  - xiaou-moyu 摸鱼工具模块
-  - xiaou-version 版本管理模块
-  - 模块间依赖关系优化
-
-### v1.2.1
-
-#### 🚀 新增功能
-- **敏感词过滤系统** - 完善的内容审核机制
-  - 支持敏感词分类管理
-  - 多种过滤策略配置
-  - 敏感词检测日志记录
-  - 实时内容过滤与替换
-
-#### 🔧 系统优化
-- 优化通知模块性能和功能
-- 完善各模块间的集成和协作
-- 提升系统稳定性和可维护性
-
-### v1.2.0
-
-#### 🚀 新增功能模块
-- **朋友圈模块** - 全新的社交功能
-  - 用户动态发布与展示
-  - 点赞、评论、转发功能
-  - 动态可见性控制
-  - 图片/视频多媒体支持
-  
-- **消息通知模块** - 完整的消息推送系统
-  - 系统消息通知
-  - 用户互动消息
-  - 消息状态管理
-  - 批量操作支持
-  
-- **文件存储模块** - 统一的文件管理系统
-  - 多种存储策略支持(本地、云存储)
-  - 文件上传下载管理
-  - 文件访问权限控制
-  - 存储统计与监控
-
-#### 🔧 技术改进
-- 完善模块化架构设计
-- 优化系统安全性
-- 提升用户体验
-
-### v1.1.1 
-
-#### 🔧 技术改进
-- 重构SQL监控系统，优化为监控树类型结构
-- 提升监控数据可视化展示效果
-- 优化监控性能和用户体验
-
-### v1.1.0
-
-#### 🚀 功能增强
-- 新增社区模块
-- 社区帖子管理
-- 评论系统
-- 用户互动功能
-
-#### 🔧 技术改进
-- 优化系统架构
-- 代码结构重构
-- 性能优化
+- ✨ **功能增强**：招聘/内推模块、问答、用户中心、数据结构升级。
+- 🧱 **架构优化**：模块抽象、代码重构、性能调优。
 
 ### v1.0.0
 
-#### 🎉 首次发布
-
-**核心功能**
-- 后台管理
-- 面试题管理
+- 🎉 初始发布，包含后台管理与基础题库/内容功能。
 
 ## 📞 联系方式
 
-- 项目维护者: xiaou
-- 邮箱: 3153566913@qq.com
-- 项目地址: https://github.com/xiaou61/Code-Nest
+- 维护者：xiaou
+- 邮箱：3153566913@qq.com
+- GitHub：https://github.com/xiaou61/Code-Nest
 
 ## 📜 开源协议
 
-本项目基于 [MIT License](LICENSE) 开源协议。
+本项目采用 [MIT License](LICENSE)。欢迎 Star / Fork，一起共建生态。
 
-**⭐ 如果这个项目对你有帮助，请点个Star支持一下！⭐**
-
-## 项目功能截图
+## 🖼️ 功能截图
 
 ### 管理员端
 
 ![image-20251001192022408](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011920552.png)
-
 ![image-20251001192046724](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011920794.png)
-
 ![image-20251001192101335](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011921406.png)
-
 ![image-20251001192116123](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011921200.png)
-
 ![image-20251001192148551](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011921665.png)
 
 ### 用户端
 
 ![image-20251001192200120](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922393.png)
-
 ![image-20251001192206833](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922904.png)
-
 ![image-20251001192254045](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922111.png)
-
 ![image-20251001192300510](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923575.png)
-
 ![image-20251001192306591](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923659.png)
-
 ![image-20251001192312505](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923749.png)
-
 ![image-20251001192320125](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923340.png)
-
 ![image-20251001192329371](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923495.png)
-
