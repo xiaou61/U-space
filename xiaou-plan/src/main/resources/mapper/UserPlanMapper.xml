@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.plan.mapper.UserPlanMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.plan.domain.UserPlan">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="plan_name" property="planName" jdbcType="VARCHAR"/>
+        <result column="plan_desc" property="planDesc" jdbcType="VARCHAR"/>
+        <result column="plan_type" property="planType" jdbcType="TINYINT"/>
+        <result column="target_type" property="targetType" jdbcType="TINYINT"/>
+        <result column="target_value" property="targetValue" jdbcType="INTEGER"/>
+        <result column="target_unit" property="targetUnit" jdbcType="VARCHAR"/>
+        <result column="start_date" property="startDate" jdbcType="DATE"/>
+        <result column="end_date" property="endDate" jdbcType="DATE"/>
+        <result column="daily_start_time" property="dailyStartTime" jdbcType="TIME"/>
+        <result column="daily_end_time" property="dailyEndTime" jdbcType="TIME"/>
+        <result column="repeat_type" property="repeatType" jdbcType="TINYINT"/>
+        <result column="repeat_days" property="repeatDays" jdbcType="VARCHAR"/>
+        <result column="remind_before" property="remindBefore" jdbcType="INTEGER"/>
+        <result column="remind_deadline" property="remindDeadline" jdbcType="INTEGER"/>
+        <result column="remind_enabled" property="remindEnabled" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="total_checkin_days" property="totalCheckinDays" jdbcType="INTEGER"/>
+        <result column="current_streak" property="currentStreak" jdbcType="INTEGER"/>
+        <result column="max_streak" property="maxStreak" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, plan_name, plan_desc, plan_type, target_type, target_value, target_unit,
+        start_date, end_date, daily_start_time, daily_end_time, repeat_type, repeat_days,
+        remind_before, remind_deadline, remind_enabled, status, total_checkin_days,
+        current_streak, max_streak, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_plan (
+            user_id, plan_name, plan_desc, plan_type, target_type, target_value, target_unit,
+            start_date, end_date, daily_start_time, daily_end_time, repeat_type, repeat_days,
+            remind_before, remind_deadline, remind_enabled, status, total_checkin_days,
+            current_streak, max_streak, create_time, update_time
+        ) VALUES (
+            #{userId}, #{planName}, #{planDesc}, #{planType}, #{targetType}, #{targetValue}, #{targetUnit},
+            #{startDate}, #{endDate}, #{dailyStartTime}, #{dailyEndTime}, #{repeatType}, #{repeatDays},
+            #{remindBefore}, #{remindDeadline}, #{remindEnabled}, #{status}, #{totalCheckinDays},
+            #{currentStreak}, #{maxStreak}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE user_plan SET
+            plan_name = #{planName},
+            plan_desc = #{planDesc},
+            plan_type = #{planType},
+            target_type = #{targetType},
+            target_value = #{targetValue},
+            target_unit = #{targetUnit},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            daily_start_time = #{dailyStartTime},
+            daily_end_time = #{dailyEndTime},
+            repeat_type = #{repeatType},
+            repeat_days = #{repeatDays},
+            remind_before = #{remindBefore},
+            remind_deadline = #{remindDeadline},
+            remind_enabled = #{remindEnabled},
+            update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE id = #{id} AND status != 0
+    </select>
+
+    <select id="selectByUserIdAndId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE user_id = #{userId} AND id = #{id} AND status != 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE user_id = #{userId} AND status != 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="planType != null">
+            AND plan_type = #{planType}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND plan_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectTodayPlans" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE user_id = #{userId}
+          AND status = 1
+          AND start_date &lt;= #{today}
+          AND (end_date IS NULL OR end_date &gt;= #{today})
+        ORDER BY daily_start_time ASC, create_time DESC
+    </select>
+
+    <select id="selectActivePlans" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE user_id = #{userId} AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE user_plan SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCheckinStats">
+        UPDATE user_plan SET
+            total_checkin_days = #{totalCheckinDays},
+            current_streak = #{currentStreak},
+            max_streak = #{maxStreak},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE user_plan SET status = 0, update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <select id="selectPlansForRemind" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_plan
+        WHERE status = 1
+          AND remind_enabled = 1
+          AND start_date &lt;= #{today}
+          AND (end_date IS NULL OR end_date &gt;= #{today})
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM user_plan
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="status == null">
+            AND status != 0
+        </if>
+    </select>
+
+</mapper>

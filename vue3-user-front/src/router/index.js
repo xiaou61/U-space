@@ -251,6 +251,16 @@ const routes = [
     }
   },
   {
+    path: '/plan',
+    name: 'PlanCheckin',
+    component: () => import('@/views/plan/Index.vue'),
+    meta: {
+      title: '计划打卡',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/lottery',
     name: 'Lottery',
     component: () => import('@/views/lottery/index.vue'),
