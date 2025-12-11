@@ -271,6 +271,36 @@ const routes = [
     }
   },
   {
+    path: '/flashcard',
+    name: 'Flashcard',
+    component: () => import('@/views/flashcard/Index.vue'),
+    meta: {
+      title: '闪卡记忆',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/flashcard/study/:id',
+    name: 'FlashcardStudy',
+    component: () => import('@/views/flashcard/Study.vue'),
+    meta: {
+      title: '闪卡学习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/stats',
+    name: 'FlashcardStats',
+    component: () => import('@/views/flashcard/Stats.vue'),
+    meta: {
+      title: '学习统计',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
     path: '/knowledge',
     name: 'Knowledge',
     component: () => import('@/views/knowledge/Index.vue'),

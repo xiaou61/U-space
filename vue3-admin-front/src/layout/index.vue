@@ -350,6 +350,17 @@
             <span>抽奖管理</span>
           </el-menu-item>
           
+          <el-sub-menu index="/flashcard">
+            <template #title>
+              <el-icon><Postcard /></el-icon>
+              <span>闪卡记忆管理</span>
+            </template>
+            <el-menu-item index="/flashcard/decks">
+              <el-icon><Collection /></el-icon>
+              <span>卡组管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+          
           <el-sub-menu index="/blog">
             <template #title>
               <el-icon><Reading /></el-icon>
@@ -500,7 +511,9 @@ import {
   Coffee,
   Calendar,
   Reading,
-  Check
+  Check,
+  Postcard,
+  CollectionTag
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

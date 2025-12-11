@@ -5,6 +5,7 @@ import com.xiaou.common.core.domain.Result;
 import com.xiaou.common.satoken.StpUserUtil;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.domain.InterviewQuestionSet;
+import com.xiaou.interview.dto.QuestionSetListRequest;
 import com.xiaou.interview.dto.RandomQuestionRequest;
 import com.xiaou.interview.service.InterviewQuestionService;
 import com.xiaou.interview.service.InterviewQuestionSetService;
@@ -31,12 +32,16 @@ public class InterviewQuestionSetPublicController {
     private final InterviewQuestionService questionService;
 
     @Operation(summary = "获取公开题单列表")
-    @GetMapping
+    @PostMapping("/list")
     public Result<PageResult<InterviewQuestionSet>> getPublicQuestionSets(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<InterviewQuestionSet> result = questionSetService.getPublicQuestionSets(categoryId, page, size);
+            @RequestBody(required = false) QuestionSetListRequest request) {
+        if (request == null) {
+            request = new QuestionSetListRequest();
+        }
+        PageResult<InterviewQuestionSet> result = questionSetService.getPublicQuestionSets(
+                request.getCategoryId(), 
+                request.getPage() != null ? request.getPage() : 1, 
+                request.getSize() != null ? request.getSize() : 10);
         return Result.success(result);
     }
 

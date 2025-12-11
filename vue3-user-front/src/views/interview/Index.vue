@@ -185,7 +185,7 @@ const fetchCategories = async () => {
 }
 
 // 获取题单列表
-const fetchQuestionSets = async () => {
+const fetchQuestionSets = async (forceRefresh = false) => {
   try {
     // 如果有搜索关键词，使用搜索接口，否则使用公开题单列表接口
     if (queryParams.keyword) {
@@ -195,7 +195,7 @@ const fetchQuestionSets = async () => {
         categoryId: currentCategoryId.value,
         page: queryParams.page,
         size: queryParams.size
-      })
+      }, { force: forceRefresh })
     }
   } catch (error) {
     ElMessage.error('获取题单列表失败')
@@ -206,8 +206,8 @@ const fetchQuestionSets = async () => {
 const selectCategory = (categoryId) => {
   currentCategoryId.value = categoryId
   queryParams.page = 1
-  // 这里可以根据分类ID进一步筛选，但现在使用搜索接口
-  fetchQuestionSets()
+  // 切换分类时强制刷新
+  fetchQuestionSets(true)
 }
 
 // 搜索

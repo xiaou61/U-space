@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaou.common.core.domain.PageResult;
 import com.xiaou.common.exception.BusinessException;
-import com.xiaou.common.satoken.StpUserUtil;
+import com.xiaou.common.satoken.StpAdminUtil;
 import com.xiaou.common.utils.PageHelper;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.domain.InterviewQuestionSet;
@@ -60,7 +60,7 @@ public class InterviewQuestionSetServiceImpl implements InterviewQuestionSetServ
                 .setViewCount(0)
                 .setFavoriteCount(0)
                 .setStatus(request.getStatus() != null ? request.getStatus() : 0) // 默认草稿
-                .setCreatorId(StpUserUtil.getLoginIdAsLong())
+                .setCreatorId(StpAdminUtil.getLoginIdAsLong())
                 .setCreatorName("系统")
                 .setCreateTime(LocalDateTime.now())
                 .setUpdateTime(LocalDateTime.now());

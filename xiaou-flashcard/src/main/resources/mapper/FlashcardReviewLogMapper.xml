@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardReviewLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardReviewLog">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="card_id" property="cardId"/>
+        <result column="quality" property="quality"/>
+        <result column="ease_factor_before" property="easeFactorBefore"/>
+        <result column="ease_factor_after" property="easeFactorAfter"/>
+        <result column="interval_before" property="intervalBefore"/>
+        <result column="interval_after" property="intervalAfter"/>
+        <result column="review_time" property="reviewTime"/>
+        <result column="time_spent_ms" property="timeSpentMs"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, card_id, quality, ease_factor_before, ease_factor_after,
+        interval_before, interval_after, review_time, time_spent_ms
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_review_log (user_id, card_id, quality, ease_factor_before,
+            ease_factor_after, interval_before, interval_after, review_time, time_spent_ms)
+        VALUES (#{userId}, #{cardId}, #{quality}, #{easeFactorBefore},
+            #{easeFactorAfter}, #{intervalBefore}, #{intervalAfter}, #{reviewTime}, #{timeSpentMs})
+    </insert>
+
+    <select id="selectByUserAndCard" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_review_log
+        WHERE user_id = #{userId} AND card_id = #{cardId}
+        ORDER BY review_time DESC
+    </select>
+
+    <select id="selectRecentLogs" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_review_log
+        WHERE user_id = #{userId}
+        ORDER BY review_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

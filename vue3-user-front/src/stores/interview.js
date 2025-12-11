@@ -79,15 +79,26 @@ export const useInterviewStore = defineStore('interview', () => {
    * 获取公开题单列表
    */
   const fetchPublicQuestionSets = async (params = {}, options = {}) => {
-    const cacheKey = `interview/question-sets/public?${JSON.stringify(params)}`
+    // 过滤掉 null/undefined 的参数
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    )
+    const cacheKey = `interview/question-sets/public?${JSON.stringify(filteredParams)}`
     
     questionSetsLoading.value = true
     try {
-      const data = await cachedRequest(
-        () => interviewApi.getPublicQuestionSets(params),
-        cacheKey,
-        { ttl: 3 * 60 * 1000, ...options } // 题单列表缓存3分钟
-      )
+      // 如果强制刷新，直接调用API，否则使用缓存
+      let data
+      if (options.force) {
+        invalidateCache(cacheKey)
+        data = await interviewApi.getPublicQuestionSets(filteredParams)
+      } else {
+        data = await cachedRequest(
+          () => interviewApi.getPublicQuestionSets(filteredParams),
+          cacheKey,
+          { ttl: 3 * 60 * 1000, ...options } // 题单列表缓存3分钟
+        )
+      }
       
       if (params.page === 1) {
         questionSets.value = data?.records || []

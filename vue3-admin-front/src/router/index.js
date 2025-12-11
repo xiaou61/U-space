@@ -480,6 +480,20 @@ const routes = [
     ]
   },
   {
+    path: '/flashcard',
+    component: Layout,
+    redirect: '/flashcard/decks',
+    meta: { title: '闪卡记忆管理' },
+    children: [
+      {
+        path: 'decks',
+        name: 'FlashcardDecks',
+        component: () => import('@/views/flashcard/decks/index.vue'),
+        meta: { title: '卡组管理' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

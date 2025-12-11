@@ -30,6 +30,7 @@
         <module>xiaou-codepen</module>
         <module>xiaou-resume</module>
         <module>xiaou-plan</module>
+        <module>xiaou-flashcard</module>
     </modules>
 
     <properties>

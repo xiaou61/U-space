@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardDeckMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardDeck">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="cover_image" property="coverImage"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="category" property="category"/>
+        <result column="card_count" property="cardCount"/>
+        <result column="is_public" property="isPublic"/>
+        <result column="is_official" property="isOfficial"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, name, description, cover_image, category_id, category, card_count,
+        is_public, is_official, sort_order, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_deck (user_id, name, description, cover_image, category_id, category,
+            card_count, is_public, is_official, sort_order, status, create_time, update_time)
+        VALUES (#{userId}, #{name}, #{description}, #{coverImage}, #{categoryId}, #{category},
+            #{cardCount}, #{isPublic}, #{isOfficial}, #{sortOrder}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM flashcard_deck WHERE id = #{id}
+    </delete>
+
+    <update id="updateById">
+        UPDATE flashcard_deck
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="cardCount != null">card_count = #{cardCount},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE user_id = #{userId} AND status = 1
+        ORDER BY sort_order DESC, create_time DESC
+    </select>
+
+    <select id="selectOfficialDecks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE (is_official = 1 OR user_id = 0) AND status = 1
+        ORDER BY sort_order DESC, create_time DESC
+    </select>
+
+    <select id="selectPublicDecks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE is_public = 1 AND status = 1
+        ORDER BY sort_order DESC, create_time DESC
+    </select>
+
+    <update id="updateCardCount">
+        UPDATE flashcard_deck
+        SET card_count = #{count}, update_time = NOW()
+        WHERE id = #{deckId}
+    </update>
+
+    <select id="countCardsByDeckId" resultType="int">
+        SELECT COUNT(*) FROM flashcard WHERE deck_id = #{deckId} AND status = 1
+    </select>
+
+</mapper>

@@ -16,8 +16,8 @@ export const interviewApi = {
   // ============ 题单相关 ============
   
   // 获取公开题单列表
-  getPublicQuestionSets(params) {
-    return request.get('/interview/question-sets', { params })
+  getPublicQuestionSets(data) {
+    return request.post('/interview/question-sets/list', data)
   },
   
   // 获取题单详情

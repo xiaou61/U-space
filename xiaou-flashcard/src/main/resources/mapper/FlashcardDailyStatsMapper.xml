@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardDailyStatsMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardDailyStats">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="study_date" property="studyDate"/>
+        <result column="new_count" property="newCount"/>
+        <result column="review_count" property="reviewCount"/>
+        <result column="correct_count" property="correctCount"/>
+        <result column="wrong_count" property="wrongCount"/>
+        <result column="study_time_seconds" property="studyTimeSeconds"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, study_date, new_count, review_count, correct_count,
+        wrong_count, study_time_seconds, create_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_daily_stats (user_id, study_date, new_count, review_count,
+            correct_count, wrong_count, study_time_seconds, create_time)
+        VALUES (#{userId}, #{studyDate}, #{newCount}, #{reviewCount},
+            #{correctCount}, #{wrongCount}, #{studyTimeSeconds}, #{createTime})
+    </insert>
+
+    <update id="updateById">
+        UPDATE flashcard_daily_stats
+        <set>
+            <if test="newCount != null">new_count = #{newCount},</if>
+            <if test="reviewCount != null">review_count = #{reviewCount},</if>
+            <if test="correctCount != null">correct_count = #{correctCount},</if>
+            <if test="wrongCount != null">wrong_count = #{wrongCount},</if>
+            <if test="studyTimeSeconds != null">study_time_seconds = #{studyTimeSeconds},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId} AND study_date = #{date}
+    </select>
+
+    <select id="selectRecentDays" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId}
+        AND study_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY study_date DESC
+    </select>
+
+    <update id="increaseNewCount">
+        UPDATE flashcard_daily_stats
+        SET new_count = new_count + 1
+        WHERE user_id = #{userId} AND study_date = #{date}
+    </update>
+
+    <update id="increaseReviewCount">
+        UPDATE flashcard_daily_stats
+        SET review_count = review_count + 1
+        WHERE user_id = #{userId} AND study_date = #{date}
+    </update>
+
+    <update id="increaseCorrectCount">
+        UPDATE flashcard_daily_stats
+        SET correct_count = correct_count + 1
+        WHERE user_id = #{userId} AND study_date = #{date}
+    </update>
+
+    <update id="increaseWrongCount">
+        UPDATE flashcard_daily_stats
+        SET wrong_count = wrong_count + 1
+        WHERE user_id = #{userId} AND study_date = #{date}
+    </update>
+
+    <select id="countStreakDays" resultType="int">
+        SELECT COUNT(*) FROM (
+            SELECT study_date
+            FROM flashcard_daily_stats
+            WHERE user_id = #{userId}
+            AND study_date > DATE_SUB(CURDATE(), INTERVAL 365 DAY)
+            AND (new_count + review_count) > 0
+            ORDER BY study_date DESC
+        ) t
+        WHERE DATEDIFF(CURDATE(), study_date) = (
+            SELECT COUNT(*) FROM flashcard_daily_stats s2
+            WHERE s2.user_id = #{userId}
+            AND s2.study_date > t.study_date
+            AND s2.study_date &lt;= CURDATE()
+            AND (s2.new_count + s2.review_count) > 0
+        )
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO flashcard_daily_stats (user_id, study_date, new_count, review_count,
+            correct_count, wrong_count, study_time_seconds, create_time)
+        VALUES (#{userId}, #{studyDate}, #{newCount}, #{reviewCount},
+            #{correctCount}, #{wrongCount}, #{studyTimeSeconds}, #{createTime})
+        ON DUPLICATE KEY UPDATE
+            new_count = new_count + VALUES(new_count),
+            review_count = review_count + VALUES(review_count),
+            correct_count = correct_count + VALUES(correct_count),
+            wrong_count = wrong_count + VALUES(wrong_count),
+            study_time_seconds = study_time_seconds + VALUES(study_time_seconds)
+    </insert>
+
+</mapper>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardStudyRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardStudyRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="card_id" property="cardId"/>
+        <result column="deck_id" property="deckId"/>
+        <result column="ease_factor" property="easeFactor"/>
+        <result column="interval_days" property="intervalDays"/>
+        <result column="repetitions" property="repetitions"/>
+        <result column="quality" property="quality"/>
+        <result column="next_review_date" property="nextReviewDate"/>
+        <result column="last_review_time" property="lastReviewTime"/>
+        <result column="total_reviews" property="totalReviews"/>
+        <result column="correct_count" property="correctCount"/>
+        <result column="wrong_count" property="wrongCount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, card_id, deck_id, ease_factor, interval_days, repetitions,
+        quality, next_review_date, last_review_time, total_reviews, correct_count,
+        wrong_count, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_study_record (user_id, card_id, deck_id, ease_factor, interval_days,
+            repetitions, quality, next_review_date, last_review_time, total_reviews, correct_count,
+            wrong_count, status, create_time, update_time)
+        VALUES (#{userId}, #{cardId}, #{deckId}, #{easeFactor}, #{intervalDays},
+            #{repetitions}, #{quality}, #{nextReviewDate}, #{lastReviewTime}, #{totalReviews},
+            #{correctCount}, #{wrongCount}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="updateById">
+        UPDATE flashcard_study_record
+        <set>
+            <if test="easeFactor != null">ease_factor = #{easeFactor},</if>
+            <if test="intervalDays != null">interval_days = #{intervalDays},</if>
+            <if test="repetitions != null">repetitions = #{repetitions},</if>
+            <if test="quality != null">quality = #{quality},</if>
+            <if test="nextReviewDate != null">next_review_date = #{nextReviewDate},</if>
+            <if test="lastReviewTime != null">last_review_time = #{lastReviewTime},</if>
+            <if test="totalReviews != null">total_reviews = #{totalReviews},</if>
+            <if test="correctCount != null">correct_count = #{correctCount},</if>
+            <if test="wrongCount != null">wrong_count = #{wrongCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserAndCard" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND card_id = #{cardId}
+    </select>
+
+    <select id="selectDueReviews" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        AND next_review_date &lt;= #{date}
+        AND status != 2
+        <if test="deckId != null">
+            AND deck_id = #{deckId}
+        </if>
+        ORDER BY next_review_date ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="countDueReviews" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        AND next_review_date &lt;= #{date}
+        AND status != 2
+    </select>
+
+    <select id="countMastered" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND status = 2
+    </select>
+
+    <select id="countLearning" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND status = 1
+    </select>
+
+    <select id="countByDeckAndStatus" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND deck_id = #{deckId} AND status = #{status}
+    </select>
+
+    <select id="selectWeakCards" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND wrong_count > 0
+        ORDER BY wrong_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="sumTotalReviews" resultType="int">
+        SELECT COALESCE(SUM(total_reviews), 0)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="countDueReviewsByDeck" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        AND deck_id = #{deckId}
+        AND next_review_date &lt;= #{date}
+        AND status != 2
+    </select>
+
+    <select id="countLearnedByDeck" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        AND deck_id = #{deckId}
+    </select>
+
+</mapper>

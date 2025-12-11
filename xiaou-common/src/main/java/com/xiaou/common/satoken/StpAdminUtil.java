@@ -1,5 +1,7 @@
 package com.xiaou.common.satoken;
 
+import cn.dev33.satoken.SaManager;
+import cn.dev33.satoken.config.SaTokenConfig;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.SaLoginModel;
 import cn.dev33.satoken.stp.StpLogic;
@@ -9,6 +11,10 @@ import java.util.List;
 /**
  * 管理员账号体系工具类
  * 使用独立的 StpLogic，loginType = "admin"
+ * 
+ * 配置说明：
+ * - 使用 Authorization 头读取 token（与前端保持一致）
+ * - Token 前缀为 Bearer
  *
  * @author xiaou
  */
@@ -16,8 +22,20 @@ public class StpAdminUtil {
     
     /**
      * 使用独立的 StpLogic，loginType = "admin"
+     * 配置为从 Authorization 头读取 token
      */
-    public static final StpLogic stpLogic = new StpLogic("admin");
+    public static final StpLogic stpLogic;
+    
+    static {
+        stpLogic = new StpLogic("admin");
+        // 为 admin 体系设置独立配置：从 Authorization 头读取 token
+        SaTokenConfig config = new SaTokenConfig();
+        config.setTokenName("Authorization");
+        config.setTokenPrefix("Bearer");
+        config.setIsReadHeader(true);
+        config.setIsReadCookie(false);
+        stpLogic.setConfig(config);
+    }
     
     // ========== 登录相关 ==========
     

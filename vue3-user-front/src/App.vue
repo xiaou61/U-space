@@ -48,6 +48,10 @@
                   <el-icon><Calendar /></el-icon>
                   计划打卡
                 </el-dropdown-item>
+                <el-dropdown-item command="/flashcard">
+                  <el-icon><Postcard /></el-icon>
+                  闪卡记忆
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -159,7 +163,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown, EditPen
+  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown, EditPen, Postcard
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

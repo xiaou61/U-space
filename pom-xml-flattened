@@ -28,6 +28,7 @@
     <module>xiaou-codepen</module>
     <module>xiaou-resume</module>
     <module>xiaou-plan</module>
+    <module>xiaou-flashcard</module>
   </modules>
   <properties>
     <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>

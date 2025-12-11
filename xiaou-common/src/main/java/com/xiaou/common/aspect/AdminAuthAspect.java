@@ -42,6 +42,11 @@ public class AdminAuthAspect {
         RequireAdmin requireAdmin = method.getAnnotation(RequireAdmin.class);
         
         try {
+            // 调试：输出当前token信息
+            String tokenValue = StpAdminUtil.getTokenValue();
+            log.debug("[AdminAuth] 当前Token值: {}", tokenValue);
+            log.debug("[AdminAuth] 是否已登录: {}", StpAdminUtil.isLogin());
+            
             // 使用 Sa-Token 检查管理员登录
             StpAdminUtil.checkLogin();
             
