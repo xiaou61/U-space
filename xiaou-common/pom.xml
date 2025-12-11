@@ -90,6 +90,13 @@
             <version>1.44.0</version>
         </dependency>
         
+        <!-- Sa-Token Redis 集成（使用 Jackson 序列化） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>1.44.0</version>
+        </dependency>
+        
         <!-- Sa-Token 独立 Redis 插件（使用独立的 Redis 连接池，不影响现有 Redisson 配置） -->
         <dependency>
             <groupId>cn.dev33</groupId>
@@ -101,6 +108,12 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
+        </dependency>
+        
+        <!-- Apache Commons Pool2（Jedis 连接池需要） -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
         </dependency>
         
         <!-- Jackson 数据绑定（Sa-Token 序列化需要） -->

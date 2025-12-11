@@ -23,17 +23,31 @@ public class StpAdminUtil {
     /**
      * 使用独立的 StpLogic，loginType = "admin"
      * 配置为从 Authorization 头读取 token
+     * 
+     * 注意：继承全局配置（包括 Redis 持久化配置），只覆盖必要的选项
      */
     public static final StpLogic stpLogic;
     
     static {
         stpLogic = new StpLogic("admin");
-        // 为 admin 体系设置独立配置：从 Authorization 头读取 token
+        // 获取全局配置并复制，这样可以继承 timeout、alone-redis 等配置
+        SaTokenConfig globalConfig = SaManager.getConfig();
         SaTokenConfig config = new SaTokenConfig();
+        
+        // 继承全局配置的关键参数
+        config.setTimeout(globalConfig.getTimeout());  // Token 有效期
+        config.setActiveTimeout(globalConfig.getActiveTimeout());  // 临时有效期
+        config.setIsConcurrent(globalConfig.getIsConcurrent());  // 是否允许并发登录
+        config.setIsShare(globalConfig.getIsShare());  // 是否共用 Token
+        config.setTokenStyle(globalConfig.getTokenStyle());  // Token 风格
+        config.setIsLog(globalConfig.getIsLog());  // 是否输出日志
+        
+        // 为 admin 体系设置独立配置：从 Authorization 头读取 token
         config.setTokenName("Authorization");
         config.setTokenPrefix("Bearer");
         config.setIsReadHeader(true);
         config.setIsReadCookie(false);
+        
         stpLogic.setConfig(config);
     }
     

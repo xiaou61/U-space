@@ -149,7 +149,7 @@ import { ref } from 'vue'
 import { 
   Reading, ChatDotRound, ArrowRight, Document, Edit, 
   Monitor, Share, Bell, Trophy, Cpu, Connection,
-  Compass, Coffee, TrendCharts, Ticket, ChatLineSquare, DataAnalysis, Calendar
+  Compass, Coffee, TrendCharts, Ticket, ChatLineSquare, DataAnalysis, Calendar, Memo
 } from '@element-plus/icons-vue'
 
 // 核心功能数据
@@ -200,6 +200,7 @@ const features = ref([
 
 // 快速入口数据
 const quickAccess = ref([
+  { title: '闪卡记忆', icon: 'Memo', path: '/flashcard', color: 'linear-gradient(135deg, #11998e, #38ef7d)' },
   { title: '朋友圈', icon: 'ChatLineSquare', path: '/moments', color: 'linear-gradient(135deg, #667eea, #764ba2)' },
   { title: '聊天室', icon: 'ChatDotRound', path: '/chat', color: 'linear-gradient(135deg, #f093fb, #f5576c)' },
   { title: '通知中心', icon: 'Bell', path: '/notification', color: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
