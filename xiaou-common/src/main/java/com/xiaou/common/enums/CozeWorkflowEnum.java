@@ -21,7 +21,22 @@ public enum CozeWorkflowEnum {
     /**
      * 社区帖子AI摘要生成
      */
-    COMMUNITY_POST_SUMMARY("7556892077167673394", "社区帖子AI摘要", "生成帖子摘要和关键词");
+    COMMUNITY_POST_SUMMARY("7556892077167673394", "社区帖子AI摘要", "生成帖子摘要和关键词"),
+
+    /**
+     * 模拟面试 - AI评价答案
+     */
+    MOCK_INTERVIEW_EVALUATE("7586301520637100074", "模拟面试答案评价", "AI评价候选人的答案并给出反馈"),
+
+    /**
+     * 模拟面试 - AI生成总结
+     */
+    MOCK_INTERVIEW_SUMMARY("7586302912424607787", "模拟面试总结", "AI生成面试总结报告"),
+
+    /**
+     * 模拟面试 - AI出题
+     */
+    MOCK_INTERVIEW_GENERATE_QUESTIONS("7586303842754347035", "模拟面试AI出题", "AI根据方向和难度生成面试题目");
 
     /**
      * 工作流ID

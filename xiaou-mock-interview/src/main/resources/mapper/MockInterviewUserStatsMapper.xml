@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.mockinterview.mapper.MockInterviewUserStatsMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.mockinterview.domain.MockInterviewUserStats">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="total_interviews" property="totalInterviews"/>
+        <result column="completed_interviews" property="completedInterviews"/>
+        <result column="avg_score" property="avgScore"/>
+        <result column="highest_score" property="highestScore"/>
+        <result column="total_questions" property="totalQuestions"/>
+        <result column="correct_questions" property="correctQuestions"/>
+        <result column="interview_streak" property="interviewStreak"/>
+        <result column="max_streak" property="maxStreak"/>
+        <result column="last_interview_date" property="lastInterviewDate"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, total_interviews, completed_interviews, avg_score, highest_score,
+        total_questions, correct_questions, interview_streak, max_streak, last_interview_date,
+        create_time, update_time
+    </sql>
+
+    <!-- 插入用户统计 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mock_interview_user_stats (
+            user_id, total_interviews, completed_interviews, avg_score, highest_score,
+            total_questions, correct_questions, interview_streak, max_streak, last_interview_date,
+            create_time, update_time
+        ) VALUES (
+            #{userId}, #{totalInterviews}, #{completedInterviews}, #{avgScore}, #{highestScore},
+            #{totalQuestions}, #{correctQuestions}, #{interviewStreak}, #{maxStreak}, #{lastInterviewDate},
+            #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据用户ID更新统计 -->
+    <update id="updateByUserId">
+        UPDATE mock_interview_user_stats
+        <set>
+            <if test="totalInterviews != null">total_interviews = #{totalInterviews},</if>
+            <if test="completedInterviews != null">completed_interviews = #{completedInterviews},</if>
+            <if test="avgScore != null">avg_score = #{avgScore},</if>
+            <if test="highestScore != null">highest_score = #{highestScore},</if>
+            <if test="totalQuestions != null">total_questions = #{totalQuestions},</if>
+            <if test="correctQuestions != null">correct_questions = #{correctQuestions},</if>
+            <if test="interviewStreak != null">interview_streak = #{interviewStreak},</if>
+            <if test="maxStreak != null">max_streak = #{maxStreak},</if>
+            <if test="lastInterviewDate != null">last_interview_date = #{lastInterviewDate},</if>
+            update_time = NOW()
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据用户ID查询 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_user_stats
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 根据用户ID删除 -->
+    <delete id="deleteByUserId">
+        DELETE FROM mock_interview_user_stats WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 增加面试次数 -->
+    <update id="incrementInterviewCount">
+        UPDATE mock_interview_user_stats
+        SET total_interviews = total_interviews + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加完成面试次数 -->
+    <update id="incrementCompletedCount">
+        UPDATE mock_interview_user_stats
+        SET completed_interviews = completed_interviews + 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

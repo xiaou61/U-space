@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.mockinterview.mapper.MockInterviewDirectionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.mockinterview.domain.MockInterviewDirection">
+        <id column="id" property="id"/>
+        <result column="direction_code" property="directionCode"/>
+        <result column="direction_name" property="directionName"/>
+        <result column="icon" property="icon"/>
+        <result column="description" property="description"/>
+        <result column="category_ids" property="categoryIds"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, direction_code, direction_name, icon, description, category_ids, sort_order, status, create_time
+    </sql>
+
+    <!-- 插入方向配置 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mock_interview_direction (
+            direction_code, direction_name, icon, description, category_ids, sort_order, status, create_time
+        ) VALUES (
+            #{directionCode}, #{directionName}, #{icon}, #{description}, #{categoryIds}, #{sortOrder}, #{status}, #{createTime}
+        )
+    </insert>
+
+    <!-- 更新方向配置 -->
+    <update id="updateById">
+        UPDATE mock_interview_direction
+        <set>
+            <if test="directionName != null">direction_name = #{directionName},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="categoryIds != null">category_ids = #{categoryIds},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_direction
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据方向代码查询 -->
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_direction
+        WHERE direction_code = #{directionCode}
+    </select>
+
+    <!-- 查询所有启用的方向配置 -->
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_direction
+        WHERE status = 1
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 查询所有方向配置 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_direction
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM mock_interview_direction WHERE id = #{id}
+    </delete>
+
+    <!-- 更新方向状态 -->
+    <update id="updateStatus">
+        UPDATE mock_interview_direction
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

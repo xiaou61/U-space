@@ -143,6 +143,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 引入mock-interview模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-mock-interview</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
