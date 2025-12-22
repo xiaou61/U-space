@@ -1,6 +1,6 @@
 # Code Nest
 
-![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -88,6 +88,7 @@ Code Nest 是一个面向开发者的成长型社区与知识运营平台，采�
 | xiaou-moyu | 摸鱼面板 | 日常任务、健康打卡、工作台 |
 | xiaou-points | 积分体系 | 积分规则、账户、排行榜、明细 |
 | xiaou-plan | 计划打卡 | 个人计划、每日打卡、连续统计、提醒通知 |
+| xiaou-mock-interview | AI模拟面试 | 多方向多难度面试、AI出题/评价、追问、报告统计 |
 | xiaou-monitor | SQL/监控 | SQL 采集、慢查询、日志审计、观测面板 |
 
 ### 前端应用
@@ -355,6 +356,17 @@ server {
 ## 📝 更新日志
 
 仅列出最近版本，更多历史可查看 `git log`。
+
+### v1.6.3 🌟 AI模拟面试
+
+- 🆕 **AI模拟面试模块**：`xiaou-mock-interview` 新增完整的AI模拟面试功能，支持多方向、多难度、多风格的模拟面试体验。
+- 🤖 **双模式出题**：支持本地题库模式（从Interview题库抽题）和 AI出题模式（调用Coze工作流智能出题）。
+- 📝 **实时AI评价**：用户回答后地获取AI评分、回答优点、改进建议，支持多种面试官风格（严厲/中性/温和）。
+- 🔄 **用户主动追问**：用户可在回答后主动请求追问，深入考察知识点掌握情况，每题最多追问2次。
+- 📊 **面试报告与统计**：面试结束后生成详细报告，包含AI总结、建议、各题得分明细；支持历史记录查询与用户统计面板。
+- 🎯 **题库选择**：本地模式下用户可手动选择题库集进行定向训练。
+- 🗂️ **前端页面**：新增面试入口页、配置页、面试进行页、报告页、历史记录页，全流程用户体验。
+- 🗄️ **数据库表**：新增mock_interview_direction、mock_interview_session、mock_interview_qa、mock_interview_user_stats等表。
 
 ### v1.6.1 ✨
 
