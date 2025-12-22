@@ -40,6 +40,10 @@
                   <el-icon><Document /></el-icon>
                   面试题库
                 </el-dropdown-item>
+                <el-dropdown-item command="/mock-interview">
+                  <el-icon><Mic /></el-icon>
+                  AI模拟面试
+                </el-dropdown-item>
                 <el-dropdown-item command="/knowledge">
                   <el-icon><DataAnalysis /></el-icon>
                   知识图谱
@@ -159,7 +163,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   HomeFilled, Document, DataAnalysis, ChatDotRound, Picture, Bell, 
-  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown, EditPen
+  User, UserFilled, SwitchButton, Calendar, Tools, Coffee, Message, Trophy, Reading, Promotion, ArrowDown, EditPen, Mic
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

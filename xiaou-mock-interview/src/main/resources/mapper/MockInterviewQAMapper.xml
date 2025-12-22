@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.mockinterview.mapper.MockInterviewQAMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.mockinterview.domain.MockInterviewQA">
+        <id column="id" property="id"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="user_id" property="userId"/>
+        <result column="question_id" property="questionId"/>
+        <result column="question_order" property="questionOrder"/>
+        <result column="question_content" property="questionContent"/>
+        <result column="question_type" property="questionType"/>
+        <result column="parent_qa_id" property="parentQaId"/>
+        <result column="user_answer" property="userAnswer"/>
+        <result column="answer_duration_seconds" property="answerDurationSeconds"/>
+        <result column="score" property="score"/>
+        <result column="ai_feedback" property="aiFeedback"/>
+        <result column="reference_answer" property="referenceAnswer"/>
+        <result column="knowledge_points" property="knowledgePoints"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, session_id, user_id, question_id, question_order, question_content, question_type,
+        parent_qa_id, user_answer, answer_duration_seconds, score, ai_feedback,
+        reference_answer, knowledge_points, status, create_time, update_time
+    </sql>
+
+    <!-- 插入问答记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mock_interview_qa (
+            session_id, user_id, question_id, question_order, question_content, question_type,
+            parent_qa_id, reference_answer, knowledge_points, status, create_time, update_time
+        ) VALUES (
+            #{sessionId}, #{userId}, #{questionId}, #{questionOrder}, #{questionContent}, #{questionType},
+            #{parentQaId}, #{referenceAnswer}, #{knowledgePoints}, #{status}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 批量插入问答记录 -->
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mock_interview_qa (
+            session_id, user_id, question_id, question_order, question_content, question_type,
+            parent_qa_id, reference_answer, knowledge_points, status, create_time, update_time
+        ) VALUES
+        <foreach collection="qaList" item="qa" separator=",">
+            (#{qa.sessionId}, #{qa.userId}, #{qa.questionId}, #{qa.questionOrder}, #{qa.questionContent}, #{qa.questionType},
+             #{qa.parentQaId}, #{qa.referenceAnswer}, #{qa.knowledgePoints}, #{qa.status}, #{qa.createTime}, #{qa.updateTime})
+        </foreach>
+    </insert>
+
+    <!-- 更新问答记录 -->
+    <update id="updateById">
+        UPDATE mock_interview_qa
+        <set>
+            <if test="userAnswer != null">user_answer = #{userAnswer},</if>
+            <if test="answerDurationSeconds != null">answer_duration_seconds = #{answerDurationSeconds},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="aiFeedback != null">ai_feedback = #{aiFeedback},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_qa
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据会话ID查询所有问答记录 -->
+    <select id="selectBySessionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId}
+        ORDER BY question_order ASC, id ASC
+    </select>
+
+    <!-- 根据会话ID查询主问题列表 -->
+    <select id="selectMainQuestionsBySessionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId} AND question_type = 1
+        ORDER BY question_order ASC
+    </select>
+
+    <!-- 根据父问答ID查询追问列表 -->
+    <select id="selectFollowUpsByParentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_qa
+        WHERE parent_qa_id = #{parentQaId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 查询当前待回答的问题 -->
+    <select id="selectCurrentPendingBySessionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId} AND status = 0
+        ORDER BY question_order ASC, id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 根据会话ID删除所有问答记录 -->
+    <delete id="deleteBySessionId">
+        DELETE FROM mock_interview_qa WHERE session_id = #{sessionId}
+    </delete>
+
+    <!-- 统计已回答的题目数量 -->
+    <select id="countAnsweredBySessionId" resultType="int">
+        SELECT COUNT(*)
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId} AND status = 1 AND question_type = 1
+    </select>
+
+    <!-- 统计高分题目数量 -->
+    <select id="countHighScoreBySessionId" resultType="int">
+        SELECT COUNT(*)
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId} AND status = 1 AND score &gt;= 7
+    </select>
+
+    <!-- 计算平均得分 -->
+    <select id="calculateAvgScoreBySessionId" resultType="java.lang.Double">
+        SELECT AVG(score)
+        FROM mock_interview_qa
+        WHERE session_id = #{sessionId} AND status = 1 AND score IS NOT NULL
+    </select>
+
+    <!-- 查询用户历史已答题目ID列表 -->
+    <select id="selectAnsweredQuestionIdsByUserId" resultType="java.lang.Long">
+        SELECT DISTINCT question_id
+        FROM mock_interview_qa
+        WHERE user_id = #{userId} AND question_id IS NOT NULL AND status = 1
+    </select>
+
+</mapper>

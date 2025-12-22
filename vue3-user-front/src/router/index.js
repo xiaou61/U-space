@@ -81,6 +81,57 @@ const routes = [
       keepAlive: true // 开启页面缓存
     }
   },
+  // ============ 模拟面试 ============
+  {
+    path: '/mock-interview',
+    name: 'MockInterview',
+    component: () => import('@/views/mock-interview/Index.vue'),
+    meta: {
+      title: 'AI模拟面试',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/mock-interview/config',
+    name: 'MockInterviewConfig',
+    component: () => import('@/views/mock-interview/Config.vue'),
+    meta: {
+      title: '面试配置',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/mock-interview/session',
+    name: 'MockInterviewSession',
+    component: () => import('@/views/mock-interview/Interview.vue'),
+    meta: {
+      title: '面试进行中',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/mock-interview/report',
+    name: 'MockInterviewReport',
+    component: () => import('@/views/mock-interview/Report.vue'),
+    meta: {
+      title: '面试报告',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/mock-interview/history',
+    name: 'MockInterviewHistory',
+    component: () => import('@/views/mock-interview/History.vue'),
+    meta: {
+      title: '面试历史',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
   {
     path: '/resume',
     name: 'ResumeHome',

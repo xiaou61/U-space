@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.mockinterview.mapper.MockInterviewSessionMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.mockinterview.domain.MockInterviewSession">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="direction" property="direction"/>
+        <result column="level" property="level"/>
+        <result column="interview_type" property="interviewType"/>
+        <result column="style" property="style"/>
+        <result column="question_count" property="questionCount"/>
+        <result column="question_mode" property="questionMode"/>
+        <result column="duration_minutes" property="durationMinutes"/>
+        <result column="status" property="status"/>
+        <result column="total_score" property="totalScore"/>
+        <result column="knowledge_score" property="knowledgeScore"/>
+        <result column="depth_score" property="depthScore"/>
+        <result column="expression_score" property="expressionScore"/>
+        <result column="adaptability_score" property="adaptabilityScore"/>
+        <result column="ai_summary" property="aiSummary"/>
+        <result column="ai_suggestion" property="aiSuggestion"/>
+        <result column="current_question_order" property="currentQuestionOrder"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, direction, level, interview_type, style, question_count, question_mode, duration_minutes,
+        status, total_score, knowledge_score, depth_score, expression_score, adaptability_score,
+        ai_summary, ai_suggestion, current_question_order, start_time, end_time, create_time, update_time
+    </sql>
+
+    <!-- 插入会话 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mock_interview_session (
+            user_id, direction, level, interview_type, style, question_count, question_mode,
+            duration_minutes, status, current_question_order, start_time, create_time, update_time
+        ) VALUES (
+            #{userId}, #{direction}, #{level}, #{interviewType}, #{style}, #{questionCount}, #{questionMode},
+            #{durationMinutes}, #{status}, #{currentQuestionOrder}, #{startTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新会话 -->
+    <update id="updateById">
+        UPDATE mock_interview_session
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="knowledgeScore != null">knowledge_score = #{knowledgeScore},</if>
+            <if test="depthScore != null">depth_score = #{depthScore},</if>
+            <if test="expressionScore != null">expression_score = #{expressionScore},</if>
+            <if test="adaptabilityScore != null">adaptability_score = #{adaptabilityScore},</if>
+            <if test="aiSummary != null">ai_summary = #{aiSummary},</if>
+            <if test="aiSuggestion != null">ai_suggestion = #{aiSuggestion},</if>
+            <if test="currentQuestionOrder != null">current_question_order = #{currentQuestionOrder},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_session
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询用户进行中的会话 -->
+    <select id="selectOngoingByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_session
+        WHERE user_id = #{userId} AND status = 0
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 分页查询用户的面试历史 -->
+    <select id="selectPageByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_session
+        <where>
+            user_id = #{userId}
+            <if test="request.direction != null and request.direction != ''">
+                AND direction = #{request.direction}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.minScore != null">
+                AND total_score &gt;= #{request.minScore}
+            </if>
+            <if test="request.maxScore != null">
+                AND total_score &lt;= #{request.maxScore}
+            </if>
+            <if test="request.startTime != null and request.startTime != ''">
+                AND create_time &gt;= #{request.startTime}
+            </if>
+            <if test="request.endTime != null and request.endTime != ''">
+                AND create_time &lt;= #{request.endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户的面试历史数量 -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM mock_interview_session
+        <where>
+            user_id = #{userId}
+            <if test="request.direction != null and request.direction != ''">
+                AND direction = #{request.direction}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.minScore != null">
+                AND total_score &gt;= #{request.minScore}
+            </if>
+            <if test="request.maxScore != null">
+                AND total_score &lt;= #{request.maxScore}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM mock_interview_session WHERE id = #{id}
+    </delete>
+
+    <!-- 统计用户某方向的面试次数 -->
+    <select id="countByUserIdAndDirection" resultType="int">
+        SELECT COUNT(*)
+        FROM mock_interview_session
+        WHERE user_id = #{userId} AND direction = #{direction}
+    </select>
+
+    <!-- 查询用户最近完成的面试 -->
+    <select id="selectRecentCompleted" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_session
+        WHERE user_id = #{userId} AND status = 1
+        ORDER BY end_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 管理端分页查询所有面试记录 -->
+    <select id="selectPageAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM mock_interview_session
+        <where>
+            <if test="request.direction != null and request.direction != ''">
+                AND direction = #{request.direction}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 管理端统计所有面试记录数量 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM mock_interview_session
+        <where>
+            <if test="request.direction != null and request.direction != ''">
+                AND direction = #{request.direction}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+        </where>
+    </select>
+
+</mapper>
