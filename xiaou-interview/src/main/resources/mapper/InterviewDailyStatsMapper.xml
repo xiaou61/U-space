@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewDailyStatsMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewDailyStats">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="stat_date" property="statDate"/>
+        <result column="learn_count" property="learnCount"/>
+        <result column="review_count" property="reviewCount"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, stat_date, learn_count, review_count, total_count, create_time, update_time
+    </sql>
+
+    <!-- 插入或更新每日统计 -->
+    <insert id="upsert">
+        INSERT INTO interview_daily_stats (user_id, stat_date, learn_count, review_count, total_count, create_time, update_time)
+        VALUES (#{userId}, #{statDate}, #{learnCount}, #{reviewCount}, #{totalCount}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            learn_count = #{learnCount},
+            review_count = #{reviewCount},
+            total_count = #{totalCount},
+            update_time = NOW()
+    </insert>
+
+    <!-- 查询用户某天的统计 -->
+    <select id="selectByUserAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_daily_stats
+        WHERE user_id = #{userId} AND stat_date = #{statDate}
+    </select>
+
+    <!-- 查询用户日期范围内的统计数据（用于热力图） -->
+    <select id="selectByUserAndDateRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_daily_stats
+        WHERE user_id = #{userId}
+        AND stat_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stat_date ASC
+    </select>
+
+    <!-- 查询用户某年的统计数据 -->
+    <select id="selectByUserAndYear" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_daily_stats
+        WHERE user_id = #{userId}
+        AND YEAR(stat_date) = #{year}
+        ORDER BY stat_date ASC
+    </select>
+
+    <!-- 统计用户总学习天数 -->
+    <select id="countTotalDays" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_daily_stats
+        WHERE user_id = #{userId}
+        AND total_count > 0
+    </select>
+
+    <!-- 查询用户当前连续学习天数 -->
+    <select id="countCurrentStreak" resultType="int">
+        SELECT COUNT(*) FROM (
+            SELECT stat_date
+            FROM interview_daily_stats
+            WHERE user_id = #{userId}
+            AND total_count > 0
+            AND stat_date &lt;= #{today}
+            ORDER BY stat_date DESC
+        ) t
+        WHERE stat_date >= (
+            SELECT IFNULL(
+                (SELECT DATE_ADD(stat_date, INTERVAL 1 DAY)
+                 FROM interview_daily_stats
+                 WHERE user_id = #{userId}
+                 AND total_count = 0
+                 AND stat_date &lt;= #{today}
+                 ORDER BY stat_date DESC
+                 LIMIT 1),
+                '1970-01-01'
+            )
+        )
+    </select>
+
+    <!-- 统计用户某月的学习天数 -->
+    <select id="countMonthDays" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_daily_stats
+        WHERE user_id = #{userId}
+        AND YEAR(stat_date) = #{year}
+        AND MONTH(stat_date) = #{month}
+        AND total_count > 0
+    </select>
+
+    <!-- 增加学习数量 -->
+    <insert id="incrementLearnCount">
+        INSERT INTO interview_daily_stats (user_id, stat_date, learn_count, review_count, total_count, create_time, update_time)
+        VALUES (#{userId}, #{statDate}, 1, 0, 1, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            learn_count = learn_count + 1,
+            total_count = total_count + 1,
+            update_time = NOW()
+    </insert>
+
+    <!-- 增加复习数量 -->
+    <insert id="incrementReviewCount">
+        INSERT INTO interview_daily_stats (user_id, stat_date, learn_count, review_count, total_count, create_time, update_time)
+        VALUES (#{userId}, #{statDate}, 0, 1, 1, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            review_count = review_count + 1,
+            total_count = total_count + 1,
+            update_time = NOW()
+    </insert>
+
+</mapper>

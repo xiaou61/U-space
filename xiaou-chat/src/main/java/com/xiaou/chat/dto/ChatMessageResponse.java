@@ -49,9 +49,29 @@ public class ChatMessageResponse {
     private String imageUrl;
     
     /**
+     * 回复的消息ID
+     */
+    private Long replyToId;
+    
+    /**
+     * 被回复消息内容摘要
+     */
+    private String replyToContent;
+    
+    /**
+     * 被回复者昵称
+     */
+    private String replyToUser;
+    
+    /**
      * 是否可撤回
      */
     private Boolean canRecall;
+    
+    /**
+     * 临时ID（前端乐观更新用）
+     */
+    private String tempId;
     
     /**
      * 创建时间

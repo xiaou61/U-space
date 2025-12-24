@@ -137,9 +137,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         ChatMessageResponse response = BeanUtil.copyProperties(chatMessage, ChatMessageResponse.class);
         response.setCanRecall(true); // 刚发送的消息可撤回
         
-        // 广播消息给所有在线用户
+        // 广播消息给所有在线用户（排除发送者，避免重复显示）
         WebSocketMessage broadcastMsg = new WebSocketMessage(WebSocketMessage.MessageType.MESSAGE, response);
-        broadcastMessage(broadcastMsg, null);
+        broadcastMessage(broadcastMsg, session.getId());
+        
+        // 给发送者发送确认消息（用于更新本地消息ID和状态）
+        WebSocketMessage ackMsg = new WebSocketMessage(WebSocketMessage.MessageType.MESSAGE_ACK, response);
+        sendMessage(session, ackMsg);
         
         log.info("用户发送消息，用户ID: {}, 消息ID: {}", userId, chatMessage.getId());
     }

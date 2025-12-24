@@ -16,7 +16,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/Login.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: {
       title: '登录',
       requiresAuth: false
@@ -25,7 +25,7 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/Register.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: {
       title: '注册',
       requiresAuth: false
@@ -79,6 +79,16 @@ const routes = [
       title: '我的收藏',
       requiresAuth: true,
       keepAlive: true // 开启页面缓存
+    }
+  },
+  {
+    path: '/interview/review',
+    name: 'InterviewReview',
+    component: () => import('@/views/interview/Review.vue'),
+    meta: {
+      title: '智能复习',
+      requiresAuth: true,
+      keepAlive: false
     }
   },
   // ============ 模拟面试 ============

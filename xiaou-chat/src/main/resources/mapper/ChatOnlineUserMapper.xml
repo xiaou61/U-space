@@ -70,4 +70,10 @@
         WHERE last_heartbeat_time &lt; DATE_SUB(NOW(), INTERVAL #{timeoutSeconds} SECOND)
     </delete>
 
+    <select id="selectUserInfoByUserId" resultMap="OnlineUserWithInfoMap">
+        SELECT u.id as user_id, u.nickname as user_nickname, u.avatar as user_avatar
+        FROM user_info u
+        WHERE u.id = #{userId}
+    </select>
+
 </mapper>

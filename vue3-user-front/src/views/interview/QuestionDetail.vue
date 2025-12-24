@@ -87,6 +87,14 @@
               show-icon
             />
           </div>
+
+          <!-- 掌握度选择器（仅做题模式且答案已显示时显示） -->
+          <MasterySelector
+            :question-id="questionId"
+            :question-set-id="setId"
+            :visible="!isStudyMode && showAnswer"
+            @marked="handleMasteryMarked"
+          />
         </div>
       </el-card>
     </div>
@@ -159,6 +167,8 @@ import {
 } from '@element-plus/icons-vue'
 import { renderMarkdown } from '@/utils/markdown'
 import { useInterviewStore } from '@/stores/interview'
+import { interviewApi } from '@/api/interview'
+import MasterySelector from './components/MasterySelector.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -234,6 +244,7 @@ const fetchQuestion = async () => {
   try {
     await interviewStore.fetchQuestionById(setId.value, questionId.value)
     showAnswer.value = false // 重置答案显示状态
+    markAsLearned() // 记录学习进度
   } catch (error) {
     console.error('获取题目详情失败:', error)
     ElMessage.error('获取题目详情失败')
@@ -317,6 +328,22 @@ const handleModeChange = (value) => {
 const initMode = () => {
   const savedMode = localStorage.getItem('question-mode')
   isStudyMode.value = savedMode === 'study'
+}
+
+// 记录学习进度（调用后端API）
+const markAsLearned = async () => {
+  try {
+    await interviewApi.recordLearn(setId.value, questionId.value)
+  } catch (error) {
+    // 静默失败，不影响用户体验
+    console.debug('记录学习进度失败:', error)
+  }
+}
+
+// 掌握度标记回调
+const handleMasteryMarked = (masteryData) => {
+  console.log('掌握度已标记:', masteryData)
+  // 可以在这里添加额外的处理逻辑
 }
 
 // 监听路由变化
@@ -419,14 +446,13 @@ onMounted(() => {
 }
 
 .question-card {
-  max-width: 1000px;
-  width: 65%;
-  min-width: 600px;
+  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: #ffffff;
   border: none;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -615,9 +641,8 @@ onMounted(() => {
 }
 
 .nav-card {
-  max-width: 1000px;
-  width: 65%;
-  min-width: 600px;
+  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: transparent;
   border: none;

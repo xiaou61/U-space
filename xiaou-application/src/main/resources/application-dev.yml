@@ -1,7 +1,9 @@
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/code_nest?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
+    # 使用 P6Spy 代理驱动（开发环境，用于SQL日志监控）
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    # P6Spy 格式的 JDBC URL（在原 jdbc:mysql 前加 p6spy:）
+    url: jdbc:p6spy:mysql://localhost:3306/code_nest?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
     username: root
     password: 1234
   

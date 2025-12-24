@@ -61,6 +61,13 @@
             <version>1.2.20</version>
         </dependency>
         
+        <!-- P6Spy SQL日志监控 -->
+        <dependency>
+            <groupId>p6spy</groupId>
+            <artifactId>p6spy</artifactId>
+            <version>3.9.1</version>
+        </dependency>
+        
         <!-- Lombok，简化代码编写 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -97,10 +104,29 @@
             <version>1.44.0</version>
         </dependency>
         
+        <!-- Sa-Token Redis 集成（Jackson 序列化）- alone-redis 需要此依赖才能生效 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>1.44.0</version>
+        </dependency>
+        
         <!-- Jedis（sa-token-alone-redis 需要） -->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Data Redis（sa-token-redis-jackson 需要） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        
+        <!-- Commons Pool2（Redis 连接池需要） -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
         </dependency>
         
         <!-- Jackson 数据绑定（Sa-Token 序列化需要） -->

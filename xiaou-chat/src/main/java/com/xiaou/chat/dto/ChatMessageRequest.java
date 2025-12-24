@@ -24,4 +24,14 @@ public class ChatMessageRequest {
      * 图片URL（消息类型为图片时）
      */
     private String imageUrl;
+    
+    /**
+     * 回复的消息ID
+     */
+    private Long replyToId;
+    
+    /**
+     * 临时ID（前端乐观更新用）
+     */
+    private String tempId;
 }

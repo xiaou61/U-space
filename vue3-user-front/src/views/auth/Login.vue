@@ -1,74 +1,135 @@
 <template>
   <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <h2>用户登录</h2>
-        <p>登录您的 Code Nest 账户</p>
+    <!-- 左侧视觉区 -->
+    <div class="login-left">
+      <!-- 波浪背景 -->
+      <div class="wave-bg">
+        <svg class="wave wave1" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(99, 179, 237, 0.1)" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+        <svg class="wave wave2" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(79, 209, 197, 0.08)" d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,90.7C672,85,768,107,864,144C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
       </div>
+      <!-- 粒子背景 -->
+      <div class="particles">
+        <span v-for="i in 50" :key="i" class="particle"></span>
+      </div>
+      <!-- 3D装饰卡片 - 展示平台功能 -->
+      <div class="floating-cards">
+        <div class="float-card card-1">
+          <div class="card-icon">📝</div>
+          <div class="card-text">面试刷题</div>
+        </div>
+        <div class="float-card card-2">
+          <div class="card-icon">🤖</div>
+          <div class="card-text">AI模拟面试</div>
+        </div>
+        <div class="float-card card-3">
+          <div class="card-icon">💻</div>
+          <div class="card-text">代码工坊</div>
+        </div>
+        <div class="float-card card-4">
+          <div class="card-icon">📚</div>
+          <div class="card-text">知识图谱</div>
+        </div>
+        <div class="float-card card-5">
+          <div class="card-icon">📝</div>
+          <div class="card-text">在线简历</div>
+        </div>
+        <div class="float-card card-6">
+          <div class="card-icon">💬</div>
+          <div class="card-text">即时聊天</div>
+        </div>
+        <div class="float-card card-7">
+          <div class="card-icon">🏆</div>
+          <div class="card-text">积分抽奖</div>
+        </div>
+        <div class="float-card card-8">
+          <div class="card-icon">📅</div>
+          <div class="card-text">计划打卡</div>
+        </div>
+      </div>
+      <!-- 品牌信息 -->
+      <div class="brand-section">
+        <h1 class="brand-title">Code Nest</h1>
+        <p class="brand-subtitle">开发者成长社区</p>
+        <p class="brand-desc">刷题 · 面试 · 知识图谱 · 代码工坊 · 简历 · 社区</p>
+      </div>
+    </div>
 
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        class="login-form"
-        @submit.prevent="handleLogin"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名或邮箱"
-            size="large"
-            :prefix-icon="User"
-          />
-        </el-form-item>
+    <!-- 右侧表单区 -->
+    <div class="login-right">
+      <div class="login-card">
+        <div class="login-header">
+          <h2>欢迎回来</h2>
+          <p>登录您的 Code Nest 账户</p>
+        </div>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-            :prefix-icon="Lock"
-            show-password
-            @keyup.enter="handleLogin"
-          />
-        </el-form-item>
-
-        <!-- 验证码 -->
-        <el-form-item prop="captcha" v-if="captchaImage">
-          <div class="captcha-row">
+        <el-form
+          ref="loginFormRef"
+          :model="loginForm"
+          :rules="loginRules"
+          class="login-form"
+          @submit.prevent="handleLogin"
+        >
+          <el-form-item prop="username">
             <el-input
-              v-model="loginForm.captcha"
-              placeholder="请输入验证码"
+              v-model="loginForm.username"
+              placeholder="请输入用户名或邮箱"
               size="large"
-              style="flex: 1;"
+              :prefix-icon="User"
             />
-            <div class="captcha-image" @click="refreshCaptcha">
-              <img :src="captchaImage" alt="验证码" />
+          </el-form-item>
+
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              placeholder="请输入密码"
+              size="large"
+              :prefix-icon="Lock"
+              show-password
+              @keyup.enter="handleLogin"
+            />
+          </el-form-item>
+
+          <!-- 验证码 -->
+          <el-form-item prop="captcha" v-if="captchaImage">
+            <div class="captcha-row">
+              <el-input
+                v-model="loginForm.captcha"
+                placeholder="请输入验证码"
+                size="large"
+                class="captcha-input"
+              />
+              <div class="captcha-image" @click="refreshCaptcha">
+                <img :src="captchaImage" alt="验证码" />
+              </div>
             </div>
-          </div>
-        </el-form-item>
+          </el-form-item>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="loading"
-            @click="handleLogin"
-            class="login-btn"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-      </el-form>
+          <el-form-item>
+            <el-button
+              type="primary"
+              size="large"
+              :loading="loading"
+              @click="handleLogin"
+              class="login-btn"
+            >
+              登 录
+            </el-button>
+          </el-form-item>
+        </el-form>
 
-      <div class="login-footer">
-        <p>
-          还没有账户？
-          <router-link to="/register" class="register-link">
-            立即注册
-          </router-link>
-        </p>
+        <div class="login-footer">
+          <p>
+            还没有账户？
+            <router-link to="/register" class="register-link">
+              立即注册
+            </router-link>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -169,268 +230,452 @@ onMounted(() => {
 <style scoped>
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
   display: flex;
+  background: #0f0f1a;
+}
+
+/* ========== 左侧视觉区 ========== */
+.login-left {
+  flex: 1;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  position: relative;
+  padding: 60px;
   overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: 
-      radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-    animation: float 8s ease-in-out infinite;
+}
+
+/* 粒子效果 */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(99, 179, 237, 0.6);
+  border-radius: 50%;
+  animation: floatParticle 15s infinite;
+  opacity: 0;
+}
+
+.particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+.particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+.particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+.particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+.particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+.particle:nth-child(7) { left: 70%; animation-delay: 6s; }
+.particle:nth-child(8) { left: 80%; animation-delay: 7s; }
+.particle:nth-child(9) { left: 90%; animation-delay: 8s; }
+.particle:nth-child(10) { left: 15%; animation-delay: 0.5s; }
+.particle:nth-child(11) { left: 25%; animation-delay: 1.5s; }
+.particle:nth-child(12) { left: 35%; animation-delay: 2.5s; }
+.particle:nth-child(13) { left: 45%; animation-delay: 3.5s; }
+.particle:nth-child(14) { left: 55%; animation-delay: 4.5s; }
+.particle:nth-child(15) { left: 65%; animation-delay: 5.5s; }
+.particle:nth-child(16) { left: 75%; animation-delay: 6.5s; }
+.particle:nth-child(17) { left: 85%; animation-delay: 7.5s; }
+.particle:nth-child(18) { left: 95%; animation-delay: 8.5s; }
+.particle:nth-child(19) { left: 5%; animation-delay: 9s; }
+.particle:nth-child(20) { left: 12%; animation-delay: 9.5s; }
+.particle:nth-child(n+21) { left: calc(5% * (var(--i, 1))); animation-delay: calc(0.3s * var(--i, 1)); }
+
+@keyframes floatParticle {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) scale(1);
+    opacity: 0;
   }
 }
 
+/* 3D悬浮卡片 */
+.floating-cards {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+}
+
+.float-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform-style: preserve-3d;
+  animation: float3d 6s ease-in-out infinite;
+}
+
+.float-card .card-icon {
+  font-size: 28px;
+}
+
+.float-card .card-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.card-1 {
+  top: 8%;
+  left: 8%;
+  animation-delay: 0s;
+}
+
+.card-2 {
+  top: 8%;
+  right: 12%;
+  animation-delay: -1s;
+}
+
+.card-3 {
+  top: 35%;
+  left: 5%;
+  animation-delay: -2s;
+}
+
+.card-4 {
+  top: 38%;
+  right: 8%;
+  animation-delay: -3s;
+}
+
+.card-5 {
+  bottom: 35%;
+  left: 12%;
+  animation-delay: -4s;
+}
+
+.card-6 {
+  bottom: 32%;
+  right: 5%;
+  animation-delay: -5s;
+}
+
+.card-7 {
+  bottom: 8%;
+  left: 6%;
+  animation-delay: -6s;
+}
+
+.card-8 {
+  bottom: 10%;
+  right: 10%;
+  animation-delay: -7s;
+}
+
+@keyframes float3d {
+  0%, 100% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotateX(5deg) rotateY(5deg);
+  }
+  50% {
+    transform: translateY(-5px) rotateX(0deg) rotateY(-5deg);
+  }
+  75% {
+    transform: translateY(-20px) rotateX(-5deg) rotateY(3deg);
+  }
+}
+
+/* 品牌信息 */
+.brand-section {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+}
+
+.brand-title {
+  font-size: 48px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #63b3ed 0%, #4fd1c5 50%, #9f7aea 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+  text-shadow: 0 0 40px rgba(99, 179, 237, 0.3);
+}
+
+.brand-subtitle {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.brand-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 2px;
+}
+
+/* 波浪背景 */
+.wave-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 200px;
+}
+
+.wave1 {
+  animation: waveMove 12s linear infinite;
+}
+
+.wave2 {
+  animation: waveMove 8s linear infinite reverse;
+  bottom: 10px;
+}
+
+@keyframes waveMove {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ========== 右侧表单区 ========== */
+.login-right {
+  width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 右侧波浪装饰 */
+.login-right::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(66, 153, 225, 0.05) 0%, transparent 50%);
+  animation: pulse 8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 48px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.15),
-    0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: white;
+  border-radius: 24px;
+  padding: 48px 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   position: relative;
   z-index: 1;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-      0 25px 70px rgba(0, 0, 0, 0.2),
-      0 12px 40px rgba(0, 0, 0, 0.15);
+  animation: cardEnter 0.5s ease-out;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .login-header {
   text-align: center;
   margin-bottom: 40px;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, #74b9ff, #0984e3);
-    border-radius: 2px;
-  }
 }
 
 .login-header h2 {
-  color: #2c3e50;
+  color: #1a202c;
   margin-bottom: 8px;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .login-header p {
-  color: #64748b;
+  color: #718096;
   margin: 0;
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 15px;
 }
 
 .login-form {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .login-form :deep(.el-form-item) {
-  margin-bottom: 24px;
-  
-  .el-input__wrapper {
-    border-radius: 16px;
-    border: 2px solid rgba(116, 185, 255, 0.1);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    padding: 12px 16px;
-    height: 52px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    
-    &:hover {
-      border-color: rgba(116, 185, 255, 0.3);
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    &.is-focus {
-      border-color: #74b9ff;
-      background: white;
-      box-shadow: 0 0 0 4px rgba(116, 185, 255, 0.1);
-    }
-  }
-  
-  .el-input__inner {
-    font-size: 15px;
-    font-weight: 500;
-    color: #2c3e50;
-  }
+  margin-bottom: 20px;
+}
+
+.login-form :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  padding: 4px 12px;
+  box-shadow: none;
+}
+
+.login-form :deep(.el-input__wrapper:hover) {
+  border-color: #cbd5e0;
+}
+
+.login-form :deep(.el-input__wrapper.is-focus) {
+  border-color: #4299e1;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.login-form :deep(.el-input__inner) {
+  font-size: 15px;
+  color: #2d3748;
+  height: 44px;
 }
 
 .captcha-row {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
+}
+
+.captcha-input {
+  flex: 1;
 }
 
 .captcha-image {
   cursor: pointer;
-  border: 2px solid rgba(116, 185, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  width: 160px;
-  height: 52px;
+  width: 120px;
+  height: 44px;
+  border: 2px solid #e2e8f0;
   transition: all 0.3s ease;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(116, 185, 255, 0.1), rgba(9, 132, 227, 0.1));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  &:hover {
-    border-color: #74b9ff;
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(116, 185, 255, 0.2);
-    
-    &::before {
-      opacity: 1;
-    }
-  }
+  flex-shrink: 0;
+}
+
+.captcha-image:hover {
+  border-color: #4299e1;
+  transform: scale(1.02);
 }
 
 .captcha-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  position: relative;
-  z-index: 1;
 }
 
 .login-btn {
   width: 100%;
-  height: 52px;
+  height: 48px;
   font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
   border: none;
-  border-radius: 16px;
+  border-radius: 12px;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-  }
-  
-  &:hover {
-    background: linear-gradient(135deg, #0984e3 0%, #2d3436 100%);
-    box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
-    transform: translateY(-2px);
-    
-    &::before {
-      left: 100%;
-    }
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.35);
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(66, 153, 225, 0.45);
+}
+
+.login-btn:active {
+  transform: translateY(0);
 }
 
 .login-footer {
   text-align: center;
-  padding-top: 24px;
-  border-top: 1px solid rgba(116, 185, 255, 0.1);
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .login-footer p {
-  color: #64748b;
+  color: #718096;
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .register-link {
-  color: #74b9ff;
+  color: #4299e1;
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.3s ease;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #74b9ff, #0984e3);
-    transition: width 0.3s ease;
+  margin-left: 4px;
+  transition: color 0.3s ease;
+}
+
+.register-link:hover {
+  color: #2b6cb0;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 1024px) {
+  .login-left {
+    display: none;
   }
   
-  &:hover {
-    color: #0984e3;
-    
-    &::after {
-      width: 100%;
-    }
+  .login-right {
+    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
+  .login-right {
+    padding: 20px;
+  }
+  
   .login-card {
     padding: 32px 24px;
-    margin: 16px;
   }
   
   .login-header h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
   
   .captcha-row {
     flex-direction: column;
-    gap: 12px;
   }
   
   .captcha-image {
     width: 100%;
-    max-width: 250px;
   }
 }
-</style> 
+</style>

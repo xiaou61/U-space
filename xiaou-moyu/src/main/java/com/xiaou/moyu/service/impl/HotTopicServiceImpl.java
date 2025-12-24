@@ -3,6 +3,7 @@ package com.xiaou.moyu.service.impl;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.xiaou.common.utils.RedisUtil;
+import com.xiaou.common.utils.ThreadPoolUtils;
 import com.xiaou.moyu.domain.HotTopicData;
 import com.xiaou.moyu.domain.HotTopicResponse;
 import com.xiaou.moyu.enums.HotTopicEnum;
@@ -14,12 +15,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 热榜服务实现类
@@ -105,61 +105,61 @@ public class HotTopicServiceImpl implements HotTopicService {
     
     @Override
     public Map<String, HotTopicData> getAllHotTopicData() {
-        Map<String, HotTopicData> result = new HashMap<>();
+        // 使用ThreadPoolUtils并行获取所有平台数据
+        List<HotTopicEnum> platforms = Arrays.asList(HotTopicEnum.values());
         
-        // 遍历所有平台，先从缓存获取，缓存不存在再调用API
-        for (HotTopicEnum platform : HotTopicEnum.values()) {
-            try {
-                HotTopicData data = getHotTopicData(platform.getCode());
-                if (data != null) {
-                    result.put(platform.getCode(), data);
+        List<Map.Entry<String, HotTopicData>> results = ThreadPoolUtils.parallelMapIO(
+                platforms,
+                platform -> {
+                    try {
+                        HotTopicData data = getHotTopicData(platform.getCode());
+                        return data != null ? Map.entry(platform.getCode(), data) : null;
+                    } catch (Exception e) {
+                        log.error("获取平台热榜数据失败: {}", platform.getCode(), e);
+                        return null;
+                    }
                 }
-            } catch (Exception e) {
-                log.error("获取平台热榜数据失败: {}", platform.getCode(), e);
-            }
-        }
+        );
         
-        return result;
+        return results.stream()
+                .filter(entry -> entry != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
     
     @Override
     @Async("hotTopicExecutor")
     public void refreshHotTopicData() {
-        int failedCount = 0;
         int totalCount = HotTopicEnum.values().length;
         
         try {
-            // 并行刷新所有平台数据
-            List<CompletableFuture<Boolean>> futures = Arrays.stream(HotTopicEnum.values())
-                .map(platform -> CompletableFuture.supplyAsync(() -> {
-                    try {
-                        String url = baseUrl + "/" + platform.getCode();
-                        HotTopicData data = restTemplate.getForObject(url, HotTopicData.class);
-                        
-                        if (data != null) {
-                            String cacheKey = CACHE_KEY_PREFIX + "data:" + platform.getCode();
-                            redisUtil.set(cacheKey, JSONUtil.toJsonStr(data), CACHE_EXPIRE_TIME);
-                            return true;
+            // 使用ThreadPoolUtils并行刷新所有平台数据，支持超时控制
+            List<HotTopicEnum> platforms = Arrays.asList(HotTopicEnum.values());
+            
+            List<Boolean> results = ThreadPoolUtils.parallelMapWithTimeout(
+                    platforms,
+                    platform -> {
+                        try {
+                            String url = baseUrl + "/" + platform.getCode();
+                            HotTopicData data = restTemplate.getForObject(url, HotTopicData.class);
+                            
+                            if (data != null) {
+                                String cacheKey = CACHE_KEY_PREFIX + "data:" + platform.getCode();
+                                redisUtil.set(cacheKey, JSONUtil.toJsonStr(data), CACHE_EXPIRE_TIME);
+                                return true;
+                            }
+                            return false;
+                        } catch (Exception e) {
+                            log.warn("刷新平台[{}]热榜数据失败: {}", platform.getCode(), e.getMessage());
+                            return false;
                         }
-                        return false;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }))
-                .collect(Collectors.toList());
+                    },
+                    30, TimeUnit.SECONDS
+            );
             
-            // 等待所有任务完成并统计结果
-            for (CompletableFuture<Boolean> future : futures) {
-                try {
-                    if (!future.join()) {
-                        failedCount++;
-                    }
-                } catch (Exception e) {
-                    failedCount++;
-                }
-            }
+            // 统计结果
+            long successCount = results.stream().filter(r -> r != null && r).count();
+            int failedCount = totalCount - (int) successCount;
             
-            int successCount = totalCount - failedCount;
             if (failedCount == 0) {
                 log.info("热榜数据刷新成功（{}/{})", successCount, totalCount);
             } else {

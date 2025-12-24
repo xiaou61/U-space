@@ -1,10 +1,33 @@
 # Code Nest
 
-![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+## 📣 v1.7.0 更新日志
+
+### 🌟 新功能
+
+**学习效果追踪系统**
+- ✨ 掌握度标记：支持不会/模糊/熟悉/已掌握四级评估
+- 📈 GitHub风格学习热力图：可视化展示全年学习轨迹
+- 🔔 艾宾浩斯遗忘曲线复习提醒：智能计算最佳复习时间
+- 📊 复习中心：统一管理待复习题目（逾期/今日/本周）
+- 🔥 学习统计：连续学习天数、最长连续、本月学习等数据
+
+**IM聊天功能增强**
+- 💬 新增消息回复功能：支持引用回复历史消息
+- 👥 优化在线用户管理：实时显示在线用户列表
+
+### 🛠️ 技术实现
+- 新增 3 张数据表：`interview_mastery_record`、`interview_daily_stats`、`interview_mastery_history`
+- 新增复习中心页面 `/interview/review`
+- 学习热力图集成到面试题库首页
+- 掌握度标记集成到做题模式
+
+---
 
 ## 📖 项目简介
 
@@ -110,7 +133,8 @@ Code-Nest/
 ├── sql/
 │   ├── struct.sql              # 数据库结构
 │   ├── data.sql                # 初始化数据
-│   └── v1.6.0/                 # 增量脚本（CodePen 等）
+│   ├── v1.6.0/                 # 增量脚本（CodePen 等）
+│   └── v1.7.0/                 # 增量脚本（学习追踪等）
 ├── vue3-admin-front/           # 管理端前端
 ├── vue3-user-front/            # 用户端前端
 ├── xiaou-common/               # 通用模块
@@ -147,7 +171,7 @@ CREATE DATABASE code_nest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_
 USE code_nest;
 SOURCE sql/struct.sql;
 SOURCE sql/data.sql;
--- 如需最新功能，请额外执行 sql/v1.6.0/*.sql
+-- 如需最新功能，请额外执行 sql/v1.7.0/*.sql
 ```
 
 ### 3. 配置文件
@@ -194,7 +218,7 @@ mvn clean package -DskipTests
 mvn -pl xiaou-application -am spring-boot:run
 
 # 或直接运行打包后的 jar
-java -jar xiaou-application/target/xiaou-application-1.6.0.jar --spring.profiles.active=prod
+java -jar xiaou-application/target/xiaou-application-1.7.0.jar --spring.profiles.active=prod
 ```
 
 - API 根地址：`http://localhost:9999/api`

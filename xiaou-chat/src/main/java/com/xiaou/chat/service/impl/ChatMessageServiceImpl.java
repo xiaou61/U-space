@@ -57,6 +57,21 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         message.setIpAddress(ipAddress);
         message.setDeviceInfo(deviceInfo);
         
+        // 处理回复消息
+        if (request.getReplyToId() != null && request.getReplyToId() > 0) {
+            ChatMessage replyToMsg = chatMessageMapper.selectById(request.getReplyToId());
+            if (replyToMsg != null) {
+                message.setReplyToId(request.getReplyToId());
+                message.setReplyToUser(replyToMsg.getUserNickname());
+                // 截取回复内容摘要，最多50字
+                String content = replyToMsg.getContent();
+                if (content != null && content.length() > 50) {
+                    content = content.substring(0, 50) + "...";
+                }
+                message.setReplyToContent(replyToMsg.getMessageType() == 2 ? "[图片]" : content);
+            }
+        }
+        
         int result = chatMessageMapper.insert(message);
         if (result <= 0) {
             throw new BusinessException("发送消息失败");
