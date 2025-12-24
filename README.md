@@ -6,29 +6,6 @@
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 📣 v1.7.0 更新日志
-
-### 🌟 新功能
-
-**学习效果追踪系统**
-- ✨ 掌握度标记：支持不会/模糊/熟悉/已掌握四级评估
-- 📈 GitHub风格学习热力图：可视化展示全年学习轨迹
-- 🔔 艾宾浩斯遗忘曲线复习提醒：智能计算最佳复习时间
-- 📊 复习中心：统一管理待复习题目（逾期/今日/本周）
-- 🔥 学习统计：连续学习天数、最长连续、本月学习等数据
-
-**IM聊天功能增强**
-- 💬 新增消息回复功能：支持引用回复历史消息
-- 👥 优化在线用户管理：实时显示在线用户列表
-
-### 🛠️ 技术实现
-- 新增 3 张数据表：`interview_mastery_record`、`interview_daily_stats`、`interview_mastery_history`
-- 新增复习中心页面 `/interview/review`
-- 学习热力图集成到面试题库首页
-- 掌握度标记集成到做题模式
-
----
-
 ## 📖 项目简介
 
 Code Nest 是一个面向开发者的成长型社区与知识运营平台，采用 Spring Boot 3.4.4 + Vue3 + Vite 的前后端分离架构，后台整合 Sa-Token 权限、Redisson 缓存、MySQL 题库/内容系统以及 Prometheus 监控指标，提供包含题库、面试辅导、知识图谱、博客、代码工坊、在线简历、IM 聊天、积分激励与抽奖等在内的多模块能力。
@@ -327,7 +304,7 @@ management:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.6.0 -f docker/Dockerfile .
+docker build -t code-nest:1.7.0 -f docker/Dockerfile .
 
 # 运行容器
 docker run -d \
@@ -335,7 +312,7 @@ docker run -d \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
   --env-file docker/env/example.env \
-  code-nest:1.6.0
+  code-nest:1.7.0
 ```
 
 可与 MySQL/Redis 容器组合，或使用 `docker-compose`.
@@ -373,13 +350,23 @@ server {
 
 - `docs/PRD/`：覆盖简历、代码工坊、IM、积分、抽奖、知识图谱、敏感词、SQL 优化等 20+ 模块的产品文档。
 - `docs/Prometheus运维部署指南.md`：Prometheus + Grafana 安装、指标、告警策略。
-- `sql/struct.sql` & `sql/data.sql`：完整结构与示例数据，`sql/v1.6.0/` 为增量脚本。
+- `sql/struct.sql` & `sql/data.sql`：完整结构与示例数据，`sql/v1.7.0/` 为最新增量脚本。
 - `pom.xml`：多模块管理、版本统一、Flatten 插件配置。
 - `docker/`：容器化部署示例。
 
 ## 📝 更新日志
 
 仅列出最近版本，更多历史可查看 `git log`。
+
+### v1.7.0 📚 学习效果追踪
+
+- 🌟 **掌握度标记**：支持不会/模糊/熟悉/已掌握四级评估，集成到做题模式。
+- 📈 **GitHub风格学习热力图**：可视化展示全年学习轨迹，集成到面试题库首页。
+- 🔔 **艾宾浩斯遗忘曲线复习提醒**：基于掌握度智能计算最佳复习时间。
+- 📊 **复习中心**：新增 `/interview/review` 页面，统一管理待复习题目（逾期/今日/本周）。
+- 🔥 **学习统计**：连续学习天数、最长连续、本月学习等数据展示。
+- 💬 **IM消息回复**：支持引用回复历史消息，优化在线用户管理。
+- 🗄️ **数据库**：新增 `interview_mastery_record`、`interview_daily_stats`、`interview_mastery_history` 表。
 
 ### v1.6.3 🌟 AI模拟面试
 
