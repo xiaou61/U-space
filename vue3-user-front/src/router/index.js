@@ -81,6 +81,16 @@ const routes = [
       keepAlive: true // 开启页面缓存
     }
   },
+  {
+    path: '/interview/review',
+    name: 'InterviewReview',
+    component: () => import('@/views/interview/Review.vue'),
+    meta: {
+      title: '智能复习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
   // ============ 模拟面试 ============
   {
     path: '/mock-interview',

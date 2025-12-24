@@ -87,6 +87,14 @@
               show-icon
             />
           </div>
+
+          <!-- 掌握度选择器（仅做题模式且答案已显示时显示） -->
+          <MasterySelector
+            :question-id="questionId"
+            :question-set-id="setId"
+            :visible="!isStudyMode && showAnswer"
+            @marked="handleMasteryMarked"
+          />
         </div>
       </el-card>
     </div>
@@ -160,6 +168,7 @@ import {
 import { renderMarkdown } from '@/utils/markdown'
 import { useInterviewStore } from '@/stores/interview'
 import { interviewApi } from '@/api/interview'
+import MasterySelector from './components/MasterySelector.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -329,6 +338,12 @@ const markAsLearned = async () => {
     // 静默失败，不影响用户体验
     console.debug('记录学习进度失败:', error)
   }
+}
+
+// 掌握度标记回调
+const handleMasteryMarked = (masteryData) => {
+  console.log('掌握度已标记:', masteryData)
+  // 可以在这里添加额外的处理逻辑
 }
 
 // 监听路由变化

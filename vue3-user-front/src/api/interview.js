@@ -131,5 +131,46 @@ export const interviewApi = {
   // 获取用户总学习数量
   getTotalLearned() {
     return request.get('/interview/learn/total')
+  },
+
+  // ============ 掌握度相关 ============
+
+  // 标记题目掌握度
+  markMastery(data) {
+    return request.post('/interview/mastery/mark', data)
+  },
+
+  // 获取题目掌握度
+  getMastery(questionId) {
+    return request.get(`/interview/mastery/${questionId}`)
+  },
+
+  // 批量获取题目掌握度
+  batchGetMastery(questionIds) {
+    return request.post('/interview/mastery/batch', questionIds)
+  },
+
+  // ============ 复习相关 ============
+
+  // 获取复习统计
+  getReviewStats() {
+    return request.get('/interview/mastery/review/stats')
+  },
+
+  // 获取待复习题目列表
+  getReviewList(type = 'all') {
+    return request.get('/interview/mastery/review/list', { params: { type } })
+  },
+
+  // ============ 热力图相关 ============
+
+  // 获取学习热力图数据
+  getHeatmap(year) {
+    return request.get('/interview/mastery/heatmap', { params: { year } })
+  },
+
+  // 获取某日学习详情
+  getHeatmapDetail(date) {
+    return request.get('/interview/mastery/heatmap/detail', { params: { date } })
   }
 }

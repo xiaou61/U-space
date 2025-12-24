@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewMasteryMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewMasteryRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="question_id" property="questionId"/>
+        <result column="question_set_id" property="questionSetId"/>
+        <result column="mastery_level" property="masteryLevel"/>
+        <result column="review_count" property="reviewCount"/>
+        <result column="last_review_time" property="lastReviewTime"/>
+        <result column="next_review_time" property="nextReviewTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="question_title" property="questionTitle"/>
+        <result column="question_set_title" property="questionSetTitle"/>
+        <result column="overdue_days" property="overdueDays"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, question_id, question_set_id, mastery_level, review_count,
+        last_review_time, next_review_time, create_time, update_time
+    </sql>
+
+    <!-- 插入掌握度记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interview_mastery_record (
+            user_id, question_id, question_set_id, mastery_level, review_count,
+            last_review_time, next_review_time, create_time, update_time
+        ) VALUES (
+            #{userId}, #{questionId}, #{questionSetId}, #{masteryLevel}, #{reviewCount},
+            #{lastReviewTime}, #{nextReviewTime}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新掌握度记录 -->
+    <update id="update">
+        UPDATE interview_mastery_record
+        SET mastery_level = #{masteryLevel},
+            review_count = #{reviewCount},
+            last_review_time = #{lastReviewTime},
+            next_review_time = #{nextReviewTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据用户ID和题目ID查询 -->
+    <select id="selectByUserAndQuestion" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_mastery_record
+        WHERE user_id = #{userId} AND question_id = #{questionId}
+    </select>
+
+    <!-- 批量查询用户对多个题目的掌握度 -->
+    <select id="selectByUserAndQuestions" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_mastery_record
+        WHERE user_id = #{userId}
+        AND question_id IN
+        <foreach collection="questionIds" item="questionId" open="(" close=")" separator=",">
+            #{questionId}
+        </foreach>
+    </select>
+
+    <!-- 查询用户待复习题目（逾期） -->
+    <select id="selectOverdueReview" resultMap="BaseResultMap">
+        SELECT m.*, 
+               iq.title as question_title,
+               iqs.title as question_set_title,
+               DATEDIFF(#{now}, m.next_review_time) as overdue_days
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question iq ON m.question_id = iq.id
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &lt; #{now}
+        AND iqs.status = 1
+        ORDER BY m.next_review_time ASC
+    </select>
+
+    <!-- 查询用户今日待复习题目 -->
+    <select id="selectTodayReview" resultMap="BaseResultMap">
+        SELECT m.*, 
+               iq.title as question_title,
+               iqs.title as question_set_title,
+               0 as overdue_days
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question iq ON m.question_id = iq.id
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &gt;= #{startTime}
+        AND m.next_review_time &lt; #{endTime}
+        AND iqs.status = 1
+        ORDER BY m.next_review_time ASC
+    </select>
+
+    <!-- 查询用户本周待复习题目 -->
+    <select id="selectWeekReview" resultMap="BaseResultMap">
+        SELECT m.*, 
+               iq.title as question_title,
+               iqs.title as question_set_title,
+               0 as overdue_days
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question iq ON m.question_id = iq.id
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &gt;= #{startTime}
+        AND m.next_review_time &lt; #{endTime}
+        AND iqs.status = 1
+        ORDER BY m.next_review_time ASC
+    </select>
+
+    <!-- 统计逾期复习数量 -->
+    <select id="countOverdueReview" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &lt; #{now}
+        AND iqs.status = 1
+    </select>
+
+    <!-- 统计今日待复习数量 -->
+    <select id="countTodayReview" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &gt;= #{startTime}
+        AND m.next_review_time &lt; #{endTime}
+        AND iqs.status = 1
+    </select>
+
+    <!-- 统计本周待复习数量 -->
+    <select id="countWeekReview" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_mastery_record m
+        LEFT JOIN interview_question_set iqs ON m.question_set_id = iqs.id
+        WHERE m.user_id = #{userId}
+        AND m.next_review_time &gt;= #{startTime}
+        AND m.next_review_time &lt; #{endTime}
+        AND iqs.status = 1
+    </select>
+
+    <!-- 统计用户已学习总题数 -->
+    <select id="countTotalLearned" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_mastery_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 按掌握度等级统计 -->
+    <select id="countByMasteryLevel" resultType="int">
+        SELECT COUNT(*)
+        FROM interview_mastery_record
+        WHERE user_id = #{userId}
+        AND mastery_level = #{masteryLevel}
+    </select>
+
+    <!-- 插入历史记录 -->
+    <insert id="insertHistory">
+        INSERT INTO interview_mastery_history (user_id, question_id, mastery_level, is_review, create_time)
+        VALUES (#{userId}, #{questionId}, #{masteryLevel}, #{isReview}, NOW())
+    </insert>
+
+</mapper>

@@ -63,6 +63,10 @@
             <el-icon class="action-icon star-icon"><Star /></el-icon>
             <span>我的收藏</span>
           </div>
+          <div class="action-btn review-btn" @click="goToReview">
+            <el-icon class="action-icon review-icon"><Clock /></el-icon>
+            <span>复习中心</span>
+          </div>
         </div>
       </div>
 
@@ -83,10 +87,16 @@
           </div>
         </div>
       </div>
+
+      <!-- 复习提醒卡片 -->
+      <ReviewReminderCard />
     </aside>
 
     <!-- 主内容区 -->
     <main class="main-content">
+      <!-- 学习热力图 -->
+      <LearningHeatmap class="heatmap-section" />
+
       <!-- 内容头部 -->
       <div class="content-header">
         <div class="header-left">
@@ -182,9 +192,11 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Search, Star, Edit, View, Refresh, Folder, DataLine, Lightning
+  Search, Star, Edit, View, Refresh, Folder, DataLine, Lightning, Clock
 } from '@element-plus/icons-vue'
 import { useInterviewStore } from '@/stores/interview'
+import ReviewReminderCard from './components/ReviewReminderCard.vue'
+import LearningHeatmap from './components/LearningHeatmap.vue'
 
 const router = useRouter()
 const interviewStore = useInterviewStore()
@@ -297,7 +309,10 @@ const goToFavorites = () => {
   router.push('/interview/favorites')
 }
 
-
+// 跳转到复习中心
+const goToReview = () => {
+  router.push('/interview/review')
+}
 
 // 跳转到随机抽题页面
 const goToRandomQuestions = () => {
@@ -451,9 +466,18 @@ onMounted(async () => {
   color: #67c23a;
 }
 
-.action-btn:last-child:hover {
+.action-btn:nth-child(2):hover {
   background: linear-gradient(135deg, #fef0f0 0%, #fde2e2 100%);
   color: #f56c6c;
+}
+
+.action-btn.review-btn:hover {
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  color: #409eff;
+}
+
+.review-icon {
+  color: #409eff;
 }
 
 .action-icon {
@@ -498,6 +522,10 @@ onMounted(async () => {
 .main-content {
   flex: 1;
   min-width: 0;
+}
+
+.heatmap-section {
+  margin-bottom: 20px;
 }
 
 .content-header {
