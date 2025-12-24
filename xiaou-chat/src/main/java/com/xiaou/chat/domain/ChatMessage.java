@@ -54,6 +54,26 @@ public class ChatMessage {
     private String imageUrl;
     
     /**
+     * 回复的消息ID
+     */
+    private Long replyToId;
+    
+    /**
+     * 被回复消息内容摘要
+     */
+    private String replyToContent;
+    
+    /**
+     * 被回复者昵称
+     */
+    private String replyToUser;
+    
+    /**
+     * @提及的用户ID,逗号分隔
+     */
+    private String mentions;
+    
+    /**
      * 是否删除：0否 1是
      */
     private Integer isDeleted;

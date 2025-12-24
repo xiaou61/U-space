@@ -19,6 +19,16 @@ public class ChatOnlineUserResponse {
     private Long userId;
     
     /**
+     * 会话ID (Redis缓存使用)
+     */
+    private String sessionId;
+    
+    /**
+     * 房间ID (Redis缓存使用)
+     */
+    private Long roomId;
+    
+    /**
      * 用户昵称
      */
     private String userNickname;

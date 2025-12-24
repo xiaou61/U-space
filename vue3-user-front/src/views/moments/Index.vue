@@ -1,203 +1,270 @@
 <template>
-  <div class="moments-page">
-    <!-- 搜索栏 -->
-    <el-card class="search-card">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="搜索动态内容..."
-        clearable
-        @keyup.enter="handleSearch"
-        @clear="handleClearSearch"
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-        <template #append>
-          <el-button @click="handleSearch" :loading="searching">
-            搜索
-          </el-button>
-        </template>
-      </el-input>
-    </el-card>
-
-    <!-- 热门动态轮播 -->
-    <el-card v-if="!isSearchMode && hotMoments.length > 0" class="hot-moments-card" v-loading="loadingHot">
-      <div class="hot-header">
-        <el-icon class="fire-icon"><StarFilled /></el-icon>
-        <span class="hot-title">热门动态</span>
+  <div class="moments-container">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">🌟 朋友圈</h1>
+        <p class="page-subtitle">分享学习与生活的精彩瞬间</p>
       </div>
-      <el-carousel height="100px" :interval="5000" indicator-position="none">
-        <el-carousel-item v-for="hot in hotMoments" :key="hot.id">
-          <div class="hot-item" @click="() => {}">
-            <div class="hot-content">
-              <span class="hot-user">{{ hot.userNickname }}:</span>
-              <span class="hot-text">{{ hot.content }}</span>
-            </div>
-            <div class="hot-stats">
-              <span><el-icon><Star /></el-icon> {{ hot.likeCount }}</span>
-              <span><el-icon><ChatDotRound /></el-icon> {{ hot.commentCount }}</span>
-              <span><el-icon><View /></el-icon> {{ hot.viewCount }}</span>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="moments-main">
+      <div class="moments-layout">
+        <!-- 左侧边栏 -->
+        <aside class="left-sidebar">
+          <!-- 搜索框 -->
+          <div class="sidebar-card search-card">
+            <div class="search-wrapper">
+              <el-icon class="search-icon"><Search /></el-icon>
+              <input
+                v-model="searchKeyword"
+                type="text"
+                class="search-input"
+                placeholder="搜索动态..."
+                @keyup.enter="handleSearch"
+              />
+              <button v-if="searchKeyword" class="clear-btn" @click="handleClearSearch">×</button>
             </div>
           </div>
-        </el-carousel-item>
-      </el-carousel>
-    </el-card>
-    
-    <!-- 发布动态区域 -->
-    <el-card class="publish-card">
-      <div class="publish-section">
-        <el-input
-          v-model="publishForm.content"
-          type="textarea"
-          placeholder="分享此刻的想法..."
-          :rows="3"
-          maxlength="100"
-          show-word-limit
-          @focus="showPublishDialog"
-          readonly
-        />
-      </div>
-    </el-card>
 
-    <!-- 动态列表 -->
-    <div v-loading="loading" class="moments-list">
-      <el-empty v-if="!loading && momentList.length === 0" description="暂无动态，快来发布第一条吧！" />
-      
-      <div v-for="moment in momentList" :key="moment.id" class="moment-item">
-        <el-card class="moment-card">
-          <!-- 用户信息 -->
-          <div class="user-header">
-            <el-avatar 
-              :size="45" 
-              :src="moment.userAvatar" 
-              class="clickable-avatar"
-              @click="goToUserProfile(moment.userId)"
-            >
-              {{ moment.userNickname?.charAt(0) }}
-            </el-avatar>
-            <div class="user-info" @click="goToUserProfile(moment.userId)">
-              <div class="user-name">{{ moment.userNickname }}</div>
-              <div class="publish-time">{{ formatTime(moment.createTime) }}</div>
-            </div>
-            <el-dropdown v-if="moment.canDelete" trigger="click">
-              <el-button type="text" size="small">
-                <el-icon><MoreFilled /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="deleteMoment(moment)">删除动态</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-
-          <!-- 动态内容 -->
-          <div class="moment-content">
-            <p class="content-text">{{ moment.content }}</p>
-            
-            <!-- 图片展示 -->
-            <div v-if="moment.images && moment.images.length" class="images-grid">
-              <div 
-                v-for="(image, index) in moment.images" 
-                :key="index" 
-                class="image-item"
-                @click="previewImage(moment.images, index)"
-              >
-                <el-image
-                  :src="image"
-                  fit="cover"
-                  class="moment-image"
-                  loading="lazy"
-                />
+          <!-- 热门动态 -->
+          <div v-if="!isSearchMode && hotMoments.length > 0" class="sidebar-card hot-card">
+            <h3 class="card-title">
+              <span class="hot-icon">🔥</span>
+              热门动态
+            </h3>
+            <div class="hot-list">
+              <div v-for="(hot, index) in hotMoments" :key="hot.id" class="hot-item">
+                <span class="hot-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</span>
+                <div class="hot-info">
+                  <p class="hot-text">{{ hot.content }}</p>
+                  <div class="hot-meta">
+                    <span class="hot-user">{{ hot.userNickname }}</span>
+                    <span class="hot-stats">
+                      <el-icon><Pointer /></el-icon> {{ hot.likeCount }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 互动区域 -->
-          <div class="interaction-section">
-            <div class="interaction-stats">
-              <span v-if="moment.likeCount > 0" class="stat-item">
-                <el-icon><Star /></el-icon>
-                {{ moment.likeCount }}
-              </span>
-              <span v-if="moment.commentCount > 0" class="stat-item">
-                <el-icon><ChatDotRound /></el-icon>
-                {{ moment.commentCount }}
-              </span>
-              <span v-if="moment.viewCount > 0" class="stat-item">
-                <el-icon><View /></el-icon>
-                {{ moment.viewCount }}
-              </span>
-            </div>
-            
-            <div class="interaction-buttons">
-              <el-button 
-                :type="moment.isLiked ? 'primary' : ''" 
-                text 
-                @click="toggleLikeMoment(moment)"
-                :loading="moment.liking"
-              >
-                <el-icon><Star /></el-icon>
-                {{ moment.isLiked ? '已赞' : '点赞' }}
-              </el-button>
-              <el-button text @click="showCommentDialog(moment)">
-                <el-icon><ChatDotRound /></el-icon>
-                评论
-              </el-button>
-              <el-button 
-                :type="moment.isFavorited ? 'warning' : ''" 
-                text 
-                @click="toggleFavoriteMoment(moment)"
-                :loading="moment.favoriting"
-              >
-                <el-icon v-if="moment.isFavorited"><StarFilled /></el-icon>
-                <el-icon v-else><Star /></el-icon>
-                {{ moment.isFavorited ? '已收藏' : '收藏' }}
-              </el-button>
-            </div>
+          <!-- 快捷发布 -->
+          <div class="sidebar-card publish-quick">
+            <h3 class="card-title">
+              <span>✍️</span>
+              快速发布
+            </h3>
+            <button class="publish-btn" @click="showPublishDialog">
+              <el-icon><Edit /></el-icon>
+              发布新动态
+            </button>
+          </div>
+        </aside>
 
-            <!-- 最新评论 -->
-            <div v-if="moment.recentComments && moment.recentComments.length" class="recent-comments">
-              <div 
-                v-for="comment in moment.recentComments" 
-                :key="comment.id" 
-                class="comment-item"
-              >
-                <span class="comment-user">{{ comment.userNickname }}:</span>
-                <span class="comment-content">{{ comment.content }}</span>
-                <el-button 
-                  v-if="comment.canDelete" 
-                  type="danger" 
-                  text 
-                  size="small"
-                  @click="deleteComment(comment, moment)"
-                >
-                  删除
-                </el-button>
-              </div>
-              <el-button 
-                v-if="moment.commentCount > moment.recentComments.length" 
-                text 
-                size="small" 
-                @click="viewAllComments(moment)"
-              >
-                查看全部 {{ moment.commentCount }} 条评论
-              </el-button>
+        <!-- 中间内容区 -->
+        <main class="main-content">
+          <!-- 发布卡片 -->
+          <div class="publish-card" @click="showPublishDialog">
+            <div class="publish-avatar">
+              {{ userStore.userInfo?.nickname?.charAt(0) || 'U' }}
+            </div>
+            <div class="publish-input-fake">
+              分享你的想法...
+            </div>
+            <div class="publish-actions">
+              <span class="action-item">
+                <el-icon><Picture /></el-icon>
+                图片
+              </span>
+              <span class="action-item">
+                <el-icon><Location /></el-icon>
+                位置
+              </span>
             </div>
           </div>
-        </el-card>
-      </div>
 
-      <!-- 加载更多 -->
-      <div v-if="hasMore" class="load-more" ref="loadMoreRef">
-        <div v-if="loadingMore" class="loading-text">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          加载中...
-        </div>
-        <div v-else class="more-text">下拉加载更多</div>
-      </div>
-      <div v-else-if="momentList.length > 0" class="no-more">
-        没有更多了
+          <!-- 动态列表 -->
+          <div v-loading="loading" class="moments-feed">
+            <div v-if="!loading && momentList.length === 0" class="empty-state">
+              <div class="empty-icon">📝</div>
+              <p class="empty-text">暂无动态</p>
+              <p class="empty-hint">快来发布第一条动态吧！</p>
+              <button class="publish-first-btn" @click="showPublishDialog">发布动态</button>
+            </div>
+
+            <!-- 动态卡片 -->
+            <div v-for="moment in momentList" :key="moment.id" class="moment-card">
+              <!-- 用户头部 -->
+              <div class="moment-header">
+                <div class="user-avatar" @click="goToUserProfile(moment.userId)">
+                  {{ moment.userNickname?.charAt(0) }}
+                </div>
+                <div class="user-info">
+                  <span class="user-name" @click="goToUserProfile(moment.userId)">{{ moment.userNickname }}</span>
+                  <span class="post-time">{{ formatTime(moment.createTime) }}</span>
+                </div>
+                <div v-if="moment.canDelete" class="more-actions">
+                  <el-dropdown trigger="click">
+                    <button class="more-btn">
+                      <el-icon><MoreFilled /></el-icon>
+                    </button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item @click="deleteMoment(moment)">
+                          <el-icon><Delete /></el-icon>
+                          删除动态
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+              </div>
+
+              <!-- 动态内容 -->
+              <div class="moment-body">
+                <p class="moment-text">{{ moment.content }}</p>
+                
+                <!-- 图片展示 -->
+                <div v-if="moment.images && moment.images.length" 
+                     class="moment-images"
+                     :class="'images-' + Math.min(moment.images.length, 9)">
+                  <div 
+                    v-for="(image, index) in moment.images.slice(0, 9)" 
+                    :key="index" 
+                    class="image-item"
+                    @click="previewImage(moment.images, index)"
+                  >
+                    <img :src="image" alt="" loading="lazy" />
+                    <div v-if="index === 8 && moment.images.length > 9" class="more-images">
+                      +{{ moment.images.length - 9 }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 互动区 -->
+              <div class="moment-footer">
+                <!-- 统计数据 -->
+                <div v-if="moment.likeCount > 0 || moment.commentCount > 0 || moment.viewCount > 0" class="stats-bar">
+                  <span v-if="moment.likeCount > 0" class="stat">
+                    <el-icon><Pointer /></el-icon> {{ moment.likeCount }} 赞
+                  </span>
+                  <span v-if="moment.commentCount > 0" class="stat">
+                    {{ moment.commentCount }} 评论
+                  </span>
+                  <span v-if="moment.viewCount > 0" class="stat">
+                    {{ moment.viewCount }} 浏览
+                  </span>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-bar">
+                  <button 
+                    class="action-btn"
+                    :class="{ active: moment.isLiked }"
+                    @click="toggleLikeMoment(moment)"
+                    :disabled="moment.liking"
+                  >
+                    <el-icon><Pointer /></el-icon>
+                    <span>{{ moment.isLiked ? '已赞' : '点赞' }}</span>
+                  </button>
+                  <button class="action-btn" @click="showCommentDialog(moment)">
+                    <el-icon><ChatDotRound /></el-icon>
+                    <span>评论</span>
+                  </button>
+                  <button 
+                    class="action-btn"
+                    :class="{ active: moment.isFavorited, favorited: moment.isFavorited }"
+                    @click="toggleFavoriteMoment(moment)"
+                    :disabled="moment.favoriting"
+                  >
+                    <el-icon><Star /></el-icon>
+                    <span>{{ moment.isFavorited ? '已收藏' : '收藏' }}</span>
+                  </button>
+                </div>
+
+                <!-- 评论区 -->
+                <div v-if="moment.recentComments && moment.recentComments.length" class="comments-area">
+                  <div v-for="comment in moment.recentComments" :key="comment.id" class="comment-item">
+                    <span class="comment-author">{{ comment.userNickname }}</span>
+                    <span class="comment-text">{{ comment.content }}</span>
+                    <button 
+                      v-if="comment.canDelete" 
+                      class="delete-comment"
+                      @click="deleteComment(comment, moment)"
+                    >
+                      删除
+                    </button>
+                  </div>
+                  <button 
+                    v-if="moment.commentCount > moment.recentComments.length"
+                    class="view-all-btn"
+                    @click="viewAllComments(moment)"
+                  >
+                    查看全部 {{ moment.commentCount }} 条评论
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 加载更多 -->
+            <div v-if="hasMore" class="load-more" ref="loadMoreRef">
+              <div v-if="loadingMore" class="loading-spinner">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                <span>加载中...</span>
+              </div>
+              <div v-else class="scroll-hint">下滑加载更多</div>
+            </div>
+            <div v-else-if="momentList.length > 0" class="no-more-data">
+              —— 已经到底了 ——
+            </div>
+          </div>
+        </main>
+
+        <!-- 右侧边栏 -->
+        <aside class="right-sidebar">
+          <!-- 统计卡片 -->
+          <div class="sidebar-card stats-card">
+            <h3 class="card-title">
+              <span>📊</span>
+              动态统计
+            </h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value">{{ momentList.length }}</span>
+                <span class="stat-label">动态</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value">{{ totalLikes }}</span>
+                <span class="stat-label">获赞</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 功能入口 -->
+          <div class="sidebar-card quick-links">
+            <h3 class="card-title">
+              <span>📢</span>
+              快捷入口
+            </h3>
+            <div class="links-list">
+              <div class="link-item" @click="$router.push('/community')">
+                <el-icon><ChatLineSquare /></el-icon>
+                <span>社区讨论</span>
+              </div>
+              <div class="link-item" @click="$router.push('/resources')">
+                <el-icon><Folder /></el-icon>
+                <span>资源中心</span>
+              </div>
+              <div class="link-item" @click="$router.push('/practice')">
+                <el-icon><Edit /></el-icon>
+                <span>在线练习</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
@@ -232,9 +299,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, onUnmounted } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus'
-import { Star, ChatDotRound, MoreFilled, StarFilled, View, Search, Loading } from '@element-plus/icons-vue'
+import { 
+  Star, ChatDotRound, MoreFilled, StarFilled, View, Search, Loading, 
+  Edit, Picture, Location, Pointer, Delete, ChatLineSquare, Folder
+} from '@element-plus/icons-vue'
 import { 
   getMomentList, 
   toggleLike, 
@@ -253,6 +323,11 @@ import AllCommentsDialog from './components/AllCommentsDialog.vue'
 
 const userStore = useUserStore()
 const router = useRouter()
+
+// 计算属性
+const totalLikes = computed(() => {
+  return momentList.value.reduce((sum, m) => sum + (m.likeCount || 0), 0)
+})
 
 // 数据状态
 const loading = ref(false)
@@ -615,276 +690,720 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.moments-page {
+/* ========== 全局容器 ========== */
+.moments-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 20px;
-  max-width: 900px;
+  background: #f4f5f5;
+}
+
+/* ========== 页面头部 ========== */
+.page-header {
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.header-content {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
 }
 
-/* 搜索栏样式 */
-.search-card {
-  margin-bottom: 20px;
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #999;
+}
+
+/* ========== 主内容区 ========== */
+.moments-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.moments-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 240px;
+  gap: 24px;
+}
+
+/* ========== 侧边栏通用 ========== */
+.sidebar-card {
+  background: white;
   border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
 }
 
-/* 热门动态样式 */
-.hot-moments-card {
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 12px;
-}
-
-.hot-header {
+.card-title {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
 }
 
-.fire-icon {
-  font-size: 20px;
-  color: #ffd700;
+/* ========== 左侧边栏 ========== */
+.left-sidebar {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+/* 搜索框 */
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.search-icon {
+  color: #999;
   margin-right: 8px;
 }
 
-.hot-title {
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #333;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #999;
   font-size: 16px;
-  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* 热门动态 */
+.hot-card .card-title .hot-icon {
+  font-size: 16px;
+}
+
+.hot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .hot-item {
+  display: flex;
+  gap: 10px;
   cursor: pointer;
-  padding: 10px 15px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
   border-radius: 8px;
-  transition: all 0.3s;
+  transition: background 0.3s;
 }
 
 .hot-item:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #f9f9f9;
 }
 
-.hot-content {
-  margin-bottom: 8px;
-  font-size: 14px;
-  line-height: 1.6;
+.hot-rank {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  background: #ddd;
+  flex-shrink: 0;
+}
+
+.hot-rank.rank-1 { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); }
+.hot-rank.rank-2 { background: linear-gradient(135deg, #ffa502, #f39c12); }
+.hot-rank.rank-3 { background: linear-gradient(135deg, #1e90ff, #3742fa); }
+
+.hot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hot-text {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.hot-user {
-  font-weight: 600;
-  margin-right: 5px;
+.hot-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
 }
 
 .hot-stats {
   display: flex;
-  gap: 15px;
-  font-size: 12px;
-  opacity: 0.9;
+  align-items: center;
+  gap: 2px;
 }
 
-.hot-stats span {
+/* 快捷发布 */
+.publish-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.publish-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 184, 148, 0.4);
+}
+
+/* ========== 主内容区 ========== */
+.main-content {
+  min-width: 0;
+}
+
+/* 发布卡片 */
+.publish-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+}
+
+.publish-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.publish-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.publish-input-fake {
+  flex: 1;
+  padding: 10px 16px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.publish-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.publish-actions .action-item {
   display: flex;
   align-items: center;
   gap: 4px;
+  font-size: 13px;
+  color: #666;
 }
 
-.publish-card {
-  margin-bottom: 20px;
-}
-
-.publish-section {
-  cursor: pointer;
-}
-
-.moments-list {
+/* 动态Feed */
+.moments-feed {
   min-height: 400px;
 }
 
-.moment-item {
-  margin-bottom: 20px;
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
 }
 
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.empty-hint {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #999;
+}
+
+.publish-first-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* 动态卡片 */
 .moment-card {
-  transition: all 0.3s;
+  background: white;
   border-radius: 12px;
-  overflow: hidden;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
 }
 
 .moment-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.user-header {
+/* 动态头部 */
+.moment-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
 }
 
 .user-info {
   flex: 1;
-  margin-left: 12px;
-  cursor: pointer;
-}
-
-.user-info:hover .user-name {
-  color: #409eff;
-}
-
-.clickable-avatar {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.clickable-avatar:hover {
-  transform: scale(1.05);
 }
 
 .user-name {
-  font-weight: 500;
-  color: #303133;
-  font-size: 16px;
-  transition: color 0.2s;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
-.publish-time {
-  color: #999;
+.user-name:hover {
+  color: #00b894;
+}
+
+.post-time {
+  display: block;
   font-size: 12px;
+  color: #999;
   margin-top: 2px;
 }
 
-.moment-content {
-  margin-bottom: 15px;
+.more-btn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.content-text {
-  margin: 0 0 15px 0;
-  line-height: 1.6;
+.more-btn:hover {
+  background: #f5f5f5;
+}
+
+/* 动态内容 */
+.moment-body {
+  margin-bottom: 12px;
+}
+
+.moment-text {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  line-height: 1.7;
   color: #333;
+  white-space: pre-wrap;
 }
 
-.images-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 15px;
-  max-width: 360px;
+/* 图片展示 */
+.moment-images {
+  display: grid;
+  gap: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.moment-images.images-1 {
+  max-width: 300px;
+}
+
+.moment-images.images-2 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 400px;
+}
+
+.moment-images.images-3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 400px;
+}
+
+.moment-images.images-4 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 300px;
+}
+
+.moment-images.images-5,
+.moment-images.images-6 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 400px;
+}
+
+.moment-images.images-7,
+.moment-images.images-8,
+.moment-images.images-9 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 400px;
 }
 
 .image-item {
+  position: relative;
+  aspect-ratio: 1;
   cursor: pointer;
-  border-radius: 8px;
   overflow: hidden;
-  width: 116px;
-  height: 116px;
 }
 
-.moment-image {
+.image-item img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
 }
 
-.interaction-section {
+.image-item:hover img {
+  transform: scale(1.05);
+}
+
+.more-images {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* 动态底部 */
+.moment-footer {
   border-top: 1px solid #f0f0f0;
   padding-top: 12px;
 }
 
-.interaction-stats {
+.stats-bar {
   display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 10px;
+  gap: 16px;
+  margin-bottom: 12px;
   font-size: 13px;
-  color: #909399;
+  color: #999;
 }
 
-.stat-item {
+.stats-bar .stat {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.interaction-buttons {
+.action-bar {
   display: flex;
-  gap: 20px;
-  margin-bottom: 10px;
+  justify-content: space-around;
+  padding: 8px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 12px;
 }
 
-.recent-comments {
-  background: #f7f7f7;
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+  color: #00b894;
+}
+
+.action-btn.active {
+  color: #00b894;
+}
+
+.action-btn.favorited {
+  color: #f6ad55;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 评论区 */
+.comments-area {
+  background: #f9f9f9;
   border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
+  padding: 12px;
 }
 
 .comment-item {
   margin-bottom: 8px;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
-.comment-item:last-child {
+.comment-item:last-of-type {
   margin-bottom: 0;
 }
 
-.comment-user {
+.comment-author {
+  color: #00b894;
   font-weight: 500;
-  color: #1890ff;
-  margin-right: 5px;
+  margin-right: 6px;
 }
 
-.comment-content {
+.comment-text {
   color: #333;
 }
 
-.load-more {
-  text-align: center;
-  padding: 30px 20px;
+.delete-comment {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 8px;
 }
 
-.loading-text {
+.delete-comment:hover {
+  color: #f56565;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: 8px;
+}
+
+.view-all-btn:hover {
+  color: #00b894;
+}
+
+/* 加载更多 */
+.load-more {
+  text-align: center;
+  padding: 30px;
+}
+
+.loading-spinner {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #909399;
+  color: #00b894;
   font-size: 14px;
 }
 
-.more-text {
-  color: #c0c4cc;
+.scroll-hint {
+  color: #ccc;
   font-size: 13px;
 }
 
-.no-more {
+.no-more-data {
   text-align: center;
-  padding: 20px;
-  color: #c0c4cc;
+  padding: 30px;
+  color: #ccc;
   font-size: 13px;
 }
 
-:deep(.el-card__body) {
-  padding: 20px;
+/* ========== 右侧边栏 ========== */
+.right-sidebar {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
 }
 
-:deep(.el-textarea__inner) {
-  resize: none;
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .images-grid {
-    max-width: 300px;
+.stats-card .stat-item {
+  text-align: center;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.stats-card .stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #00b894;
+}
+
+.stats-card .stat-label {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 快捷入口 */
+.links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.3s;
+}
+
+.link-item:hover {
+  background: #e8f8f5;
+  color: #00b894;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 1100px) {
+  .moments-layout {
+    grid-template-columns: 1fr;
   }
   
-  .image-item {
-    width: 96px;
-    height: 96px;
+  .left-sidebar,
+  .right-sidebar {
+    display: none;
   }
 }
-</style> 
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .moments-main {
+    padding: 16px;
+  }
+  
+  .publish-card {
+    padding: 12px;
+  }
+  
+  .publish-actions {
+    display: none;
+  }
+  
+  .moment-card {
+    padding: 16px;
+  }
+  
+  .moment-images {
+    max-width: 100% !important;
+  }
+  
+  .action-bar {
+    padding: 4px 0;
+  }
+  
+  .action-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+</style>

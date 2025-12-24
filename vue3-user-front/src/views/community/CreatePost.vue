@@ -1,221 +1,212 @@
 <template>
-  <div class="create-post-page">
-    <!-- 头部导航 -->
-    <div class="header">
+  <div class="create-post-container">
+    <!-- 页面头部 -->
+    <div class="page-header">
       <div class="header-content">
-        <div class="header-left">
-          <h2>创作帖子</h2>
-          <p>使用Markdown格式，让您的内容更加丰富多彩</p>
+        <div class="breadcrumb-nav">
+          <span class="back-link" @click="goBack">
+            <el-icon><Back /></el-icon>
+            社区首页
+          </span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="current-page">创作帖子</span>
         </div>
-        <div class="header-right">
-          <el-button @click="goBack" :icon="Back">
-            返回社区
-          </el-button>
-          <el-button type="primary" @click="handlePublish" :loading="publishLoading" :icon="Edit">
-            发表帖子
-          </el-button>
+        <div class="page-title-row">
+          <h1 class="page-title">✍️ 创作帖子</h1>
+          <p class="page-subtitle">使用 Markdown 格式，让你的内容更加丰富多彩</p>
         </div>
       </div>
     </div>
 
-    <!-- 标题和分类输入 -->
-    <div class="title-section">
-      <el-card shadow="never" class="title-card">
-        <el-row :gutter="20">
-          <el-col :span="16">
-            <el-input 
-              v-model="postForm.title" 
-              placeholder="请输入帖子标题..." 
-              size="large"
+    <!-- 主内容区 -->
+    <div class="create-main">
+      <!-- 基本信息卡片 -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📝 基本信息</h3>
+          <div class="draft-status">
+            <span v-if="draftSavedAt" class="saved-hint">
+              <el-icon><CircleCheck /></el-icon>
+              草稿已保存于 {{ draftSavedAt }}
+            </span>
+            <button 
+              v-if="postForm.title || postForm.content"
+              class="clear-draft-btn"
+              @click="clearDraft"
+            >
+              <el-icon><Delete /></el-icon>
+              清空草稿
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group title-group">
+            <label>帖子标题 <span class="required">*</span></label>
+            <input 
+              v-model="postForm.title"
+              type="text"
+              class="form-input title-input"
+              placeholder="输入一个吸引人的标题..."
               maxlength="200"
-              show-word-limit
-              clearable
               @input="saveDraft"
             />
-          </el-col>
-          <el-col :span="8">
+            <span class="char-count">{{ postForm.title.length }}/200</span>
+          </div>
+          <div class="form-group category-group">
+            <label>分类</label>
             <el-select 
               v-model="postForm.categoryId" 
-              placeholder="选择分类（可选）"
-              size="large"
+              placeholder="选择分类"
               clearable
-              style="width: 100%"
+              class="category-select"
               @change="saveDraft"
             >
-              <template #prefix>
-                <el-icon><Flag /></el-icon>
-              </template>
               <el-option
                 v-for="category in categoryList"
                 :key="category.id"
                 :label="category.name"
                 :value="category.id"
-              >
-                <span>{{ category.name }}</span>
-                <span style="color: #8492a6; font-size: 13px; margin-left: 8px">{{ category.description }}</span>
-              </el-option>
+              />
             </el-select>
-          </el-col>
-        </el-row>
-
-        <!-- 标签选择区域 -->
-        <div style="margin-top: 16px">
-          <div style="margin-bottom: 8px">
-            <span style="font-weight: 500; color: #606266">选择标签（最多5个）：</span>
-            <el-button 
-              v-if="draftSavedAt" 
-              text 
-              size="small" 
-              type="success"
-              style="margin-left: 16px"
-            >
-              <el-icon><CircleCheck /></el-icon>
-              草稿已保存于 {{ draftSavedAt }}
-            </el-button>
-            <el-button 
-              v-if="postForm.title || postForm.content"
-              text 
-              size="small" 
-              type="danger"
-              @click="clearDraft"
-              style="margin-left: 8px"
-            >
-              <el-icon><Delete /></el-icon>
-              清空草稿
-            </el-button>
           </div>
-          <div class="tags-selection">
-            <el-tag
-              v-for="tagId in postForm.tagIds"
-              :key="tagId"
-              closable
-              type="success"
-              @close="removeTag(tagId)"
-              style="margin-right: 8px; margin-bottom: 8px"
+        </div>
+
+        <!-- 标签选择 -->
+        <div class="tags-section">
+          <label>标签（最多5个）</label>
+          <div class="tags-wrapper">
+            <span 
+              v-for="tagId in postForm.tagIds" 
+              :key="tagId" 
+              class="tag-item selected"
             >
               # {{ getTagName(tagId) }}
-            </el-tag>
-            <el-button 
+              <span class="tag-remove" @click="removeTag(tagId)">×</span>
+            </span>
+            <button 
               v-if="postForm.tagIds.length < 5"
-              size="small"
-              type="success"
-              plain
+              class="add-tag-btn"
               @click="showTagSelector = true"
             >
               <el-icon><Plus /></el-icon>
               添加标签
-            </el-button>
-            <span v-if="postForm.tagIds.length >= 5" style="color: #909399; font-size: 13px; margin-left: 8px">
-              已达到标签数量上限
-            </span>
+            </button>
           </div>
         </div>
-      </el-card>
+      </div>
+
+      <!-- 编辑器区域 -->
+      <div class="editor-card">
+        <div class="editor-layout">
+          <!-- 左侧编辑器 -->
+          <div class="editor-pane">
+            <div class="pane-header">
+              <h3>
+                <span class="icon">💻</span>
+                Markdown 编辑
+              </h3>
+              <div class="toolbar">
+                <button class="tool-btn" @click="insertMarkdown('**', '**')" title="加粗">
+                  <strong>B</strong>
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('*', '*')" title="斜体">
+                  <em>I</em>
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('`', '`')" title="行内代码">
+                  &lt;/&gt;
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('### ', '')" title="标题">
+                  H
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('\n```\n', '\n```')" title="代码块">
+                  { }
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('> ', '')" title="引用">
+                  ”
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('- ', '')" title="列表">
+                  •
+                </button>
+                <button class="tool-btn" @click="insertMarkdown('[', '](url)')" title="链接">
+                  🔗
+                </button>
+              </div>
+            </div>
+            <textarea
+              v-model="postForm.content"
+              class="editor-textarea"
+              placeholder="在这里使用 Markdown 格式编写内容...
+
+支持的格式：
+# 标题  **加粗**  *斜体*  `代码`
+- 列表项  > 引用  [链接](url)
+```代码块```"
+              @input="handleContentInput"
+            ></textarea>
+            <div class="editor-footer">
+              <span class="word-count">{{ postForm.content.length }} / 5000 字符</span>
+            </div>
+          </div>
+
+          <!-- 右侧预览 -->
+          <div class="preview-pane">
+            <div class="pane-header">
+              <h3>
+                <span class="icon">👁️</span>
+                实时预览
+              </h3>
+              <span class="preview-badge">{{ previewWordCount }} 字</span>
+            </div>
+            <div class="preview-body markdown-content" v-html="previewHtml"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 发布按钮 -->
+      <div class="publish-bar">
+        <button class="cancel-btn" @click="goBack">
+          取消
+        </button>
+        <button 
+          class="publish-btn"
+          @click="handlePublish"
+          :disabled="publishLoading"
+        >
+          <el-icon v-if="publishLoading" class="is-loading"><Loading /></el-icon>
+          <el-icon v-else><Edit /></el-icon>
+          {{ publishLoading ? '发布中...' : '发布帖子' }}
+        </button>
+      </div>
     </div>
 
     <!-- 标签选择对话框 -->
     <el-dialog
       v-model="showTagSelector"
       title="选择标签"
-      width="600px"
+      width="500px"
       :close-on-click-modal="false"
+      class="tag-dialog"
     >
-      <div class="tag-selector-content">
-        <el-tag
-          v-for="tag in availableTags"
+      <div class="tag-selector-grid">
+        <span
+          v-for="tag in tagList"
           :key="tag.id"
-          :type="postForm.tagIds.includes(tag.id) ? 'success' : ''"
-          :effect="postForm.tagIds.includes(tag.id) ? 'dark' : 'plain'"
-          class="tag-selector-item"
+          class="tag-option"
+          :class="{ selected: postForm.tagIds.includes(tag.id) }"
           @click="toggleTag(tag.id)"
         >
           # {{ tag.name }}
-          <el-icon v-if="postForm.tagIds.includes(tag.id)" style="margin-left: 4px"><Check /></el-icon>
-        </el-tag>
-        <div v-if="availableTags.length === 0" class="empty-tags">
+          <el-icon v-if="postForm.tagIds.includes(tag.id)" class="check-icon"><Check /></el-icon>
+        </span>
+        <div v-if="tagList.length === 0" class="empty-tags">
           暂无可用标签
         </div>
       </div>
       <template #footer>
-        <el-button @click="showTagSelector = false">关闭</el-button>
+        <button class="dialog-btn" @click="showTagSelector = false">完成</button>
       </template>
     </el-dialog>
-
-    <!-- 编辑器主体 -->
-    <div class="editor-section">
-      <el-card shadow="never" class="editor-card">
-        <div class="editor-container">
-          <!-- 左侧编辑区域 -->
-          <div class="editor-panel">
-            <div class="editor-header">
-              <h3>Markdown编辑器</h3>
-              <div class="editor-tools">
-                <el-button size="small" @click="insertMarkdown('**', '**')" :icon="EditPen">
-                  加粗
-                </el-button>
-                <el-button size="small" @click="insertMarkdown('*', '*')" :icon="More">
-                  斜体
-                </el-button>
-                <el-button size="small" @click="insertMarkdown('`', '`')" :icon="Flag">
-                  代码
-                </el-button>
-                <el-button size="small" @click="insertMarkdown('### ', '')" :icon="Menu">
-                  标题
-                </el-button>
-              </div>
-            </div>
-            <el-input
-              v-model="postForm.content"
-              type="textarea"
-              placeholder="在这里使用Markdown格式编写您的帖子内容...
-
-示例：
-# 一级标题
-## 二级标题
-### 三级标题
-
-**粗体文本**
-*斜体文本*
-`行内代码`
-
-```javascript
-// 代码块
-console.log('Hello World!');
-```
-
-- 无序列表项1
-- 无序列表项2
-
-1. 有序列表项1
-2. 有序列表项2
-
-> 引用文本
-
-[链接文本](https://example.com)
-
-| 表头1 | 表头2 |
-|-------|-------|
-| 单元格1 | 单元格2 |
-"
-              class="markdown-editor"
-              :rows="25"
-              maxlength="5000"
-              show-word-limit
-              @input="handleContentInput"
-            />
-          </div>
-
-          <!-- 右侧预览区域 -->
-          <div class="preview-panel">
-            <div class="preview-header">
-              <h3>实时预览</h3>
-              <el-tag size="small" type="info">{{ previewWordCount }} 字符</el-tag>
-            </div>
-            <div class="preview-content markdown-content" v-html="previewHtml"></div>
-          </div>
-        </div>
-      </el-card>
-    </div>
   </div>
 </template>
 
@@ -224,7 +215,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } 
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Back, Edit, EditPen, More, Flag, Menu, Plus, Check, CircleCheck, Delete
+  Back, Edit, EditPen, More, Flag, Menu, Plus, Check, CircleCheck, Delete, Loading
 } from '@element-plus/icons-vue'
 import { communityApi } from '@/api/community'
 import { renderMarkdown } from '@/utils/markdown'
@@ -507,219 +498,547 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.create-post-page {
+/* ========== 全局容器 ========== */
+.create-post-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 20px;
+  background: #f4f5f5;
 }
 
-.header {
-  margin-bottom: 20px;
+/* ========== 页面头部 ========== */
+.page-header {
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: #999;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #00b894;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: #00a085;
+}
+
+.breadcrumb-sep {
+  color: #ddd;
+}
+
+.current-page {
+  color: #666;
+}
+
+.page-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #999;
+}
+
+/* ========== 主内容区 ========== */
+.create-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ========== 信息卡片 ========== */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 185, 148, 0.3);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.header-left h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.header-left p {
+.card-header h3 {
   margin: 0;
-  opacity: 0.9;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
 }
 
-.header-right {
+.draft-status {
   display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.title-section {
+.saved-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #10b981;
+}
+
+.clear-draft-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid #f56565;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #f56565;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clear-draft-btn:hover {
+  background: #f56565;
+  color: white;
+}
+
+/* 表单 */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
-.title-card {
-  border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.tags-selection {
+.form-group {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
-.tag-selector-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 8px;
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
 }
 
-.tag-selector-item {
-  cursor: pointer;
+.required {
+  color: #f56565;
+}
+
+.title-group {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 15px;
   transition: all 0.3s;
-  padding: 8px 16px;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #00b894;
+  box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+}
+
+.title-input {
+  padding-right: 70px;
+}
+
+.char-count {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-size: 12px;
+  color: #999;
+}
+
+.category-select {
+  width: 100%;
+}
+
+:deep(.category-select .el-input__wrapper) {
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* 标签区域 */
+.tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tags-section label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  border-radius: 6px;
+  font-size: 13px;
+  color: white;
+}
+
+.tag-remove {
+  cursor: pointer;
+  opacity: 0.8;
   font-size: 14px;
 }
 
-.tag-selector-item:hover {
-  transform: scale(1.05);
+.tag-remove:hover {
+  opacity: 1;
+}
+
+.add-tag-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-tag-btn:hover {
+  border-color: #00b894;
+  color: #00b894;
+}
+
+/* ========== 编辑器卡片 ========== */
+.editor-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  min-height: 500px;
+}
+
+.editor-pane,
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pane-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.pane-header .icon {
+  font-size: 18px;
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: 4px;
+}
+
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tool-btn:hover {
+  background: #00b894;
+  color: white;
+}
+
+/* 编辑器 */
+.editor-textarea {
+  flex: 1;
+  min-height: 400px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-family: 'Consolas', 'Monaco', 'SF Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  transition: all 0.3s;
+}
+
+.editor-textarea:focus {
+  outline: none;
+  border-color: #00b894;
+  box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+}
+
+.editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.word-count {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 预览 */
+.preview-badge {
+  padding: 2px 10px;
+  background: #e8f8f5;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #00b894;
+}
+
+.preview-body {
+  flex: 1;
+  min-height: 400px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+  overflow-y: auto;
+}
+
+.preview-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preview-body::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+/* ========== 发布栏 ========== */
+.publish-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn {
+  padding: 12px 32px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-btn:hover {
+  border-color: #00b894;
+  color: #00b894;
+}
+
+.publish-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.publish-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+}
+
+.publish-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ========== 标签对话框 ========== */
+.tag-selector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tag-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f5f5f5;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tag-option:hover {
+  border-color: #00b894;
+  color: #00b894;
+}
+
+.tag-option.selected {
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  color: white;
+}
+
+.check-icon {
+  font-size: 14px;
 }
 
 .empty-tags {
   width: 100%;
   text-align: center;
   padding: 40px;
-  color: #909399;
+  color: #999;
 }
 
-.editor-section {
-  margin-bottom: 20px;
-}
-
-.editor-card {
+.dialog-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  min-height: calc(100vh - 200px);
-}
-
-.editor-container {
-  display: flex;
-  gap: 20px;
-  height: 100%;
-}
-
-.editor-panel,
-.preview-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.editor-header,
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f0f0f0;
-  margin-bottom: 16px;
-}
-
-.editor-header h3,
-.preview-header h3 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.editor-tools {
-  display: flex;
-  gap: 8px;
-}
-
-:deep(.markdown-editor .el-textarea__inner) {
-  min-height: 600px !important;
-  font-family: 'Consolas', 'Monaco', 'SF Mono', 'Courier New', monospace;
+  border-radius: 8px;
   font-size: 14px;
-  line-height: 1.6;
-  border-radius: 8px;
-  border: 1px solid #dcdfe6;
-  resize: none;
+  color: white;
+  cursor: pointer;
 }
 
-:deep(.markdown-editor .el-textarea__inner:focus) {
-  border-color: #00b894;
-  box-shadow: 0 0 0 2px rgba(0, 185, 148, 0.2);
-}
-
-.preview-content {
-  min-height: 600px;
-  max-height: 600px;
-  overflow-y: auto;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-  background: white;
-  padding: 0; /* markdown-content class already has padding */
-}
-
-.empty-preview {
-  color: #909399;
-  text-align: center;
-  padding: 50px 20px;
-  font-style: italic;
-}
-
-/* 自定义滚动条 */
-.preview-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.preview-content::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 4px;
-}
-
-.preview-content::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
-  border-radius: 4px;
-}
-
-.preview-content::-webkit-scrollbar-thumb:hover {
-  background: #a8abb2;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .editor-container {
-    flex-direction: column;
+/* ========== 响应式 ========== */
+@media (max-width: 900px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
   }
   
-  .editor-panel,
-  .preview-panel {
-    flex: none;
+  .preview-pane {
+    order: -1;
   }
   
-  :deep(.markdown-editor .el-textarea__inner) {
-    min-height: 300px !important;
-  }
-  
-  .preview-content {
+  .editor-textarea,
+  .preview-body {
     min-height: 300px;
-    max-height: 400px;
   }
 }
 
 @media (max-width: 768px) {
-  .create-post-page {
-    padding: 10px;
-  }
-  
   .header-content {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
+    padding: 16px;
   }
   
-  .editor-tools {
+  .page-title-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .create-main {
+    padding: 16px;
+  }
+  
+  .info-card,
+  .editor-card {
+    padding: 16px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .toolbar {
     flex-wrap: wrap;
-    gap: 6px;
+  }
+  
+  .publish-bar {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .publish-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
-</style> 
+</style>

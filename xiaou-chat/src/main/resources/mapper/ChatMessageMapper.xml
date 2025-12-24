@@ -11,6 +11,10 @@
         <result column="message_type" property="messageType"/>
         <result column="content" property="content"/>
         <result column="image_url" property="imageUrl"/>
+        <result column="reply_to_id" property="replyToId"/>
+        <result column="reply_to_content" property="replyToContent"/>
+        <result column="reply_to_user" property="replyToUser"/>
+        <result column="mentions" property="mentions"/>
         <result column="is_deleted" property="isDeleted"/>
         <result column="ip_address" property="ipAddress"/>
         <result column="device_info" property="deviceInfo"/>
@@ -19,14 +23,15 @@
 
     <sql id="Base_Column_List">
         m.id, m.room_id, m.user_id, u.nickname as user_nickname, u.avatar as user_avatar,
-        m.message_type, m.content, m.image_url, m.is_deleted, m.ip_address, m.device_info, m.create_time
+        m.message_type, m.content, m.image_url, m.reply_to_id, m.reply_to_content, m.reply_to_user,
+        m.mentions, m.is_deleted, m.ip_address, m.device_info, m.create_time
     </sql>
 
     <insert id="insert" parameterType="com.xiaou.chat.domain.ChatMessage" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO chat_messages (room_id, user_id, message_type, content, image_url, is_deleted, 
-        ip_address, device_info, create_time)
-        VALUES (#{roomId}, #{userId}, #{messageType}, #{content}, #{imageUrl}, #{isDeleted}, 
-        #{ipAddress}, #{deviceInfo}, NOW())
+        INSERT INTO chat_messages (room_id, user_id, message_type, content, image_url, 
+        reply_to_id, reply_to_content, reply_to_user, mentions, is_deleted, ip_address, device_info, create_time)
+        VALUES (#{roomId}, #{userId}, #{messageType}, #{content}, #{imageUrl}, 
+        #{replyToId}, #{replyToContent}, #{replyToUser}, #{mentions}, #{isDeleted}, #{ipAddress}, #{deviceInfo}, NOW())
     </insert>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">

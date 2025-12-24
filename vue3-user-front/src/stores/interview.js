@@ -78,7 +78,7 @@ export const useInterviewStore = defineStore('interview', () => {
   /**
    * 获取公开题单列表
    */
-  const fetchPublicQuestionSets = async (params = {}, options = {}) => {
+const fetchPublicQuestionSets = async (params = {}, options = {}) => {
     const cacheKey = `interview/question-sets/public?${JSON.stringify(params)}`
     
     questionSetsLoading.value = true
@@ -86,7 +86,7 @@ export const useInterviewStore = defineStore('interview', () => {
       const data = await cachedRequest(
         () => interviewApi.getPublicQuestionSets(params),
         cacheKey,
-        { ttl: 3 * 60 * 1000, ...options } // 题单列表缓存3分钟
+        { ttl: 3 * 60 * 1000, force: options.forceRefresh, ...options } // 题单列表缓存3分钟
       )
       
       if (params.page === 1) {
@@ -108,7 +108,7 @@ export const useInterviewStore = defineStore('interview', () => {
   /**
    * 搜索题单
    */
-  const searchQuestions = async (params = {}, options = {}) => {
+const searchQuestions = async (params = {}, options = {}) => {
     const cacheKey = `interview/questions/search?${JSON.stringify(params)}`
     
     questionSetsLoading.value = true
@@ -116,7 +116,7 @@ export const useInterviewStore = defineStore('interview', () => {
       const data = await cachedRequest(
         () => interviewApi.searchQuestions(params),
         cacheKey,
-        { ttl: 2 * 60 * 1000, ...options } // 搜索结果缓存2分钟
+        { ttl: 2 * 60 * 1000, force: options.forceRefresh, ...options } // 搜索结果缓存2分钟
       )
       
       // 将搜索到的题目转换为题单格式显示

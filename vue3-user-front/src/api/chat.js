@@ -23,3 +23,23 @@ export function getOnlineUsers() {
 export function recallMessage(data) {
   return request.post('/user/chat/message/recall', data)
 }
+
+// 上传聊天图片
+export function uploadChatImage(file, onProgress) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('moduleName', 'chat')
+  formData.append('businessType', 'message')
+  
+  return request.post('/file/upload/single', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress(percent)
+      }
+    }
+  })
+}

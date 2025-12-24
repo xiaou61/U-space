@@ -54,4 +54,9 @@ public interface ChatOnlineUserMapper {
      * 删除超时的在线用户
      */
     int deleteTimeoutUsers(@Param("timeoutSeconds") Integer timeoutSeconds);
+    
+    /**
+     * 根据用户ID查询用户信息（昵称、头像）
+     */
+    ChatOnlineUserResponse selectUserInfoByUserId(@Param("userId") Long userId);
 }

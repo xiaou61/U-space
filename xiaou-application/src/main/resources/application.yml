@@ -80,7 +80,8 @@ sa-token:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 关闭 MyBatis 原生 SQL 日志，由 P6Spy 接管
+    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   mapper-locations: 
     - classpath*:mapper/**/*.xml
     - classpath*:com/xiaou/*/mapper/*.xml
@@ -114,8 +115,9 @@ logging:
     # 禁用 Spring Security 的默认日志
     org.springframework.boot.autoconfigure.security: OFF
     org.springframework.security: WARN
-    com.xiaou: debug
-    org.springframework.web: debug
+    # 业务日志级别（INFO 可避免 Mapper 的 DEBUG SQL 输出，SQL 由 P6Spy 接管）
+    com.xiaou: INFO
+    org.springframework.web: WARN
 
 # SpringDoc OpenAPI 3.0 配置
 springdoc:

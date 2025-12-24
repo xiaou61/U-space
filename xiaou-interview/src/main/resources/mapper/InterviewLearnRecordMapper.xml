@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.interview.mapper.InterviewLearnRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.interview.domain.InterviewLearnRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="question_set_id" property="questionSetId"/>
+        <result column="question_id" property="questionId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 插入学习记录（忽略重复） -->
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO interview_learn_record (user_id, question_set_id, question_id, create_time)
+        VALUES (#{userId}, #{questionSetId}, #{questionId}, NOW())
+    </insert>
+
+    <!-- 检查是否已学习 -->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM interview_learn_record
+        WHERE user_id = #{userId} AND question_id = #{questionId}
+    </select>
+
+    <!-- 获取用户在某题单的已学习题目ID列表 -->
+    <select id="selectLearnedQuestionIds" resultType="java.lang.Long">
+        SELECT question_id
+        FROM interview_learn_record
+        WHERE user_id = #{userId} AND question_set_id = #{questionSetId}
+    </select>
+
+    <!-- 统计用户在某题单的学习数量 -->
+    <select id="countByUserAndSet" resultType="int">
+        SELECT COUNT(1)
+        FROM interview_learn_record
+        WHERE user_id = #{userId} AND question_set_id = #{questionSetId}
+    </select>
+
+    <!-- 统计用户总学习数量 -->
+    <select id="countByUser" resultType="int">
+        SELECT COUNT(1)
+        FROM interview_learn_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 删除用户的学习记录 -->
+    <delete id="deleteByUser">
+        DELETE FROM interview_learn_record WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 删除某题目的所有学习记录 -->
+    <delete id="deleteByQuestion">
+        DELETE FROM interview_learn_record WHERE question_id = #{questionId}
+    </delete>
+
+</mapper>

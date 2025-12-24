@@ -37,6 +37,7 @@ public class WebSocketMessage {
         public static final String ONLINE_COUNT = "ONLINE_COUNT"; // 在线人数更新
         public static final String USER_JOIN = "USER_JOIN";       // 用户加入
         public static final String USER_LEAVE = "USER_LEAVE";     // 用户离开
+        public static final String MESSAGE_ACK = "MESSAGE_ACK";       // 消息发送确认
         public static final String MESSAGE_RECALL = "MESSAGE_RECALL"; // 消息撤回
         public static final String MESSAGE_DELETE = "MESSAGE_DELETE"; // 消息删除
         public static final String KICK_OUT = "KICK_OUT";         // 被踢出

@@ -4,26 +4,18 @@
     <!-- 定义日志文件的存储地址 -->
     <property name="LOG_HOME" value="./logs" />
     
-    <!-- 简单控制台输出 -->
+    <!-- 控制台输出 - 简洁格式 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss} %-5level %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %highlight(%-5level) %cyan([%logger{20}]) %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
     
-    <!-- 业务日志控制台输出 -->
-    <appender name="BUSINESS_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- P6Spy SQL日志控制台输出 -->
+    <appender name="P6SPY_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss} 📋 %msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-    
-    <!-- SQL日志控制台输出 -->
-    <appender name="SQL_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss} 🗃️ %boldBlue([%logger{15}]) %msg%n</pattern>
+            <pattern>%cyan(%msg%n)</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -70,7 +62,7 @@
             <MaxHistory>7</MaxHistory>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
@@ -80,43 +72,47 @@
 
     <!-- 开发环境配置 -->
     <springProfile name="dev">
-        <!-- MyBatis SQL日志 - DEBUG级别显示SQL -->
-        <logger name="com.xiaou.system.mapper" level="DEBUG" additivity="false">
-            <appender-ref ref="SQL_CONSOLE" />
+        <!-- P6Spy SQL日志 -->
+        <logger name="p6spy" level="INFO" additivity="false">
+            <appender-ref ref="P6SPY_CONSOLE" />
             <appender-ref ref="SQL_FILE" />
         </logger>
         
-        <!-- MyBatis内部日志 - 显示SQL参数和结果 -->
-        <logger name="org.apache.ibatis" level="DEBUG" additivity="false">
-            <appender-ref ref="SQL_CONSOLE" />
-            <appender-ref ref="SQL_FILE" />
+        <!-- 关闭 MyBatis 原生 SQL日志（由 P6Spy 接管） -->
+        <logger name="org.apache.ibatis" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT" />
+        </logger>
+        <logger name="org.mybatis" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT" />
         </logger>
         
-        <!-- 业务日志 -->
+        <!-- 业务日志（INFO 级别，关闭 Mapper 的 DEBUG SQL 输出） -->
         <logger name="com.xiaou" level="INFO" additivity="false">
-            <appender-ref ref="BUSINESS_CONSOLE" />
+            <appender-ref ref="STDOUT" />
             <appender-ref ref="FILE" />
         </logger>
         
         <!-- Spring框架日志 -->
-        <logger name="org.springframework" level="INFO" additivity="false">
+        <logger name="org.springframework" level="WARN" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
         
-        <!-- WebSocket 日志 - 过滤客户端正常断连的 DEBUG 日志 -->
-        <logger name="org.springframework.web.socket" level="WARN" additivity="false">
+        <!-- 第三方库日志 -->
+        <logger name="org.redisson" level="WARN" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
-        
-        <logger name="org.redisson" level="INFO" additivity="false">
+        <logger name="com.alibaba.druid" level="WARN" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
-        <logger name="com.alibaba.druid" level="INFO" additivity="false">
+        <logger name="io.lettuce" level="WARN" additivity="false">
+            <appender-ref ref="STDOUT" />
+        </logger>
+        <logger name="com.zaxxer.hikari" level="WARN" additivity="false">
             <appender-ref ref="STDOUT" />
         </logger>
         
         <!-- Root logger -->
-        <root level="INFO">
+        <root level="WARN">
             <appender-ref ref="STDOUT" />
             <appender-ref ref="FILE" />
             <appender-ref ref="ERROR_FILE" />

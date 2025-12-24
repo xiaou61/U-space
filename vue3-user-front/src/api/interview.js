@@ -100,11 +100,36 @@ export const interviewApi = {
     })
   },
   
-  // 获取收藏统计
+// 获取收藏统计
   getFavoriteCount(targetType, targetId) {
     return request.post('/interview/favorites/count', {
       targetType,
       targetId
     })
+  },
+
+  // ============ 学习记录相关 ============
+
+  // 记录学习
+  recordLearn(questionSetId, questionId) {
+    return request.post('/interview/learn/record', {
+      questionSetId,
+      questionId
+    })
+  },
+
+  // 获取题单学习进度
+  getLearnProgress(questionSetId) {
+    return request.get(`/interview/learn/progress/${questionSetId}`)
+  },
+
+  // 获取已学习题目ID列表
+  getLearnedQuestions(questionSetId) {
+    return request.get(`/interview/learn/questions/${questionSetId}`)
+  },
+
+  // 获取用户总学习数量
+  getTotalLearned() {
+    return request.get('/interview/learn/total')
   }
-} 
+}

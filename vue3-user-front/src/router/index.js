@@ -16,7 +16,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/Login.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: {
       title: '登录',
       requiresAuth: false
@@ -25,7 +25,7 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/Register.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: {
       title: '注册',
       requiresAuth: false
