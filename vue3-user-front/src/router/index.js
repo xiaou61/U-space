@@ -321,6 +321,57 @@ const routes = [
       keepAlive: true
     }
   },
+  // ============ 学习小组 ============
+  {
+    path: '/team',
+    name: 'TeamSquare',
+    component: () => import('@/views/team/Index.vue'),
+    meta: {
+      title: '小组广场',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/team/create',
+    name: 'TeamCreate',
+    component: () => import('@/views/team/Create.vue'),
+    meta: {
+      title: '创建小组',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/team/my',
+    name: 'MyTeams',
+    component: () => import('@/views/team/My.vue'),
+    meta: {
+      title: '我的小组',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/team/:id',
+    name: 'TeamDetail',
+    component: () => import('@/views/team/Detail.vue'),
+    meta: {
+      title: '小组详情',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/team/:id/edit',
+    name: 'TeamEdit',
+    component: () => import('@/views/team/Create.vue'),
+    meta: {
+      title: '编辑小组',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
   {
     path: '/lottery',
     name: 'Lottery',

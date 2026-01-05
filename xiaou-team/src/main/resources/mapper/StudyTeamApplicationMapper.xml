@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamApplicationMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.team.domain.StudyTeamApplication">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="team_id" property="teamId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="apply_reason" property="applyReason" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="reviewer_id" property="reviewerId" jdbcType="BIGINT"/>
+        <result column="review_time" property="reviewTime" jdbcType="TIMESTAMP"/>
+        <result column="reject_reason" property="rejectReason" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, team_id, user_id, apply_reason, status, reviewer_id, review_time, reject_reason, create_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team_application (
+            team_id, user_id, apply_reason, status, create_time
+        ) VALUES (
+            #{teamId}, #{userId}, #{applyReason}, #{status}, #{createTime}
+        )
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_application
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPendingByTeamId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_application
+        WHERE team_id = #{teamId} AND status = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByTeamId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_application
+        WHERE team_id = #{teamId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_application
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectPendingByTeamIdAndUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_application
+        WHERE team_id = #{teamId} AND user_id = #{userId} AND status = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateStatus">
+        UPDATE study_team_application SET
+            status = #{status},
+            reviewer_id = #{reviewerId},
+            review_time = NOW(),
+            reject_reason = #{rejectReason}
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancel">
+        UPDATE study_team_application SET status = 3
+        WHERE id = #{id} AND user_id = #{userId} AND status = 0
+    </update>
+
+    <select id="countPendingByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM study_team_application
+        WHERE user_id = #{userId} AND status = 0
+    </select>
+
+    <select id="countPendingByTeamId" resultType="int">
+        SELECT COUNT(*)
+        FROM study_team_application
+        WHERE team_id = #{teamId} AND status = 0
+    </select>
+
+</mapper>

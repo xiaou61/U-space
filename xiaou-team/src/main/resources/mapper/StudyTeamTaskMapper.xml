@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamTaskMapper">
+    
+    <!-- 插入任务 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team_task (
+            team_id, task_name, task_desc, task_type, target_value, target_unit,
+            repeat_type, repeat_days, require_content, require_image,
+            start_date, end_date, status, create_by, create_time, update_time
+        ) VALUES (
+            #{teamId}, #{taskName}, #{taskDesc}, #{taskType}, #{targetValue}, #{targetUnit},
+            #{repeatType}, #{repeatDays}, #{requireContent}, #{requireImage},
+            #{startDate}, #{endDate}, #{status}, #{createBy}, NOW(), NOW()
+        )
+    </insert>
+    
+    <!-- 更新任务 -->
+    <update id="update">
+        UPDATE study_team_task
+        SET task_name = #{taskName},
+            task_desc = #{taskDesc},
+            task_type = #{taskType},
+            target_value = #{targetValue},
+            target_unit = #{targetUnit},
+            repeat_type = #{repeatType},
+            repeat_days = #{repeatDays},
+            require_content = #{requireContent},
+            require_image = #{requireImage},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据ID查询任务 -->
+    <select id="selectById" resultType="com.xiaou.team.domain.StudyTeamTask">
+        SELECT * FROM study_team_task WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 删除任务 -->
+    <update id="deleteById">
+        UPDATE study_team_task SET is_deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 更新任务状态 -->
+    <update id="updateStatus">
+        UPDATE study_team_task SET status = #{status}, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 任务响应映射 -->
+    <resultMap id="TaskResponseMap" type="com.xiaou.team.dto.TaskResponse">
+        <id column="id" property="taskId"/>
+        <result column="team_id" property="teamId"/>
+        <result column="task_name" property="taskName"/>
+        <result column="task_desc" property="taskDesc"/>
+        <result column="task_type" property="taskType"/>
+        <result column="target_value" property="targetValue"/>
+        <result column="target_unit" property="targetUnit"/>
+        <result column="repeat_type" property="repeatType"/>
+        <result column="repeat_days" property="repeatDays"/>
+        <result column="require_content" property="requireContent"/>
+        <result column="require_image" property="requireImage"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_by" property="createBy"/>
+    </resultMap>
+    
+    <!-- 查询小组任务列表 -->
+    <select id="selectTaskList" resultMap="TaskResponseMap">
+        SELECT 
+            t.id,
+            t.team_id,
+            t.task_name,
+            t.task_desc,
+            t.task_type,
+            t.target_value,
+            t.target_unit,
+            t.repeat_type,
+            t.repeat_days,
+            t.require_content,
+            t.require_image,
+            t.start_date,
+            t.end_date,
+            t.status,
+            t.create_time,
+            t.create_by
+        FROM study_team_task t
+        WHERE t.team_id = #{teamId}
+        AND t.is_deleted = 0
+        <if test="status != null">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+    
+    <!-- 根据ID查询任务详情 -->
+    <select id="selectTaskById" resultMap="TaskResponseMap">
+        SELECT 
+            t.id,
+            t.team_id,
+            t.task_name,
+            t.task_desc,
+            t.task_type,
+            t.target_value,
+            t.target_unit,
+            t.repeat_type,
+            t.repeat_days,
+            t.require_content,
+            t.require_image,
+            t.start_date,
+            t.end_date,
+            t.status,
+            t.create_time,
+            t.create_by
+        FROM study_team_task t
+        WHERE t.id = #{taskId}
+        AND t.is_deleted = 0
+    </select>
+    
+    <!-- 查询今日需要打卡的任务 -->
+    <select id="selectTodayTasks" resultMap="TaskResponseMap">
+        SELECT 
+            t.id,
+            t.team_id,
+            t.task_name,
+            t.task_desc,
+            t.task_type,
+            t.target_value,
+            t.target_unit,
+            t.repeat_type,
+            t.repeat_days,
+            t.require_content,
+            t.require_image,
+            t.start_date,
+            t.end_date,
+            t.status,
+            t.create_time,
+            t.create_by
+        FROM study_team_task t
+        WHERE t.team_id = #{teamId}
+        AND t.is_deleted = 0
+        AND t.status = 1
+        AND (t.start_date IS NULL OR t.start_date &lt;= #{today})
+        AND (t.end_date IS NULL OR t.end_date >= #{today})
+        AND (
+            t.repeat_type = 1
+            OR (t.repeat_type = 2 AND #{dayOfWeek} BETWEEN 1 AND 5)
+            OR (t.repeat_type = 3 AND FIND_IN_SET(#{dayOfWeek}, t.repeat_days) > 0)
+        )
+        ORDER BY t.create_time DESC
+    </select>
+    
+    <!-- 统计今日已打卡人数 -->
+    <select id="countTodayCheckins" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT user_id)
+        FROM study_team_checkin
+        WHERE task_id = #{taskId}
+        AND checkin_date = #{today}
+        AND is_deleted = 0
+    </select>
+    
+    <!-- 检查用户今日是否已打卡 -->
+    <select id="checkUserTodayCheckin" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM study_team_checkin
+        WHERE task_id = #{taskId}
+        AND user_id = #{userId}
+        AND checkin_date = #{today}
+        AND is_deleted = 0
+    </select>
+    
+</mapper>

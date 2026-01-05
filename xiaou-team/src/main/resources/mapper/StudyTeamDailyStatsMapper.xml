@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamDailyStatsMapper">
+    
+    <!-- 插入或更新统计 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO study_team_daily_stats (
+            team_id, stats_date, checkin_count, active_members, total_duration,
+            completion_rate, create_time, update_time
+        ) VALUES (
+            #{teamId}, #{statsDate}, #{checkinCount}, #{activeMembers}, #{totalDuration},
+            #{completionRate}, NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            checkin_count = #{checkinCount},
+            active_members = #{activeMembers},
+            total_duration = #{totalDuration},
+            completion_rate = #{completionRate},
+            update_time = NOW()
+    </insert>
+    
+    <!-- 根据小组ID和日期查询 -->
+    <select id="selectByTeamIdAndDate" resultType="com.xiaou.team.domain.StudyTeamDailyStats">
+        SELECT * FROM study_team_daily_stats WHERE team_id = #{teamId} AND stats_date = #{statsDate}
+    </select>
+    
+    <!-- 查询日期范围内的统计 -->
+    <select id="selectStatsByDateRange" resultType="com.xiaou.team.domain.StudyTeamDailyStats">
+        SELECT *
+        FROM study_team_daily_stats
+        WHERE team_id = #{teamId}
+        AND stats_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stats_date ASC
+    </select>
+    
+    <!-- 统计某日打卡人数 -->
+    <select id="countCheckinsByDate" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT user_id)
+        FROM study_team_checkin
+        WHERE team_id = #{teamId}
+        AND checkin_date = #{date}
+        AND is_deleted = 0
+    </select>
+    
+    <!-- 统计累计打卡次数 -->
+    <select id="countTotalCheckins" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM study_team_checkin
+        WHERE team_id = #{teamId}
+        AND is_deleted = 0
+    </select>
+    
+    <!-- 统计累计打卡天数 -->
+    <select id="countTotalCheckinDays" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT checkin_date)
+        FROM study_team_checkin
+        WHERE team_id = #{teamId}
+        AND is_deleted = 0
+    </select>
+    
+</mapper>
