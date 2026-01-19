@@ -1,0 +1,53 @@
+appId: com.codenest.admin
+productName: Code-Nest 管理端
+copyright: Copyright © 2024 Code-Nest
+
+directories:
+  buildResources: electron/resources
+  output: release/${version}
+
+files:
+  - "!**/.vscode/*"
+  - "!src/*"
+  - "!electron/*"
+  - "!{.eslintignore,.eslintrc.js,.prettierignore,.prettierrc.yaml}"
+  - "!{tsconfig.json,tsconfig.node.json,electron.vite.config.ts}"
+  - "!{.env,.env.*}"
+  - "!node_modules/.cache/**"
+
+asarUnpack:
+  - resources/**
+
+win:
+  executableName: CodeNest-Admin
+  icon: electron/resources/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Code-Nest 管理端
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+mac:
+  category: public.app-category.developer-tools
+  icon: electron/resources/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+linux:
+  icon: electron/resources
+  target:
+    - target: AppImage
+    - target: deb
+  category: Development
