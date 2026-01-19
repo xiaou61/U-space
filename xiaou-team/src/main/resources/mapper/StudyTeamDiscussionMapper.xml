@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamDiscussionMapper">
+    
+    <!-- 插入讨论 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team_discussion (
+            team_id, user_id, category, title, content, images,
+            create_time, update_time
+        ) VALUES (
+            #{teamId}, #{userId}, #{category}, #{title}, #{content}, #{images},
+            NOW(), NOW()
+        )
+    </insert>
+    
+    <!-- 更新讨论 -->
+    <update id="update">
+        UPDATE study_team_discussion
+        SET title = #{title},
+            content = #{content},
+            images = #{images},
+            category = #{category},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据ID查询讨论 -->
+    <select id="selectById" resultType="com.xiaou.team.domain.StudyTeamDiscussion">
+        SELECT * FROM study_team_discussion WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 删除讨论 -->
+    <update id="deleteById">
+        UPDATE study_team_discussion SET is_deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 更新置顶状态 -->
+    <update id="updateTopStatus">
+        UPDATE study_team_discussion SET is_pinned = #{isTop}, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 更新精华状态 -->
+    <update id="updateEssenceStatus">
+        UPDATE study_team_discussion SET is_essence = #{isEssence}, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 更新点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE study_team_discussion SET like_count = like_count + #{delta}, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 讨论响应映射 -->
+    <resultMap id="DiscussionResponseMap" type="com.xiaou.team.dto.DiscussionResponse">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="user_id" property="userId"/>
+        <result column="category" property="category"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="images" property="imagesJson"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="is_pinned" property="isTop"/>
+        <result column="is_essence" property="isEssence"/>
+        <result column="create_time" property="createTime"/>
+        <result column="last_reply_time" property="lastReplyTime"/>
+    </resultMap>
+    
+    <!-- 查询讨论列表 -->
+    <select id="selectDiscussionList" resultMap="DiscussionResponseMap">
+        SELECT 
+            d.id,
+            d.team_id,
+            d.user_id,
+            d.category,
+            d.title,
+            d.content,
+            d.images,
+            d.view_count,
+            d.like_count,
+            d.comment_count,
+            d.is_pinned,
+            d.is_essence,
+            d.create_time,
+            d.last_reply_time
+        FROM study_team_discussion d
+        WHERE d.team_id = #{teamId}
+        AND d.is_deleted = 0
+        <if test="category != null">
+            AND d.category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (d.title LIKE CONCAT('%', #{keyword}, '%') 
+                 OR d.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY d.is_pinned DESC, d.create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 查询讨论详情 -->
+    <select id="selectDiscussionById" resultMap="DiscussionResponseMap">
+        SELECT 
+            d.id,
+            d.team_id,
+            d.user_id,
+            d.category,
+            d.title,
+            d.content,
+            d.images,
+            d.view_count,
+            d.like_count,
+            d.comment_count,
+            d.is_pinned,
+            d.is_essence,
+            d.create_time,
+            d.last_reply_time
+        FROM study_team_discussion d
+        WHERE d.id = #{discussionId}
+        AND d.is_deleted = 0
+    </select>
+    
+    <!-- 统计讨论数量 -->
+    <select id="countDiscussions" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM study_team_discussion
+        WHERE team_id = #{teamId}
+        AND is_deleted = 0
+        <if test="category != null">
+            AND category = #{category}
+        </if>
+    </select>
+    
+    <!-- 增加浏览量 -->
+    <update id="incrementViewCount">
+        UPDATE study_team_discussion
+        SET view_count = view_count + 1
+        WHERE id = #{discussionId}
+    </update>
+    
+</mapper>

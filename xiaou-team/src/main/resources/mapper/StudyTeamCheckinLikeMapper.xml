@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamCheckinLikeMapper">
+    
+    <!-- 插入点赞记录 -->
+    <insert id="insert">
+        INSERT INTO study_team_checkin_like (checkin_id, user_id, create_time)
+        VALUES (#{checkinId}, #{userId}, NOW())
+    </insert>
+    
+    <!-- 删除点赞记录 -->
+    <delete id="delete">
+        DELETE FROM study_team_checkin_like 
+        WHERE checkin_id = #{checkinId} AND user_id = #{userId}
+    </delete>
+    
+    <!-- 检查用户是否已点赞 -->
+    <select id="checkExists" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM study_team_checkin_like 
+        WHERE checkin_id = #{checkinId} AND user_id = #{userId}
+    </select>
+    
+    <!-- 统计打卡点赞数 -->
+    <select id="countByCheckinId" resultType="int">
+        SELECT COUNT(1) FROM study_team_checkin_like WHERE checkin_id = #{checkinId}
+    </select>
+    
+</mapper>

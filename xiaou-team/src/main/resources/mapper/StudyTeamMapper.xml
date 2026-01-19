@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.team.domain.StudyTeam">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="team_name" property="teamName" jdbcType="VARCHAR"/>
+        <result column="team_desc" property="teamDesc" jdbcType="VARCHAR"/>
+        <result column="team_avatar" property="teamAvatar" jdbcType="VARCHAR"/>
+        <result column="team_type" property="teamType" jdbcType="TINYINT"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="max_members" property="maxMembers" jdbcType="INTEGER"/>
+        <result column="current_members" property="currentMembers" jdbcType="INTEGER"/>
+        <result column="join_type" property="joinType" jdbcType="TINYINT"/>
+        <result column="invite_code" property="inviteCode" jdbcType="VARCHAR"/>
+        <result column="goal_title" property="goalTitle" jdbcType="VARCHAR"/>
+        <result column="goal_desc" property="goalDesc" jdbcType="VARCHAR"/>
+        <result column="goal_start_date" property="goalStartDate" jdbcType="DATE"/>
+        <result column="goal_end_date" property="goalEndDate" jdbcType="DATE"/>
+        <result column="daily_target" property="dailyTarget" jdbcType="INTEGER"/>
+        <result column="total_checkins" property="totalCheckins" jdbcType="INTEGER"/>
+        <result column="total_discussions" property="totalDiscussions" jdbcType="INTEGER"/>
+        <result column="active_days" property="activeDays" jdbcType="INTEGER"/>
+        <result column="creator_id" property="creatorId" jdbcType="BIGINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, team_name, team_desc, team_avatar, team_type, tags, max_members, current_members,
+        join_type, invite_code, goal_title, goal_desc, goal_start_date, goal_end_date, daily_target,
+        total_checkins, total_discussions, active_days, creator_id, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team (
+            team_name, team_desc, team_avatar, team_type, tags, max_members, current_members,
+            join_type, invite_code, goal_title, goal_desc, goal_start_date, goal_end_date, daily_target,
+            total_checkins, total_discussions, active_days, creator_id, status, create_time, update_time
+        ) VALUES (
+            #{teamName}, #{teamDesc}, #{teamAvatar}, #{teamType}, #{tags}, #{maxMembers}, #{currentMembers},
+            #{joinType}, #{inviteCode}, #{goalTitle}, #{goalDesc}, #{goalStartDate}, #{goalEndDate}, #{dailyTarget},
+            #{totalCheckins}, #{totalDiscussions}, #{activeDays}, #{creatorId}, #{status}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE study_team SET
+            team_name = #{teamName},
+            team_desc = #{teamDesc},
+            team_avatar = #{teamAvatar},
+            team_type = #{teamType},
+            tags = #{tags},
+            max_members = #{maxMembers},
+            join_type = #{joinType},
+            goal_title = #{goalTitle},
+            goal_desc = #{goalDesc},
+            goal_start_date = #{goalStartDate},
+            goal_end_date = #{goalEndDate},
+            daily_target = #{dailyTarget},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE id = #{id} AND status != 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE status != 0
+        <if test="teamType != null">
+            AND team_type = #{teamType}
+        </if>
+        <if test="tag != null and tag != ''">
+            AND FIND_IN_SET(#{tag}, tags)
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND team_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="joinable != null and joinable">
+            AND current_members &lt; max_members
+            AND status = 1
+        </if>
+        <choose>
+            <when test="sortBy == 'new'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="sortBy == 'active'">
+                ORDER BY active_days DESC, total_checkins DESC
+            </when>
+            <otherwise>
+                ORDER BY current_members DESC, total_checkins DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectByCreatorId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE creator_id = #{creatorId} AND status != 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectJoinedTeams" resultMap="BaseResultMap">
+        SELECT t.*
+        FROM study_team t
+        INNER JOIN study_team_member m ON t.id = m.team_id
+        WHERE m.user_id = #{userId} AND m.status = 1 AND t.status != 0
+        ORDER BY m.join_time DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE study_team SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateMemberCount">
+        UPDATE study_team SET 
+            current_members = current_members + #{delta},
+            status = CASE 
+                WHEN current_members + #{delta} >= max_members THEN 2 
+                WHEN current_members + #{delta} &lt; max_members AND status = 2 THEN 1
+                ELSE status 
+            END,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementCheckinCount">
+        UPDATE study_team SET total_checkins = total_checkins + 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementDiscussionCount">
+        UPDATE study_team SET total_discussions = total_discussions + 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByInviteCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE invite_code = #{inviteCode} AND status != 0
+    </select>
+
+    <update id="updateInviteCode">
+        UPDATE study_team SET invite_code = #{inviteCode}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="countByCreatorId" resultType="int">
+        SELECT COUNT(*)
+        FROM study_team
+        WHERE creator_id = #{creatorId} AND status != 0
+    </select>
+
+    <select id="selectRecommend" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE status = 1 
+          AND current_members &lt; max_members
+          AND id NOT IN (
+              SELECT team_id FROM study_team_member WHERE user_id = #{userId} AND status = 1
+          )
+        ORDER BY current_members DESC, total_checkins DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectHot" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team
+        WHERE status != 0
+        ORDER BY current_members DESC, total_checkins DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

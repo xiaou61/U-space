@@ -31,11 +31,12 @@
         <module>xiaou-resume</module>
         <module>xiaou-plan</module>
         <module>xiaou-mock-interview</module>
+        <module>xiaou-team</module>
     </modules>
 
     <properties>
         <!-- 统一版本管理 -->
-        <revision>1.7.0</revision>
+        <revision>1.7.1</revision>
         
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>

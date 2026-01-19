@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamCheckinMapper">
+    
+    <!-- 打卡响应映射 -->
+    <resultMap id="CheckinResponseMap" type="com.xiaou.team.dto.CheckinResponse">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="task_id" property="taskId"/>
+        <result column="task_name" property="taskName"/>
+        <result column="user_id" property="userId"/>
+        <result column="checkin_date" property="checkinDate"/>
+        <result column="complete_value" property="completeValue"/>
+        <result column="target_unit" property="targetUnit"/>
+        <result column="content" property="content"/>
+        <result column="images" property="images" jdbcType="VARCHAR"/>
+        <result column="feeling" property="feeling"/>
+        <result column="is_supplement" property="isSupplement"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+    
+    <!-- 插入打卡记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team_checkin (
+            team_id, task_id, user_id, checkin_date, complete_value, 
+            content, images, feeling, is_supplement, duration,
+            create_time, update_time
+        ) VALUES (
+            #{teamId}, #{taskId}, #{userId}, #{checkinDate}, #{completeValue},
+            #{content}, #{images}, #{feeling}, #{isSupplement}, #{duration},
+            NOW(), NOW()
+        )
+    </insert>
+    
+    <!-- 更新打卡记录 -->
+    <update id="update">
+        UPDATE study_team_checkin
+        SET content = #{content},
+            images = #{images},
+            feeling = #{feeling},
+            complete_value = #{completeValue},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据ID查询打卡记录 -->
+    <select id="selectById" resultType="com.xiaou.team.domain.StudyTeamCheckin">
+        SELECT * FROM study_team_checkin WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 删除打卡记录 -->
+    <update id="deleteById">
+        UPDATE study_team_checkin SET is_deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 更新点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE study_team_checkin SET like_count = like_count + #{delta}, update_time = NOW() WHERE id = #{id}
+    </update>
+    
+    <!-- 查询小组打卡动态列表 -->
+    <select id="selectCheckinList" resultMap="CheckinResponseMap">
+        SELECT 
+            c.id,
+            c.team_id,
+            c.task_id,
+            t.task_name,
+            c.user_id,
+            c.checkin_date,
+            c.complete_value,
+            t.target_unit,
+            c.content,
+            c.images,
+            c.feeling,
+            c.is_supplement,
+            c.like_count,
+            c.comment_count,
+            c.create_time
+        FROM study_team_checkin c
+        LEFT JOIN study_team_task t ON c.task_id = t.id
+        WHERE c.team_id = #{teamId}
+        AND c.is_deleted = 0
+        <if test="taskId != null">
+            AND c.task_id = #{taskId}
+        </if>
+        ORDER BY c.create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 查询用户打卡记录 -->
+    <select id="selectUserCheckins" resultMap="CheckinResponseMap">
+        SELECT 
+            c.id,
+            c.team_id,
+            c.task_id,
+            t.task_name,
+            c.user_id,
+            c.checkin_date,
+            c.complete_value,
+            t.target_unit,
+            c.content,
+            c.images,
+            c.feeling,
+            c.is_supplement,
+            c.like_count,
+            c.comment_count,
+            c.create_time
+        FROM study_team_checkin c
+        LEFT JOIN study_team_task t ON c.task_id = t.id
+        WHERE c.user_id = #{userId}
+        AND c.is_deleted = 0
+        <if test="teamId != null">
+            AND c.team_id = #{teamId}
+        </if>
+        <if test="startDate != null">
+            AND c.checkin_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND c.checkin_date &lt;= #{endDate}
+        </if>
+        ORDER BY c.checkin_date DESC, c.create_time DESC
+    </select>
+    
+    <!-- 根据ID查询打卡详情 -->
+    <select id="selectCheckinById" resultMap="CheckinResponseMap">
+        SELECT 
+            c.id,
+            c.team_id,
+            c.task_id,
+            t.task_name,
+            c.user_id,
+            c.checkin_date,
+            c.complete_value,
+            t.target_unit,
+            c.content,
+            c.images,
+            c.feeling,
+            c.is_supplement,
+            c.like_count,
+            c.comment_count,
+            c.create_time
+        FROM study_team_checkin c
+        LEFT JOIN study_team_task t ON c.task_id = t.id
+        WHERE c.id = #{checkinId}
+        AND c.is_deleted = 0
+    </select>
+    
+    <!-- 统计用户连续打卡天数（使用递归CTE） -->
+    <select id="countStreakDays" resultType="java.lang.Integer">
+        WITH RECURSIVE streak AS (
+            SELECT checkin_date, 1 as day_count
+            FROM study_team_checkin
+            WHERE user_id = #{userId}
+            AND team_id = #{teamId}
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+            AND checkin_date = #{today}
+            AND is_deleted = 0
+            
+            UNION ALL
+            
+            SELECT c.checkin_date, s.day_count + 1
+            FROM study_team_checkin c
+            JOIN streak s ON c.checkin_date = DATE_SUB(s.checkin_date, INTERVAL 1 DAY)
+            WHERE c.user_id = #{userId}
+            AND c.team_id = #{teamId}
+            <if test="taskId != null">
+                AND c.task_id = #{taskId}
+            </if>
+            AND c.is_deleted = 0
+        )
+        SELECT COALESCE(MAX(day_count), 0) FROM streak
+    </select>
+    
+    <!-- 统计用户在小组的总打卡天数 -->
+    <select id="countUserTotalCheckinDays" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT checkin_date)
+        FROM study_team_checkin
+        WHERE user_id = #{userId}
+        AND team_id = #{teamId}
+        AND is_deleted = 0
+    </select>
+    
+    <!-- 查询某日打卡的用户列表 -->
+    <select id="selectCheckinUserIds" resultType="java.lang.Long">
+        SELECT DISTINCT user_id
+        FROM study_team_checkin
+        WHERE team_id = #{teamId}
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        AND checkin_date = #{date}
+        AND is_deleted = 0
+    </select>
+    
+    <!-- 检查用户是否点赞 -->
+    <select id="checkUserLiked" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM study_team_checkin_like
+        WHERE checkin_id = #{checkinId}
+        AND user_id = #{userId}
+    </select>
+    
+    <!-- 查询用户今日在某任务的打卡记录 -->
+    <select id="selectUserTodayCheckin" resultType="com.xiaou.team.domain.StudyTeamCheckin">
+        SELECT *
+        FROM study_team_checkin
+        WHERE user_id = #{userId}
+        AND task_id = #{taskId}
+        AND checkin_date = #{today}
+        AND is_deleted = 0
+        LIMIT 1
+    </select>
+    
+</mapper>

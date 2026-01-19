@@ -52,6 +52,10 @@
                   <el-icon><Calendar /></el-icon>
                   计划打卡
                 </el-dropdown-item>
+                <el-dropdown-item command="/team">
+                  <el-icon><UserFilled /></el-icon>
+                  学习小组
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>

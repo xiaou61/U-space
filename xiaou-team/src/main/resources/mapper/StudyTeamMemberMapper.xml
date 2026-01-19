@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.team.mapper.StudyTeamMemberMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.team.domain.StudyTeamMember">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="team_id" property="teamId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="role" property="role" jdbcType="TINYINT"/>
+        <result column="nickname" property="nickname" jdbcType="VARCHAR"/>
+        <result column="join_reason" property="joinReason" jdbcType="VARCHAR"/>
+        <result column="total_checkins" property="totalCheckins" jdbcType="INTEGER"/>
+        <result column="current_streak" property="currentStreak" jdbcType="INTEGER"/>
+        <result column="max_streak" property="maxStreak" jdbcType="INTEGER"/>
+        <result column="total_likes_received" property="totalLikesReceived" jdbcType="INTEGER"/>
+        <result column="contribution_points" property="contributionPoints" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="mute_end_time" property="muteEndTime" jdbcType="TIMESTAMP"/>
+        <result column="join_time" property="joinTime" jdbcType="TIMESTAMP"/>
+        <result column="last_active_time" property="lastActiveTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, team_id, user_id, role, nickname, join_reason, total_checkins, current_streak,
+        max_streak, total_likes_received, contribution_points, status, mute_end_time, join_time, last_active_time
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO study_team_member (
+            team_id, user_id, role, nickname, join_reason, total_checkins, current_streak,
+            max_streak, total_likes_received, contribution_points, status, join_time, last_active_time
+        ) VALUES (
+            #{teamId}, #{userId}, #{role}, #{nickname}, #{joinReason}, #{totalCheckins}, #{currentStreak},
+            #{maxStreak}, #{totalLikesReceived}, #{contributionPoints}, #{status}, #{joinTime}, #{lastActiveTime}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE study_team_member SET
+            role = #{role},
+            nickname = #{nickname},
+            status = #{status},
+            mute_end_time = #{muteEndTime},
+            last_active_time = #{lastActiveTime}
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </update>
+
+    <select id="selectByTeamIdAndUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </select>
+
+    <select id="selectByTeamId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_member
+        WHERE team_id = #{teamId}
+        ORDER BY role ASC, join_time ASC
+    </select>
+
+    <select id="selectActiveByTeamId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND status = 1
+        ORDER BY role ASC, join_time ASC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE study_team_member SET status = #{status}
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </update>
+
+    <update id="updateRole">
+        UPDATE study_team_member SET role = #{role}
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </update>
+
+    <update id="updateCheckinStats">
+        UPDATE study_team_member SET
+            total_checkins = #{totalCheckins},
+            current_streak = #{currentStreak},
+            max_streak = #{maxStreak},
+            last_active_time = NOW()
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </update>
+
+    <update id="incrementLikesReceived">
+        UPDATE study_team_member SET total_likes_received = total_likes_received + 1
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </update>
+
+    <select id="countActiveMembers" resultType="int">
+        SELECT COUNT(*)
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND status = 1
+    </select>
+
+    <select id="countJoinedTeams" resultType="int">
+        SELECT COUNT(*)
+        FROM study_team_member
+        WHERE user_id = #{userId} AND status = 1
+    </select>
+
+    <select id="selectRole" resultType="java.lang.Integer">
+        SELECT role
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND user_id = #{userId} AND status = 1
+    </select>
+
+    <select id="selectMemberAvatars" resultType="java.lang.String">
+        SELECT u.avatar
+        FROM study_team_member m
+        INNER JOIN user_info u ON m.user_id = u.id
+        WHERE m.team_id = #{teamId} AND m.status = 1
+        ORDER BY m.role ASC, m.join_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteByTeamId">
+        DELETE FROM study_team_member WHERE team_id = #{teamId}
+    </delete>
+    
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND status = 1
+    </select>
+    
+    <select id="selectOne" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM study_team_member
+        WHERE team_id = #{teamId} AND user_id = #{userId}
+    </select>
+
+</mapper>

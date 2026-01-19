@@ -1,6 +1,6 @@
 # Code Nest
 
-![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -93,10 +93,17 @@ Code Nest 是一个面向开发者的成长型社区与知识运营平台，采�
 
 ### 前端应用
 
-| 模块 | 说明 | 启动命令 |
-| --- | --- | --- |
-| vue3-admin-front | 管理后台，Element Plus + Pinia | `npm install && npm run dev`（端口 5173） |
-| vue3-user-front | 用户端，组件与依赖同后台 | `npm install && npm run dev`（端口 5174） |
+|| 模块 | 说明 | 启动命令 |
+|| --- | --- | --- |
+|| vue3-admin-front | 管理后台，Element Plus + Pinia | `npm install && npm run dev`（端口 3000） |
+|| vue3-user-front | 用户端，组件与依赖同后台 | `npm install && npm run dev`（端口 3001） |
+
+### 桌面应用（Electron）
+
+|| 模块 | 说明 | 打包命令 |
+|| --- | --- | --- |
+|| code-nest-admin-desktop | 管理端桌面应用 | `npm run dist:win`（生成 Windows exe） |
+|| code-nest-user-desktop | 用户端桌面应用 | `npm run dist:win`（生成 Windows exe） |
 
 ## 🗂️ 目录结构
 
@@ -195,7 +202,7 @@ mvn clean package -DskipTests
 mvn -pl xiaou-application -am spring-boot:run
 
 # 或直接运行打包后的 jar
-java -jar xiaou-application/target/xiaou-application-1.7.0.jar --spring.profiles.active=prod
+java -jar xiaou-application/target/xiaou-application-1.7.1.jar --spring.profiles.active=prod
 ```
 
 - API 根地址：`http://localhost:9999/api`
@@ -304,7 +311,7 @@ management:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.7.0 -f docker/Dockerfile .
+docker build -t code-nest:1.7.1 -f docker/Dockerfile .
 
 # 运行容器
 docker run -d \
@@ -312,7 +319,7 @@ docker run -d \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
   --env-file docker/env/example.env \
-  code-nest:1.7.0
+  code-nest:1.7.1
 ```
 
 可与 MySQL/Redis 容器组合，或使用 `docker-compose`.
@@ -357,6 +364,14 @@ server {
 ## 📝 更新日志
 
 仅列出最近版本，更多历史可查看 `git log`。
+
+### v1.7.1 🖥️ 桌面应用支持
+
+- 🆕 **Electron 桌面端打包**：支持将 vue3-admin-front 和 vue3-user-front 打包为独立桌面应用（Windows exe / macOS dmg / Linux AppImage）。
+- 🖥️ **桌面端功能**：系统托盘、窗口状态记忆、本地存储、IPC 通信等原生桌面能力。
+- 🔧 **electron-vite 构建**：采用 electron-vite + electron-builder 技术栈，支持开发热重载与生产打包。
+- 👥 **小组头像上传**：学习小组支持自定义头像上传，优化组件交互体验。
+- 📝 **PRD 文档**：新增 `docs/PRD/Electron桌面端打包PRD-v1.0.0.md`，完整记录桌面端技术方案。
 
 ### v1.7.0 📚 学习效果追踪
 
