@@ -63,7 +63,7 @@ public class SalaryCalculatorServiceImpl implements SalaryCalculatorService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean saveOrUpdateSalaryConfig(Long userId, SalaryConfigRequest request) {
         UserSalaryConfig existingConfig = userSalaryConfigMapper.selectByUserId(userId);
         
@@ -93,7 +93,7 @@ public class SalaryCalculatorServiceImpl implements SalaryCalculatorService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SalaryCalculatorDto handleWorkTimeAction(Long userId, WorkTimeRequest request) {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
@@ -198,7 +198,7 @@ public class SalaryCalculatorServiceImpl implements SalaryCalculatorService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteSalaryConfig(Long userId) {
         return userSalaryConfigMapper.deleteByUserId(userId) > 0;
     }

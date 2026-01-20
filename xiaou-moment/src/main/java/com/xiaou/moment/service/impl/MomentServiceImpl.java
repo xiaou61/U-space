@@ -50,7 +50,7 @@ public class MomentServiceImpl implements MomentService {
     private final MomentViewService momentViewService;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long publishMoment(MomentPublishRequest request) {
         StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
@@ -102,7 +102,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-        @Transactional
+        @Transactional(rollbackFor = Exception.class)
     public void deleteMoment(Long momentId) {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
@@ -127,7 +127,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean toggleLike(Long momentId) {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
@@ -178,7 +178,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long publishComment(CommentPublishRequest request) {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
@@ -235,7 +235,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Long commentId) {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {
@@ -295,7 +295,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void batchDeleteMoments(List<Long> momentIds) {
         if (CollUtil.isEmpty(momentIds)) {
             return;
@@ -468,7 +468,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void adminDeleteComment(Long commentId) {
         MomentComment comment = momentCommentMapper.selectById(commentId);
         if (comment == null) {
@@ -676,7 +676,7 @@ public class MomentServiceImpl implements MomentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean toggleFavorite(Long momentId) {
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         if (currentUserId == null) {

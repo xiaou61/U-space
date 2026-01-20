@@ -79,7 +79,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean saveOrUpdateUserPreference(Long userId, UserCalendarPreference preference) {
         try {
             preference.setUserId(userId);
@@ -103,7 +103,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggleEventCollection(Long userId, Long eventId) {
         try {
             UserCalendarCollection existing = userCalendarCollectionMapper.selectByUserIdAndTarget(userId, 1, eventId);
@@ -181,7 +181,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean createEvent(DeveloperCalendarEvent event) {
         try {
             event.setStatus(1); // 默认启用
@@ -195,7 +195,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateEvent(DeveloperCalendarEvent event) {
         try {
             event.setUpdateTime(LocalDateTime.now());
@@ -207,7 +207,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteEvent(Long id) {
         try {
             return developerCalendarEventMapper.deleteById(id) > 0;
@@ -218,7 +218,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean batchDeleteEvents(List<Long> ids) {
         try {
             for (Long id : ids) {
@@ -232,7 +232,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateEventStatus(Long id, Integer status) {
         try {
             DeveloperCalendarEvent event = new DeveloperCalendarEvent();

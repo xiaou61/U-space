@@ -55,7 +55,7 @@ public class PointsServiceImpl implements PointsService {
     private static final int POINTS_TO_YUAN_RATE = 1000;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public CheckinResponse checkin(Long userId) {
         LocalDate today = LocalDate.now();
         String yearMonth = today.format(DateTimeFormatter.ofPattern("yyyy-MM"));
@@ -261,7 +261,7 @@ public class PointsServiceImpl implements PointsService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AdminGrantPointsResponse grantPoints(AdminGrantPointsRequest request, Long adminId) {
         log.info("管理员{}为用户{}发放{}积分，原因：{}", adminId, request.getUserId(), request.getPoints(), request.getReason());
         
@@ -344,7 +344,7 @@ public class PointsServiceImpl implements PointsService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createPointsAccountForNewUser(Long userId) {
         // 检查是否已存在
         UserPointsBalance existing = pointsBalanceMapper.selectByUserId(userId);
@@ -555,7 +555,7 @@ public class PointsServiceImpl implements PointsService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BatchGrantPointsResponse batchGrantPoints(BatchGrantPointsRequest request, Long adminId) {
         log.info("管理员{}开始批量发放积分，用户数量：{}，积分：{}，原因：{}", 
                 adminId, request.getUserIds().size(), request.getPoints(), request.getReason());

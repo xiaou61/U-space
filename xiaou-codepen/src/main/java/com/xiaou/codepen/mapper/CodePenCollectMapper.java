@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 作品收藏Mapper
@@ -43,5 +44,10 @@ public interface CodePenCollectMapper {
      * 查询收藏夹中的作品ID列表
      */
     List<Long> selectPenIdsByFolderId(@Param("folderId") Long folderId, @Param("userId") Long userId);
+    
+    /**
+     * 批量查询用户已收藏的作品ID列表
+     */
+    Set<Long> selectCollectedPenIdsByUserId(@Param("userId") Long userId, @Param("penIds") List<Long> penIds);
 }
 

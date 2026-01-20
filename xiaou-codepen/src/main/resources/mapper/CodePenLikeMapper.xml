@@ -31,5 +31,17 @@
         WHERE pen_id = #{penId}
     </select>
 
+    <select id="selectLikedPenIdsByUserId" resultType="java.lang.Long">
+        SELECT pen_id
+        FROM code_pen_like
+        WHERE user_id = #{userId}
+        <if test="penIds != null and penIds.size() > 0">
+            AND pen_id IN
+            <foreach collection="penIds" item="penId" open="(" separator="," close=")">
+                #{penId}
+            </foreach>
+        </if>
+    </select>
+
 </mapper>
 

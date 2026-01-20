@@ -40,7 +40,7 @@ public class CommunityAiSummaryServiceImpl implements CommunityAiSummaryService 
     private static final String SUMMARY_CACHE_KEY = "community:post:summary:";
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> generateSummary(Long postId, boolean forceRefresh) {
         // 检查是否启用AI功能
         if (!communityProperties.getAi().getEnabled()) {

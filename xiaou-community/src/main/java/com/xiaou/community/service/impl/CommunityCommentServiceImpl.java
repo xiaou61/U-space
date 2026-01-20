@@ -105,7 +105,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createComment(Long postId, CommunityCommentCreateRequest request) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
@@ -199,7 +199,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void likeComment(Long commentId) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
@@ -254,7 +254,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unlikeComment(Long commentId) {
         StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
@@ -308,7 +308,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void replyComment(Long commentId, CommunityCommentReplyRequest request) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();

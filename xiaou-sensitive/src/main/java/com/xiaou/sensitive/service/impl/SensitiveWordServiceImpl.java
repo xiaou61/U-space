@@ -45,7 +45,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean addWord(SensitiveWord word) {
         try {
             // 检查敏感词是否已存在
@@ -82,7 +82,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateWord(SensitiveWord word) {
         try {
             int result = sensitiveWordMapper.updateWord(word);
@@ -101,7 +101,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteWord(Long id) {
         try {
             int result = sensitiveWordMapper.deleteWordById(id);
@@ -120,7 +120,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteWords(List<Long> ids) {
         try {
             if (ids == null || ids.isEmpty()) {
@@ -143,7 +143,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ImportResult importWords(List<String> words, Long creatorId) {
         int total = words.size();
         int success = 0;

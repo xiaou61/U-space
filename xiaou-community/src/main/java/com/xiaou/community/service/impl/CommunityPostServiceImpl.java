@@ -196,7 +196,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createPost(CommunityPostCreateRequest request) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
@@ -274,7 +274,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void likePost(Long id) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
@@ -329,7 +329,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unlikePost(Long id) {
         StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
@@ -359,7 +359,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void collectPost(Long id) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
@@ -414,7 +414,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void uncollectPost(Long id) {
         StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();

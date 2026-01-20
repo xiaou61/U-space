@@ -31,7 +31,7 @@ public class NotificationService {
     /**
      * 同步发送单个消息
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean sendNotification(Notification notification) {
         try {
             int result = notificationMapper.insert(notification);
@@ -54,7 +54,7 @@ public class NotificationService {
      * 批量发送消息
      */
     @Async("notificationExecutor")
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void sendBatchNotifications(List<Notification> notifications) {
         try {
             if (notifications != null && !notifications.isEmpty()) {
@@ -105,7 +105,7 @@ public class NotificationService {
     /**
      * 标记消息已读
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean markAsRead(Long messageId, Long userId) {
         try {
             // 先获取消息信息
@@ -148,7 +148,7 @@ public class NotificationService {
     /**
      * 批量标记已读
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean batchMarkAsRead(List<Long> messageIds, Long userId) {
         try {
             if (messageIds != null && !messageIds.isEmpty()) {
@@ -203,7 +203,7 @@ public class NotificationService {
     /**
      * 删除消息
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteMessage(Long messageId, Long userId) {
         try {
             int result = notificationMapper.deleteMessage(messageId, userId);

@@ -52,5 +52,17 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="selectCollectedPenIdsByUserId" resultType="java.lang.Long">
+        SELECT pen_id
+        FROM code_pen_collect
+        WHERE user_id = #{userId}
+        <if test="penIds != null and penIds.size() > 0">
+            AND pen_id IN
+            <foreach collection="penIds" item="penId" open="(" separator="," close=")">
+                #{penId}
+            </foreach>
+        </if>
+    </select>
+
 </mapper>
 

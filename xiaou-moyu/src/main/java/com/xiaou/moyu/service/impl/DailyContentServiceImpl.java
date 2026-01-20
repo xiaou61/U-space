@@ -137,7 +137,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean incrementViewCount(Long contentId) {
         try {
             return dailyContentMapper.incrementViewCount(contentId) > 0;
@@ -148,7 +148,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean likeContent(Long contentId) {
         try {
             return dailyContentMapper.incrementLikeCount(contentId) > 0;
@@ -159,7 +159,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggleContentCollection(Long userId, Long contentId) {
         try {
             UserCalendarCollection existing = userCalendarCollectionMapper.selectByUserIdAndTarget(userId, 2, contentId);
@@ -242,7 +242,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean createContent(DailyContent content) {
         try {
             content.setStatus(1); // 默认启用
@@ -258,7 +258,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateContent(DailyContent content) {
         try {
             content.setUpdateTime(LocalDateTime.now());
@@ -270,7 +270,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteContent(Long id) {
         try {
             return dailyContentMapper.deleteById(id) > 0;
@@ -281,7 +281,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean batchDeleteContent(List<Long> ids) {
         try {
             for (Long id : ids) {
@@ -295,7 +295,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateContentStatus(Long id, Integer status) {
         try {
             DailyContent content = new DailyContent();

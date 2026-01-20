@@ -47,7 +47,7 @@ public class PlanServiceImpl implements PlanService {
     private static final int CHECKIN_POINTS = 10;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PlanResponse createPlan(Long userId, PlanCreateRequest request) {
         // 参数校验
         if (StrUtil.isBlank(request.getPlanName())) {
@@ -92,7 +92,7 @@ public class PlanServiceImpl implements PlanService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PlanResponse updatePlan(Long userId, Long planId, PlanCreateRequest request) {
         UserPlan plan = planMapper.selectByUserIdAndId(userId, planId);
         if (plan == null) {
@@ -143,7 +143,7 @@ public class PlanServiceImpl implements PlanService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deletePlan(Long userId, Long planId) {
         int result = planMapper.deleteById(planId, userId);
         if (result > 0) {
@@ -174,7 +174,7 @@ public class PlanServiceImpl implements PlanService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean pausePlan(Long userId, Long planId) {
         UserPlan plan = planMapper.selectByUserIdAndId(userId, planId);
         if (plan == null) {
@@ -190,7 +190,7 @@ public class PlanServiceImpl implements PlanService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean resumePlan(Long userId, Long planId) {
         UserPlan plan = planMapper.selectByUserIdAndId(userId, planId);
         if (plan == null) {
@@ -271,7 +271,7 @@ public class PlanServiceImpl implements PlanService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public PlanCheckinResponse checkin(Long userId, PlanCheckinRequest request) {
         LocalDate today = LocalDate.now();
         
