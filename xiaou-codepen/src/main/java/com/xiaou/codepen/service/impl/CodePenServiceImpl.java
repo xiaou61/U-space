@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.xiaou.codepen.constant.CodePenConstants.CREATE_REWARD_POINTS;
+
 /**
  * 代码作品Service实现
  * 

@@ -26,6 +26,13 @@
             <artifactId>xiaou-common</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <!-- AI模块 -->
+        <dependency>
+            <groupId>com.xiaou</groupId>
+            <artifactId>xiaou-ai</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 </project> 

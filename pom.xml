@@ -33,6 +33,8 @@
         <module>xiaou-mock-interview</module>
         <module>xiaou-team</module>
         <module>xiaou-flashcard</module>
+        <module>xiaou-ai</module>
+        <module>xiaou-sql-optimizer</module>
     </modules>
 
     <properties>

@@ -36,7 +36,12 @@ public enum CozeWorkflowEnum {
     /**
      * 模拟面试 - AI出题
      */
-    MOCK_INTERVIEW_GENERATE_QUESTIONS("7586303842754347035", "模拟面试AI出题", "AI根据方向和难度生成面试题目");
+    MOCK_INTERVIEW_GENERATE_QUESTIONS("7586303842754347035", "模拟面试AI出题", "AI根据方向和难度生成面试题目"),
+
+    /**
+     * 慢SQL优化分析
+     */
+    SQL_OPTIMIZE_ANALYZE("PLACEHOLDER_SQL_OPTIMIZE", "慢SQL优化分析", "分析SQL执行计划并给出优化建议");
 
     /**
      * 工作流ID

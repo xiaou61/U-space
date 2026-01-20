@@ -1,12 +1,7 @@
 package com.xiaou.mockinterview.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
-import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.enums.CozeWorkflowEnum;
-import com.xiaou.common.utils.CozeUtils;
+import com.xiaou.ai.service.AiInterviewService;
 import com.xiaou.interview.domain.InterviewQuestion;
 import com.xiaou.interview.mapper.InterviewQuestionMapper;
 import com.xiaou.mockinterview.domain.MockInterviewDirection;
@@ -34,7 +29,7 @@ public class QuestionSelectorServiceImpl implements QuestionSelectorService {
     private final InterviewQuestionMapper questionMapper;
     private final MockInterviewDirectionMapper directionMapper;
     private final MockInterviewQAMapper qaMapper;
-    private final CozeUtils cozeUtils;
+    private final AiInterviewService aiInterviewService;
 
     @Override
     public List<InterviewQuestion> selectQuestions(String direction, Integer level, Integer questionCount, Long userId) {
@@ -106,58 +101,29 @@ public class QuestionSelectorServiceImpl implements QuestionSelectorService {
         String levelName = levelEnum != null ? levelEnum.getName() : "中级";
 
         try {
-            if (cozeUtils.isClientAvailable()) {
-                Map<String, Object> params = new HashMap<>();
-                params.put("direction", direction);
-                params.put("level", levelName);
-                params.put("count", questionCount);
+            // 调用AI服务
+            List<com.xiaou.ai.dto.interview.GeneratedQuestion> aiQuestions = 
+                    aiInterviewService.generateQuestions(direction, levelName, questionCount);
 
-                Result<String> result = cozeUtils.runWorkflow(CozeWorkflowEnum.MOCK_INTERVIEW_GENERATE_QUESTIONS.getWorkflowId(), params);
-
-                if (result.isSuccess() && StrUtil.isNotBlank(result.getData())) {
-                    return parseGeneratedQuestions(result.getData());
-                }
+            if (aiQuestions != null && !aiQuestions.isEmpty()) {
+                // 转换为业务DTO
+                return aiQuestions.stream().map(q -> {
+                    GeneratedQuestion gq = new GeneratedQuestion();
+                    gq.setQuestionContent(q.getQuestion());
+                    gq.setReferenceAnswer(q.getAnswer());
+                    gq.setKnowledgePoints(q.getKnowledgePoints());
+                    return gq;
+                }).collect(Collectors.toList());
             }
 
-            // AI服务不可用，使用本地生成
-            log.warn("AI服务不可用，使用本地生成题目");
+            // AI服务返回空，使用本地生成
+            log.warn("AI服务返回空结果，使用本地生成题目");
             return generateLocalQuestions(direction, levelName, questionCount);
 
         } catch (Exception e) {
             log.error("AI出题失败，使用本地生成", e);
             return generateLocalQuestions(direction, levelName, questionCount);
         }
-    }
-
-    /**
-     * 解析AI生成的题目（支持Coze的output包装格式）
-     */
-    private List<GeneratedQuestion> parseGeneratedQuestions(String aiResponse) {
-        List<GeneratedQuestion> questions = new ArrayList<>();
-        try {
-            String dataStr = aiResponse;
-            
-            // Coze返回格式: {"output": "[...]"}，需要先提取output字段
-            if (aiResponse.trim().startsWith("{")) {
-                JSONObject wrapper = JSONUtil.parseObj(aiResponse);
-                if (wrapper.containsKey("output")) {
-                    dataStr = wrapper.getStr("output");
-                }
-            }
-            
-            JSONArray jsonArray = JSONUtil.parseArray(dataStr);
-            for (int i = 0; i < jsonArray.size(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                GeneratedQuestion q = new GeneratedQuestion();
-                q.setQuestionContent(obj.getStr("question"));
-                q.setReferenceAnswer(obj.getStr("answer"));
-                q.setKnowledgePoints(obj.getStr("knowledgePoints"));
-                questions.add(q);
-            }
-        } catch (Exception e) {
-            log.error("解析AI生成题目失败: {}", aiResponse, e);
-        }
-        return questions;
     }
 
     /**

@@ -5,11 +5,11 @@
   <parent>
     <groupId>com.xiaou</groupId>
     <artifactId>Code-Nest</artifactId>
-    <version>1.7.0</version>
+    <version>1.7.1</version>
   </parent>
   <groupId>com.xiaou</groupId>
   <artifactId>xiaou-community</artifactId>
-  <version>1.7.0</version>
+  <version>1.7.1</version>
   <name>xiaou-community</name>
   <description>社区模块</description>
   <properties>
@@ -21,6 +21,11 @@
     <dependency>
       <groupId>com.xiaou</groupId>
       <artifactId>xiaou-common</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.xiaou</groupId>
+      <artifactId>xiaou-ai</artifactId>
       <version>${revision}</version>
     </dependency>
   </dependencies>

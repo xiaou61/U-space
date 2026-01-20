@@ -31,6 +31,8 @@
     <module>xiaou-mock-interview</module>
     <module>xiaou-team</module>
     <module>xiaou-flashcard</module>
+    <module>xiaou-ai</module>
+    <module>xiaou-sql-optimizer</module>
   </modules>
   <properties>
     <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
