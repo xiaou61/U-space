@@ -32,6 +32,7 @@
         <module>xiaou-plan</module>
         <module>xiaou-mock-interview</module>
         <module>xiaou-team</module>
+        <module>xiaou-flashcard</module>
     </modules>
 
     <properties>

@@ -27,19 +27,10 @@ public class UserPointsController {
      */
     @GetMapping("/balance")
     public Result<PointsBalanceResponse> getPointsBalance() {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            PointsBalanceResponse response = pointsService.getPointsBalance(userId);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取用户积分余额失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        PointsBalanceResponse response = pointsService.getPointsBalance(userId);
+        return Result.success("获取成功", response);
     }
     
     /**
@@ -47,20 +38,10 @@ public class UserPointsController {
      */
     @PostMapping("/checkin")
     public Result<CheckinResponse> checkin() {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            CheckinResponse response = pointsService.checkin(userId);
-            return Result.success("打卡成功", response);
-            
-        } catch (Exception e) {
-            log.error("用户打卡失败，用户ID: {}", 
-                    StpUserUtil.isLogin() ? StpUserUtil.getLoginIdAsLong() : null, e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        CheckinResponse response = pointsService.checkin(userId);
+        return Result.success("打卡成功", response);
     }
     
     /**
@@ -68,22 +49,12 @@ public class UserPointsController {
      */
     @PostMapping("/detail")
     public Result<PageResult<PointsDetailResponse>> getPointsDetailList(@RequestBody PointsDetailQueryRequest request) {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            // 设置当前用户ID，防止查询其他用户的数据
-            request.setUserId(userId);
-            
-            PageResult<PointsDetailResponse> response = pointsService.getPointsDetailList(request);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取积分明细失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        // 设置当前用户ID，防止查询其他用户的数据
+        request.setUserId(userId);
+        PageResult<PointsDetailResponse> response = pointsService.getPointsDetailList(request);
+        return Result.success("获取成功", response);
     }
     
     /**
@@ -91,20 +62,11 @@ public class UserPointsController {
      */
     @PostMapping("/checkin-calendar")
     public Result<CheckinCalendarResponse> getCheckinCalendar(@RequestBody(required = false) CheckinCalendarRequest request) {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            
-            String yearMonth = request != null ? request.getYearMonth() : null;
-            CheckinCalendarResponse response = pointsService.getCheckinCalendar(userId, yearMonth);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取打卡日历失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        String yearMonth = request != null ? request.getYearMonth() : null;
+        CheckinCalendarResponse response = pointsService.getCheckinCalendar(userId, yearMonth);
+        return Result.success("获取成功", response);
     }
     
     /**
@@ -112,22 +74,13 @@ public class UserPointsController {
      */
     @PostMapping("/checkin-statistics")
     public Result<CheckinStatisticsResponse> getCheckinStatistics(@RequestBody(required = false) CheckinStatisticsRequest request) {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            
-            Integer months = request != null ? request.getMonths() : 3;
-            if (months == null || months <= 0) {
-                months = 3;
-            }
-            CheckinStatisticsResponse response = pointsService.getCheckinStatistics(userId, months);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取打卡统计失败", e);
-            return Result.error(e.getMessage());
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        Integer months = request != null ? request.getMonths() : 3;
+        if (months == null || months <= 0) {
+            months = 3;
         }
+        CheckinStatisticsResponse response = pointsService.getCheckinStatistics(userId, months);
+        return Result.success("获取成功", response);
     }
 }

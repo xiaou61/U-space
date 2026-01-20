@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardDailyStatsMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardDailyStats">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="stat_date" property="statDate"/>
+        <result column="new_cards" property="newCards"/>
+        <result column="review_cards" property="reviewCards"/>
+        <result column="correct_cards" property="correctCards"/>
+        <result column="study_duration" property="studyDuration"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, stat_date, new_cards, review_cards, correct_cards, study_duration, create_time, update_time
+    </sql>
+
+    <select id="selectByUserAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId} AND stat_date = #{statDate}
+    </select>
+
+    <select id="selectByUserAndDateRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId}
+        AND stat_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stat_date ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_daily_stats (
+            user_id, stat_date, new_cards, review_cards, correct_cards, study_duration, create_time, update_time
+        ) VALUES (
+            #{userId}, #{statDate}, #{newCards}, #{reviewCards}, #{correctCards}, #{studyDuration}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="incrementStats">
+        INSERT INTO flashcard_daily_stats (user_id, stat_date, new_cards, review_cards, correct_cards, study_duration, create_time, update_time)
+        VALUES (#{userId}, #{statDate}, #{newCards}, #{reviewCards}, #{correctCards}, #{duration}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            new_cards = new_cards + #{newCards},
+            review_cards = review_cards + #{reviewCards},
+            correct_cards = correct_cards + #{correctCards},
+            study_duration = study_duration + #{duration},
+            update_time = NOW()
+    </update>
+
+    <select id="countStudyDays" resultType="int">
+        SELECT COUNT(DISTINCT stat_date)
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId}
+    </select>
+    <select id="selectRecentDates" resultType="java.time.LocalDate">
+        <!-- 获取用户最近N天的学习日期 -->
+        SELECT stat_date
+        FROM flashcard_daily_stats
+        WHERE user_id = #{userId} AND stat_date &lt;= #{endDate}
+        ORDER BY stat_date DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

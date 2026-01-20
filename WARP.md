@@ -8,6 +8,8 @@ Code Nest is a developer community and knowledge platform built with **Spring Bo
 
 ## Build & Run Commands
 
+ok，现在我需要你制定俩个plan 首先第一个，就是前端的开发计划，第二个是一个后端所有的api 跟对应的字段的plan 也可以叫做接口文档，怎么叫都可以，要一定确保前端和后端是一一对应的，接口和字段都要一一对应。
+
 ### Backend
 
 ```bash

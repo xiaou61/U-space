@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardDeckMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardDeck">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="cover_image" property="coverImage"/>
+        <result column="tags" property="tags"/>
+        <result column="is_public" property="isPublic" javaType="java.lang.Boolean"/>
+        <result column="card_count" property="cardCount"/>
+        <result column="study_count" property="studyCount"/>
+        <result column="fork_count" property="forkCount"/>
+        <result column="source_deck_id" property="sourceDeckId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="del_flag" property="delFlag"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, name, description, cover_image, tags, is_public,
+        card_count, study_count, fork_count, source_deck_id, create_time, update_time, del_flag
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE id = #{id} AND del_flag = 0
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE user_id = #{userId} AND del_flag = 0
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="selectPublicDecks" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_deck
+        WHERE is_public = 1 AND del_flag = 0
+        <if test="keyword != null and keyword != ''">
+            AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="tags != null and tags != ''">
+            AND tags LIKE CONCAT('%', #{tags}, '%')
+        </if>
+        ORDER BY study_count DESC, create_time DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_deck (
+            user_id, name, description, cover_image, tags, is_public,
+            card_count, study_count, fork_count, source_deck_id, create_time, update_time, del_flag
+        ) VALUES (
+            #{userId}, #{name}, #{description}, #{coverImage}, #{tags}, #{isPublic},
+            #{cardCount}, #{studyCount}, #{forkCount}, #{sourceDeckId}, #{createTime}, #{updateTime}, #{delFlag}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE flashcard_deck
+        SET name = #{name},
+            description = #{description},
+            cover_image = #{coverImage},
+            tags = #{tags},
+            is_public = #{isPublic},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND del_flag = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE flashcard_deck SET del_flag = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateCardCount">
+        UPDATE flashcard_deck
+        SET card_count = card_count + #{delta}, update_time = NOW()
+        WHERE id = #{id} AND del_flag = 0
+    </update>
+
+    <update id="incrementStudyCount">
+        UPDATE flashcard_deck
+        SET study_count = study_count + 1, update_time = NOW()
+        WHERE id = #{id} AND del_flag = 0
+    </update>
+
+    <update id="incrementForkCount">
+        UPDATE flashcard_deck
+        SET fork_count = fork_count + 1, update_time = NOW()
+        WHERE id = #{id} AND del_flag = 0
+    </update>
+
+</mapper>
