@@ -110,9 +110,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -206,9 +204,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查评论是否存在
@@ -260,9 +256,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     @Override
     @Transactional
     public void unlikeComment(Long commentId) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查评论是否存在
@@ -291,9 +285,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     
     @Override
     public PageResult<CommunityCommentResponse> getUserComments(CommunityCommentQueryRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始评论数据
@@ -321,9 +313,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查被回复的评论是否存在

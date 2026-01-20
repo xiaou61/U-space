@@ -43,9 +43,7 @@ public class UserTeamController {
     @PostMapping("/create")
     public Result<TeamResponse> createTeam(@RequestBody TeamCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             TeamResponse response = teamService.createTeam(userId, request);
             return Result.success("创建成功", response);
@@ -61,9 +59,7 @@ public class UserTeamController {
     @PutMapping("/{teamId}")
     public Result<TeamResponse> updateTeam(@PathVariable Long teamId, @RequestBody TeamCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             TeamResponse response = teamService.updateTeam(userId, teamId, request);
             return Result.success("更新成功", response);
@@ -79,9 +75,7 @@ public class UserTeamController {
     @DeleteMapping("/{teamId}")
     public Result<Boolean> dissolveTeam(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = teamService.dissolveTeam(userId, teamId);
             return success ? Result.success("解散成功", true) : Result.error("解散失败");
@@ -133,9 +127,7 @@ public class UserTeamController {
     @GetMapping("/my")
     public Result<List<TeamResponse>> getMyTeams() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<TeamResponse> response = teamService.getMyTeams(userId);
             return Result.success("获取成功", response);
@@ -151,9 +143,7 @@ public class UserTeamController {
     @GetMapping("/created")
     public Result<List<TeamResponse>> getCreatedTeams() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<TeamResponse> response = teamService.getCreatedTeams(userId);
             return Result.success("获取成功", response);
@@ -187,9 +177,7 @@ public class UserTeamController {
     @GetMapping("/{teamId}/invite-code")
     public Result<String> getInviteCode(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             String code = teamService.getInviteCode(userId, teamId);
             return Result.success("获取成功", code);
@@ -205,9 +193,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/invite-code/refresh")
     public Result<String> refreshInviteCode(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             String code = teamService.refreshInviteCode(userId, teamId);
             return Result.success("刷新成功", code);
@@ -239,9 +225,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/join")
     public Result<Boolean> applyJoin(@PathVariable Long teamId, @RequestBody(required = false) JoinRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             if (request == null) {
                 request = new JoinRequest();
@@ -261,9 +245,7 @@ public class UserTeamController {
     @PostMapping("/join-by-code")
     public Result<Boolean> joinByInviteCode(@RequestBody JoinRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.joinByInviteCode(userId, request.getInviteCode());
             return success ? Result.success("加入成功", true) : Result.error("加入失败");
@@ -279,9 +261,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/quit")
     public Result<Boolean> quitTeam(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.quitTeam(userId, teamId);
             return success ? Result.success("退出成功", true) : Result.error("退出失败");
@@ -311,9 +291,7 @@ public class UserTeamController {
     @GetMapping("/{teamId}/applications")
     public Result<List<ApplicationResponse>> getApplicationList(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<ApplicationResponse> response = memberService.getApplicationList(userId, teamId);
             return Result.success("获取成功", response);
@@ -329,9 +307,7 @@ public class UserTeamController {
     @GetMapping("/applications/my")
     public Result<List<ApplicationResponse>> getMyApplications() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<ApplicationResponse> response = memberService.getMyApplications(userId);
             return Result.success("获取成功", response);
@@ -347,9 +323,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/application/{applicationId}/approve")
     public Result<Boolean> approveApplication(@PathVariable Long teamId, @PathVariable Long applicationId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.approveApplication(userId, applicationId);
             return success ? Result.success("审批通过", true) : Result.error("审批失败");
@@ -366,9 +340,7 @@ public class UserTeamController {
     public Result<Boolean> rejectApplication(@PathVariable Long teamId, @PathVariable Long applicationId,
                                              @RequestParam(required = false) String rejectReason) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.rejectApplication(userId, applicationId, rejectReason);
             return success ? Result.success("已拒绝", true) : Result.error("操作失败");
@@ -384,9 +356,7 @@ public class UserTeamController {
     @PostMapping("/application/{applicationId}/cancel")
     public Result<Boolean> cancelApplication(@PathVariable Long applicationId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.cancelApplication(userId, applicationId);
             return success ? Result.success("取消成功", true) : Result.error("取消失败");
@@ -402,9 +372,7 @@ public class UserTeamController {
     @DeleteMapping("/{teamId}/member/{targetUserId}")
     public Result<Boolean> removeMember(@PathVariable Long teamId, @PathVariable Long targetUserId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.removeMember(userId, teamId, targetUserId);
             return success ? Result.success("移除成功", true) : Result.error("移除失败");
@@ -421,9 +389,7 @@ public class UserTeamController {
     public Result<Boolean> setMemberRole(@PathVariable Long teamId, @PathVariable Long targetUserId,
                                          @RequestParam Integer role) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.setMemberRole(userId, teamId, targetUserId, role);
             return success ? Result.success("设置成功", true) : Result.error("设置失败");
@@ -439,9 +405,7 @@ public class UserTeamController {
     @PutMapping("/{teamId}/transfer")
     public Result<Boolean> transferLeader(@PathVariable Long teamId, @RequestParam Long newLeaderId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.transferLeader(userId, teamId, newLeaderId);
             return success ? Result.success("转让成功", true) : Result.error("转让失败");
@@ -458,9 +422,7 @@ public class UserTeamController {
     public Result<Boolean> muteMember(@PathVariable Long teamId, @PathVariable Long targetUserId,
                                       @RequestParam Integer minutes) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.muteMember(userId, teamId, targetUserId, minutes);
             return success ? Result.success("禁言成功", true) : Result.error("禁言失败");
@@ -476,9 +438,7 @@ public class UserTeamController {
     @DeleteMapping("/{teamId}/member/{targetUserId}/mute")
     public Result<Boolean> unmuteMember(@PathVariable Long teamId, @PathVariable Long targetUserId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = memberService.unmuteMember(userId, teamId, targetUserId);
             return success ? Result.success("解除禁言成功", true) : Result.error("解除禁言失败");
@@ -496,9 +456,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/task")
     public Result<Long> createTask(@PathVariable Long teamId, @RequestBody TaskCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Long taskId = taskService.createTask(teamId, request, userId);
             return Result.success("创建成功", taskId);
@@ -514,9 +472,7 @@ public class UserTeamController {
     @PutMapping("/task/{taskId}")
     public Result<Boolean> updateTask(@PathVariable Long taskId, @RequestBody TaskCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             taskService.updateTask(taskId, request, userId);
             return Result.success("更新成功", true);
@@ -532,9 +488,7 @@ public class UserTeamController {
     @DeleteMapping("/task/{taskId}")
     public Result<Boolean> deleteTask(@PathVariable Long taskId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             taskService.deleteTask(taskId, userId);
             return Result.success("删除成功", true);
@@ -550,9 +504,7 @@ public class UserTeamController {
     @PutMapping("/task/{taskId}/status")
     public Result<Boolean> setTaskStatus(@PathVariable Long taskId, @RequestParam Integer status) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             taskService.setTaskStatus(taskId, status, userId);
             return Result.success("操作成功", true);
@@ -625,9 +577,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/checkin")
     public Result<Long> checkin(@PathVariable Long teamId, @RequestBody CheckinRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Long checkinId = checkinService.checkin(teamId, request, userId);
             return Result.success("打卡成功", checkinId);
@@ -645,9 +595,7 @@ public class UserTeamController {
                                           @RequestBody CheckinRequest request,
                                           @RequestParam String date) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             LocalDate checkinDate = LocalDate.parse(date);
             Long checkinId = checkinService.supplementCheckin(teamId, request, checkinDate, userId);
@@ -664,9 +612,7 @@ public class UserTeamController {
     @DeleteMapping("/checkin/{checkinId}")
     public Result<Boolean> deleteCheckin(@PathVariable Long checkinId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             checkinService.deleteCheckin(checkinId, userId);
             return Result.success("删除成功", true);
@@ -723,9 +669,7 @@ public class UserTeamController {
                                                        @RequestParam(required = false) String startDate,
                                                        @RequestParam(required = false) String endDate) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
             LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
@@ -745,9 +689,7 @@ public class UserTeamController {
                                                       @RequestParam Integer year,
                                                       @RequestParam Integer month) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<LocalDate> response = checkinService.getCheckinCalendar(userId, teamId, year, month);
             return Result.success("获取成功", response);
@@ -763,9 +705,7 @@ public class UserTeamController {
     @PostMapping("/checkin/{checkinId}/like")
     public Result<Boolean> likeCheckin(@PathVariable Long checkinId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             checkinService.likeCheckin(checkinId, userId);
             return Result.success("点赞成功", true);
@@ -781,9 +721,7 @@ public class UserTeamController {
     @DeleteMapping("/checkin/{checkinId}/like")
     public Result<Boolean> unlikeCheckin(@PathVariable Long checkinId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             checkinService.unlikeCheckin(checkinId, userId);
             return Result.success("取消点赞成功", true);
@@ -800,9 +738,7 @@ public class UserTeamController {
     public Result<Integer> getStreakDays(@PathVariable Long teamId,
                                          @RequestParam(required = false) Long taskId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Integer streak = checkinService.getStreakDays(userId, teamId, taskId);
             return Result.success("获取成功", streak);
@@ -818,9 +754,7 @@ public class UserTeamController {
     @GetMapping("/{teamId}/checkin/total")
     public Result<Integer> getTotalCheckinDays(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Integer total = checkinService.getTotalCheckinDays(userId, teamId);
             return Result.success("获取成功", total);
@@ -917,9 +851,7 @@ public class UserTeamController {
     public Result<RankResponse> getMyRank(@PathVariable Long teamId,
                                           @RequestParam(defaultValue = "checkin") String rankType) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             RankResponse response = rankService.getUserRank(teamId, userId, rankType);
             return Result.success("获取成功", response);
@@ -937,9 +869,7 @@ public class UserTeamController {
     @PostMapping("/{teamId}/discussion")
     public Result<Long> createDiscussion(@PathVariable Long teamId, @RequestBody DiscussionCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Long discussionId = discussionService.createDiscussion(teamId, request, userId);
             return Result.success("发布成功", discussionId);
@@ -955,9 +885,7 @@ public class UserTeamController {
     @PutMapping("/discussion/{discussionId}")
     public Result<Boolean> updateDiscussion(@PathVariable Long discussionId, @RequestBody DiscussionCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.updateDiscussion(discussionId, request, userId);
             return Result.success("更新成功", true);
@@ -973,9 +901,7 @@ public class UserTeamController {
     @DeleteMapping("/discussion/{discussionId}")
     public Result<Boolean> deleteDiscussion(@PathVariable Long discussionId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.deleteDiscussion(discussionId, userId);
             return Result.success("删除成功", true);
@@ -1031,9 +957,7 @@ public class UserTeamController {
     @PutMapping("/discussion/{discussionId}/top")
     public Result<Boolean> setDiscussionTop(@PathVariable Long discussionId, @RequestParam Integer isTop) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.setTop(discussionId, isTop, userId);
             return Result.success("操作成功", true);
@@ -1049,9 +973,7 @@ public class UserTeamController {
     @PutMapping("/discussion/{discussionId}/essence")
     public Result<Boolean> setDiscussionEssence(@PathVariable Long discussionId, @RequestParam Integer isEssence) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.setEssence(discussionId, isEssence, userId);
             return Result.success("操作成功", true);
@@ -1067,9 +989,7 @@ public class UserTeamController {
     @PostMapping("/discussion/{discussionId}/like")
     public Result<Boolean> likeDiscussion(@PathVariable Long discussionId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.likeDiscussion(discussionId, userId);
             return Result.success("点赞成功", true);
@@ -1085,9 +1005,7 @@ public class UserTeamController {
     @DeleteMapping("/discussion/{discussionId}/like")
     public Result<Boolean> unlikeDiscussion(@PathVariable Long discussionId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             discussionService.unlikeDiscussion(discussionId, userId);
             return Result.success("取消点赞成功", true);
@@ -1153,9 +1071,7 @@ public class UserTeamController {
     @GetMapping("/{teamId}/stats/my")
     public Result<TeamStatsResponse.UserStats> getMyStats(@PathVariable Long teamId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             TeamStatsResponse.UserStats response = statsService.getUserStats(teamId, userId);
             return Result.success("获取成功", response);

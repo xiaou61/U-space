@@ -47,9 +47,7 @@ public class BlogConfigServiceImpl implements BlogConfigService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BlogOpenResponse openBlog() {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         // 检查是否已开通
@@ -113,9 +111,7 @@ public class BlogConfigServiceImpl implements BlogConfigService {
     
     @Override
     public BlogCheckStatusResponse checkBlogStatus() {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         BlogConfig config = blogConfigMapper.selectByUserId(userId);
@@ -163,9 +159,7 @@ public class BlogConfigServiceImpl implements BlogConfigService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateBlogConfig(BlogConfigUpdateRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         BlogConfig config = blogConfigMapper.selectByUserId(userId);

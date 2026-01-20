@@ -52,9 +52,7 @@ public class MomentServiceImpl implements MomentService {
     @Override
     @Transactional
     public Long publishMoment(MomentPublishRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查发布频率限制 - 5分钟内最多3条

@@ -29,10 +29,7 @@ public class BugStoreController {
     @PostMapping("/random")
     public Result<BugItemDto> getRandomBug() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
-            
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             BugItemDto bugItem = bugStoreService.getRandomBug(userId);
             

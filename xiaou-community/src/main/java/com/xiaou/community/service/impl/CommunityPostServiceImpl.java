@@ -201,9 +201,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 如果指定了分类ID，需要验证分类是否存在且启用
@@ -281,9 +279,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -335,9 +331,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     @Override
     @Transactional
     public void unlikePost(Long id) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -370,9 +364,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -424,9 +416,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     @Override
     @Transactional
     public void uncollectPost(Long id) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -455,9 +445,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getUserCollections(CommunityPostQueryRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
@@ -481,9 +469,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getUserPosts(CommunityPostQueryRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
