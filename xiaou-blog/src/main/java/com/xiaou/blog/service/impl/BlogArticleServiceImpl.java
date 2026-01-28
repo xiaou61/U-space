@@ -54,9 +54,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createArticle(ArticlePublishRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         // 检查是否已开通博客
@@ -79,9 +77,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ArticlePublishResponse publishArticle(ArticlePublishRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         // 检查是否已开通博客
@@ -195,9 +191,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateArticle(Long id, ArticlePublishRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         BlogArticle article = blogArticleMapper.selectById(id);
@@ -228,9 +222,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteArticle(Long id) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         BlogArticle article = blogArticleMapper.selectById(id);
@@ -323,9 +315,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     
     @Override
     public PageResult<ArticleSimpleResponse> getMyArticleList(ArticleListRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         request.setUserId(userId);
         request.setStatus(1); // 已发布
@@ -356,9 +346,7 @@ public class BlogArticleServiceImpl implements BlogArticleService {
     
     @Override
     public PageResult<ArticleSimpleResponse> getMyDraftList(Integer pageNum, Integer pageSize) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long userId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始草稿数据

@@ -45,9 +45,7 @@ public class CodePenUserController {
     @PostMapping("/create")
     public Result<CodePenCreateResponse> create(@RequestBody CodePenCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             CodePenCreateResponse response = codePenService.createOrSave(request, userId);
             return Result.success(response);
@@ -64,9 +62,7 @@ public class CodePenUserController {
     @PostMapping("/save")
     public Result<CodePenCreateResponse> save(@RequestBody CodePenCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             CodePenCreateResponse response = codePenService.createOrSave(request, userId);
             return Result.success(response);
@@ -83,9 +79,7 @@ public class CodePenUserController {
     @PostMapping("/update")
     public Result<Boolean> update(@RequestBody CodePenCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.update(request, userId);
             return Result.success(result);
@@ -102,9 +96,7 @@ public class CodePenUserController {
     @DeleteMapping("/{id}")
     public Result<Boolean> delete(@PathVariable Long id) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.delete(id, userId);
             return Result.success(result);
@@ -121,9 +113,7 @@ public class CodePenUserController {
     @PostMapping("/fork")
     public Result<ForkResponse> fork(@RequestBody ForkRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             ForkResponse response = codePenService.forkPen(request, userId);
             return Result.success(response);
@@ -154,9 +144,7 @@ public class CodePenUserController {
     @PostMapping("/my-list")
     public Result<List<CodePenDetailResponse>> getMyList(@RequestBody(required = false) CodePenListRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Integer status = request != null ? request.getStatus() : null;
             List<CodePenDetailResponse> list = codePenService.getMyList(userId, status);
@@ -173,9 +161,7 @@ public class CodePenUserController {
     @PostMapping("/draft-list")
     public Result<List<CodePenDetailResponse>> getDraftList() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<CodePenDetailResponse> list = codePenService.getMyList(userId, 0);
             return Result.success(list);
@@ -191,9 +177,7 @@ public class CodePenUserController {
     @PostMapping("/check-fork-price")
     public Result<CheckForkPriceResponse> checkForkPrice(@RequestBody CheckForkPriceRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             CheckForkPriceResponse response = codePenService.checkForkPrice(request.getPenId(), userId);
             return Result.success(response);
@@ -209,9 +193,7 @@ public class CodePenUserController {
     @PostMapping("/income-stats")
     public Result<IncomeStatsResponse> getIncomeStats() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             IncomeStatsResponse response = codePenService.getIncomeStats(userId);
             return Result.success(response);
@@ -335,9 +317,7 @@ public class CodePenUserController {
     @PostMapping("/like")
     public Result<Boolean> like(@RequestBody CheckForkPriceRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.like(request.getPenId(), userId);
             return Result.success(result);
@@ -354,9 +334,7 @@ public class CodePenUserController {
     @PostMapping("/unlike")
     public Result<Boolean> unlike(@RequestBody CheckForkPriceRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.unlike(request.getPenId(), userId);
             return Result.success(result);
@@ -373,9 +351,7 @@ public class CodePenUserController {
     @PostMapping("/collect")
     public Result<Boolean> collect(@RequestBody CheckForkPriceRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.collect(request.getPenId(), userId, null);
             return Result.success(result);
@@ -392,9 +368,7 @@ public class CodePenUserController {
     @PostMapping("/uncollect")
     public Result<Boolean> uncollect(@RequestBody CheckForkPriceRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = codePenService.uncollect(request.getPenId(), userId);
             return Result.success(result);
@@ -425,9 +399,7 @@ public class CodePenUserController {
     @PostMapping("/comment")
     public Result<Long> createComment(@RequestBody CommentCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Long commentId = commentService.createComment(request, userId);
             return Result.success(commentId);
@@ -444,9 +416,7 @@ public class CodePenUserController {
     @DeleteMapping("/comment/{id}")
     public Result<Boolean> deleteComment(@PathVariable Long id) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = commentService.deleteComment(id, userId);
             return Result.success(result);
@@ -479,9 +449,7 @@ public class CodePenUserController {
     @PostMapping("/folder/create")
     public Result<Long> createFolder(@RequestBody CodePenFolder folder) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             Long folderId = folderService.createFolder(folder.getFolderName(), folder.getFolderDescription(), userId);
             return Result.success(folderId);
@@ -498,9 +466,7 @@ public class CodePenUserController {
     @PostMapping("/folder/update")
     public Result<Boolean> updateFolder(@RequestBody CodePenFolder folder) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = folderService.updateFolder(folder.getId(), folder.getFolderName(), folder.getFolderDescription(), userId);
             return Result.success(result);
@@ -517,9 +483,7 @@ public class CodePenUserController {
     @DeleteMapping("/folder/{id}")
     public Result<Boolean> deleteFolder(@PathVariable Long id) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean result = folderService.deleteFolder(id, userId);
             return Result.success(result);
@@ -535,9 +499,7 @@ public class CodePenUserController {
     @PostMapping("/folder/list")
     public Result<List<CodePenFolder>> getFolderList() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<CodePenFolder> list = folderService.getFolderList(userId);
             return Result.success(list);
@@ -553,9 +515,7 @@ public class CodePenUserController {
     @PostMapping("/folder/items")
     public Result<List<CodePenDetailResponse>> getFolderItems(@RequestBody CodePenFolder folder) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             
             // 查询收藏夹中的作品ID列表

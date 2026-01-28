@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardStudyRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.FlashcardStudyRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="card_id" property="cardId"/>
+        <result column="deck_id" property="deckId"/>
+        <result column="repetitions" property="repetitions"/>
+        <result column="ease_factor" property="easeFactor"/>
+        <result column="interval_days" property="intervalDays"/>
+        <result column="mastery_level" property="masteryLevel"/>
+        <result column="last_review_time" property="lastReviewTime"/>
+        <result column="next_review_time" property="nextReviewTime"/>
+        <result column="total_reviews" property="totalReviews"/>
+        <result column="correct_count" property="correctCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, card_id, deck_id, repetitions, ease_factor, interval_days,
+        mastery_level, last_review_time, next_review_time, total_reviews, correct_count,
+        create_time, update_time
+    </sql>
+
+    <select id="selectByUserAndCard" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND card_id = #{cardId}
+    </select>
+
+    <select id="selectByUserAndDeck" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND deck_id = #{deckId}
+    </select>
+
+    <select id="selectDueCards" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        <if test="deckId != null">
+            AND deck_id = #{deckId}
+        </if>
+        AND next_review_time &lt;= #{now}
+        ORDER BY next_review_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countDueCards" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        <if test="deckId != null">
+            AND deck_id = #{deckId}
+        </if>
+        AND next_review_time &lt;= #{now}
+    </select>
+
+    <select id="selectLearnedCardIds" resultType="java.lang.Long">
+        SELECT card_id
+        FROM flashcard_study_record
+        WHERE user_id = #{userId} AND deck_id = #{deckId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard_study_record (
+            user_id, card_id, deck_id, repetitions, ease_factor, interval_days,
+            mastery_level, last_review_time, next_review_time, total_reviews, correct_count,
+            create_time, update_time
+        ) VALUES (
+            #{userId}, #{cardId}, #{deckId}, #{repetitions}, #{easeFactor}, #{intervalDays},
+            #{masteryLevel}, #{lastReviewTime}, #{nextReviewTime}, #{totalReviews}, #{correctCount},
+            #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE flashcard_study_record
+        SET repetitions = #{repetitions},
+            ease_factor = #{easeFactor},
+            interval_days = #{intervalDays},
+            mastery_level = #{masteryLevel},
+            last_review_time = #{lastReviewTime},
+            next_review_time = #{nextReviewTime},
+            total_reviews = #{totalReviews},
+            correct_count = #{correctCount},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <select id="countByMasteryLevel" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        <if test="deckId != null">
+            AND deck_id = #{deckId}
+        </if>
+        AND mastery_level = #{masteryLevel}
+    </select>
+
+    <select id="countLearnedCards" resultType="int">
+        SELECT COUNT(*)
+        FROM flashcard_study_record
+        WHERE user_id = #{userId}
+        <if test="deckId != null">
+            AND deck_id = #{deckId}
+        </if>
+    </select>
+
+</mapper>

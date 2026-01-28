@@ -117,6 +117,13 @@ public class StpUserUtil {
     // ========== Token 操作 ==========
     
     /**
+     * 获取当前Token的剩余有效期（秒）
+     */
+    public static long getTokenTimeout() {
+        return stpLogic.getTokenTimeout();
+    }
+    
+    /**
      * 根据登录ID获取Token值
      */
     public static String getTokenValueByLoginId(Object loginId) {

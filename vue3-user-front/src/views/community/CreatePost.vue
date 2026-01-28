@@ -145,7 +145,7 @@
               @input="handleContentInput"
             ></textarea>
             <div class="editor-footer">
-              <span class="word-count">{{ postForm.content.length }} / 5000 字符</span>
+              <span class="word-count">{{ postForm.content.length }} / 50000 字符</span>
             </div>
           </div>
 
@@ -404,8 +404,8 @@ const handlePublish = async () => {
     ElMessage.error('请输入帖子内容')
     return
   }
-  if (postForm.content.length < 10 || postForm.content.length > 5000) {
-    ElMessage.error('内容长度应为10-5000个字符')
+  if (postForm.content.length < 10 || postForm.content.length > 50000) {
+    ElMessage.error('内容长度应为10-50000个字符')
     return
   }
 

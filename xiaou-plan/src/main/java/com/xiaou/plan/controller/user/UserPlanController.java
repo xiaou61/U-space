@@ -31,9 +31,7 @@ public class UserPlanController {
     @PostMapping("/create")
     public Result<PlanResponse> createPlan(@RequestBody PlanCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             PlanResponse response = planService.createPlan(userId, request);
             return Result.success("创建成功", response);
@@ -49,9 +47,7 @@ public class UserPlanController {
     @PutMapping("/update/{planId}")
     public Result<PlanResponse> updatePlan(@PathVariable Long planId, @RequestBody PlanCreateRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             PlanResponse response = planService.updatePlan(userId, planId, request);
             return Result.success("更新成功", response);
@@ -67,9 +63,7 @@ public class UserPlanController {
     @DeleteMapping("/{planId}")
     public Result<Boolean> deletePlan(@PathVariable Long planId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = planService.deletePlan(userId, planId);
             return success ? Result.success("删除成功", true) : Result.error("删除失败");
@@ -85,9 +79,7 @@ public class UserPlanController {
     @GetMapping("/{planId}")
     public Result<PlanResponse> getPlanDetail(@PathVariable Long planId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             PlanResponse response = planService.getPlanDetail(userId, planId);
             return Result.success("获取成功", response);
@@ -103,9 +95,7 @@ public class UserPlanController {
     @PostMapping("/list")
     public Result<PageResult<PlanResponse>> getPlanList(@RequestBody PlanListRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             request.setUserId(userId);
             PageResult<PlanResponse> response = planService.getPlanList(request);
@@ -122,9 +112,7 @@ public class UserPlanController {
     @PutMapping("/{planId}/pause")
     public Result<Boolean> pausePlan(@PathVariable Long planId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = planService.pausePlan(userId, planId);
             return success ? Result.success("暂停成功", true) : Result.error("暂停失败");
@@ -140,9 +128,7 @@ public class UserPlanController {
     @PutMapping("/{planId}/resume")
     public Result<Boolean> resumePlan(@PathVariable Long planId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             boolean success = planService.resumePlan(userId, planId);
             return success ? Result.success("恢复成功", true) : Result.error("恢复失败");
@@ -158,9 +144,7 @@ public class UserPlanController {
     @GetMapping("/today-tasks")
     public Result<List<TodayTaskResponse>> getTodayTasks() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<TodayTaskResponse> tasks = planService.getTodayTasks(userId);
             return Result.success("获取成功", tasks);
@@ -176,9 +160,7 @@ public class UserPlanController {
     @PostMapping("/checkin")
     public Result<PlanCheckinResponse> checkin(@RequestBody PlanCheckinRequest request) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             PlanCheckinResponse response = planService.checkin(userId, request);
             return Result.success("打卡成功", response);
@@ -194,9 +176,7 @@ public class UserPlanController {
     @GetMapping("/{planId}/checkin/list")
     public Result<List<PlanCheckinRecord>> getCheckinRecords(@PathVariable Long planId) {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             List<PlanCheckinRecord> records = planService.getCheckinRecords(userId, planId);
             return Result.success("获取成功", records);
@@ -212,9 +192,7 @@ public class UserPlanController {
     @GetMapping("/stats/overview")
     public Result<PlanStatsResponse> getStatsOverview() {
         try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("请先登录");
-            }
+            StpUserUtil.checkLogin();
             Long userId = StpUserUtil.getLoginIdAsLong();
             PlanStatsResponse response = planService.getStatsOverview(userId);
             return Result.success("获取成功", response);

@@ -131,8 +131,10 @@ public class UserInfoServiceImpl implements UserInfoService {
         try {
             // 根据用户名或邮箱查询用户
             UserInfo user = userInfoMapper.selectByUsernameOrEmail(request.getUsername());
+            
+            // 统一返回“用户名或密码错误”防止用户枚举攻击
             if (user == null) {
-                throw new BusinessException("用户不存在");
+                throw new BusinessException("用户名或密码错误");
             }
 
             // 检查用户状态
@@ -140,12 +142,12 @@ public class UserInfoServiceImpl implements UserInfoService {
                 throw new BusinessException("账户已被禁用，请联系管理员");
             }
             if (user.getStatus() == 2) {
-                throw new BusinessException("账户已被删除");
+                throw new BusinessException("用户名或密码错误"); // 已删除用户也返回相同提示
             }
 
             // 验证密码
             if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
-                throw new BusinessException("密码错误");
+                throw new BusinessException("用户名或密码错误");
             }
 
             // 更新最后登录信息
@@ -185,6 +187,8 @@ public class UserInfoServiceImpl implements UserInfoService {
             log.info("用户登录成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
             return response;
 
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("用户登录异常，用户名: {}", request.getUsername(), e);
             throw new BusinessException("登录失败，请稍后重试");

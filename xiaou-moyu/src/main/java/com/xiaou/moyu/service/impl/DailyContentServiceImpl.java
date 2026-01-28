@@ -137,7 +137,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean incrementViewCount(Long contentId) {
         try {
             return dailyContentMapper.incrementViewCount(contentId) > 0;
@@ -148,7 +148,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean likeContent(Long contentId) {
         try {
             return dailyContentMapper.incrementLikeCount(contentId) > 0;
@@ -159,7 +159,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggleContentCollection(Long userId, Long contentId) {
         try {
             UserCalendarCollection existing = userCalendarCollectionMapper.selectByUserIdAndTarget(userId, 2, contentId);
@@ -193,15 +193,17 @@ public class DailyContentServiceImpl implements DailyContentService {
             return new ArrayList<>();
         }
 
-        List<DailyContent> contents = new ArrayList<>();
-        for (UserCalendarCollection collection : collections) {
-            DailyContent content = dailyContentMapper.selectById(collection.getTargetId());
-            if (content != null && content.getStatus() == 1) {
-                contents.add(content);
-            }
-        }
+        // 批量查询所有收藏的内容，避免N+1问题
+        List<Long> contentIds = collections.stream()
+                .map(UserCalendarCollection::getTargetId)
+                .collect(java.util.stream.Collectors.toList());
         
-        return contents;
+        List<DailyContent> allContents = dailyContentMapper.selectBatchIds(contentIds);
+        
+        // 过滤出状态为启用的内容
+        return allContents.stream()
+                .filter(content -> content != null && content.getStatus() == 1)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -242,7 +244,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean createContent(DailyContent content) {
         try {
             content.setStatus(1); // 默认启用
@@ -258,7 +260,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateContent(DailyContent content) {
         try {
             content.setUpdateTime(LocalDateTime.now());
@@ -270,7 +272,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteContent(Long id) {
         try {
             return dailyContentMapper.deleteById(id) > 0;
@@ -281,12 +283,14 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean batchDeleteContent(List<Long> ids) {
         try {
-            for (Long id : ids) {
-                dailyContentMapper.deleteById(id);
+            if (CollectionUtils.isEmpty(ids)) {
+                return true;
             }
+            // 使用批量删除，避免N+1问题
+            dailyContentMapper.deleteBatchIds(ids);
             return true;
         } catch (Exception e) {
             log.error("批量删除内容失败", e);
@@ -295,7 +299,7 @@ public class DailyContentServiceImpl implements DailyContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateContentStatus(Long id, Integer status) {
         try {
             DailyContent content = new DailyContent();

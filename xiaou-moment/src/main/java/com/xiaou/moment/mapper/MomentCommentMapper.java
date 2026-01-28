@@ -52,4 +52,11 @@ public interface MomentCommentMapper {
      * 根据动态ID删除所有评论
      */
     int deleteByMomentId(Long momentId);
-} 
+    
+    /**
+     * 根据多个动态ID批量删除评论
+     * @param momentIds 动态ID列表
+     * @return 影响行数
+     */
+    int deleteByMomentIds(@Param("momentIds") List<Long> momentIds);
+}

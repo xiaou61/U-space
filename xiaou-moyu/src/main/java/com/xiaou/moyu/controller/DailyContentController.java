@@ -177,9 +177,7 @@ public class DailyContentController {
      * 获取当前用户ID
      */
     private Long getCurrentUserId() {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         return StpUserUtil.getLoginIdAsLong();
     }
     

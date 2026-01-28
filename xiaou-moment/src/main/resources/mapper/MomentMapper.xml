@@ -217,5 +217,13 @@
         AND status = 1
         ORDER BY create_time DESC
     </select>
+    
+    <!-- 批量删除动态 -->
+    <update id="deleteBatchIds">
+        UPDATE moments SET status = 0 WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 
-</mapper> 
+</mapper>

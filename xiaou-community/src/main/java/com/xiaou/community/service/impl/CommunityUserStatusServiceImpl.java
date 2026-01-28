@@ -97,9 +97,7 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
     
     @Override
     public CommunityUserStatus getCurrentUserStatus() {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // Sa-Token: 从工具类获取用户名
@@ -110,9 +108,7 @@ public class CommunityUserStatusServiceImpl implements CommunityUserStatusServic
     
     @Override
     public void checkUserBanStatus() {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         CommunityUserStatus userStatus = getByUserId(currentUserId);

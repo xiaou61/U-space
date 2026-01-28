@@ -52,4 +52,45 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
         SimpleUserInfo userInfo = getSimpleUserInfo(userId);
         return userInfo != null ? userInfo.getDisplayName() : "用户" + userId;
     }
+    
+    @Override
+    public java.util.Map<Long, SimpleUserInfo> getSimpleUserInfoBatch(java.util.List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        
+        try {
+            // 去重并过滤空null
+            java.util.List<Long> distinctIds = userIds.stream()
+                    .filter(id -> id != null)
+                    .distinct()
+                    .collect(java.util.stream.Collectors.toList());
+            
+            if (distinctIds.isEmpty()) {
+                return new java.util.HashMap<>();
+            }
+            
+            // 批量查询用户
+            java.util.List<UserInfo> users = userInfoMapper.selectBatchIds(distinctIds);
+            
+            // 转换为Map
+            return users.stream()
+                    .filter(user -> user != null && user.getStatus() != 2)
+                    .collect(java.util.stream.Collectors.toMap(
+                            UserInfo::getId,
+                            user -> SimpleUserInfo.builder()
+                                    .id(user.getId())
+                                    .username(user.getUsername())
+                                    .nickname(user.getNickname())
+                                    .realName(user.getRealName())
+                                    .avatar(user.getAvatar())
+                                    .build(),
+                            (existing, replacement) -> existing // 如果有重复，保留第一个
+                    ));
+                    
+        } catch (Exception e) {
+            log.warn("批量获取用户信息失败，错误: {}", e.getMessage());
+            return new java.util.HashMap<>();
+        }
+    }
 }

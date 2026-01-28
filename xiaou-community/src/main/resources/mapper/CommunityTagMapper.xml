@@ -108,6 +108,16 @@
         SET post_count = post_count + #{increment}
         WHERE id = #{tagId}
     </update>
+    
+    <!-- 批量查询标签 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_tag
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
 
 </mapper>
 

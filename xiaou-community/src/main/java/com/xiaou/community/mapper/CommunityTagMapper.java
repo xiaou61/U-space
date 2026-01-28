@@ -59,5 +59,12 @@ public interface CommunityTagMapper {
      * 更新标签帖子数量
      */
     int updatePostCount(@Param("tagId") Long tagId, @Param("increment") Integer increment);
+    
+    /**
+     * 批量查询标签
+     * @param ids 标签ID列表
+     * @return 标签列表
+     */
+    List<CommunityTag> selectBatchIds(@Param("ids") List<Long> ids);
 }
 

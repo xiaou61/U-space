@@ -2,6 +2,7 @@ package com.xiaou.codepen.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
+import com.xiaou.codepen.config.CodePenProperties;
 import com.xiaou.codepen.domain.CodePen;
 import com.xiaou.codepen.domain.CodePenForkTransaction;
 import com.xiaou.codepen.dto.*;
@@ -23,9 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.xiaou.codepen.constant.CodePenConstants.CREATE_REWARD_POINTS;
 
 /**
  * 代码作品Service实现
@@ -44,8 +46,7 @@ public class CodePenServiceImpl implements CodePenService {
     private final UserPointsBalanceMapper pointsBalanceMapper;
     private final UserPointsDetailMapper pointsDetailMapper;
     private final UserInfoApiService userInfoApiService;
-    
-    private static final int CREATE_REWARD_POINTS = 10; // 创建作品奖励积分
+    private final CodePenProperties codePenProperties;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -106,7 +107,7 @@ public class CodePenServiceImpl implements CodePenService {
             ensureUserPointsBalance(userId);
             
             // 增加积分
-            pointsBalanceMapper.addPoints(userId, CREATE_REWARD_POINTS);
+            pointsBalanceMapper.addPoints(userId, codePenProperties.getCreateRewardPoints());
             
             // 获取增加后的余额
             UserPointsBalance balance = pointsBalanceMapper.selectByUserId(userId);
@@ -115,7 +116,7 @@ public class CodePenServiceImpl implements CodePenService {
             // 记录积分明细
             UserPointsDetail detail = new UserPointsDetail();
             detail.setUserId(userId);
-            detail.setPointsChange(CREATE_REWARD_POINTS);
+            detail.setPointsChange(codePenProperties.getCreateRewardPoints());
             detail.setPointsType(PointsType.ADMIN_GRANT.getCode());
             detail.setDescription("创建代码作品");
             detail.setBalanceAfter(balance.getTotalPoints());
@@ -141,9 +142,9 @@ public class CodePenServiceImpl implements CodePenService {
                 .build();
         
         if (isNewPublish) {
-            response.setPointsAdded(CREATE_REWARD_POINTS);
+            response.setPointsAdded(codePenProperties.getCreateRewardPoints());
             response.setPointsTotal(pointsTotal);
-            response.setShareUrl("https://code-nest.com/pen/" + codePen.getId());
+            response.setShareUrl(codePenProperties.getShareBaseUrl() + codePen.getId());
         }
         
         log.info("用户{}{}作品成功，作品ID：{}", userId, 
@@ -232,7 +233,7 @@ public class CodePenServiceImpl implements CodePenService {
             response.setIsCollected(false);
         }
         
-        response.setShareUrl("https://code-nest.com/pen/" + id);
+        response.setShareUrl(codePenProperties.getShareBaseUrl() + id);
         
         return response;
     }
@@ -246,9 +247,27 @@ public class CodePenServiceImpl implements CodePenService {
             () -> codePenMapper.selectList(request)
         );
         
-        // 在分页外进行DTO转换
+        List<CodePen> records = pageResult.getRecords();
+        if (records.isEmpty()) {
+            return PageResult.of(pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotal(), new ArrayList<>());
+        }
+        
+        // 提取所有作品ID
+        List<Long> penIds = records.stream().map(CodePen::getId).collect(Collectors.toList());
+        
+        // 批量查询用户的点赞/收藏状态（一次查询代替 N 次）
+        Set<Long> likedPenIds = Collections.emptySet();
+        Set<Long> collectedPenIds = Collections.emptySet();
+        if (currentUserId != null) {
+            likedPenIds = codePenLikeMapper.selectLikedPenIdsByUserId(currentUserId, penIds);
+            collectedPenIds = codePenCollectMapper.selectCollectedPenIdsByUserId(currentUserId, penIds);
+            if (likedPenIds == null) likedPenIds = Collections.emptySet();
+            if (collectedPenIds == null) collectedPenIds = Collections.emptySet();
+        }
+        
+        // 在内存中进行匹配
         List<CodePenDetailResponse> responses = new ArrayList<>();
-        for (CodePen codePen : pageResult.getRecords()) {
+        for (CodePen codePen : records) {
             CodePenDetailResponse response = convertToDetailResponse(codePen);
             
             // 列表不返回代码
@@ -256,10 +275,10 @@ public class CodePenServiceImpl implements CodePenService {
             response.setCssCode(null);
             response.setJsCode(null);
             
-            // 设置互动状态
+            // 设置互动状态（从内存中匹配，无需查询数据库）
             if (currentUserId != null) {
-                response.setIsLiked(codePenLikeMapper.selectByPenIdAndUserId(codePen.getId(), currentUserId) != null);
-                response.setIsCollected(codePenCollectMapper.selectByPenIdAndUserId(codePen.getId(), currentUserId) != null);
+                response.setIsLiked(likedPenIds.contains(codePen.getId()));
+                response.setIsCollected(collectedPenIds.contains(codePen.getId()));
             }
             
             responses.add(response);
@@ -277,10 +296,18 @@ public class CodePenServiceImpl implements CodePenService {
     @Override
     public List<CodePenDetailResponse> getMyList(Long userId, Integer status) {
         List<CodePen> list = codePenMapper.selectByUserId(userId, status);
-        List<CodePenDetailResponse> responses = new ArrayList<>();
         
+        // 批量查询用户信息，避免N+1问题
+        List<Long> userIds = list.stream()
+                .map(CodePen::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
+        List<CodePenDetailResponse> responses = new ArrayList<>();
         for (CodePen codePen : list) {
-            CodePenDetailResponse response = convertToDetailResponse(codePen);
+            CodePenDetailResponse response = convertToDetailResponseWithUserInfo(codePen, userInfoMap);
             response.setCanEdit(true);
             response.setCanDelete(true);
             responses.add(response);
@@ -642,11 +669,55 @@ public class CodePenServiceImpl implements CodePenService {
     }
     
     private List<CodePenDetailResponse> convertToDetailResponseList(List<CodePen> list) {
+        if (list == null || list.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 批量查询用户信息，避免N+1问题
+        List<Long> userIds = list.stream()
+                .map(CodePen::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
         List<CodePenDetailResponse> responses = new ArrayList<>();
         for (CodePen codePen : list) {
-            responses.add(convertToDetailResponse(codePen));
+            responses.add(convertToDetailResponseWithUserInfo(codePen, userInfoMap));
         }
         return responses;
+    }
+    
+    /**
+     * 转换为详情响应（使用已查询的用户信息Map）
+     */
+    private CodePenDetailResponse convertToDetailResponseWithUserInfo(CodePen codePen, Map<Long, SimpleUserInfo> userInfoMap) {
+        CodePenDetailResponse response = new CodePenDetailResponse();
+        BeanUtil.copyProperties(codePen, response);
+        
+        // 获取用户信息
+        if (codePen.getUserId() != null) {
+            SimpleUserInfo userInfo = userInfoMap.get(codePen.getUserId());
+            if (userInfo != null) {
+                response.setUserNickname(userInfo.getDisplayName());
+                response.setUserAvatar(userInfo.getAvatar());
+            }
+        }
+        
+        // 转换JSON字段
+        if (codePen.getExternalCss() != null) {
+            response.setExternalCss(JSONUtil.toList(codePen.getExternalCss(), String.class));
+        }
+        if (codePen.getExternalJs() != null) {
+            response.setExternalJs(JSONUtil.toList(codePen.getExternalJs(), String.class));
+        }
+        if (codePen.getTags() != null) {
+            response.setTags(JSONUtil.toList(codePen.getTags(), String.class));
+        }
+        
+        response.setIsFree(codePen.getIsFree() == 1);
+        
+        return response;
     }
 }
 

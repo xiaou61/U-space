@@ -52,7 +52,7 @@ public class StudyTeamServiceImpl implements StudyTeamService {
     private static final int MAX_JOIN_TEAMS = 10;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TeamResponse createTeam(Long userId, TeamCreateRequest request) {
         // 参数校验
         if (StrUtil.isBlank(request.getTeamName())) {
@@ -118,7 +118,7 @@ public class StudyTeamServiceImpl implements StudyTeamService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TeamResponse updateTeam(Long userId, Long teamId, TeamCreateRequest request) {
         StudyTeam team = teamMapper.selectById(teamId);
         if (team == null) {
@@ -163,7 +163,7 @@ public class StudyTeamServiceImpl implements StudyTeamService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean dissolveTeam(Long userId, Long teamId) {
         StudyTeam team = teamMapper.selectById(teamId);
         if (team == null) {
@@ -326,7 +326,7 @@ public class StudyTeamServiceImpl implements StudyTeamService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String refreshInviteCode(Long userId, Long teamId) {
         StudyTeam team = teamMapper.selectById(teamId);
         if (team == null) {

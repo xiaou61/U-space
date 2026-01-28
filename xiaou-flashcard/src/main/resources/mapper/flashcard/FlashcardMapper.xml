@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaou.flashcard.mapper.FlashcardMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaou.flashcard.domain.Flashcard">
+        <id column="id" property="id"/>
+        <result column="deck_id" property="deckId"/>
+        <result column="front_content" property="frontContent"/>
+        <result column="back_content" property="backContent"/>
+        <result column="content_type" property="contentType"/>
+        <result column="tags" property="tags"/>
+        <result column="source_question_id" property="sourceQuestionId"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="del_flag" property="delFlag"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, deck_id, front_content, back_content, content_type, tags,
+        source_question_id, sort_order, create_time, update_time, del_flag
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard
+        WHERE id = #{id} AND del_flag = 0
+    </select>
+
+    <select id="selectByDeckId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM flashcard
+        WHERE deck_id = #{deckId} AND del_flag = 0
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectIdsByDeckId" resultType="java.lang.Long">
+        SELECT id
+        FROM flashcard
+        WHERE deck_id = #{deckId} AND del_flag = 0
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flashcard (
+            deck_id, front_content, back_content, content_type, tags,
+            source_question_id, sort_order, create_time, update_time, del_flag
+        ) VALUES (
+            #{deckId}, #{frontContent}, #{backContent}, #{contentType}, #{tags},
+            #{sourceQuestionId}, #{sortOrder}, #{createTime}, #{updateTime}, #{delFlag}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO flashcard (
+            deck_id, front_content, back_content, content_type, tags,
+            source_question_id, sort_order, create_time, update_time, del_flag
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deckId}, #{item.frontContent}, #{item.backContent}, #{item.contentType}, #{item.tags},
+             #{item.sourceQuestionId}, #{item.sortOrder}, #{item.createTime}, #{item.updateTime}, #{item.delFlag})
+        </foreach>
+    </insert>
+
+    <update id="update">
+        UPDATE flashcard
+        SET front_content = #{frontContent},
+            back_content = #{backContent},
+            content_type = #{contentType},
+            tags = #{tags},
+            sort_order = #{sortOrder},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND del_flag = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE flashcard SET del_flag = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="deleteByDeckId">
+        UPDATE flashcard SET del_flag = 1, update_time = NOW() WHERE deck_id = #{deckId}
+    </update>
+
+    <select id="countByDeckId" resultType="int">
+        SELECT COUNT(*) FROM flashcard WHERE deck_id = #{deckId} AND del_flag = 0
+    </select>
+
+    <select id="countBySourceQuestionId" resultType="int">
+        SELECT COUNT(*) FROM flashcard
+        WHERE deck_id = #{deckId} AND source_question_id = #{sourceQuestionId} AND del_flag = 0
+    </select>
+
+</mapper>

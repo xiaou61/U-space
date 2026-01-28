@@ -4,9 +4,9 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.xiaou.common.core.domain.Result;
-import com.xiaou.common.enums.CozeWorkflowEnum;
-import com.xiaou.common.utils.CozeUtils;
+import com.xiaou.ai.dto.interview.AnswerEvaluationResult;
+import com.xiaou.ai.dto.interview.InterviewSummaryResult;
+import com.xiaou.ai.service.AiInterviewService;
 import com.xiaou.mockinterview.domain.MockInterviewQA;
 import com.xiaou.mockinterview.domain.MockInterviewSession;
 import com.xiaou.mockinterview.dto.AIEvaluationResult;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AIInterviewerServiceImpl implements AIInterviewerService {
 
-    private final CozeUtils cozeUtils;
+    private final AiInterviewService aiInterviewService;
 
     @Override
     public AIEvaluationResult evaluateAnswer(MockInterviewSession session, String question, String answer, int followUpCount) {
@@ -43,32 +43,53 @@ public class AIInterviewerServiceImpl implements AIInterviewerService {
         String styleName = style != null ? style.getName() : "标准型";
 
         try {
-            // 检查Coze客户端是否可用
-            if (cozeUtils.isClientAvailable()) {
-                // 传递具体字段，不传prompt
-                Map<String, Object> params = new HashMap<>();
-                params.put("direction", session.getDirection());
-                params.put("level", levelName);
-                params.put("style", styleName);
-                params.put("question", question);
-                params.put("answer", answer);
-                params.put("followUpCount", followUpCount);
+            // 调用AI服务
+            AnswerEvaluationResult aiResult = aiInterviewService.evaluateAnswer(
+                    session.getDirection(), levelName, styleName, question, answer, followUpCount);
 
-                Result<String> result = cozeUtils.runWorkflow(CozeWorkflowEnum.MOCK_INTERVIEW_EVALUATE.getWorkflowId(), params);
-
-                if (result.isSuccess() && StrUtil.isNotBlank(result.getData())) {
-                    return parseEvaluationResult(result.getData(), style);
-                }
+            // 如果是降级结果，使用本地评估（保留业务特有的风格调整逻辑）
+            if (aiResult.isFallback()) {
+                log.warn("AI服务返回降级结果，使用本地评估");
+                return generateLocalEvaluation(answer, style, followUpCount);
             }
 
-            // 如果AI服务不可用，使用简单的本地评估
-            log.warn("AI服务不可用，使用本地评估");
-            return generateLocalEvaluation(answer, style, followUpCount);
+            // 转换AI结果为业务DTO
+            return convertToAIEvaluationResult(aiResult, style);
 
         } catch (Exception e) {
             log.error("AI评价失败，使用本地评估", e);
             return generateLocalEvaluation(answer, style, followUpCount);
         }
+    }
+
+    /**
+     * 将AI结果转换为业务DTO
+     */
+    private AIEvaluationResult convertToAIEvaluationResult(AnswerEvaluationResult aiResult, InterviewStyleEnum style) {
+        AIEvaluationResult result = new AIEvaluationResult();
+        
+        // 根据风格调整分数
+        int score = aiResult.getScore() != null ? aiResult.getScore() : 5;
+        if (style != null) {
+            score = Math.max(0, Math.min(10, score + style.getScoreAdjustment()));
+        }
+        result.setScore(score);
+        
+        // 转换反馈
+        if (aiResult.getFeedback() != null) {
+            AIEvaluationResult.Feedback feedback = new AIEvaluationResult.Feedback();
+            feedback.setStrengths(aiResult.getFeedback().getStrengths());
+            feedback.setImprovements(aiResult.getFeedback().getImprovements());
+            result.setFeedback(feedback);
+        } else {
+            result.setFeedback(createDefaultFeedback(score));
+        }
+        
+        result.setNextAction(aiResult.getNextAction());
+        result.setFollowUpQuestion(aiResult.getFollowUpQuestion());
+        result.setReferencePoints(aiResult.getReferencePoints());
+        
+        return result;
     }
 
     @Override
@@ -86,34 +107,27 @@ public class AIInterviewerServiceImpl implements AIInterviewerService {
 
         // 构建问答记录JSON
         String qaListJson = buildQAListJson(qaList);
+        int totalScore = session.getTotalScore() != null ? session.getTotalScore() : 0;
 
         try {
-            if (cozeUtils.isClientAvailable()) {
-                Map<String, Object> params = new HashMap<>();
-                params.put("direction", session.getDirection());
-                params.put("level", levelName);
-                params.put("questionCount", session.getQuestionCount());
-                params.put("answeredCount", answeredCount);
-                params.put("skippedCount", skippedCount);
-                params.put("totalScore", session.getTotalScore() != null ? session.getTotalScore() : 0);
-                params.put("qaList", qaListJson);
+            // 调用AI服务
+            InterviewSummaryResult aiResult = aiInterviewService.generateSummary(
+                    session.getDirection(), levelName, session.getQuestionCount(),
+                    answeredCount, skippedCount, totalScore, qaListJson);
 
-                Result<String> result = cozeUtils.runWorkflow(CozeWorkflowEnum.MOCK_INTERVIEW_SUMMARY.getWorkflowId(), params);
-
-                if (result.isSuccess() && StrUtil.isNotBlank(result.getData())) {
-                    // 检查是否为错误响应
-                    String data = result.getData();
-                    if (data.contains("ERROR") || data.contains("Workflow not found")) {
-                        log.warn("Coze工作流返回错误，使用本地生成: {}", data);
-                        return generateLocalSummaryResult(session);
-                    }
-                    return parseSummaryResult(data, session);
-                }
+            // 如果是降级结果，使用本地生成
+            if (aiResult.isFallback()) {
+                log.warn("AI服务返回降级结果，使用本地生成");
+                return generateLocalSummaryResult(session);
             }
 
-            // 本地生成总结
-            log.info("AI服务不可用，使用本地生成总结");
-            return generateLocalSummaryResult(session);
+            // 转换为业务结果
+            SummaryResult result = new SummaryResult();
+            result.setSummary(aiResult.getSummary());
+            result.setOverallLevel(aiResult.getOverallLevel());
+            result.setSuggestions(aiResult.getSuggestions() != null ? 
+                    aiResult.getSuggestions() : generateDefaultSuggestions(session));
+            return result;
 
         } catch (Exception e) {
             log.error("生成AI总结失败", e);
@@ -139,97 +153,6 @@ public class AIInterviewerServiceImpl implements AIInterviewerService {
                 })
                 .collect(Collectors.toList());
         return JSONUtil.toJsonStr(list);
-    }
-
-    /**
-     * 解析评价结果（支持Coze的output包装格式）
-     */
-    private AIEvaluationResult parseEvaluationResult(String aiResponse, InterviewStyleEnum style) {
-        try {
-            JSONObject json = JSONUtil.parseObj(aiResponse);
-
-            // Coze返回格式: {"output": "{...}"}，需要二次解析
-            if (json.containsKey("output")) {
-                String outputStr = json.getStr("output");
-                if (StrUtil.isNotBlank(outputStr)) {
-                    json = JSONUtil.parseObj(outputStr);
-                }
-            }
-
-            AIEvaluationResult result = new AIEvaluationResult();
-
-            // 解析评分，并根据风格调整
-            int score = json.getInt("score", 5);
-            if (style != null) {
-                score = Math.max(0, Math.min(10, score + style.getScoreAdjustment()));
-            }
-            result.setScore(score);
-
-            // 解析反馈
-            JSONObject feedbackJson = json.getJSONObject("feedback");
-            if (feedbackJson != null) {
-                AIEvaluationResult.Feedback feedback = new AIEvaluationResult.Feedback();
-                feedback.setStrengths(feedbackJson.getBeanList("strengths", String.class));
-                feedback.setImprovements(feedbackJson.getBeanList("improvements", String.class));
-                result.setFeedback(feedback);
-            } else {
-                result.setFeedback(createDefaultFeedback(score));
-            }
-
-            // 解析下一步动作
-            result.setNextAction(json.getStr("nextAction", "nextQuestion"));
-            result.setFollowUpQuestion(json.getStr("followUpQuestion"));
-            result.setReferencePoints(json.getBeanList("referencePoints", String.class));
-
-            return result;
-
-        } catch (Exception e) {
-            log.error("解析AI响应失败: {}", aiResponse, e);
-            return generateLocalEvaluation("", style, 0);
-        }
-    }
-
-    /**
-     * 解析总结结果
-     */
-    private SummaryResult parseSummaryResult(String aiResponse, MockInterviewSession session) {
-        try {
-            // 先检查是否为有效JSON
-            if (StrUtil.isBlank(aiResponse) || !aiResponse.trim().startsWith("{")) {
-                log.warn("AI响应不是有效JSON，使用本地生成: {}", aiResponse);
-                return generateLocalSummaryResult(session);
-            }
-            
-            JSONObject json = JSONUtil.parseObj(aiResponse);
-
-            // Coze返回格式: {"output": "{...}"}
-            if (json.containsKey("output")) {
-                String outputStr = json.getStr("output");
-                if (StrUtil.isNotBlank(outputStr) && outputStr.trim().startsWith("{")) {
-                    json = JSONUtil.parseObj(outputStr);
-                } else {
-                    log.warn("Coze output不是有效JSON，使用本地生成: {}", outputStr);
-                    return generateLocalSummaryResult(session);
-                }
-            }
-
-            SummaryResult result = new SummaryResult();
-            result.setSummary(json.getStr("summary", "面试已结束，感谢您的参与。"));
-            result.setOverallLevel(json.getStr("overallLevel", "良好"));
-
-            JSONArray suggestionsArr = json.getJSONArray("suggestions");
-            if (suggestionsArr != null) {
-                result.setSuggestions(suggestionsArr.toList(String.class));
-            } else {
-                result.setSuggestions(generateDefaultSuggestions(session));
-            }
-
-            return result;
-
-        } catch (Exception e) {
-            log.error("解析AI总结失败: {}", aiResponse, e);
-            return generateLocalSummaryResult(session);
-        }
     }
 
     private AIEvaluationResult generateLocalEvaluation(String answer, InterviewStyleEnum style, int followUpCount) {
@@ -292,38 +215,7 @@ public class AIInterviewerServiceImpl implements AIInterviewerService {
 
     @Override
     public String generateFollowUpQuestion(MockInterviewSession session, String question, String answer) {
-        try {
-            // 尝试使用AI生成追问
-            if (cozeUtils.isClientAvailable()) {
-                Map<String, Object> params = new HashMap<>();
-                params.put("direction", session.getDirection());
-                params.put("question", question);
-                params.put("answer", answer);
-                params.put("action", "generateFollowUp");
-
-                Result<String> result = cozeUtils.runWorkflow(
-                        CozeWorkflowEnum.MOCK_INTERVIEW_EVALUATE.getWorkflowId(), params);
-
-                if (result.isSuccess() && StrUtil.isNotBlank(result.getData())) {
-                    String data = result.getData();
-                    // 解析追问问题
-                    if (data.contains("followUpQuestion")) {
-                        JSONObject json = JSONUtil.parseObj(data);
-                        if (json.containsKey("output")) {
-                            json = JSONUtil.parseObj(json.getStr("output"));
-                        }
-                        String followUp = json.getStr("followUpQuestion");
-                        if (StrUtil.isNotBlank(followUp)) {
-                            return followUp;
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.warn("AI生成追问失败，使用本地生成", e);
-        }
-
-        // 本地生成追问问题
+        // 直接使用本地生成追问问题（追问逻辑已在评价阶段由AI处理）
         return generateLocalFollowUpQuestion(question, answer);
     }
 

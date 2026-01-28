@@ -110,6 +110,14 @@ public interface KnowledgeNodeMapper {
     int deleteByMapId(Long mapId);
     
     /**
+     * 根据多个图谱ID批量删除所有节点
+     * 
+     * @param mapIds 图谱ID列表
+     * @return 影响行数
+     */
+    int deleteByMapIds(@Param("mapIds") List<Long> mapIds);
+    
+    /**
      * 搜索节点
      * 
      * @param mapId 图谱ID

@@ -196,14 +196,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createPost(CommunityPostCreateRequest request) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 如果指定了分类ID，需要验证分类是否存在且启用
@@ -276,14 +274,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void likePost(Long id) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -333,11 +329,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unlikePost(Long id) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -365,14 +359,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void collectPost(Long id) {
         // 检查用户是否被封禁
         communityUserStatusService.checkUserBanStatus();
         
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -422,11 +414,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void uncollectPost(Long id) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 检查帖子是否存在
@@ -455,9 +445,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getUserCollections(CommunityPostQueryRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
@@ -481,9 +469,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     
     @Override
     public PageResult<CommunityPostResponse> getUserPosts(CommunityPostQueryRequest request) {
-        if (!StpUserUtil.isLogin()) {
-            throw new BusinessException("请先登录");
-        }
+        StpUserUtil.checkLogin();
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
         
         // 先获取分页的原始帖子数据
@@ -512,17 +498,11 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         CommunityPostResponse response = BeanUtil.copyProperties(post, CommunityPostResponse.class);
         response.setIsTop(post.getIsTop() != null && post.getIsTop() == 1);
         
-        // 查询帖子的标签列表
+        // 查询帖子的标签列表，使用批量查询避免N+1问题
         List<Long> tagIds = communityPostTagMapper.selectTagIdsByPostId(post.getId());
         if (tagIds != null && !tagIds.isEmpty()) {
-            List<CommunityTag> tags = new java.util.ArrayList<>();
-            for (Long tagId : tagIds) {
-                CommunityTag tag = communityTagMapper.selectById(tagId);
-                if (tag != null) {
-                    tags.add(tag);
-                }
-            }
-            response.setTags(tags);
+            List<CommunityTag> tags = communityTagMapper.selectBatchIds(tagIds);
+            response.setTags(tags != null ? tags : new java.util.ArrayList<>());
         }
         
         // 设置AI摘要

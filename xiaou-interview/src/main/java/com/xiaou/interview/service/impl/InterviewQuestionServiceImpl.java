@@ -173,16 +173,15 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
             return;
         }
 
-        // 先获取要删除的题目信息，用于后续更新题单数量
-        List<InterviewQuestion> questions = ids.stream()
-                .map(questionMapper::selectById)
-                .filter(q -> q != null)
-                .toList();
+        // 批量查询要删除的题目信息，用于后续更新题单数量
+        List<InterviewQuestion> questions = questionMapper.selectBatchIds(ids);
+
+        if (questions.isEmpty()) {
+            return;
+        }
 
         // 批量删除题目
-        for (Long id : ids) {
-            questionMapper.deleteById(id);
-        }
+        questionMapper.deleteBatchIds(ids);
 
         // 更新相关题单的题目数量
         questions.stream()
@@ -190,7 +189,7 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
                 .distinct()
                 .forEach(this::updateQuestionSetCount);
 
-        log.info("批量删除题目成功: count={}", ids.size());
+        log.info("批量删除题目成功: count={}", questions.size());
     }
 
     @Override

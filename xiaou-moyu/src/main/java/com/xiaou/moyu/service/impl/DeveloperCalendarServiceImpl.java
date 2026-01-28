@@ -79,7 +79,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean saveOrUpdateUserPreference(Long userId, UserCalendarPreference preference) {
         try {
             preference.setUserId(userId);
@@ -103,7 +103,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggleEventCollection(Long userId, Long eventId) {
         try {
             UserCalendarCollection existing = userCalendarCollectionMapper.selectByUserIdAndTarget(userId, 1, eventId);
@@ -137,15 +137,17 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
             return new ArrayList<>();
         }
 
-        List<DeveloperCalendarEvent> events = new ArrayList<>();
-        for (UserCalendarCollection collection : collections) {
-            DeveloperCalendarEvent event = developerCalendarEventMapper.selectById(collection.getTargetId());
-            if (event != null && event.getStatus() == 1) {
-                events.add(event);
-            }
-        }
+        // 批量查询所有收藏的事件，避免N+1问题
+        List<Long> eventIds = collections.stream()
+                .map(UserCalendarCollection::getTargetId)
+                .collect(java.util.stream.Collectors.toList());
         
-        return events;
+        List<DeveloperCalendarEvent> allEvents = developerCalendarEventMapper.selectBatchIds(eventIds);
+        
+        // 过滤出状态为启用的事件
+        return allEvents.stream()
+                .filter(event -> event != null && event.getStatus() == 1)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -181,7 +183,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean createEvent(DeveloperCalendarEvent event) {
         try {
             event.setStatus(1); // 默认启用
@@ -195,7 +197,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateEvent(DeveloperCalendarEvent event) {
         try {
             event.setUpdateTime(LocalDateTime.now());
@@ -207,7 +209,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteEvent(Long id) {
         try {
             return developerCalendarEventMapper.deleteById(id) > 0;
@@ -218,12 +220,14 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean batchDeleteEvents(List<Long> ids) {
         try {
-            for (Long id : ids) {
-                developerCalendarEventMapper.deleteById(id);
+            if (CollectionUtils.isEmpty(ids)) {
+                return true;
             }
+            // 使用批量删除，避免N+1问题
+            developerCalendarEventMapper.deleteBatchIds(ids);
             return true;
         } catch (Exception e) {
             log.error("批量删除事件失败", e);
@@ -232,7 +236,7 @@ public class DeveloperCalendarServiceImpl implements DeveloperCalendarService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateEventStatus(Long id, Integer status) {
         try {
             DeveloperCalendarEvent event = new DeveloperCalendarEvent();

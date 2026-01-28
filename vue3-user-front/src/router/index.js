@@ -613,6 +613,87 @@ const routes = [
       keepAlive: false
     }
   },
+  // ============ 闪卡记忆系统 ============
+  {
+    path: '/flashcard',
+    name: 'Flashcard',
+    component: () => import('@/views/flashcard/Index.vue'),
+    meta: {
+      title: '闪卡记忆',
+      requiresAuth: false,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/flashcard/deck/:id',
+    name: 'FlashcardDeckDetail',
+    component: () => import('@/views/flashcard/DeckDetail.vue'),
+    meta: {
+      title: '卡组详情',
+      requiresAuth: false,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/study',
+    name: 'FlashcardStudy',
+    component: () => import('@/views/flashcard/Study.vue'),
+    meta: {
+      title: '闪卡学习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/study/:deckId',
+    name: 'FlashcardDeckStudy',
+    component: () => import('@/views/flashcard/Study.vue'),
+    meta: {
+      title: '卡组学习',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/my',
+    name: 'MyFlashcardDecks',
+    component: () => import('@/views/flashcard/MyDecks.vue'),
+    meta: {
+      title: '我的卡组',
+      requiresAuth: true,
+      keepAlive: true
+    }
+  },
+  {
+    path: '/flashcard/deck/create',
+    name: 'CreateFlashcardDeck',
+    component: () => import('@/views/flashcard/DeckEditor.vue'),
+    meta: {
+      title: '创建卡组',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/deck/:id/edit',
+    name: 'EditFlashcardDeck',
+    component: () => import('@/views/flashcard/DeckEditor.vue'),
+    meta: {
+      title: '编辑卡组',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
+  {
+    path: '/flashcard/deck/:deckId/cards',
+    name: 'FlashcardCards',
+    component: () => import('@/views/flashcard/CardEditor.vue'),
+    meta: {
+      title: '管理闪卡',
+      requiresAuth: true,
+      keepAlive: false
+    }
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',

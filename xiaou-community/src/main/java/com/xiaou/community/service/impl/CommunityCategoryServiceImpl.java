@@ -54,7 +54,7 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createCategory(CommunityCategoryCreateRequest request) {
         // 检查分类名称是否已存在
         CommunityCategory existingCategory = communityCategoryMapper.selectByName(request.getName());
@@ -81,7 +81,7 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateCategory(CommunityCategoryUpdateRequest request) {
         // 检查分类是否存在
         CommunityCategory existingCategory = getById(request.getId());
@@ -108,7 +108,7 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteCategory(Long id) {
         CommunityCategory category = getById(id);
         
@@ -126,7 +126,7 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void toggleCategoryStatus(Long id) {
         CommunityCategory category = getById(id);
         
@@ -170,7 +170,7 @@ public class CommunityCategoryServiceImpl implements CommunityCategoryService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updatePostCount(Long categoryId, Integer count) {
         if (categoryId == null) {
             return;

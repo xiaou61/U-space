@@ -181,4 +181,23 @@
         SELECT COUNT(*) FROM daily_content WHERE status = #{status}
     </select>
 
+    <!-- 批量查询内容 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM daily_content
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 批量删除内容 -->
+    <delete id="deleteBatchIds">
+        DELETE FROM daily_content WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper>

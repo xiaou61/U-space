@@ -247,5 +247,16 @@
             AND id != #{excludeId}
         </if>
     </select>
+    
+    <!-- 批量查询用户 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_info
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        AND status != 2
+    </select>
 
-</mapper> 
+</mapper>

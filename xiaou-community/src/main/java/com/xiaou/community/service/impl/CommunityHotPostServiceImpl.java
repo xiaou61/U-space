@@ -52,11 +52,19 @@ public class CommunityHotPostServiceImpl implements CommunityHotPostService {
                 return new ArrayList<>();
             }
             
-            // 根据ID列表查询帖子详情
+            // 批量查询帖子详情，避免N+1问题
+            List<Long> postIds = hotPostMap.keySet().stream()
+                    .map(key -> Long.valueOf(key.toString()))
+                    .collect(Collectors.toList());
+            
+            List<CommunityPost> posts = communityPostMapper.selectBatchIds(postIds);
+            Map<Long, CommunityPost> postMap = posts.stream()
+                    .collect(Collectors.toMap(CommunityPost::getId, p -> p));
+            
             List<CommunityPostResponse> hotPosts = new ArrayList<>();
             for (Map.Entry<Object, Double> entry : hotPostMap.entrySet()) {
                 Long postId = Long.valueOf(entry.getKey().toString());
-                CommunityPost post = communityPostMapper.selectById(postId);
+                CommunityPost post = postMap.get(postId);
                 if (post != null && post.getStatus() == 1) {
                     CommunityPostResponse response = convertToResponse(post);
                     response.setHotScore(entry.getValue());

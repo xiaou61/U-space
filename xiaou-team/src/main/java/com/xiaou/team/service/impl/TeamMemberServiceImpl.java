@@ -45,7 +45,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private static final int MAX_JOIN_TEAMS = 10;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean applyJoin(Long userId, JoinRequest request) {
         Long teamId = request.getTeamId();
         
@@ -103,7 +103,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean directJoin(Long userId, JoinRequest request) {
         Long teamId = request.getTeamId();
         
@@ -120,7 +120,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean joinByInviteCode(Long userId, String inviteCode) {
         if (StrUtil.isBlank(inviteCode)) {
             throw new BusinessException("邀请码不能为空");
@@ -135,7 +135,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean quitTeam(Long userId, Long teamId) {
         StudyTeamMember member = memberMapper.selectByTeamIdAndUserId(teamId, userId);
         if (member == null || !member.getStatus().equals(MemberStatus.NORMAL.getCode())) {
@@ -163,7 +163,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean approveApplication(Long reviewerId, Long applicationId) {
         StudyTeamApplication application = applicationMapper.selectById(applicationId);
         if (application == null) {
@@ -187,7 +187,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean rejectApplication(Long reviewerId, Long applicationId, String rejectReason) {
         StudyTeamApplication application = applicationMapper.selectById(applicationId);
         if (application == null) {
@@ -231,7 +231,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean cancelApplication(Long userId, Long applicationId) {
         int result = applicationMapper.cancel(applicationId, userId);
         if (result > 0) {
@@ -242,7 +242,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean removeMember(Long operatorId, Long teamId, Long targetUserId) {
         // 检查操作者权限
         Integer operatorRole = memberMapper.selectRole(teamId, operatorId);
@@ -274,7 +274,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean setMemberRole(Long operatorId, Long teamId, Long targetUserId, Integer role) {
         // 只有组长可以设置角色
         Integer operatorRole = memberMapper.selectRole(teamId, operatorId);
@@ -305,7 +305,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean transferLeader(Long currentLeaderId, Long teamId, Long newLeaderId) {
         // 检查当前用户是否是组长
         Integer currentRole = memberMapper.selectRole(teamId, currentLeaderId);
@@ -328,7 +328,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean muteMember(Long operatorId, Long teamId, Long targetUserId, Integer minutes) {
         // 检查权限
         Integer operatorRole = memberMapper.selectRole(teamId, operatorId);
@@ -362,7 +362,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean unmuteMember(Long operatorId, Long teamId, Long targetUserId) {
         // 检查权限
         Integer operatorRole = memberMapper.selectRole(teamId, operatorId);

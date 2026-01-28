@@ -139,4 +139,11 @@ public interface CommunityPostMapper {
     int updateAiSummary(@Param("postId") Long postId, 
                        @Param("aiSummary") String aiSummary, 
                        @Param("aiKeywords") String aiKeywords);
-} 
+    
+    /**
+     * 批量查询帖子
+     * @param ids 帖子ID列表
+     * @return 帖子列表
+     */
+    List<CommunityPost> selectBatchIds(@Param("ids") List<Long> ids);
+}

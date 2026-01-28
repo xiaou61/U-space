@@ -34,7 +34,7 @@ public class CommunityTagServiceImpl implements CommunityTagService {
     private final CommunityCacheService communityCacheService;
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createTag(CommunityTagCreateRequest request) {
         // 检查标签名称是否已存在
         CommunityTag existingTag = communityTagMapper.selectByName(request.getName());
@@ -70,7 +70,7 @@ public class CommunityTagServiceImpl implements CommunityTagService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateTag(CommunityTagUpdateRequest request) {
         // 检查标签是否存在
         CommunityTag existingTag = getById(request.getId());
@@ -98,7 +98,7 @@ public class CommunityTagServiceImpl implements CommunityTagService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteTag(Long id) {
         // 检查标签是否存在
         getById(id);
@@ -162,13 +162,13 @@ public class CommunityTagServiceImpl implements CommunityTagService {
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updatePostCount(Long tagId, Integer increment) {
         communityTagMapper.updatePostCount(tagId, increment);
     }
     
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void batchUpdatePostCount(List<Long> tagIds, Integer increment) {
         if (tagIds == null || tagIds.isEmpty()) {
             return;

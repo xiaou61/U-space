@@ -32,25 +32,13 @@ public class UserLotteryController {
     @PostMapping("/draw")
     public Result<LotteryDrawResponse> draw(@RequestBody LotteryDrawRequest request, 
                                               HttpServletRequest httpRequest) {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            String ip = IPUtil.getIpAddress(httpRequest);
-            String device = httpRequest.getHeader("User-Agent");
-            
-            LotteryDrawResponse response = lotteryService.draw(request, userId, ip, device);
-            
-            log.info("用户{}抽奖成功，获得：{}", userId, response.getPrizeName());
-            
-            return Result.success("抽奖成功", response);
-            
-        } catch (Exception e) {
-            log.error("用户抽奖失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        String ip = IPUtil.getIpAddress(httpRequest);
+        String device = httpRequest.getHeader("User-Agent");
+        LotteryDrawResponse response = lotteryService.draw(request, userId, ip, device);
+        log.info("用户{}抽奖成功，获得：{}", userId, response.getPrizeName());
+        return Result.success("抽奖成功", response);
     }
     
     /**
@@ -58,18 +46,9 @@ public class UserLotteryController {
      */
     @GetMapping("/prizes")
     public Result<List<LotteryPrizeResponse>> getPrizeList() {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            List<LotteryPrizeResponse> prizes = lotteryService.getPrizeList();
-            return Result.success("获取成功", prizes);
-            
-        } catch (Exception e) {
-            log.error("获取奖品列表失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        List<LotteryPrizeResponse> prizes = lotteryService.getPrizeList();
+        return Result.success("获取成功", prizes);
     }
     
     /**
@@ -77,19 +56,10 @@ public class UserLotteryController {
      */
     @PostMapping("/records")
     public Result<PageResult<LotteryDrawResponse>> getDrawRecords(@RequestBody LotteryRecordQueryRequest request) {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            PageResult<LotteryDrawResponse> response = lotteryService.getUserDrawRecords(request, userId);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取抽奖记录失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        PageResult<LotteryDrawResponse> response = lotteryService.getUserDrawRecords(request, userId);
+        return Result.success("获取成功", response);
     }
     
     /**
@@ -97,19 +67,10 @@ public class UserLotteryController {
      */
     @GetMapping("/statistics")
     public Result<LotteryStatisticsResponse> getStatistics() {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            LotteryStatisticsResponse response = lotteryService.getUserStatistics(userId);
-            return Result.success("获取成功", response);
-            
-        } catch (Exception e) {
-            log.error("获取抽奖统计失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        LotteryStatisticsResponse response = lotteryService.getUserStatistics(userId);
+        return Result.success("获取成功", response);
     }
     
     /**
@@ -117,13 +78,8 @@ public class UserLotteryController {
      */
     @GetMapping("/rules")
     public Result<String> getLotteryRules() {
-        try {
-            String rules = lotteryService.getLotteryRules();
-            return Result.success("获取成功", rules);
-        } catch (Exception e) {
-            log.error("获取抽奖规则失败", e);
-            return Result.error(e.getMessage());
-        }
+        String rules = lotteryService.getLotteryRules();
+        return Result.success("获取成功", rules);
     }
     
     /**
@@ -131,19 +87,10 @@ public class UserLotteryController {
      */
     @GetMapping("/remaining-count")
     public Result<Integer> getRemainingCount() {
-        try {
-            if (!StpUserUtil.isLogin()) {
-                return Result.error("Token无效或已过期");
-            }
-            
-            Long userId = StpUserUtil.getLoginIdAsLong();
-            Integer count = lotteryService.getTodayRemainingCount(userId);
-            return Result.success("获取成功", count);
-            
-        } catch (Exception e) {
-            log.error("获取剩余抽奖次数失败", e);
-            return Result.error(e.getMessage());
-        }
+        StpUserUtil.checkLogin();
+        Long userId = StpUserUtil.getLoginIdAsLong();
+        Integer count = lotteryService.getTodayRemainingCount(userId);
+        return Result.success("获取成功", count);
     }
 }
 

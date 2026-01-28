@@ -3,6 +3,8 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-ai/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-ai/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-application/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-application/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-blog/src/main/java" charset="UTF-8" />
@@ -17,6 +19,8 @@
     <file url="file://$PROJECT_DIR$/xiaou-community/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-filestorage/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-filestorage/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-flashcard/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-flashcard/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-interview/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-interview/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-knowledge/src/main/java" charset="UTF-8" />
@@ -47,6 +51,8 @@
     <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-api/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-biz/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-sensitive/xiaou-sensitive-biz/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sql-optimizer/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xiaou-sql-optimizer/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-system/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-system/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/xiaou-team/src/main/java" charset="UTF-8" />

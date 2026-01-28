@@ -54,6 +54,8 @@ export function createWindow(): BrowserWindow {
   // 开发环境加载 dev server，生产环境加载打包文件
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    // 开发环境下打开 DevTools
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }

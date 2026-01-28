@@ -4,6 +4,9 @@ import com.xiaou.codepen.domain.CodePenLike;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 作品点赞Mapper
  * 
@@ -31,5 +34,10 @@ public interface CodePenLikeMapper {
      * 查询作品的点赞数
      */
     Long selectCountByPenId(Long penId);
+    
+    /**
+     * 批量查询用户已点赞的作品ID列表
+     */
+    Set<Long> selectLikedPenIdsByUserId(@Param("userId") Long userId, @Param("penIds") List<Long> penIds);
 }
 
