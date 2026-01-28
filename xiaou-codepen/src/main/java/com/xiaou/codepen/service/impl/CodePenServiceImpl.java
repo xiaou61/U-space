@@ -24,11 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.xiaou.codepen.constant.CodePenConstants.CREATE_REWARD_POINTS;
@@ -300,10 +296,18 @@ public class CodePenServiceImpl implements CodePenService {
     @Override
     public List<CodePenDetailResponse> getMyList(Long userId, Integer status) {
         List<CodePen> list = codePenMapper.selectByUserId(userId, status);
-        List<CodePenDetailResponse> responses = new ArrayList<>();
         
+        // 批量查询用户信息，避免N+1问题
+        List<Long> userIds = list.stream()
+                .map(CodePen::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
+        List<CodePenDetailResponse> responses = new ArrayList<>();
         for (CodePen codePen : list) {
-            CodePenDetailResponse response = convertToDetailResponse(codePen);
+            CodePenDetailResponse response = convertToDetailResponseWithUserInfo(codePen, userInfoMap);
             response.setCanEdit(true);
             response.setCanDelete(true);
             responses.add(response);
@@ -665,11 +669,55 @@ public class CodePenServiceImpl implements CodePenService {
     }
     
     private List<CodePenDetailResponse> convertToDetailResponseList(List<CodePen> list) {
+        if (list == null || list.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 批量查询用户信息，避免N+1问题
+        List<Long> userIds = list.stream()
+                .map(CodePen::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
         List<CodePenDetailResponse> responses = new ArrayList<>();
         for (CodePen codePen : list) {
-            responses.add(convertToDetailResponse(codePen));
+            responses.add(convertToDetailResponseWithUserInfo(codePen, userInfoMap));
         }
         return responses;
+    }
+    
+    /**
+     * 转换为详情响应（使用已查询的用户信息Map）
+     */
+    private CodePenDetailResponse convertToDetailResponseWithUserInfo(CodePen codePen, Map<Long, SimpleUserInfo> userInfoMap) {
+        CodePenDetailResponse response = new CodePenDetailResponse();
+        BeanUtil.copyProperties(codePen, response);
+        
+        // 获取用户信息
+        if (codePen.getUserId() != null) {
+            SimpleUserInfo userInfo = userInfoMap.get(codePen.getUserId());
+            if (userInfo != null) {
+                response.setUserNickname(userInfo.getDisplayName());
+                response.setUserAvatar(userInfo.getAvatar());
+            }
+        }
+        
+        // 转换JSON字段
+        if (codePen.getExternalCss() != null) {
+            response.setExternalCss(JSONUtil.toList(codePen.getExternalCss(), String.class));
+        }
+        if (codePen.getExternalJs() != null) {
+            response.setExternalJs(JSONUtil.toList(codePen.getExternalJs(), String.class));
+        }
+        if (codePen.getTags() != null) {
+            response.setTags(JSONUtil.toList(codePen.getTags(), String.class));
+        }
+        
+        response.setIsFree(codePen.getIsFree() == 1);
+        
+        return response;
     }
 }
 

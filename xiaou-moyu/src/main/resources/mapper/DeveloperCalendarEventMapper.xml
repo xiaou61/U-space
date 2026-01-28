@@ -122,4 +122,23 @@
         SELECT COUNT(*) FROM developer_calendar_event WHERE status = #{status}
     </select>
 
+    <!-- 批量查询事件 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM developer_calendar_event
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 批量删除事件 -->
+    <delete id="deleteBatchIds">
+        DELETE FROM developer_calendar_event WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper>

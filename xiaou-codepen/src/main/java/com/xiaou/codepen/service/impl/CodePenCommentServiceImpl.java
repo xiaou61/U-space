@@ -79,10 +79,22 @@ public class CodePenCommentServiceImpl implements CodePenCommentService {
     public List<CodePenComment> getCommentList(Long penId) {
         List<CodePenComment> comments = commentMapper.selectByPenId(penId, 1);
         
+        if (comments.isEmpty()) {
+            return comments;
+        }
+        
+        // 批量查询用户信息，避免N+1问题
+        java.util.List<Long> userIds = comments.stream()
+                .map(CodePenComment::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+        java.util.Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
         // 填充用户信息
         for (CodePenComment comment : comments) {
             if (comment.getUserId() != null) {
-                SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(comment.getUserId());
+                SimpleUserInfo userInfo = userInfoMap.get(comment.getUserId());
                 if (userInfo != null) {
                     comment.setUserNickname(userInfo.getDisplayName());
                     comment.setUserAvatar(userInfo.getAvatar());

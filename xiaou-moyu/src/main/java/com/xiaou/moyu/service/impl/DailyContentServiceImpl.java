@@ -193,15 +193,17 @@ public class DailyContentServiceImpl implements DailyContentService {
             return new ArrayList<>();
         }
 
-        List<DailyContent> contents = new ArrayList<>();
-        for (UserCalendarCollection collection : collections) {
-            DailyContent content = dailyContentMapper.selectById(collection.getTargetId());
-            if (content != null && content.getStatus() == 1) {
-                contents.add(content);
-            }
-        }
+        // 批量查询所有收藏的内容，避免N+1问题
+        List<Long> contentIds = collections.stream()
+                .map(UserCalendarCollection::getTargetId)
+                .collect(java.util.stream.Collectors.toList());
         
-        return contents;
+        List<DailyContent> allContents = dailyContentMapper.selectBatchIds(contentIds);
+        
+        // 过滤出状态为启用的内容
+        return allContents.stream()
+                .filter(content -> content != null && content.getStatus() == 1)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -284,9 +286,11 @@ public class DailyContentServiceImpl implements DailyContentService {
     @Transactional(rollbackFor = Exception.class)
     public boolean batchDeleteContent(List<Long> ids) {
         try {
-            for (Long id : ids) {
-                dailyContentMapper.deleteById(id);
+            if (CollectionUtils.isEmpty(ids)) {
+                return true;
             }
+            // 使用批量删除，避免N+1问题
+            dailyContentMapper.deleteBatchIds(ids);
             return true;
         } catch (Exception e) {
             log.error("批量删除内容失败", e);

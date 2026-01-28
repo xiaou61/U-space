@@ -93,4 +93,20 @@ public interface DeveloperCalendarEventMapper {
      * @return 事件总数
      */
     Long countByStatus(@Param("status") Integer status);
+
+    /**
+     * 批量查询事件
+     *
+     * @param ids 事件ID列表
+     * @return 事件列表
+     */
+    List<DeveloperCalendarEvent> selectBatchIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 批量删除事件
+     *
+     * @param ids 事件ID列表
+     * @return 影响行数
+     */
+    int deleteBatchIds(@Param("ids") List<Long> ids);
 }

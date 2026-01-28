@@ -301,10 +301,9 @@ public class MomentServiceImpl implements MomentService {
             return;
         }
         
-        for (Long momentId : momentIds) {
-            momentMapper.deleteById(momentId);
-            momentCommentMapper.deleteByMomentId(momentId);
-        }
+        // 使用批量删除，避免N+1问题
+        momentMapper.deleteBatchIds(momentIds);
+        momentCommentMapper.deleteByMomentIds(momentIds);
     }
     
     /**
@@ -493,8 +492,16 @@ public class MomentServiceImpl implements MomentService {
         return PageHelper.doPage(request.getPageNum(), request.getPageSize(), () -> {
             List<MomentComment> comments = momentCommentMapper.selectByMomentId(request.getMomentId(), null);
             
+            // 批量查询用户信息，避免N+1问题
+            List<Long> userIds = comments.stream()
+                    .map(MomentComment::getUserId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+            Long currentUserId = StpUserUtil.getLoginIdAsLong();
+            
             return comments.stream()
-                    .map(this::convertToCommentResponse)
+                    .map(comment -> convertToCommentResponseWithUserInfo(comment, userInfoMap, currentUserId))
                     .collect(Collectors.toList());
         });
     }
@@ -780,14 +787,9 @@ public class MomentServiceImpl implements MomentService {
                 .map(Moment::getUserId)
                 .collect(Collectors.toSet());
         
-        // 2. 批量查询用户信息（这里假设UserInfoApiService暂不支持批量查询，实际可扩展）
-        Map<Long, SimpleUserInfo> userInfoMap = new HashMap<>();
-        for (Long userId : userIds) {
-            SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(userId);
-            if (userInfo != null) {
-                userInfoMap.put(userId, userInfo);
-            }
-        }
+        // 2. 批量查询用户信息，避免N+1问题
+        Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(
+                new ArrayList<>(userIds));
         
         // 3. 获取当前用户ID
         Long currentUserId = StpUserUtil.getLoginIdAsLong();
@@ -812,7 +814,25 @@ public class MomentServiceImpl implements MomentService {
             }
         }
         
-        // 6. 批量转换
+        // 6. 批量获取所有动态的评论，并收集评论用户ID
+        List<Long> momentIds = moments.stream().map(Moment::getId).collect(Collectors.toList());
+        Map<Long, List<MomentComment>> momentCommentsMap = new HashMap<>();
+        Set<Long> commentUserIds = new HashSet<>();
+        
+        for (Long momentId : momentIds) {
+            List<MomentComment> comments = momentCommentMapper.selectByMomentId(momentId, 3);
+            momentCommentsMap.put(momentId, comments);
+            comments.forEach(c -> commentUserIds.add(c.getUserId()));
+        }
+        
+        // 7. 批量查询评论用户信息
+        Map<Long, SimpleUserInfo> commentUserInfoMap = new HashMap<>();
+        if (!commentUserIds.isEmpty()) {
+            commentUserInfoMap = userInfoApiService.getSimpleUserInfoBatch(new ArrayList<>(commentUserIds));
+        }
+        final Map<Long, SimpleUserInfo> finalCommentUserInfoMap = commentUserInfoMap;
+        
+        // 8. 批量转换
         return moments.stream().map(moment -> {
             MomentListResponse response = BeanUtil.copyProperties(moment, MomentListResponse.class);
             
@@ -838,19 +858,43 @@ public class MomentServiceImpl implements MomentService {
             response.setViewCount(moment.getViewCount() != null ? moment.getViewCount() : 0);
             response.setFavoriteCount(moment.getFavoriteCount() != null ? moment.getFavoriteCount() : 0);
             
-            // 设置是否已点赞和是否已收藏（未登录时，Set为空，contains自然返回false）
+            // 设置是否已点赞和是否已收藏
             response.setIsLiked(likedMomentIds.contains(moment.getId()));
             response.setIsFavorited(favoritedMomentIds.contains(moment.getId()));
             response.setCanDelete(currentUserId != null && moment.getUserId().equals(currentUserId));
             
-            // 获取最新3条评论
-            List<MomentComment> comments = momentCommentMapper.selectByMomentId(moment.getId(), 3);
+            // 转换评论（使用已批量查询的用户信息）
+            List<MomentComment> comments = momentCommentsMap.getOrDefault(moment.getId(), Collections.emptyList());
             List<CommentResponse> commentResponses = comments.stream()
-                    .map(this::convertToCommentResponse)
+                    .map(comment -> convertToCommentResponseWithUserInfo(comment, finalCommentUserInfoMap, currentUserId))
                     .collect(Collectors.toList());
             response.setRecentComments(commentResponses);
             
             return response;
         }).collect(Collectors.toList());
+    }
+    
+    /**
+     * 转换评论响应（使用已查询的用户信息Map）
+     */
+    private CommentResponse convertToCommentResponseWithUserInfo(MomentComment comment, 
+                                                                  Map<Long, SimpleUserInfo> userInfoMap,
+                                                                  Long currentUserId) {
+        CommentResponse response = BeanUtil.copyProperties(comment, CommentResponse.class);
+        
+        // 设置用户信息
+        SimpleUserInfo userInfo = userInfoMap.get(comment.getUserId());
+        if (userInfo != null) {
+            response.setUserNickname(userInfo.getDisplayName());
+            response.setUserAvatar(userInfo.getAvatar());
+        } else {
+            response.setUserNickname("用户" + comment.getUserId());
+            response.setUserAvatar("");
+        }
+        
+        // 设置是否可删除（简化处理，仅评论者本人可删除）
+        response.setCanDelete(currentUserId != null && comment.getUserId().equals(currentUserId));
+        
+        return response;
     }
 } 

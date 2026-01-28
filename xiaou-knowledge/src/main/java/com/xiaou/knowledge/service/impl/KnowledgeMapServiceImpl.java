@@ -175,10 +175,8 @@ public class KnowledgeMapServiceImpl implements KnowledgeMapService {
             throw new BusinessException("删除的图谱ID列表不能为空");
         }
         
-        // 先删除相关节点
-        for (Long id : ids) {
-            knowledgeNodeMapper.deleteByMapId(id);
-        }
+        // 使用批量删除相关节点，避免N+1问题
+        knowledgeNodeMapper.deleteByMapIds(ids);
         
         // 再批量删除图谱
         int result = knowledgeMapMapper.deleteBatchIds(ids);

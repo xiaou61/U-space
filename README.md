@@ -468,7 +468,7 @@ server {
 
 本项目采用 [MIT License](LICENSE)。欢迎 Star / Fork，一起共建生态。
 
-## 🖼️ 功能截图
+## 🖼️ 功能截图(bu'fen)
 
 ### 管理员端
 
@@ -480,11 +480,32 @@ server {
 
 ### 用户端
 
-![image-20251001192200120](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922393.png)
-![image-20251001192206833](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922904.png)
-![image-20251001192254045](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011922111.png)
-![image-20251001192300510](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923575.png)
-![image-20251001192306591](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923659.png)
-![image-20251001192312505](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923749.png)
-![image-20251001192320125](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923340.png)
-![image-20251001192329371](https://11-1305448902.cos.ap-chengdu.myqcloud.com/imgs/202510011923495.png)
+
+
+![image-20260128111943563](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281119341.png)
+
+
+
+![image-20260128111953084](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281119446.png)
+
+![image-20260128112011807](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281120161.png)
+
+![image-20260128112030776](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281120041.png)
+
+![image-20260128112045443](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281120004.png)
+
+![image-20260128112055648](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281120061.png)
+
+![image-20260128112110606](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281121938.png)
+
+![image-20260128112120106](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281121448.png)
+
+![image-20260128112137308](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281121696.png)
+
+![image-20260128112149380](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281121774.png)
+
+![image-20260128112200018](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281122224.png)
+
+![image-20260128112235813](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281122565.png)
+
+![image-20260128112246514](https://eduplan-1305448902.cos.ap-guangzhou.myqcloud.com/imgs/202601281122911.png)

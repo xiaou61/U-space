@@ -303,5 +303,16 @@
             ai_generate_time = NOW()
         WHERE id = #{postId}
     </update>
+    
+    <!-- 批量查询帖子 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM community_post p
+        LEFT JOIN community_category cc ON p.category_id = cc.id
+        WHERE p.id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
 
-</mapper> 
+</mapper>

@@ -101,4 +101,11 @@ public interface UserInfoMapper {
      * 检查手机号是否存在
      */
     int checkPhoneExists(@Param("phone") String phone, @Param("excludeId") Long excludeId);
-} 
+    
+    /**
+     * 批量查询用户
+     * @param ids 用户ID列表
+     * @return 用户列表
+     */
+    List<UserInfo> selectBatchIds(@Param("ids") List<Long> ids);
+}

@@ -119,5 +119,13 @@
             </if>
         </where>
     </select>
+    
+    <!-- 根据多个动态ID批量删除评论 -->
+    <update id="deleteByMomentIds">
+        UPDATE moment_comments SET status = 0 WHERE moment_id IN
+        <foreach collection="momentIds" item="momentId" open="(" separator="," close=")">
+            #{momentId}
+        </foreach>
+    </update>
 
-</mapper> 
+</mapper>

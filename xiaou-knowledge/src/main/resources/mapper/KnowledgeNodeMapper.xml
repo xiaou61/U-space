@@ -143,6 +143,14 @@
         DELETE FROM knowledge_node WHERE map_id = #{mapId}
     </delete>
 
+    <!-- 根据多个图谱ID批量删除所有节点 -->
+    <delete id="deleteByMapIds">
+        DELETE FROM knowledge_node WHERE map_id IN
+        <foreach collection="mapIds" item="mapId" open="(" close=")" separator=",">
+            #{mapId}
+        </foreach>
+    </delete>
+
     <!-- 搜索节点 -->
     <select id="searchNodes" resultMap="KnowledgeNodeTreeResponseResultMap">
         SELECT 

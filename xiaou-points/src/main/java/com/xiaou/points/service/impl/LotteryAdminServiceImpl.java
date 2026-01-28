@@ -311,9 +311,17 @@ public class LotteryAdminServiceImpl implements LotteryAdminService {
         
         log.info("管理员{}批量调整概率，奖品数量：{}", adminId, request.getPrizes().size());
         
+        // 批量查询所有需要调整的奖品配置，避免N+1问题
+        List<Long> prizeIds = request.getPrizes().stream()
+                .map(BatchAdjustProbabilityRequest.PrizeAdjustItem::getPrizeId)
+                .collect(Collectors.toList());
+        List<LotteryPrizeConfig> configs = prizeConfigMapper.selectBatchIds(prizeIds);
+        java.util.Map<Long, LotteryPrizeConfig> configMap = configs.stream()
+                .collect(Collectors.toMap(LotteryPrizeConfig::getId, c -> c));
+        
         // 批量调整概率
         for (BatchAdjustProbabilityRequest.PrizeAdjustItem item : request.getPrizes()) {
-            LotteryPrizeConfig config = prizeConfigMapper.selectById(item.getPrizeId());
+            LotteryPrizeConfig config = configMap.get(item.getPrizeId());
             if (config == null) {
                 log.warn("奖品{}不存在，跳过", item.getPrizeId());
                 continue;
@@ -360,20 +368,8 @@ public class LotteryAdminServiceImpl implements LotteryAdminService {
         
         log.info("管理员{}批量{}奖品，数量：{}", adminId, request.getIsActive() ? "启用" : "禁用", request.getPrizeIds().size());
         
-        int successCount = 0;
-        for (Long prizeId : request.getPrizeIds()) {
-            LotteryPrizeConfig config = prizeConfigMapper.selectById(prizeId);
-            if (config == null) {
-                log.warn("奖品{}不存在，跳过", prizeId);
-                continue;
-            }
-            
-            config.setIsActive(request.getIsActive() ? 1 : 0);
-            prizeConfigMapper.updateById(config);
-            successCount++;
-            
-            log.info("{}奖品：{}", request.getIsActive() ? "启用" : "禁用", config.getPrizeName());
-        }
+        // 使用批量更新，避免N+1问题
+        int successCount = prizeConfigMapper.batchUpdateIsActive(request.getPrizeIds(), request.getIsActive() ? 1 : 0);
         
         log.info("管理员{}批量{}奖品完成，成功{}个", adminId, request.getIsActive() ? "启用" : "禁用", successCount);
     }

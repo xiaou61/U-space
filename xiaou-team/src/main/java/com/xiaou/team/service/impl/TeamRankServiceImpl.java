@@ -233,12 +233,18 @@ public class TeamRankServiceImpl implements TeamRankService {
      * 填充排名信息
      */
     private void fillRankInfo(List<RankResponse> ranks, Long userId, Integer limit) {
+        // 批量查询用户信息，避免N+1问题
+        java.util.List<Long> userIds = ranks.stream()
+                .map(RankResponse::getUserId)
+                .collect(java.util.stream.Collectors.toList());
+        java.util.Map<Long, SimpleUserInfo> userInfoMap = userInfoApiService.getSimpleUserInfoBatch(userIds);
+        
         int rank = 1;
         for (RankResponse r : ranks) {
             r.setRank(rank++);
             
             // 用户信息
-            SimpleUserInfo userInfo = userInfoApiService.getSimpleUserInfo(r.getUserId());
+            SimpleUserInfo userInfo = userInfoMap.get(r.getUserId());
             if (userInfo != null) {
                 r.setUserName(userInfo.getDisplayName());
                 r.setUserAvatar(userInfo.getAvatar());

@@ -111,4 +111,14 @@ public interface InterviewQuestionMapper {
      * 获取题单中的最大排序号
      */
     Integer getMaxSortOrderByQuestionSetId(Long questionSetId);
+
+    /**
+     * 根据ID列表批量查询题目
+     */
+    List<InterviewQuestion> selectBatchIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 根据ID列表批量删除题目
+     */
+    int deleteBatchIds(@Param("ids") List<Long> ids);
 } 

@@ -210,4 +210,23 @@
         WHERE question_set_id = #{questionSetId}
     </select>
 
+    <!-- 根据ID列表批量查询题目 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM interview_question
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 根据ID列表批量删除题目 -->
+    <delete id="deleteBatchIds">
+        DELETE FROM interview_question
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper> 

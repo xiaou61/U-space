@@ -118,5 +118,20 @@ public interface LotteryPrizeConfigMapper {
      * 更新库存
      */
     int updateStock(@Param("id") Long id, @Param("stock") Integer stock);
+    
+    /**
+     * 批量查询奖品配置
+     * @param ids ID列表
+     * @return 奖品配置列表
+     */
+    List<LotteryPrizeConfig> selectBatchIds(@Param("ids") List<Long> ids);
+    
+    /**
+     * 批量更新奖品启用状态
+     * @param ids ID列表
+     * @param isActive 是否启用
+     * @return 影响行数
+     */
+    int batchUpdateIsActive(@Param("ids") List<Long> ids, @Param("isActive") Integer isActive);
 }
 

@@ -498,17 +498,11 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         CommunityPostResponse response = BeanUtil.copyProperties(post, CommunityPostResponse.class);
         response.setIsTop(post.getIsTop() != null && post.getIsTop() == 1);
         
-        // 查询帖子的标签列表
+        // 查询帖子的标签列表，使用批量查询避免N+1问题
         List<Long> tagIds = communityPostTagMapper.selectTagIdsByPostId(post.getId());
         if (tagIds != null && !tagIds.isEmpty()) {
-            List<CommunityTag> tags = new java.util.ArrayList<>();
-            for (Long tagId : tagIds) {
-                CommunityTag tag = communityTagMapper.selectById(tagId);
-                if (tag != null) {
-                    tags.add(tag);
-                }
-            }
-            response.setTags(tags);
+            List<CommunityTag> tags = communityTagMapper.selectBatchIds(tagIds);
+            response.setTags(tags != null ? tags : new java.util.ArrayList<>());
         }
         
         // 设置AI摘要

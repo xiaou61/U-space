@@ -225,6 +225,27 @@
             update_time = NOW()
         WHERE id = #{id}
     </update>
+    
+    <!-- 批量查询奖品配置 -->
+    <select id="selectBatchIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lottery_prize_config
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+    
+    <!-- 批量更新奖品启用状态 -->
+    <update id="batchUpdateIsActive">
+        UPDATE lottery_prize_config
+        SET is_active = #{isActive},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
 
 </mapper>
 

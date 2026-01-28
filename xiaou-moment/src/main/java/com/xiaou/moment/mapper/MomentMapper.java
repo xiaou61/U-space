@@ -123,4 +123,11 @@ public interface MomentMapper {
      * 根据ID列表批量查询动态
      */
     List<Moment> selectByIds(@Param("ids") List<Long> ids);
-} 
+    
+    /**
+     * 批量删除动态
+     * @param ids 动态ID列表
+     * @return 影响行数
+     */
+    int deleteBatchIds(@Param("ids") List<Long> ids);
+}

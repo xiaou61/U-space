@@ -25,4 +25,12 @@ public interface UserInfoApiService {
      * @return 用户显示名称
      */
     String getUserDisplayName(Long userId);
+    
+    /**
+     * 批量获取简单用户信息
+     * 
+     * @param userIds 用户ID列表
+     * @return 用户ID到用户信息的映射
+     */
+    java.util.Map<Long, SimpleUserInfo> getSimpleUserInfoBatch(java.util.List<Long> userIds);
 }

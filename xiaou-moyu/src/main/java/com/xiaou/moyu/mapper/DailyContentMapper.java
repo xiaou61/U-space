@@ -143,4 +143,20 @@ public interface DailyContentMapper {
      * @return 内容总数
      */
     Long countByStatus(@Param("status") Integer status);
+
+    /**
+     * 批量查询内容
+     *
+     * @param ids 内容ID列表
+     * @return 内容列表
+     */
+    List<DailyContent> selectBatchIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 批量删除内容
+     *
+     * @param ids 内容ID列表
+     * @return 影响行数
+     */
+    int deleteBatchIds(@Param("ids") List<Long> ids);
 }
