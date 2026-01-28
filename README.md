@@ -1,6 +1,6 @@
 # Code Nest
 
-![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)
 ![Java](https://img.shields.io/badge/java-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/spring%20boot-3.4.4-brightgreen.svg)
 ![Vue](https://img.shields.io/badge/vue-3.x-4fc08d.svg)
@@ -202,7 +202,7 @@ mvn clean package -DskipTests
 mvn -pl xiaou-application -am spring-boot:run
 
 # 或直接运行打包后的 jar
-java -jar xiaou-application/target/xiaou-application-1.7.1.jar --spring.profiles.active=prod
+java -jar xiaou-application/target/xiaou-application-1.7.2.jar --spring.profiles.active=prod
 ```
 
 - API 根地址：`http://localhost:9999/api`
@@ -311,7 +311,7 @@ management:
 
 ```bash
 # 构建镜像
-docker build -t code-nest:1.7.1 -f docker/Dockerfile .
+docker build -t code-nest:1.7.2 -f docker/Dockerfile .
 
 # 运行容器
 docker run -d \
@@ -319,7 +319,7 @@ docker run -d \
   -p 9999:9999 \
   -e SPRING_PROFILES_ACTIVE=prod \
   --env-file docker/env/example.env \
-  code-nest:1.7.1
+  code-nest:1.7.2
 ```
 
 可与 MySQL/Redis 容器组合，或使用 `docker-compose`.
@@ -364,6 +364,14 @@ server {
 ## 📝 更新日志
 
 仅列出最近版本，更多历史可查看 `git log`。
+
+### v1.7.2 🃏 闪卡与AI重构
+
+- 🆕 **闪卡模块**：`xiaou-flashcard` 新增闪卡学习功能，支持卡片式记忆法，提升知识点复习效率。
+- 🤖 **AI服务重构**：`xiaou-ai` 替换 Coze 工具类为统一的 AI 服务接口，提升扩展性与可维护性。
+- 🔐 **登录安全优化**：统一登录检查逻辑，修复安全性问题，增强系统防护能力。
+- ⚡ **代码质量优化**：CodePen、积分模块代码质量与性能优化。
+- 🔧 **SQL优化模块**：`xiaou-sql-optimizer` 新增 SQL 优化分析能力。
 
 ### v1.7.1 🖥️ 桌面应用支持
 
