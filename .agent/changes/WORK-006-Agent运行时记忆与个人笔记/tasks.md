@@ -218,7 +218,7 @@ approver_role: CTO
   2. 多轮的按用户限流；**保持纯 BYOK**：无凭据用户不能触发生成。
 - 验证：`mvn -B verify`（用量数值返还 + 无凭据被拒 + 超限被拒）。
 
-### TASK-016 | pending | 回归与整端验收
+### TASK-016 | done | 回归与整端验收
 
 - 对应：全部 `AC-001`…`AC-016`
 - 依赖：TASK-003、TASK-005、TASK-006、TASK-008、TASK-010、TASK-012、TASK-013、TASK-014、TASK-015

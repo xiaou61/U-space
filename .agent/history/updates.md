@@ -1724,3 +1724,21 @@ schema_version: 1
   - `mvn -B -o verify` 见 TASK-016 的统一回归。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
+
+## 2026-10-12 19:57:27 +0800 · WORK-006 TASK-016 完成：回归与整端验收（十六片收口）
+
+- 类型：change
+- 变更：无源码改动。补 `testing/plan.md` 与 `testing/report.md`（含结构化证据矩阵与四条反向验证），把十六片全部收口。
+- 验证（全部退出码 0，证据在 `testing/logs/`，该目录被 gitignore）：
+  - **后端全量 `mvn -B -o verify` → 112 条 0 失败 0 错误 0 跳过**（3:26；`paideia-note` 新模块构建成功；`ModularityTest` 通过）。
+  - 前端 `pnpm -r typecheck` **11 个包全过**；`pnpm -r test` **77 条通过**（assistant 12）。
+  - 三端 e2e（串行）：学习者端 **19**、管理端 **8**、展览页 **5**，共 **32 条通过**。
+  - **WORK-005 回归**：`AiSummaryIntegrationTest` 9 条通过（本项只把它的限流器换成共享实现）。
+- **四条反向验证全部咬住**（都做了"改坏 → 必须红 → `git checkout --` 还原"，还原后工作区干净）：
+  1. 删掉 `NoteMapper.findByIdAndUser` 的 `user_id` 条件 → `NoteIntegrationTest` **4 挂 1**。
+  2. 分享端点由 `permitAll()` 改成 `authenticated()` → `NoteShareIntegrationTest` **6 挂 4**。
+  3. 注释掉注销的级联事件发布 → `AccountDeletionCascadeIntegrationTest` **2 挂 1**（逐表断言）。
+  4. 去掉注销的口令校验 → 同一类 **2 挂 1**（"口令错时拒绝且什么都不删"）。
+- 依据：WORK-006 `tasks.md` TASK-016、`design.md` 的测试策略；用户 2026-10-12「一直继续 task 到 16 不要停」
+- 本地提交：见下一笔
+- 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时。**这一项需要用户启动代理客户端后才能完成。**
