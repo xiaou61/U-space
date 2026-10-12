@@ -14,6 +14,8 @@ import io.github.xiaou61.knowledge.KnowledgeApi;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,20 +45,19 @@ public class SummaryService {
     private final EntrySummarizer summarizer;
     private final EntrySummaryMapper mapper;
     private final SummaryRateLimiter limiter;
-    private final ObjectMapper objectMapper;
+    /** 卡片与库里的 JSON 互转；用默认配置即可（不依赖容器里的 ObjectMapper）。 */
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     SummaryService(KnowledgeApi knowledge,
                    CredentialService credentials,
                    EntrySummarizer summarizer,
                    EntrySummaryMapper mapper,
-                   SummaryRateLimiter limiter,
-                   ObjectMapper objectMapper) {
+                   SummaryRateLimiter limiter) {
         this.knowledge = knowledge;
         this.credentials = credentials;
         this.summarizer = summarizer;
         this.mapper = mapper;
         this.limiter = limiter;
-        this.objectMapper = objectMapper;
     }
 
     /** 响应形状。`usage` 命中缓存时为 null；`source` 说明这份结果是谁生成的。 */
@@ -140,9 +141,22 @@ public class SummaryService {
         }
     }
 
+    /**
+     * 按 JSON 树显式构造卡片，而不是 {@code readValue(json, SummaryCard.class)}。
+     *
+     * <p>原因：record 的反序列化要靠 Jackson 的参数名模块，而这里用的是**自建的** ObjectMapper
+     * （容器没暴露该 Bean）。按树构造不依赖任何模块，顺带对库里的数据再做一次形状检查——
+     * 读出来的字段缺失或为空时得到的就是一张空卡片，调用方能立刻看出不对。
+     */
     private SummaryCard fromJson(String json) {
         try {
-            return objectMapper.readValue(json, SummaryCard.class);
+            var root = objectMapper.readTree(json);
+            List<SummaryCard.SummarySection> sections = new ArrayList<>();
+            for (var node : root.path("sections")) {
+                sections.add(new SummaryCard.SummarySection(
+                        node.path("heading").asText(""), node.path("body").asText("")));
+            }
+            return new SummaryCard(root.path("headline").asText(""), sections);
         } catch (JsonProcessingException exception) {
             // 落库的都是校验过的卡片，读不出来只可能是数据被外部改过
             throw new IllegalStateException("已保存的卡片无法解析", exception);

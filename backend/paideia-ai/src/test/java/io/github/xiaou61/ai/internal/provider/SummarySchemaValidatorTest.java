@@ -3,7 +3,6 @@ package io.github.xiaou61.ai.internal.provider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.SummaryCard;
 import io.github.xiaou61.platform.BizException;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +16,7 @@ import org.junit.jupiter.api.Test;
  */
 class SummarySchemaValidatorTest {
 
-    private final SummarySchemaValidator validator = new SummarySchemaValidator(new ObjectMapper());
+    private final SummarySchemaValidator validator = new SummarySchemaValidator();
 
     @Test
     @DisplayName("正常卡片解析成结构化字段")

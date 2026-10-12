@@ -27,11 +27,9 @@ class SummarySchemaValidator {
     private static final int MAX_SECTION_BODY = 2000;
     private static final int MAX_SECTIONS = 8;
 
-    private final ObjectMapper objectMapper;
-
-    SummarySchemaValidator(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+    // 自建而不是注入容器里的 ObjectMapper：这个 Boot 4 组合里容器并没有暴露该 Bean
+    // （全仓其它模块也都不用它）。这里只做"解析模型输出 / 序列化卡片"，用默认配置即可。
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     SummaryCard validate(String rawModelOutput) {
         if (rawModelOutput == null || rawModelOutput.isBlank()) {
