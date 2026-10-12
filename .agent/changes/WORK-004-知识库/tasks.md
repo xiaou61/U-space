@@ -104,6 +104,7 @@ approver_role: CTO
 - 依赖：TASK-005
 - 修改：`apps/admin/package.json`（加 `react-router` 与 `@paideia/knowledge`）、`apps/admin/src/main.tsx`（改用 `RouterProvider`）、`apps/admin/src/pages/AdminHomePage.tsx`（保留为首页，管理区入口指向新页）
 - 新建：`apps/admin/src/router.tsx`、`apps/admin/src/pages/KnowledgeAdminPage.tsx`、`apps/admin/e2e/knowledge.spec.ts`
+  - **该页面已于 2026-10-12（用户验收后）拆成 `pages/KnowledgeCategoriesPage.tsx` 与 `pages/KnowledgeEntriesPage.tsx`**，共用件在 `apps/admin/src/knowledge-shared.tsx`，侧栏改为可展开父菜单；本任务当时建的文件名保留在历史里，当前形态见 `design.md` 同段的后续说明与 `testing/report.md` 的「验收后的界面重建」。
 - 步骤：
   1. 引入 Hash 路由，`/` 保持现有单屏行为（现有 `admin.spec.ts` 的 `admin-console` 断言必须继续通过）。
   2. 分类管理：树 + 新建／改名／删除对话框。

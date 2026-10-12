@@ -50,6 +50,7 @@ src/main/java/io/github/xiaou61/knowledge/
 - `frontend/packages/knowledge/src/`：`types.ts`（DTO）、`client.ts`（`createKnowledgeApi(apiClient)`）、`markdown-body.tsx`（`MarkdownBody`）、`heading-slug.ts`（标题 → 锚点 id，纯函数，可单测；**重复标题追加序号**）、`entry-toc.tsx`（正文目录）、`image-lightbox.tsx`（图注 + 点击放大，复用 `@paideia/ui` 的 `Dialog`）、`self-assessment.tsx`（懂了／还不懂按钮）、`index.ts`。
 - `apps/app/src/pages/KnowledgeListPage.tsx`（列表 + 分类树 + 搜索 + 「我的标记」入口）、`KnowledgeEntryPage.tsx`（详情 + md 渲染 + 目录 + 上一篇／下一篇 + 反向链接 + 自评 + 邻域）；`apps/app/src/components/CategoryTree.tsx`（展开／折叠与筛选）；`apps/app/src/router.tsx` 加两条 Hash 路由，另加一条「我的标记」。
 - `apps/admin/src/router.tsx`（新建）、`apps/admin/src/pages/KnowledgeAdminPage.tsx`（分类管理、条目列表与编辑、关系编辑，**外加草稿预览**——预览复用 `MarkdownBody` 与学习者的关系区块，而不是另做一套渲染）。
+  - **后续（2026-10-12，用户验收后）**：该单页已拆成 `pages/KnowledgeCategoriesPage.tsx` 与 `pages/KnowledgeEntriesPage.tsx`，路由相应变成 `/knowledge/categories` 与 `/knowledge/entries`（旧的 `/knowledge` 重定向到条目管理），共用件抽到 `apps/admin/src/knowledge-shared.tsx`，侧栏改成可展开的父菜单。验收结论不变，见 `testing/report.md` 的「验收后的界面重建」。
 - 复用的既有件：`AppShell`/`PageHeader`/`Section`、`Card`/`Table`/`Dialog`/`Input`/`Label`/`Button`/`Select`/`Empty`/`Alert`/`Spinner`/`Badge`。
 
 ## 请求或事件流程

@@ -79,3 +79,15 @@ updated: 2026-10-10
 - 存量数据：只回拨**由数据库默认值写入**的列（`created_at`／`updated_at`／`refresh_tokens.created_at` 等），**应用绑定 Instant 的列不动**（`published_at`／`expires_at`／`revoked_at`／`email_verified_at`）——后者本来就是 UTC，一起回拨反而会错。列清单取自 `information_schema`，不靠猜。
 - 验证：回拨后条目 8 的 `created_at` = `09:44:11.546`，与本来就正确的 `published_at` = `09:44:11.545` **只差 1 毫秒**，两条独立写入路径对上了；新写入一条后接口返回 `2026-10-10T10:04:21.270Z`，而那一刻真实 UTC 是 `10:04:30`（本机本地时间 18:04）——不再快 8 小时。
 - 回归：后端 `mvn -B verify` → **124 条 0 失败**；管理端 e2e **7 passed（23.3 秒）**；学习者端 e2e **11 passed（32.2 秒）**。
+
+## 验收后的界面重组（2026-10-12，用户继续反馈）
+
+用户接着提了两点：分类与条目"不能分成两个页面吗"，以及侧栏"应该父菜单、下拉选这俩子菜单"。都已实现并部署：
+
+- `KnowledgeAdminPage` 拆成 `pages/KnowledgeCategoriesPage.tsx`（分类表 + 新建分类弹窗）与 `pages/KnowledgeEntriesPage.tsx`（条目表 + 工具栏 + 分页 + 条目编辑器）；路由 `/knowledge/categories` 与 `/knowledge/entries`，旧地址 `/knowledge` 重定向到条目管理。共用件抽到 `apps/admin/src/knowledge-shared.tsx`（分类树展开、下拉选项、删除确认弹窗、加载行、api 客户端）。
+- 侧栏改为一级 + 子菜单：`知识库` 展开为 `分类管理`／`条目管理`，未手动点过时跟着当前路由展开；面包屑相应变成两级。
+- 顺手修掉一处真缺陷：条目编辑器的「目标条目」下拉原先吃的是表格当前筛选结果（筛成"仅草稿"时只能关联到草稿），改为不随筛选走的全量列表。
+
+**对本报告结论仍无影响**，且这次的证据比上一次更贴近线上：**e2e 直接在已部署实例上跑，7 passed / 14.7 秒**（新增 `E2E_BASE_URL`／`E2E_ADMIN_PATH`／账号环境变量，设了就不再启本地后端与 dev server；用法见 `.agent/notes/dev-workflow.md`）。同一批断言、同一个链路（分类页建分类 → 条目页录入发布 → 回分类页删除）没有放宽；e2e 只多了一处"跨页导航"。
+
+**关于验证锚点**：本报告正文的验证基准是 `f0edc79`，此后代码又有上述界面改动与一次连接串改动（时区）。当前状态的验证覆盖是：后端 **124 条在时区修复之后重跑过 0 失败**，之后只改过 `frontend/apps/admin`（学习者端与后端未动）；管理端 **7 条在线上跑过**（含最新的拆页与父菜单）；学习者端 **11 条**跑于拆页之前，而拆页未触及 `apps/app` 与 `packages/knowledge`。若要把锚点刷新到当前提交，重跑一次 `mvn -B verify` 即可（结论预期不变）。
