@@ -123,7 +123,7 @@ approver_role: CTO
   3. `/api/v1/notes/**` 的 CRUD，全部按 `user_id` 过滤；安全规则 `authenticated()`。
 - 验证：`mvn -B verify`（模块边界 `ModularityTest` 仍通过；他人笔记不可读写）。
 
-### TASK-008 | pending | 笔记前端页与 AI 内容落进笔记
+### TASK-008 | done | 笔记前端页与 AI 内容落进笔记
 
 - 对应：`REQ-011`、`AC-010`
 - 依赖：TASK-007、TASK-003

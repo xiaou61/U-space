@@ -1,0 +1,82 @@
+import type { ApiClient } from '@paideia/core'
+
+import { api } from './api'
+
+/** 列表项：**不含正文**（服务端就不返回），列表页只要标题与时间。 */
+export interface NoteSummary {
+  id: number
+  entryId: number | null
+  title: string
+  updatedAt: string | null
+}
+
+export interface NoteView extends NoteSummary {
+  body: string
+  createdAt: string | null
+}
+
+export interface NoteInput {
+  entryId: number | null
+  title: string
+  body: string
+}
+
+export interface NotesApi {
+  list(): Promise<NoteSummary[]>
+  read(id: number): Promise<NoteView>
+  create(input: NoteInput): Promise<NoteView>
+  update(id: number, input: NoteInput): Promise<NoteView>
+  remove(id: number): Promise<boolean>
+}
+
+/**
+ * 笔记端点客户端。
+ *
+ * <p>与知识库那份同形：只包路径与请求体，鉴权与 401 刷新重放交给 `api`。
+ *
+ * <p>**放在应用里而不是单独开一个包**：目前只有学习者端这一个消费者。拆包要有第二个消费者
+ * 才划算（与后端"第二个消费者出现才提升为共享"是同一把尺子）。
+ */
+export function createNotesApi(client: ApiClient): NotesApi {
+  const base = '/api/v1/notes'
+  const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
+  return {
+    list: () => client.requestEnvelope<NoteSummary[]>(base),
+    read: (id) => client.requestEnvelope<NoteView>(`${base}/${id}`),
+    create: (input) =>
+      client.requestEnvelope<NoteView>(base, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(input),
+      }),
+    update: (id, input) =>
+      client.requestEnvelope<NoteView>(`${base}/${id}`, {
+        method: 'PUT',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(input),
+      }),
+    remove: (id) => client.requestEnvelope<boolean>(`${base}/${id}`, { method: 'DELETE' }),
+  }
+}
+
+/** 应用级单例，页面直接 import。 */
+export const notes = createNotesApi(api)
+
+/**
+ * 把助手的一段话存成**一条新**笔记。
+ *
+ * <p>不往已有笔记里追加：「作为一段落进笔记」听起来是追加，但"追加到哪一条"要猜——同一轮里
+ * 用户可能已经改过那条笔记。新建一条不破坏任何已有内容，用户想合并自己在笔记页里做。
+ *
+ * <p>标题取第一行非空内容的前 60 个字：模型产出的正文通常第一行就是要点，够用了。
+ * 取不到就退成"来自助手的笔记"。
+ */
+export async function saveAssistantTextToNote(text: string, entryId: number | null): Promise<NoteView> {
+  const firstLine = text
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '')
+  const title = firstLine === undefined ? '来自助手的笔记' : firstLine.slice(0, 60)
+  return notes.create({ entryId, title, body: text })
+}

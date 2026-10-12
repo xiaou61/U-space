@@ -20,14 +20,25 @@ import type { ChatMessage } from './types'
  * </ol>
  *
  * <p>没有条目上下文时照样能聊（用户裁决：助手任意处可开，条目只是**可选**上下文）。
+ *
+ * <p>`onSaveToNote` 由**应用**注入而不是本包直接调笔记接口：本包不认识笔记（它只认识助手），
+ * 让应用把"存进笔记"这件事接上，本包就不必知道笔记模块存在。
  */
-export function ConversationPanel({ api }: { api: AssistantApi }) {
+export function ConversationPanel({
+  api,
+  onSaveToNote,
+}: {
+  api: AssistantApi
+  onSaveToNote?: (text: string, entryId: number | null) => Promise<unknown>
+}) {
   const { entryId, entryTitle } = useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** 已存进笔记的消息下标：同一个回答可以再存一次（用户可能删过那条笔记），所以不锁按钮。 */
+  const [savedIndexes, setSavedIndexes] = useState<number[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   // 换条目：中断当前流并重开一个会话
@@ -150,6 +161,36 @@ export function ConversationPanel({ api }: { api: AssistantApi }) {
                   本次用量：{message.usage.totalTokens} tokens（输入 {message.usage.inputTokens}／输出{' '}
                   {message.usage.outputTokens}）
                 </p>
+              )}
+              {/* 只对"真正的回答"给存笔记入口：空正文的提示不该被存成笔记 */}
+              {onSaveToNote === undefined ||
+              message.role !== 'assistant' ||
+              message.content === '' ||
+              message.emptyHint ? null : (
+                <div className="mt-1 flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    data-testid="conversation-save-to-note"
+                    onClick={() => {
+                      void onSaveToNote(message.content, entryId)
+                        .then(() => {
+                          setError(null)
+                          setSavedIndexes((previous) => [...previous, index])
+                        })
+                        .catch((cause: unknown) =>
+                          setError(cause instanceof Error ? cause.message : String(cause)),
+                        )
+                    }}
+                  >
+                    存进笔记
+                  </Button>
+                  {savedIndexes.includes(index) ? (
+                    <span className="text-muted-foreground text-[11px]" data-testid="conversation-saved">
+                      已存进笔记
+                    </span>
+                  ) : null}
+                </div>
               )}
             </article>
           ))

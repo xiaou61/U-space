@@ -23,7 +23,14 @@ import type { CredentialView, SummaryView, SummaryVisibility } from './types'
  *   <li>没配凭据时给的是**配置入口**，不是错误；已有他人公开结果时照常可读。</li>
  * </ol>
  */
-export function AssistantShell({ api }: { api: AssistantApi }) {
+export function AssistantShell({
+  api,
+  onSaveToNote,
+}: {
+  api: AssistantApi
+  /** 由应用注入：本包不认识笔记，只负责把"这一段话"交出去。 */
+  onSaveToNote?: (text: string, entryId: number | null) => Promise<unknown>
+}) {
   const { entryId, entryTitle, onlyMine, setOnlyMine } = useAssistantContext()
   const [expanded, setExpanded] = useState(false)
   const [credential, setCredential] = useState<CredentialView | null>(null)
@@ -177,7 +184,7 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
       </nav>
 
       {tab === 'chat' ? (
-        <ConversationPanel api={api} />
+        <ConversationPanel api={api} onSaveToNote={onSaveToNote} />
       ) : tab === 'memory' ? (
         <MemoryPanel api={api} />
       ) : entryId === null ? (

@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 
 import { auth } from './auth'
+import { saveAssistantTextToNote } from './notes-api'
 import { platform } from './host'
 import { PlatformProvider } from './platform'
 import { router } from './router'
@@ -58,7 +59,8 @@ function AssistantMount() {
   if (status !== 'signed-in') {
     return null
   }
-  return <AssistantShell api={assistantApi} />
+  // 把助手的回答接上笔记：助手包不认识笔记，这层接线放在组合根
+  return <AssistantShell api={assistantApi} onSaveToNote={saveAssistantTextToNote} />
 }
 
 const container = document.getElementById('root')

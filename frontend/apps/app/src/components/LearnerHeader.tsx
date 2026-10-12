@@ -17,6 +17,7 @@ import { Link, useLocation } from 'react-router'
  */
 const NAV = [
   { to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
+  { to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
   { to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
 ]
 
