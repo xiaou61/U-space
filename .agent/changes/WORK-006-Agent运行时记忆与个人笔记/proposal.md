@@ -2,7 +2,7 @@
 artifact: proposal
 work_id: WORK-006
 work: Agent 运行时、记忆与个人笔记
-status: draft
+status: approved
 mode: strict
 mode_reason: 首次引入 agent 运行时；首次出现平台的大宗用户私有数据及其生命周期；新增第二处免鉴权读端点；跨模块与部署
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-004, WORK-005]
 related_to: [WORK-008]
 created: 2026-10-12
 updated: 2026-10-12
+approved_by: xiaou61
+approved_at: 2026-10-12 15:19:52 +0800
+approver_role: CTO
 ---
 
 # Agent 运行时、记忆与个人笔记提案

@@ -1355,3 +1355,43 @@ schema_version: 1
   - `project_status.py`：WORK-006 = 需求讨论｜草稿，4 个核心文件 57872 bytes，任务待办 16／进行中 0／完成 0／阻塞 0；依赖 WORK-004、WORK-005 均已完成（无硬阻塞）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-12 15:19:51 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:51 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-12 15:19:52 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:52 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-12 15:19:53 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:53 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-12 15:19:54 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-006-Agent运行时记忆与个人笔记/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:54 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

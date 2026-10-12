@@ -2,13 +2,16 @@
 artifact: tasks
 work_id: WORK-006
 work: Agent 运行时、记忆与个人笔记
-status: draft
+status: approved
 mode: strict
 workflow: full
 depends_on: [WORK-004, WORK-005]
 related_to: [WORK-008]
 created: 2026-10-12
 updated: 2026-10-12
+approved_by: xiaou61
+approved_at: 2026-10-12 15:19:54 +0800
+approver_role: CTO
 ---
 
 # Agent 运行时、记忆与个人笔记实施任务
