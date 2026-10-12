@@ -50,6 +50,10 @@ public interface RefreshTokenMapper {
      * <b>不删"已吊销但未过期"的行</b>——那些行必须留着，重用检测靠它们才能认出
      * "这枚令牌已经被换过了"并吊销整条链。
      */
+    /** 注销时把这个人所有 refresh 记录删掉：留着等于留着一把能换新令牌的钥匙。 */
+    @Delete("DELETE FROM refresh_tokens WHERE user_id = #{userId}")
+    int deleteByUser(@Param("userId") long userId);
+
     @Delete("DELETE FROM refresh_tokens WHERE expires_at < #{before}")
     int deleteExpiredBefore(@Param("before") Instant before);
 }

@@ -1,6 +1,21 @@
 import { useAuth } from '@paideia/auth'
-import { Badge, Button } from '@paideia/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+} from '@paideia/ui'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+
+import { api } from '../api'
 
 /**
  * 学习者端页头：**主导航 + 账号区**放在一个组件里。
@@ -24,8 +39,38 @@ const NAV = [
 export function LearnerHeader() {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
+  const [deleting, setDeleting] = useState(false)
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   if (user === null) {
     return null
+  }
+
+  /**
+   * 注销。**不可恢复**：会话、记忆、笔记与已发出的分享一并删除（用户裁决 10）。
+   *
+   * <p>要口令：只凭一个被偷走的令牌就能清空一个人的全部数据，代价不对等。
+   * 服务端删完刷新记录之后，本地这份令牌也刷不出新的了（会话最多活到访问令牌到期）。
+   */
+  const confirmDeletion = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await api.requestEnvelope<boolean>('/api/v1/me/deletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      // 账号已经没了：登出只是一个本地收尾（服务端那条刷新记录也被删了，登出接口会失败，
+      // 所以这里不 await 它的成败——本地令牌必须清掉，界面要回到登录门）
+      void logout().catch(() => undefined)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setBusy(false)
+    }
   }
   return (
     <>
@@ -54,9 +99,50 @@ export function LearnerHeader() {
         {user.username}
       </span>
       <Badge variant="outline">{user.role === 'admin' ? '管理员' : '学习者'}</Badge>
+      <Button variant="ghost" size="sm" data-testid="account-deletion-open" onClick={() => setDeleting(true)}>
+        注销账号
+      </Button>
       <Button variant="ghost" size="sm" data-testid="logout" onClick={() => void logout()}>
         登出
       </Button>
+
+      <Dialog open={deleting} onOpenChange={setDeleting}>
+        <DialogContent data-testid="account-deletion-dialog">
+          <DialogHeader>
+            <DialogTitle>注销账号</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Alert variant="destructive">
+              <AlertTitle>这一步不可恢复</AlertTitle>
+              <AlertDescription>
+                你的会话、记忆、个人笔记与已发出的分享都会被删除，且无法找回。
+              </AlertDescription>
+            </Alert>
+            <Input
+              type="password"
+              value={password}
+              placeholder="输入当前密码确认"
+              aria-label="当前密码"
+              data-testid="account-deletion-password"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(false)} disabled={busy}>
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={busy || password === ''}
+              data-testid="account-deletion-confirm"
+              onClick={() => void confirmDeletion()}
+            >
+              确认注销
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -1,6 +1,7 @@
 package io.github.xiaou61.account.internal.user;
 
 import java.util.Optional;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -52,6 +53,10 @@ public interface UserMapper {
 
     @Select("SELECT id, username, email, password_hash, role, email_verified_at FROM users WHERE id = #{id}")
     Optional<User> findById(@Param("id") Long id);
+
+    /** 注销。级联删除靠应用内事件（见 {@code UserDeletedEvent}），不建跨模块外键。 */
+    @Delete("DELETE FROM users WHERE id = #{id}")
+    int deleteById(@Param("id") long id);
 
     @Select("SELECT role FROM users WHERE id = #{id}")
     Optional<String> findRoleById(@Param("id") Long id);

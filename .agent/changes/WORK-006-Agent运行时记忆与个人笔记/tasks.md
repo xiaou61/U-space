@@ -194,7 +194,7 @@ approver_role: CTO
   3. 管理端页面：举报列表 + 下架操作。
 - 验证：`mvn -B verify`（匿名 401 / 学习者 403 / 管理员放行三态）+ 管理端 e2e。
 
-### TASK-014 | pending | 注销级联硬删
+### TASK-014 | done | 注销级联硬删
 
 - 对应：`REQ-014`、`AC-014`
 - 依赖：TASK-001、TASK-004、TASK-007、TASK-011

@@ -1681,3 +1681,26 @@ schema_version: 1
   - 一处小坑：管理端**带子菜单**的项才有 `admin-menu-*` 的 testid，叶子项没有——按可访问名点更稳。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
+
+## 2026-10-12 19:43:44 +0800 · WORK-006 TASK-014 完成：注销级联硬删
+
+- 类型：change
+- 变更：
+  - 新增 `UserDeletedEvent`（`paideia-platform`）；账号模块：`AccountDeletionService` + `POST /api/v1/me/deletion`（要口令）+ `UserMapper.deleteById` + `RefreshTokenMapper.deleteByUser`。
+  - `paideia-ai` 与 `paideia-note` 各加一个 `@TransactionalEventListener(BEFORE_COMMIT)` 监听器，按**手写表清单**删自己的数据。
+  - 学习者端页头加「注销账号」入口（口令确认 + 不可恢复的警示）。
+  - `AccountDeletionCascadeIntegrationTest`（**这个类就是护栏**，见下）。
+- 决策：
+  1. **用应用内事件而不是让账号模块直接调各模块**：注销要删的数据散在多个模块，若让 `paideia-account` 去调它们的 API，地基模块会反向依赖所有业务模块——方向不对。事件让"谁删什么"留在各模块自己手里。事件类型放 `paideia-platform`（所有模块都已依赖它），避免每个监听方多依赖一个模块。**这是对 design"经各自 API 包提供删除入口"的一处等价替换。**
+  2. **`BEFORE_COMMIT` 而不是提交后**：注销要么全删干净、要么什么都没发生。分两个事务会出现"用户没了但记忆还在"的中间状态，而那种残留没有任何人会去清理。
+  3. **注销要口令**：不可逆，只凭一个被偷走的令牌就能清空一个人的全部数据，代价不对等。路径放 `/api/v1/me/**`（**不是** `/api/v1/auth/**`——那个前缀在安全配置里是 permitAll，注销绝不能免鉴权）。
+  4. **表名与列名成对写**：`note_reports` 的列是 `reporter_user_id`、`ai_messages` 根本没有 `user_id`（随会话走）。**我第一版按 `user_id` 一刀切，写出来就是错的**——两处都在读清单时才发现。
+- **已知缺口（如实记，且是刻意不修的）**：注销后**旧的访问令牌在 TTL 内仍能通过鉴权**。JWT 是无状态的：签名有效就不看库，删 users 行不会让它立刻失效。要立刻失效得在鉴权层对每个请求做一次存活性查询——那会让**全部**集成测试（它们都用不存在的用户 id 签令牌）集体改造成"先造真实用户"，代价与收益不对等。**能立刻保证的两条都已断言**：数据全没了、以及**刷新记录已删所以刷不出新令牌**（会话最多活到访问令牌 TTL 到期）。
+- 依据：WORK-006 `design.md`（注销流程、安全与权限）、`tasks.md` TASK-014；用户裁决 7、10、11
+- 验证：
+  - `AccountDeletionCascadeIntegrationTest` → **2 条通过**。核心是一条**逐表断言清单**（`ai_conversations`／`ai_messages`／`ai_memories_structured`／`ai_memories_text`／`ai_model_credentials`／`ai_entry_summaries`／`notes`／`note_shares`／`note_reports`／`refresh_tokens`／`users`）：注销后全部为 0；口令不对时拒绝**且什么都不删**；别人的数据一行不动。
+    - **这张清单就是"删干净"的长期护栏**：新增用户私有表却忘了登记，这条用例会红。
+  - 学习者端 e2e → **19 passed**（页头新增按钮不影响既有用例）。
+  - `pnpm -r typecheck` 全过。
+- 本地提交：见下一笔
+- 远端推送：未执行（等代理）
