@@ -1395,3 +1395,25 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:54 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-12 15:31:12 +0800 · WORK-006 TASK-001 完成：会话与消息持久化
+
+- 类型：change
+- 变更：
+  - 新增迁移 `V5__create_assistant_tables.sql`（编号经确认未撞号）：`ai_conversations`（含滑动过期 `expires_at`、可选 `entry_id`）与 `ai_messages`（`role`／`content`／`token_usage`，**思考不入库**）。
+  - 新增 `paideia-ai/internal/conversation/`：`Conversation`、`ConversationMessage`、`ConversationMapper`、`ConversationMessageMapper`、`ConversationWindow`（纯函数裁剪）、`ConversationProperties`（上下文窗口 20／存储上限 200／会话有效期 7 天，配置前缀 `paideia.ai.conversation`）。
+  - `AiConfiguration` 注册 `ConversationProperties`；新增 `ConversationWindowTest`（5 条）。
+- 决策：
+  1. **归属与过期都写在 SQL 里**（`user_id` 进 WHERE、`expires_at > now` 进 WHERE），不在 Java 里判断：漏写一处就等于读走别人的会话，写进 WHERE 就不存在"忘了判断"这条路；过期会话在调用方看来就是"不存在"，不需要定时清理。
+  2. **滑动过期**（每追加一条消息往后推），并**拒绝复活已过期的会话**（UPDATE 带 `expires_at > now`）——否则"过期即视为不存在"会出现例外。
+  3. **存储上限用"删最旧的 N 条"**（`DELETE ... ORDER BY id ASC LIMIT`）而不是定时任务；裁多少条由纯函数算，便于单测。
+  4. **上限配错（< 1）时什么都不删**：把 0 解释成"全删"会让一个手误清空用户历史，代价不对等。
+- **一处必须点明的设计纠正（局部事实订正，需求未变）**：`design.md` 初稿要求各表用 `user_id` 外键 → `users.id` + `ON DELETE CASCADE` 做级联硬删。实施时核实到两点使其不可行——① `V4` 明文定了"不建跨模块外键"，且集成测试用**任意数字身份**造数据（`"91" + nanoTime`，库里没有对应 users 行），加外键会要求每个用例先造真实用户；② 要让级联覆盖 `ai_model_credentials`（用户加密的 API Key，注销必须删）就得给**已有表**加外键，那会直接把 `AiSummaryIntegrationTest` 打红。**改为应用层显式删除**，并把"用户私有表清单 + AC-014 逐表断言行数为 0"作为长期护栏。`design.md` 与 `tasks.md` TASK-014 已回填。
+- 依据：WORK-006 `design.md`（已批准）、`tasks.md` TASK-001；`V1`/`V4` 迁移的既有约定
+- 验证：
+  - `mvn -B -o -pl paideia-ai -am test -Dtest=ConversationWindowTest -Dsurefire.failIfNoSpecifiedTests=false` → **5 条通过**、BUILD SUCCESS。
+  - `mvn -B -o -pl paideia-ai -am test` → paideia-ai **31 条全过**（原 26 + 新 5），上游模块全绿、BUILD SUCCESS。
+  - **一条过程教训**：`-DfailIfNoSpecifiedTests=false` 是错的属性名（可用的是 `-Dsurefire.failIfNoSpecifiedTests`），第一次跑直接 BUILD FAILURE——退出码非 0 看着像"测试失败"，其实测试一次都没跑。判据仍是"红在哪一行"，不是"是否非 0"。
+  - **SQL 层覆盖的本地调整**：TASK-001 的 DB 级断言挪到 TASK-002 的集成用例（完整上下文跑真实 `V5` 迁移）。在 `paideia-ai` 内另起 DB 装配会重复它，且 `paideia-ai` 在反应堆里早于 `paideia-app`，那时 `V5` 还没建。已写进 `tasks.md` TASK-001 的验证条目。
+- 本地提交：见下一笔
+- 远端推送：未执行

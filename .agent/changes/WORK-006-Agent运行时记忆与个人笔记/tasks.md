@@ -36,17 +36,19 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 会话与消息持久化
+### TASK-001 | done | 会话与消息持久化
 
 - 对应：`REQ-001`、`REQ-003`、`AC-001`、`AC-003`
 - 依赖：无
-- 修改：`backend/paideia-app/src/main/resources/db/migration/`（新迁移，编号取下一个可用号）、`backend/paideia-ai/src/main/java/io/github/xiaou61/ai/internal/conversation/`
-- 测试：`backend/paideia-ai/src/test/java/io/github/xiaou61/ai/internal/conversation/`
+- 修改：`backend/paideia-app/src/main/resources/db/migration/V5__create_assistant_tables.sql`（编号取下一个可用号，实施时确认未撞号）、`backend/paideia-ai/src/main/java/io/github/xiaou61/ai/internal/conversation/`
+- 测试：`backend/paideia-ai/src/test/java/io/github/xiaou61/ai/internal/conversation/ConversationWindowTest.java`
 - 步骤：
-  1. 建 `ai_conversations`、`ai_messages` 两表；`user_id` 外键指向 `users.id` 且 `ON DELETE CASCADE`；`ai_messages.conversation_id` 外键同级联。
-  2. 写仓库与"最近 N 轮 + 可选条目正文 + 记忆召回结果"的上下文装配；裁剪规则写成纯函数。
-  3. 实现会话有效期与条数上限的**读取时判定**（过期会话视为不存在）。
-- 验证：`mvn -B verify`（上下文裁剪纯函数单测 + 会话读写集成用例）。
+  1. 建 `ai_conversations`、`ai_messages` 两表。**不建外键**（理由见 `design.md`「注销级联硬删」的纠正）。
+  2. 写 mapper 与"最近 N 轮 + 可选条目正文 + 记忆召回结果"的上下文装配；裁剪规则写成纯函数。
+  3. 实现会话有效期与条数上限的**读取时判定**（过期会话视为不存在），并支持滑动续期。
+- 验证：`mvn -B -o -pl paideia-ai -am test -Dtest=ConversationWindowTest -Dsurefire.failIfNoSpecifiedTests=false` → **5 条通过**（已跑）。
+  - **SQL 层的覆盖落在 TASK-002 的集成用例**（本地调整，理由）：那个用例在完整上下文里跑真实的 `V5` 迁移并按 API 断言读写与过期。在 `paideia-ai` 里另起一套 DB 装配只会重复它，且会撞 Flyway 迁移顺序——`paideia-ai` 在反应堆里早于 `paideia-app`，那时 `V5` 还没建。
+
 
 ### TASK-002 | pending | 对话端口与 SSE 端点
 
@@ -196,13 +198,14 @@ approver_role: CTO
 
 - 对应：`REQ-014`、`AC-014`
 - 依赖：TASK-001、TASK-004、TASK-007、TASK-011
-- 修改：各表外键定义（`ON DELETE CASCADE`）、`backend/paideia-account/`（注销流程）、`frontend/apps/app/src/pages/`（注销确认文案）
+- 修改：`backend/paideia-account/`（注销流程与逐表删除编排）、`paideia-ai` 与 `paideia-note` 的 API 包（各自的删除入口）、`frontend/apps/app/src/pages/`（注销确认文案）
 - 测试：`backend/paideia-app/src/test/java/io/github/xiaou61/AccountDeletionCascadeIntegrationTest.java`
 - 步骤：
-  1. 复核**所有**用户私有表（会话、消息、记忆两路、笔记、分享、举报）的 `user_id` 外键均为 CASCADE；跨模块**不建模块间外键**，统一指向 `users.id`。
-  2. 注销删除 `users` 行，验证上述表全部清空。
-  3. 注销后本人凭旧令牌不可再访问（会话失效）。
-- 验证：`mvn -B verify`（删除前后行数对比 + 注销后访问被拒）。
+  1. **不用数据库外键**（理由见 `design.md`「注销级联硬删」的纠正）：注销流程按固定清单**逐表显式删除**。
+  2. 清单：`ai_conversations`、`ai_messages`、`ai_memories_structured`、`ai_memories_text`、`notes`、`note_shares`、`note_reports`，**外加本项之前已有的** `ai_model_credentials`、`ai_entry_summaries`、`refresh_tokens`。
+  3. 跨模块经各自 API 包提供的删除入口；账号模块不引用别人的表结构。
+  4. 注销后本人凭旧令牌不可再访问（会话失效）。
+- 验证：`mvn -B verify`（注销后**逐表断言行数为 0** —— 这张断言清单就是"删干净"的长期护栏；另加注销后访问被拒）。
 
 ### TASK-015 | pending | 用量返还与限流收口
 

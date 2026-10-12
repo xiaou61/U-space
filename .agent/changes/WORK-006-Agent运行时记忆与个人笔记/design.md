@@ -87,9 +87,11 @@ Flyway 迁移、`/api/v1/**` 的安全规则、新模块注册。**迁移编号�
 
 ### 注销级联硬删
 
-1. 所有用户私有表（会话、消息、记忆两路、笔记、分享、举报）都带 `user_id` 外键指向 `users.id`，且 **`ON DELETE CASCADE`**。
-2. 注销删除 `users` 行 → 数据库级联删净上述所有行。**不引入定时任务**，删除是同步的。
-3. 因笔记／分享在 `paideia-note`、会话／记忆在 `paideia-ai`，级联**不跨模块建外键**，而是各表都指向 `users.id`——由数据库统一保证，两个模块都不需要知道对方的表。
+1. **机制：应用层显式删除，不用数据库外键。**
+   - **纠正（2026-10-12，实施中发现，属局部事实订正）**：本节初稿写的是"各表 `user_id` 外键 → `users.id` + `ON DELETE CASCADE`"。实施时核实到两点使其不可行：① `V4` 迁移明文定了"不建跨模块外键"的约定，且集成测试用**任意数字身份**造数据（`"91" + nanoTime`，库里没有对应 `users` 行）——加外键会要求每个用例先造真实用户；② 要让级联覆盖 `ai_model_credentials`（用户加密的 API Key，注销必须删），就得给**已有表**加外键，那会直接把 `AiSummaryIntegrationTest` 打红。**需求与可见行为不变**（注销后全删），只换机制。
+2. **表清单本身是护栏**：AC-014 的用例在注销后**逐表断言行数为 0**，清单从该用例反推；新增用户私有表忘了登记就会红——这是"删干净"能长期成立的唯一保证。清单：`ai_conversations`、`ai_messages`、`ai_memories_structured`、`ai_memories_text`、`notes`、`note_shares`、`note_reports`，**外加本项之前已有的** `ai_model_credentials`、`ai_entry_summaries`、`refresh_tokens`。
+3. **跨模块互不引用对方的表**：注销由 `paideia-account` 发起，各模块经自己的 API 包提供删除入口，账号模块不需要知道别人的表结构。
+4. **不引入定时任务**，删除同步完成；注销后本人凭旧令牌也不可再访问。
 
 ## 接口与数据
 
@@ -112,13 +114,13 @@ Flyway 迁移、`/api/v1/**` 的安全规则、新模块注册。**迁移编号�
 
 | 表 | 关键列 | 说明 |
 | --- | --- | --- |
-| `ai_conversations` | `id`、`user_id`(FK→users, CASCADE)、`entry_id`(可空)、`created_at`、`updated_at` | 会话 |
-| `ai_messages` | `id`、`conversation_id`(FK, CASCADE)、`role`、`content`、`created_at`、`token_usage`(可空) | 消息；**思考不入库** |
-| `ai_memories_structured` | `id`、`user_id`(CASCADE)、`kind`、`ref_id`(可空)、`value`、`created_at` | 结构化记忆 |
-| `ai_memories_text` | `id`、`user_id`(CASCADE)、`text`、`created_at`，**中文全文索引** | "说过的话"那一路 |
-| `notes` | `id`、`user_id`(CASCADE)、`entry_id`(可空)、`title`、`body`、`created_at`、`updated_at` | 笔记 |
-| `note_shares` | `share_id`(UUID, PK)、`note_id`(FK, CASCADE)、`user_id`(CASCADE)、`expires_at`、`revoked_at` | 分享 |
-| `note_reports` | `id`、`share_id`(FK)、`reporter_user_id`(CASCADE)、`reason`、`status`、`created_at` | 举报 |
+| `ai_conversations` | `id`、`user_id`、`entry_id`(可空)、`expires_at`、`created_at`、`updated_at` | 会话；`user_id` 与 `entry_id` **都不建外键**（见「注销级联硬删」的纠正） |
+| `ai_messages` | `id`、`conversation_id`、`role`、`content`、`token_usage`(可空)、`created_at` | 消息；**思考不入库**；随会话一起删 |
+| `ai_memories_structured` | `id`、`user_id`、`kind`、`ref_id`(可空)、`value`、`created_at` | 结构化记忆 |
+| `ai_memories_text` | `id`、`user_id`、`text`、`created_at`，**中文全文索引** | "说过的话"那一路 |
+| `notes` | `id`、`user_id`、`entry_id`(可空)、`title`、`body`、`created_at`、`updated_at` | 笔记 |
+| `note_shares` | `share_id`(UUID, PK)、`note_id`、`user_id`、`expires_at`、`revoked_at` | 分享 |
+| `note_reports` | `id`、`share_id`、`reporter_user_id`、`reason`、`status`、`created_at` | 举报 |
 
 全文索引用 MySQL 的 **ngram** 解析器建（与 WORK-004 的中文检索同一套做法）。
 
