@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import io.github.xiaou61.ai.AssistantConversation;
 import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import io.github.xiaou61.security.AuthPort;
@@ -64,6 +65,9 @@ class AssistantConversationIntegrationTest {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    MemoryStore memories;
+
     @MockitoBean
     AssistantConversation assistant;
 
@@ -85,6 +89,8 @@ class AssistantConversationIntegrationTest {
         jdbcTemplate.update("DELETE FROM ai_messages");
         jdbcTemplate.update("DELETE FROM ai_conversations");
         jdbcTemplate.update("DELETE FROM ai_model_credentials");
+        jdbcTemplate.update("DELETE FROM ai_memories_structured");
+        jdbcTemplate.update("DELETE FROM ai_memories_text");
 
         String suffix = Long.toString(System.nanoTime() % 1_000_000L);
         userA = "71" + suffix;
@@ -96,6 +102,8 @@ class AssistantConversationIntegrationTest {
         jdbcTemplate.update("DELETE FROM ai_messages");
         jdbcTemplate.update("DELETE FROM ai_conversations");
         jdbcTemplate.update("DELETE FROM ai_model_credentials");
+        jdbcTemplate.update("DELETE FROM ai_memories_structured");
+        jdbcTemplate.update("DELETE FROM ai_memories_text");
     }
 
     @Test
@@ -276,8 +284,36 @@ class AssistantConversationIntegrationTest {
                 Long.class, conversationId)).isEqualTo(1);
     }
 
-    /** 桩：按顺序回调思考、正文、结束。失败路径由各用例自己 doAnswer。 */
-    private void stubStream(String thinking, String content, TokenUsage usage) {
+    @Test
+    @DisplayName("召回的记忆会随这一轮进到模型上下文，并在提示词里标出来源")
+    void recalledMemoryReachesTheModel() throws Exception {
+        configureCredential(userA);
+        long conversationId = createConversation(userA, null);
+        // 写入端点属 TASK-009（助手写本人私有数据那条确认路径），这里直接落一条
+        memories.rememberStructured(Long.parseLong(userA), "entry_understanding", null, "第 9 条：还不懂");
+        memories.rememberText(Long.parseLong(userA), "他说过想先学并发");
+
+        List<AssistantConversation.Request> seen = new ArrayList<>();
+        doAnswer(invocation -> {
+            seen.add(invocation.getArgument(0));
+            AssistantConversation.Listener listener = invocation.getArgument(2);
+            listener.onContent("好的");
+            listener.onCompleted(null);
+            return null;
+        }).when(assistant).stream(any(), any(), any());
+
+        // 消息里带上关键词：全文那一路是**按当前这轮的话**检索的（第 2 条裁决取舍——
+        // 用全文检索而不是语义检索，代价就是字面对不上就召不回）
+        sendMessage(userA, conversationId, "并发我该先看什么");
+
+        assertThat(seen).hasSize(1);
+        // 两路都在，且各自带了来源标注——不标的话模型会把"随口一句"当成事实
+        assertThat(seen.getFirst().memorySnippets()).containsExactly(
+                "[学习者事实] 第 9 条：还不懂",
+                "[他说过] 他说过想先学并发");
+    }
+
+    /** 桩：按顺序回调思考、正文、结束。失败路径由各用例自己 doAnswer。 */    private void stubStream(String thinking, String content, TokenUsage usage) {
         doAnswer(invocation -> {
             AssistantConversation.Listener listener = invocation.getArgument(2);
             if (!thinking.isEmpty()) {

@@ -1,4 +1,4 @@
-package io.github.xiaou61.knowledge.internal.search;
+package io.github.xiaou61.platform;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

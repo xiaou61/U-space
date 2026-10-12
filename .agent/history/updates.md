@@ -1462,3 +1462,25 @@ schema_version: 1
   2. e2e 的 `signIn` 此前**点击后即返回**，没等登录完成；后面紧跟的"刷新页面→换访问令牌"会和"还没登录"的窗口抢时间，表现为随机 401。已改为等登录表单消失。
 - 本地提交：见下一笔
 - 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时（首页 200 但 `/info/refs` 000）。已探测：直连首页 200、代理 000、常见代理端口全 000。需要用户启动代理客户端后再推。
+
+## 2026-10-12 16:50:45 +0800 · WORK-006 TASK-004 完成：记忆两路存储与召回
+
+- 类型：change
+- 变更：
+  - 迁移 `V6__create_memory_tables.sql`：`ai_memories_structured`（kind／ref_id／content）与 `ai_memories_text`（content + **`FULLTEXT … WITH PARSER ngram`**）。
+  - `paideia-ai/internal/memory/`：`MemoryRow`（两路共用一个行形状）、`MemoryMapper`（归属一律写在 SQL 里）、`MemoryStore`（写入／召回／列出／逐条删除）。
+  - 把召回接进对话：`ConversationService.prepare` 用**本轮用户输入**当关键词召回，`AssistantConversation.Request` 增加 `memorySnippets`，提示词里按来源标注（`[学习者事实]`／`[他说过]`）。
+- 决策（实现选择，均已回填）：
+  1. **把 `SearchQuery`（ngram 短查询退 LIKE + LIKE 通配符转义）从 `paideia-knowledge/internal/search` 提升到 `paideia-platform`**。它现在有两个消费者（知识库检索、助手记忆），而**跨模块引用别人的 internal 包被 Modulith 边界禁止**；复制一份"信任边界上的转义逻辑"让它有两份各自漂移的版本，是明显更坏的选项。这也符合本项目一贯的"第二个消费者出现时才提升"（与 `KnowledgeApiImplementation` 同一时机）。搬动只涉及 1 个生产调用点 + 1 个测试。
+  2. **两路的列都叫 `content`**（design 里写的 `value`）：两路差别只在"怎么被召回"，不在"存了什么"，统一列名后"取值→拼提示词"只有一条路径。属局部事实订正。
+  3. **召回条数上限写死 8**（`ponytail:` 注释标明），等真出现"记忆太多挤爆上下文"再提成配置。
+  4. **超长不静默截断**：记忆会被后续对话反复读取，悄悄砍一半比报错更坏；写入层是信任边界（将来写入方包含模型），校验放在这一层而不是每个调用点。
+- **口径澄清（重要）**：全文那一路是**按当前这轮的话**检索的，所以过去说过的话**只有在字面对得上时才被召回**——这正是第 2 条裁决（全文检索而非语义检索）的取舍。测试一开始就因此挂了一次，我没有放宽实现去迁就它，而是把用例的消息改成带关键词，并把这个口径写进注释与这里。
+- 依据：WORK-006 `design.md`、`tasks.md` TASK-004；用户裁决 2（混合）、3（严格私有）、13（可查看与逐条删除）
+- 验证：
+  - `LearnerMemoryIntegrationTest` → **6 条通过**：结构化写入与召回（kind/ref 都留着）、多字关键词命中全文索引、**单字关键词退回 LIKE 也能召回**、严格私有（召回到的只有本人、拿别人 id 删不掉且不泄漏存在性）、两路合并顺序（结构化在前）、空白与超长被拒且不静默截断。
+  - `AssistantConversationIntegrationTest` → **10 条通过**（新增一条"召回的记忆进到模型上下文并带来源标注"）。
+  - **后端全量 `mvn -B -o verify` → BUILD SUCCESS、0 失败 0 跳过**（2:55；app 83 条、ai 31 条；`ModularityTest` 通过 = 模块边界未被搬动破坏）。
+  - **一条过程教训**：`-Dtest='A+B'` 里的 `+` 不是 surefire 的分隔符（要用逗号），结果是 **BUILD SUCCESS 但一条测试都没跑**——又一次"绿了却没验"。
+- 本地提交：见下一笔
+- 远端推送：未执行（同上：等代理）

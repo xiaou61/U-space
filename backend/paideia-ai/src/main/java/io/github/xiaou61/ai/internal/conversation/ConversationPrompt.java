@@ -53,6 +53,18 @@ final class ConversationPrompt {
         return "当前条目：《" + title + "》\n\n" + body;
     }
 
+    /**
+     * 把召回的记忆拼成一条系统侧说明。
+     *
+     * <p>标注两类来源，并且**明写它们的可信度不同**：结构化那条是平台记录的既成事实，
+     * 全文那条只是用户说过的话。不区分的话，模型会把随口一句当成事实讲回去。
+     */
+    static String memory(List<String> snippets) {
+        return "关于这个学习者，你记得以下内容（[学习者事实] 是平台记录的既成事实；"
+                + "[他说过] 是他此前说过的话，可能已经不准确）：\n- "
+                + String.join("\n- ", snippets);
+    }
+
     /** 历史消息 → 提示词里的消息。'user' / 'assistant' 由 {@link ConversationTurn.Role} 保证。 */
     static List<ConversationTurn> history(List<ConversationTurn> turns) {
         return turns == null ? List.of() : List.copyOf(turns);

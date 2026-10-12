@@ -22,25 +22,28 @@ import java.util.List;
 public interface AssistantConversation {
 
     /**
-     * @param history   之前的对话（旧 → 新），供模型保持多轮上下文
-     * @param userMessage 本轮用户输入
-     * @param entryTitle 可选：当前条目标题（为空表示这轮没有条目上下文）
-     * @param entryBody  可选：当前条目正文；超长由实现截断
-     */
-    /**
      * @param request 这一轮的上下文与用户输入
      * @param access  本次调用用的凭据（明文只在这次调用期间存在，与 {@link EntrySummarizer} 同一纪律）
      * @param listener 增量回调
      */
     void stream(Request request, ModelAccess access, Listener listener);
 
+    /**
+     * @param history        之前的对话（旧 → 新），供模型保持多轮上下文
+     * @param userMessage    本轮用户输入
+     * @param entryTitle     可选：当前条目标题（为空表示这轮没有条目上下文）
+     * @param entryBody      可选：当前条目正文；超长由实现截断
+     * @param memorySnippets 召回的记忆（本人私有），每条一行；为空表示这次没有可用记忆
+     */
     record Request(List<ConversationTurn> history,
                    String userMessage,
                    String entryTitle,
-                   String entryBody) {
+                   String entryBody,
+                   List<String> memorySnippets) {
 
         public Request {
             history = history == null ? List.of() : List.copyOf(history);
+            memorySnippets = memorySnippets == null ? List.of() : List.copyOf(memorySnippets);
         }
 
         /** 有没有条目上下文。实现据此决定是否把正文放进提示词。 */

@@ -5,7 +5,7 @@ import io.github.xiaou61.knowledge.internal.category.Category;
 import io.github.xiaou61.knowledge.internal.category.CategoryMapper;
 import io.github.xiaou61.knowledge.internal.category.CategoryTree;
 import io.github.xiaou61.knowledge.internal.relation.RelationMapper;
-import io.github.xiaou61.knowledge.internal.search.SearchQuery;
+import io.github.xiaou61.platform.SearchQuery;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import io.github.xiaou61.platform.PageQuery;

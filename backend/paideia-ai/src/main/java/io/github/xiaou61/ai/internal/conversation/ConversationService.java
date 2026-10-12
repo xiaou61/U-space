@@ -4,6 +4,7 @@ import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
+import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.knowledge.KnowledgeApi;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -37,17 +38,20 @@ public class ConversationService {
     private final ConversationProperties properties;
     private final CredentialService credentials;
     private final KnowledgeApi knowledge;
+    private final MemoryStore memories;
 
     ConversationService(ConversationMapper conversations,
                         ConversationMessageMapper messages,
                         ConversationProperties properties,
                         CredentialService credentials,
-                        KnowledgeApi knowledge) {
+                        KnowledgeApi knowledge,
+                        MemoryStore memories) {
         this.conversations = conversations;
         this.messages = messages;
         this.properties = properties;
         this.credentials = credentials;
         this.knowledge = knowledge;
+        this.memories = memories;
     }
 
     /** 会话列表项。**不含消息内容**：列表只用来选，拉开某一条才取内容。 */
@@ -62,6 +66,7 @@ public class ConversationService {
      * @param userMessage    本轮用户输入
      * @param entryTitle     可选条目上下文
      * @param entryBody      可选条目上下文
+     * @param memorySnippets 召回的记忆（本人私有，每条一行）
      * @param access         凭据；调用方据此给出"尚未配置"的提示
      */
     public record TurnPreparation(long conversationId,
@@ -69,6 +74,7 @@ public class ConversationService {
                                   String userMessage,
                                   String entryTitle,
                                   String entryBody,
+                                  List<String> memorySnippets,
                                   ModelAccess access) {
     }
 
@@ -114,7 +120,23 @@ public class ConversationService {
 
         EntryContext entry = entryContext(conversation.getEntryId());
         return new TurnPreparation(conversationId, history(conversationId), trimmed,
-                entry.title(), entry.body(), access.get());
+                entry.title(), entry.body(), memorySnippets(userId, trimmed), access.get());
+    }
+
+    /**
+     * 召回本人记忆并拼成给模型看的几行。
+     *
+     * <p>用**本轮用户输入**当检索关键词：这一步是"这轮的话可能和过去说过什么有关"，
+     * 关键词为空（理论上不会，消息已校验非空）时退回"取最近的记忆"。
+     *
+     * <p>两路在提示词里**标注来源**：结构化的是"关于学习者的事实"，全文的是"他说过的话"。
+     * 不标的话，模型会把"用户曾经随口说的一句"当成确定的事实。
+     */
+    private List<String> memorySnippets(long userId, String keyword) {
+        return memories.recall(userId, keyword).stream()
+                .map(item -> (item.source() == MemoryStore.MemoryItem.Source.STRUCTURED
+                        ? "[学习者事实] " : "[他说过] ") + item.text())
+                .toList();
     }
 
     /**

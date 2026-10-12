@@ -132,6 +132,12 @@ class AgentScopeConversation implements AssistantConversation {
                     .textContent(ConversationPrompt.entryContext(request.entryTitle(), request.entryBody()))
                     .build());
         }
+        if (!request.memorySnippets().isEmpty()) {
+            messages.add(Msg.builder()
+                    .role(MsgRole.SYSTEM)
+                    .textContent(ConversationPrompt.memory(request.memorySnippets()))
+                    .build());
+        }
         for (ConversationTurn turn : ConversationPrompt.history(request.history())) {
             messages.add(Msg.builder()
                     .role(turn.role() == ConversationTurn.Role.ASSISTANT ? MsgRole.ASSISTANT : MsgRole.USER)

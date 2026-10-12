@@ -75,7 +75,7 @@ approver_role: CTO
   3. 全站入口：任意页可开；在条目页自动把当前条目作为**可选**上下文。
 - 验证：`pnpm --filter @paideia/app test:e2e`（多轮、流式、思考折叠各有用例）。
 
-### TASK-004 | pending | 记忆两路存储与召回
+### TASK-004 | done | 记忆两路存储与召回
 
 - 对应：`REQ-004`、`AC-004`
 - 依赖：TASK-002
