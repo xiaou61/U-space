@@ -5,6 +5,7 @@ import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import io.github.xiaou61.security.CurrentUser;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +39,12 @@ class NoteShareController {
     @PostMapping("/notes/{id}/share")
     ApiResponse<String> share(@PathVariable("id") long noteId) {
         return ApiResponse.ok(shares.share(requireUserId(), noteId));
+    }
+
+    /** 我在这条笔记上还有效的分享 id。没有它，离开页面就再也撤不回来了。 */
+    @GetMapping("/notes/{id}/shares")
+    ApiResponse<List<String>> activeShares(@PathVariable("id") long noteId) {
+        return ApiResponse.ok(shares.activeShares(requireUserId(), noteId));
     }
 
     /** 撤回。 */

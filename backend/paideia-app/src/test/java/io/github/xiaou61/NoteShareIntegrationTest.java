@@ -141,6 +141,29 @@ class NoteShareIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM note_shares", Long.class)).isZero();
     }
 
+    @Test
+    @DisplayName("能找回自己已发出的分享（否则离开页面就撤不回来），且只看得到自己的")
+    void activeSharesAreListedForOwnerOnly() throws Exception {
+        long noteId = createNote(userA, null, "已分享", "正文");
+        String shareId = share(userA, noteId);
+
+        MvcResult mine = mockMvc.perform(get("/api/v1/notes/" + noteId + "/shares")
+                        .header("Authorization", token(userA)))
+                .andReturn();
+        assertThat(mine.getResponse().getStatus()).isEqualTo(200);
+        assertThat(body(mine)).contains(shareId);
+
+        // 别人连"这条笔记有没有被分享过"都不该答（笔记本身就不是他的）
+        assertThat(mockMvc.perform(get("/api/v1/notes/" + noteId + "/shares")
+                        .header("Authorization", token(userB)))
+                .andReturn().getResponse().getStatus()).isEqualTo(404);
+
+        // 撤回之后列表里就没有了
+        mockMvc.perform(delete("/api/v1/shares/" + shareId).header("Authorization", token(userA)));
+        assertThat(body(mockMvc.perform(get("/api/v1/notes/" + noteId + "/shares")
+                .header("Authorization", token(userA))).andReturn())).doesNotContain(shareId);
+    }
+
     private long createNote(long userId, Long entryId, String title, String body) throws Exception {
         MvcResult created = mockMvc.perform(post("/api/v1/notes")
                         .header("Authorization", token(userId))

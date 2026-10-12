@@ -1,6 +1,7 @@
 package io.github.xiaou61.note.internal.share;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -48,6 +49,24 @@ interface NoteShareMapper {
               AND s.expires_at > #{now}
             """)
     Optional<SharedNote> findValid(@Param("shareId") String shareId, @Param("now") Instant now);
+
+    /**
+     * 某条笔记**当前有效**的分享 id（本人）。
+     *
+     * <p>没有它，"提前撤回"就只兑现一半：链接只在刚生成的那一刻存在于界面上，用户离开页面
+     * 就再也找不到自己分享过什么、也就撤不回来。
+     */
+    @Select("""
+            SELECT share_id
+            FROM note_shares
+            WHERE note_id = #{noteId} AND user_id = #{userId}
+              AND revoked_at IS NULL
+              AND expires_at > #{now}
+            ORDER BY created_at DESC
+            """)
+    List<String> findActiveForNote(@Param("noteId") long noteId,
+                                   @Param("userId") long userId,
+                                   @Param("now") Instant now);
 
     /** 撤回（自己那条）。返回 0 表示不存在、不是本人的、或已经失效。 */
     @Update("""

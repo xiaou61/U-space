@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NotesPage } from './pages/NotesPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SharedNotePage } from './pages/SharedNotePage'
 
 /**
  * 使用 Hash 路由：桌面壳从自定义协议加载页面，基于浏览器历史的路径路由在那种来源下会失效。
@@ -23,6 +24,14 @@ import { RegisterPage } from './pages/RegisterPage'
  * `scrollIntoView`，见 `packages/knowledge` 的 `EntryToc`。
  */
 export const router = createHashRouter([
+  {
+    // 分享页**不包 RequireAuth**：它是给站外的人看的（用户裁决 12）。
+    // 代价是这个路由也加载了学习者端的整包（含认证代码）——比为此单开一个前端产物便宜得多，
+    // 而且登录门之外这唯一的一个页面，正是匿名访问者真正会走到的入口
+    // （apps/public 在当前部署里并没有被服务，线上根路径就是学习者端）。
+    path: '/share/:shareId',
+    element: <SharedNotePage />,
+  },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   {

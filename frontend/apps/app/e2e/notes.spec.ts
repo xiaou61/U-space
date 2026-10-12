@@ -51,6 +51,40 @@ test('从导航进入笔记：建档→编辑→保存→重载仍在→删除',
   await expect(page.getByText(title)).toHaveCount(0)
 })
 
+test('分享：链接免登录可读，撤回后立刻失效', async ({ page, browser }) => {
+  await signIn(page, SEED_LEARNER)
+  await page.getByTestId('learner-nav-notes').click()
+  await page.getByTestId('notes-create').click()
+
+  const title = `e2e 分享 ${Date.now()}`
+  await page.getByTestId('note-title').fill(title)
+  await page.getByTestId('note-body').fill('分享出去的正文')
+  await page.getByTestId('note-save').click()
+  await page.getByTestId('note-share').click()
+
+  const link = await page.getByTestId('note-share-link').innerText()
+  expect(link).toContain('/#/share/')
+
+  // **全新的匿名上下文**：没有任何登录状态，这正是"免登录可读"要验的形态
+  const anonymous = await browser.newContext()
+  const guest = await anonymous.newPage()
+  await guest.goto(link)
+  await expect(guest.getByTestId('share-title')).toHaveText(title)
+  await expect(guest.getByTestId('share-body')).toHaveText('分享出去的正文')
+
+  // 撤回：同一个链接立刻不可读
+  await page.getByTestId('note-revoke').click()
+  await expect(page.getByTestId('note-share')).toBeVisible()
+  await guest.reload()
+  await expect(guest.getByTestId('share-missing')).toBeVisible()
+
+  await anonymous.close()
+  // 收尾：删掉这条笔记（种子账号的数据是持久的）
+  page.on('dialog', (dialog) => void dialog.accept())
+  await page.getByTestId('note-delete').click()
+  await expect(page.getByText(title)).toHaveCount(0)
+})
+
 test('跟着助手的回答走：回答上带"存进笔记"入口（本环境没凭据，只验入口的挂载规则）', async ({ page }) => {
   await signIn(page, SEED_LEARNER)
   await page.goto('/#/knowledge')

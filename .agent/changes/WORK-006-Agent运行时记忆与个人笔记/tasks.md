@@ -171,7 +171,7 @@ approver_role: CTO
   4. 静态放行列表与 view controller 同步（分享页是前端静态产物）。
 - 验证：`mvn -B verify`（免登录可读、UUID 不可枚举、到期与撤回各自失效、产物不含痕迹）。
 
-### TASK-012 | pending | 分享前端（公开页 + 分享入口）
+### TASK-012 | done | 分享前端（公开页 + 分享入口）
 
 - 对应：`REQ-012`、`AC-011`、`AC-012`
 - 依赖：TASK-011

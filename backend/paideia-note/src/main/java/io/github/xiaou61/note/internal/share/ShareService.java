@@ -53,6 +53,13 @@ public class ShareService {
         return shareId;
     }
 
+    /** 某条笔记当前有效的分享 id（本人）。界面据此告诉用户"现在撤的是一条已发出的链接"。 */
+    public java.util.List<String> activeShares(long userId, long noteId) {
+        // 先确认笔记是本人的：不是本人的笔记连"它有没有被分享过"都不该答
+        notes.read(userId, noteId);
+        return shares.findActiveForNote(noteId, userId, Instant.now());
+    }
+
     /** 撤回。删不到（不是本人的、已失效）就报 404——同样不确认它是否存在。 */
     @Transactional
     public void revoke(long userId, String shareId) {

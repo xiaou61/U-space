@@ -27,6 +27,14 @@ export interface NotesApi {
   create(input: NoteInput): Promise<NoteView>
   update(id: number, input: NoteInput): Promise<NoteView>
   remove(id: number): Promise<boolean>
+  /** 生成一条分享链接的 id。链接本身由界面按当前站点拼出来。 */
+  share(id: number): Promise<string>
+  /** 撤回。 */
+  revoke(shareId: string): Promise<boolean>
+  /** 我在这条笔记上还有效的分享 id（否则离开页面就撤不回来）。 */
+  activeShares(id: number): Promise<string[]>
+  /** 拼出可发给别人的链接（由界面按当前站点拼）。 */
+  shareLink(shareId: string): string
 }
 
 /**
@@ -57,6 +65,12 @@ export function createNotesApi(client: ApiClient): NotesApi {
         body: JSON.stringify(input),
       }),
     remove: (id) => client.requestEnvelope<boolean>(`${base}/${id}`, { method: 'DELETE' }),
+    share: (id) => client.requestEnvelope<string>(`${base}/${id}/share`, { method: 'POST' }),
+    revoke: (shareId) => client.requestEnvelope<boolean>(`/api/v1/shares/${shareId}`, { method: 'DELETE' }),
+    activeShares: (id) => client.requestEnvelope<string[]>(`${base}/${id}/shares`),
+
+    // 分享链接由界面按当前站点拼：后端不知道自己是哪个域名（本地、隧道、线上各不相同）
+    shareLink: (shareId) => `${window.location.origin}/#/share/${shareId}`,
   }
 }
 

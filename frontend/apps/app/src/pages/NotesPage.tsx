@@ -22,6 +22,8 @@ export function NotesPage() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [error, setError] = useState<string | null>(null)
+  /** 刚生成的分享链接（只为给一句"已生成"的反馈；真正的链接从 shares 查询里读）。 */
+  const [justShared, setJustShared] = useState<string | null>(null)
 
   const list = useQuery({ queryKey: ['notes'], queryFn: () => notes.list() })
   const detail = useQuery({
@@ -58,6 +60,33 @@ export function NotesPage() {
     onSuccess: () => {
       setError(null)
       invalidate()
+    },
+    onError: (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)),
+  })
+
+  // 这条笔记当前有效的分享。查它而不是只记"刚生成的 id"：用户离开页面再回来也要能撤回
+  const shares = useQuery({
+    queryKey: ['note-shares', selected],
+    queryFn: () => notes.activeShares(selected as number),
+    enabled: selected !== null,
+  })
+
+  const createShare = useMutation({
+    mutationFn: () => notes.share(selected as number),
+    onSuccess: (shareId) => {
+      setError(null)
+      setJustShared(notes.shareLink(shareId))
+      void queryClient.invalidateQueries({ queryKey: ['note-shares', selected] })
+    },
+    onError: (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)),
+  })
+
+  const revokeShare = useMutation({
+    mutationFn: (shareId: string) => notes.revoke(shareId),
+    onSuccess: () => {
+      setError(null)
+      setJustShared(null)
+      void queryClient.invalidateQueries({ queryKey: ['note-shares', selected] })
     },
     onError: (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)),
   })
@@ -174,6 +203,43 @@ export function NotesPage() {
                       挂靠条目 #{detail.data.entryId}
                     </span>
                   )}
+                </div>
+
+                {/* 分享：链接免登录可读，30 天到期，可提前撤回（用户裁决 12） */}
+                <div className="border-border space-y-1 border-t pt-3">
+                  {(shares.data ?? []).length === 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={createShare.isPending}
+                      data-testid="note-share"
+                      onClick={() => createShare.mutate()}
+                    >
+                      生成分享链接
+                    </Button>
+                  ) : (
+                    (shares.data ?? []).map((shareId) => (
+                      <div key={shareId} className="flex flex-wrap items-center gap-2">
+                        <code className="text-muted-foreground text-xs break-all" data-testid="note-share-link">
+                          {notes.shareLink(shareId)}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={revokeShare.isPending}
+                          data-testid="note-revoke"
+                          onClick={() => revokeShare.mutate(shareId)}
+                        >
+                          撤回
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                  <p className="text-muted-foreground text-xs">
+                    {justShared === null
+                      ? '链接不需要登录就能看，30 天后自动失效。'
+                      : '已生成，可以复制发给别人。不想给了点撤回。'}
+                  </p>
                 </div>
               </>
             )}
