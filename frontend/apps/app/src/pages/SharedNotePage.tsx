@@ -1,6 +1,9 @@
-import { Alert, AlertDescription, AlertTitle, Card, CardContent, CardHeader, CardTitle, Spinner } from '@paideia/ui'
+import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent, CardHeader, CardTitle, Spinner } from '@paideia/ui'
+import { useAuth } from '@paideia/auth'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
+
+import { api } from '../api'
 
 /** 分享端点返回的形状。**没有作者、没有时间**——服务端就不给。 */
 interface SharedNote {
@@ -21,9 +24,13 @@ interface SharedNote {
  */
 export function SharedNotePage() {
   const { shareId } = useParams<{ shareId: string }>()
+  const { status } = useAuth()
   const [note, setNote] = useState<SharedNote | null>(null)
   const [missing, setMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reason, setReason] = useState('')
+  const [reported, setReported] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -89,6 +96,72 @@ export function SharedNotePage() {
                 相关条目 #{note.entryId}
               </p>
             )}
+
+            {/*
+              举报入口。**分享页是免登录的，但举报需要身份**：接口按"举报人有账号"设计
+              （表里是 reporter_user_id），所以未登录时给的是登录引导而不是一个点了会 401 的按钮。
+              这也是免鉴权分享面唯一的治理手段——没有它，被分享出去的不当内容只能靠管理员主动发现。
+            */}
+            <div className="border-border mt-6 border-t pt-3">
+              {status !== 'signed-in' ? (
+                <p className="text-muted-foreground text-xs" data-testid="share-report-need-login">
+                  觉得内容不合适？<Link to="/login" className="underline">登录</Link>后可以举报。
+                </p>
+              ) : reported ? (
+                <p className="text-muted-foreground text-xs" data-testid="share-reported">
+                  已提交举报，管理员会处理。
+                </p>
+              ) : reportOpen ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={reason}
+                    rows={2}
+                    placeholder="说明一下问题（会转给管理员）"
+                    aria-label="举报理由"
+                    data-testid="share-report-reason"
+                    onChange={(event) => setReason(event.target.value)}
+                    className="border-border bg-background w-full rounded border px-2 py-1 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={reason.trim() === ''}
+                      data-testid="share-report-submit"
+                      onClick={() => {
+                        void api
+                          .requestEnvelope<boolean>('/api/v1/reports', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ shareId, reason }),
+                          })
+                          .then(() => {
+                            setError(null)
+                            setReported(true)
+                            setReportOpen(false)
+                          })
+                          .catch((cause: unknown) =>
+                            setError(cause instanceof Error ? cause.message : String(cause)),
+                          )
+                      }}
+                    >
+                      提交举报
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setReportOpen(false)}>
+                      取消
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  data-testid="share-report-open"
+                  onClick={() => setReportOpen(true)}
+                >
+                  举报这条分享
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -71,6 +71,8 @@ test('分享：链接免登录可读，撤回后立刻失效', async ({ page, br
   await guest.goto(link)
   await expect(guest.getByTestId('share-title')).toHaveText(title)
   await expect(guest.getByTestId('share-body')).toHaveText('分享出去的正文')
+  // 举报入口在**未登录**时给的是登录引导（举报需要身份），而不是一个点了会 401 的按钮
+  await expect(guest.getByTestId('share-report-need-login')).toBeVisible()
 
   // 撤回：同一个链接立刻不可读
   await page.getByTestId('note-revoke').click()
