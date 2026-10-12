@@ -121,6 +121,10 @@ public class SecurityConfiguration {
                         // 否则将来看到这个前缀没有规则，会以为漏配了。凭据与额度都是每个用户自己的，
                         // 不是管理操作。
                         .requestMatchers("/api/v1/ai/**").authenticated()
+                        // 只读分享：**全项目第二处免鉴权读端点**（用户裁决 12）。与附件读取同一模型——
+                        // id 是 UUID、不可枚举即凭据。**限定 GET**：分享只有读，把 POST 一起放行
+                        // 就等于给了匿名写入口。产物只含笔记标题与正文，不含作者、记忆与学习痕迹。
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/shares/**").permitAll()
                         // 附件读取**免鉴权**（用户裁决）：<img> 不携带 Authorization 头，
                         // 而本项目无 Cookie，要求登录就等于图片显示不出来。限定 GET：
                         // 上传挂在 /api/v1/knowledge/admin/files，不能因为放行读取把写入也放开。
