@@ -41,6 +41,10 @@
     </dependency>
     <dependency>
       <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-note</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
       <artifactId>paideia-ai</artifactId>
     </dependency>
 

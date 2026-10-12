@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.xiaou61</groupId>
+    <artifactId>paideia</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>paideia-note</artifactId>
+  <name>paideia-note</name>
+  <description>个人笔记与只读分享（WORK-006 合并进来的原 WORK-007 范围）</description>
+
+  <!--
+    依赖方向：note -> {platform, persistence, security}。
+
+    **刻意不依赖 knowledge**：笔记挂靠条目用的是 entry_id 这个数字，不需要为了存一个 id 去
+    依赖整个知识库模块。等到真需要"显示所挂条目的标题"时再按需加——那时它会是一个有真实用途的
+    依赖，而不是提前画上的箭头（WORK-004 定下的"不预先设计猜测出来的接口"是同一套纪律）。
+
+    **暂不提供对外 API 接口**：本模块目前只服务学习者端自己的 HTTP 端点，没有任何别的模块调用它。
+    等 WORK-006 的"助手写笔记"（TASK-010）真的跨模块调它时，再加 NoteApi——空接口只会让人以为
+    有人用。
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-platform</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-security</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Boot 4 把测试切片拆到独立模块 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

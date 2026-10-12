@@ -111,7 +111,7 @@ approver_role: CTO
   3. 工具错误作为可观察结果回到模型，不写记忆。
 - 验证：`mvn -B verify`（工具被调用的证据 + 越权 id 被拒的用例）。
 
-### TASK-007 | pending | 新建 paideia-note 模块与笔记 CRUD
+### TASK-007 | done | 新建 paideia-note 模块与笔记 CRUD
 
 - 对应：`REQ-011`、`AC-010`
 - 依赖：无

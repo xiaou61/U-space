@@ -1525,3 +1525,23 @@ schema_version: 1
   - 一处小坑：自评标记的合法取值是 `understood`／`unsure`（我按 `not_yet` 写，测试 400）。读一眼控制器就不该猜。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
+
+## 2026-10-12 18:52:44 +0800 · WORK-006 TASK-007 完成：新建 paideia-note 模块与笔记 CRUD
+
+- 类型：change
+- 变更：
+  - 新模块 `backend/paideia-note/`（`note -> {platform, persistence, security}`），注册进父 pom 与 `paideia-app`；迁移 `V7__create_note_tables.sql` 建 `notes`。
+  - `internal/note/`：`Note`、`NoteMapper`（每条语句都带 `user_id`）、`NoteService`（CRUD + 长度校验 + 读不到一律当不存在）；`internal/web/NoteController` 出 `/api/v1/notes` 的五个动作。
+- 决策：
+  1. **暂不建 `NoteApi`**：本模块目前只服务自己的 HTTP 端点，没有别的模块调用它。等 TASK-010"助手写笔记"真的跨模块调它时再加——空接口只会让人以为有人用（WORK-004 的"不预先设计猜测出来的接口"是同一套纪律）。
+  2. **刻意不依赖 `paideia-knowledge`**：挂靠条目只存一个 `entry_id` 数字，不需要为存一个 id 依赖整个知识库模块；等真要显示"所挂条目的标题"时再按需加。
+  3. **列表不带正文**（`NoteSummary` 里就没有 `body` 字段）：几百条的列表把正文都拽回来是纯浪费；详情才给全文。
+  4. **正文允许为空、标题不允许**：先建个空壳再写内容是正常用法；标题空则列表里会是一行空白。
+  5. 一行身份解析（令牌主体→账号 id）仍各模块自己持有，**没有**为此往 security 加公共入口——那会牵动另外两个已有调用点，而三处各六行。
+- 依据：WORK-006 `design.md`（组件与职责、表设计）、`tasks.md` TASK-007；用户裁决 5、6（笔记并入本项）
+- 验证：
+  - `NoteIntegrationTest` → **4 条通过**：CRUD 走通且列表不含正文、三态（匿名 401／他人读改删都 404 且不确认其存在／本人放行）、标题与正文长度校验、`entryId` 可挂可不挂且挂不存在的 id 也不报错。
+  - **后端全量 `mvn -B -o verify` → BUILD SUCCESS、0 失败 0 跳过**（2:49；app 95 条；`paideia-note` 模块构建成功；`ModularityTest` 通过 = 新模块边界被接受）。
+  - 一处小坑：断言"列表不含某字段"要用"响应体里没有这个键"，而不是取值为 null——后者会 PathNotFound，与"字段被漏掉"混在一起无法分辨。
+- 本地提交：见下一笔
+- 远端推送：未执行（等代理）
