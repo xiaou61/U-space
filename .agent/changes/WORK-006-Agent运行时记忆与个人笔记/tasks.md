@@ -134,7 +134,7 @@ approver_role: CTO
   2. 助手生成的正文可一键作为一段落进笔记（走用户点击确认）。
 - 验证：`pnpm --filter @paideia/app test:e2e`（录入 → 编辑 → 刷新仍在 → 落进笔记）。
 
-### TASK-009 | pending | 写本人私有数据（确认端点）
+### TASK-009 | done | 写本人私有数据（确认端点）
 
 - 对应：`REQ-008`、`AC-008`
 - 依赖：TASK-004、TASK-002

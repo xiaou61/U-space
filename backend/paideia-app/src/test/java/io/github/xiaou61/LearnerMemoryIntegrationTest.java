@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.platform.BizException;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -194,6 +196,36 @@ class LearnerMemoryIntegrationTest {
         assertThat(mockMvc.perform(delete("/api/v1/ai/memories/whatever/1")
                         .header("Authorization", token(userA)))
                 .andReturn().getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("记忆写入口：本人可写两路，匿名 401，非法类型／空内容／缺 kind 都被拒")
+    void memoryWriteEndpointIsOwnerScoped() throws Exception {
+        assertThat(mockMvc.perform(post("/api/v1/ai/memories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"text\",\"text\":\"x\"}"))
+                .andReturn().getResponse().getStatus()).isEqualTo(401);
+
+        assertThat(writeStatus(userA, "{\"type\":\"whatever\",\"text\":\"x\"}")).isEqualTo(400);
+        assertThat(writeStatus(userA, "{\"type\":\"text\",\"text\":\"   \"}")).isEqualTo(400);
+        // 结构化那路必须说明 kind：没有种类的"事实"没法用
+        assertThat(writeStatus(userA, "{\"type\":\"structured\",\"text\":\"x\"}")).isEqualTo(400);
+
+        assertThat(writeStatus(userA, "{\"type\":\"text\",\"text\":\"甲说过的原话\"}")).isEqualTo(200);
+        assertThat(writeStatus(userA, "{\"type\":\"structured\",\"text\":\"第 5 条：还不懂\","
+                + "\"kind\":\"entry_understanding\",\"refId\":5}")).isEqualTo(200);
+
+        assertThat(memories.list(userA)).hasSize(2);
+        // 归属取的是令牌，请求体里没有 userId 这个字段——传不了别人的
+        assertThat(memories.list(userB)).isEmpty();
+    }
+
+    private int writeStatus(long userId, String json) throws Exception {
+        return mockMvc.perform(post("/api/v1/ai/memories")
+                        .header("Authorization", token(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andReturn().getResponse().getStatus();
     }
 
     private String token(long userId) {

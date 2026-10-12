@@ -26,6 +26,11 @@ export interface AssistantApi {
   /** 逐条删除。返回是否真的删掉了一行（不是本人的会返回 false）。 */
   deleteMemory(source: MemoryView['source'], id: number): Promise<boolean>
   /**
+   * 记住一句话（写一条全文记忆）。**这是记忆唯一的写入口**，只有用户点击才会走到这里——
+   * 助手自己无法调用它（端口里没有写工具）。
+   */
+  remember(text: string): Promise<number>
+  /**
    * 发一轮消息，把 SSE 事件逐个回调出去。本方法返回时表示这一轮结束。
    *
    * <p>`signal` 用于"用户关掉面板/切换会话"时中断：不断开的话，上游调用会继续计费到
@@ -85,6 +90,13 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
 
     deleteMemory: (source, id) =>
       client.requestEnvelope<boolean>(`${base}/memories/${source}/${id}`, { method: 'DELETE' }),
+
+    remember: (text) =>
+      client.requestEnvelope<number>(`${base}/memories`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ type: 'text', text }),
+      }),
 
     sendMessage: async (conversationId, message, onEvent, signal) => {
       const response = await client.stream(`${base}/conversations/${conversationId}/messages`, {

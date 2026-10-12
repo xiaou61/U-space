@@ -39,6 +39,8 @@ export function ConversationPanel({
   const [error, setError] = useState<string | null>(null)
   /** 已存进笔记的消息下标：同一个回答可以再存一次（用户可能删过那条笔记），所以不锁按钮。 */
   const [savedIndexes, setSavedIndexes] = useState<number[]>([])
+  /** 同上的"已记住"。 */
+  const [rememberedIndexes, setRememberedIndexes] = useState<number[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   // 换条目：中断当前流并重开一个会话
@@ -162,32 +164,60 @@ export function ConversationPanel({
                   {message.usage.outputTokens}）
                 </p>
               )}
-              {/* 只对"真正的回答"给存笔记入口：空正文的提示不该被存成笔记 */}
-              {onSaveToNote === undefined ||
-              message.role !== 'assistant' ||
-              message.content === '' ||
-              message.emptyHint ? null : (
+              {/* 只对"真正的回答"给这两个入口：空正文的提示不该被存成笔记或记忆 */}
+              {message.role !== 'assistant' || message.content === '' || message.emptyHint ? null : (
                 <div className="mt-1 flex items-center gap-2">
+                  {/* 存进笔记要宿主注入回调（本包不认识笔记）；没注入就不显示这个按钮 */}
+                  {onSaveToNote === undefined ? null : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-testid="conversation-save-to-note"
+                      onClick={() => {
+                        // 闭包里 TS 不再知道上面的 undefined 判断成立，所以这里再守一次
+                        if (onSaveToNote === undefined) {
+                          return
+                        }
+                        void onSaveToNote(message.content, entryId)
+                          .then(() => {
+                            setError(null)
+                            setSavedIndexes((previous) => [...previous, index])
+                          })
+                          .catch((cause: unknown) =>
+                            setError(cause instanceof Error ? cause.message : String(cause)),
+                          )
+                      }}
+                    >
+                      存进笔记
+                    </Button>
+                  )}
+                  {/* 「记住这条」不需要外部注入：记忆就是助手自己的数据 */}
                   <Button
                     variant="ghost"
                     size="sm"
-                    data-testid="conversation-save-to-note"
+                    data-testid="conversation-remember"
                     onClick={() => {
-                      void onSaveToNote(message.content, entryId)
+                      void api
+                        .remember(message.content)
                         .then(() => {
                           setError(null)
-                          setSavedIndexes((previous) => [...previous, index])
+                          setRememberedIndexes((previous) => [...previous, index])
                         })
                         .catch((cause: unknown) =>
                           setError(cause instanceof Error ? cause.message : String(cause)),
                         )
                     }}
                   >
-                    存进笔记
+                    记住这条
                   </Button>
                   {savedIndexes.includes(index) ? (
                     <span className="text-muted-foreground text-[11px]" data-testid="conversation-saved">
                       已存进笔记
+                    </span>
+                  ) : null}
+                  {rememberedIndexes.includes(index) ? (
+                    <span className="text-muted-foreground text-[11px]" data-testid="conversation-remembered">
+                      已记住
                     </span>
                   ) : null}
                 </div>

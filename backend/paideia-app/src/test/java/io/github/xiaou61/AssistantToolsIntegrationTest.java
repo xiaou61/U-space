@@ -129,6 +129,15 @@ class AssistantToolsIntegrationTest {
     }
 
     @Test
+    @DisplayName("工具清单里**没有写工具**——写入只能经用户点击的那个确认端点")
+    void toolsAreReadOnly() {
+        // 这条是防回归：将来有人往工具集里加一个"写"工具，就等于绕过了"自主只建议不动作"
+        // （用户裁决 7）。断了它，加的人必须先想清楚这件事。
+        assertThat(tools.schemas()).extracting(io.agentscope.core.model.ToolSchema::getName)
+                .containsExactlyInAnyOrder("search_entries", "list_categories", "my_marks");
+    }
+
+    @Test
     @DisplayName("未知工具名返回错误结果而不是抛异常——工具失败不该炸掉整轮对话")
     void unknownToolReturnsErrorOutcome() {
         AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "delete_everything", Map.of());

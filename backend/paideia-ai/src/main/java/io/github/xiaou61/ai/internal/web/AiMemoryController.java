@@ -9,6 +9,8 @@ import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,6 +30,15 @@ class AiMemoryController {
     record MemoryView(String source, long id, String text, Instant createdAt) {
     }
 
+    /**
+     * 写入请求。
+     *
+     * <p>`type` 必给：两路存在不同的表里，只给一段文本无法判断该进哪一路。
+     * `kind`／`refId` 只有结构化那路用得上。
+     */
+    record WriteRequest(String type, String text, String kind, Long refId) {
+    }
+
     private final MemoryStore memories;
 
     AiMemoryController(MemoryStore memories) {
@@ -40,6 +51,29 @@ class AiMemoryController {
                 .map(item -> new MemoryView(item.source().name().toLowerCase(java.util.Locale.ROOT),
                         item.id(), item.text(), item.createdAt()))
                 .toList());
+    }
+
+    /**
+     * 写入一条记忆。**这是记忆唯一的写入口**。
+     *
+     * <p>为什么单独成一个端点而不是让模型直接写：用户裁决 7 是"自主只建议不动作"，
+     * 所以模型产出的只能是**草案**，由用户点击后调到这里来。模型那条路径不存在——
+     * 这是"写操作必须用户确认"在接口层的落点，不是靠前端自觉。
+     *
+     * <p>归属取调用者：请求体里**没有** userId 字段，传不了别人的。
+     */
+    @PostMapping
+    ApiResponse<Long> create(@RequestBody WriteRequest request) {
+        long userId = AiRequester.require();
+        if (request == null || request.type() == null) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "类型只能是 structured 或 text");
+        }
+        return switch (request.type().toLowerCase(java.util.Locale.ROOT)) {
+            case "structured" -> ApiResponse.ok(
+                    memories.rememberStructured(userId, request.kind(), request.refId(), request.text()));
+            case "text" -> ApiResponse.ok(memories.rememberText(userId, request.text()));
+            default -> throw new BizException(ErrorCode.INVALID_ARGUMENT, "类型只能是 structured 或 text");
+        };
     }
 
     @DeleteMapping("/{source}/{id}")
