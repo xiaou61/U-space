@@ -313,6 +313,36 @@ class AssistantConversationIntegrationTest {
                 "[他说过] 他说过想先学并发");
     }
 
+    @Test
+    @DisplayName("一轮的用量返还给用户；触发限流时给 429 而不是把上游的错误抛出来")
+    void usageIsReturnedAndRateLimitIsEnforced() throws Exception {
+        configureCredential(userA);
+        long conversationId = createConversation(userA, null);
+        stubStream("", "回答", new TokenUsage(5, 7, 12));
+
+        // 用量随 done 事件回去（BYOK 下用户自己付费，看得见才透明）
+        String stream = body(sendMessage(userA, conversationId, "第一轮"));
+        assertThat(stream).contains("\"total\":12");
+
+        // 默认每分钟 10 轮：把这一分钟用光，第 11 轮应该被限流
+        for (int round = 1; round < 10; round++) {
+            sendMessage(userA, conversationId, "第 " + round + " 轮");
+        }
+        MvcResult limited = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
+                        .header("Authorization", token(userA))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"超限的一轮\"}"))
+                .andReturn();
+
+        assertThat(limited.getResponse().getStatus()).isEqualTo(429);
+        assertThat(body(limited)).contains("发送消息");
+        // 被限流的那一轮**什么都没写**：用户那句话不该落库（它没有产生任何调用）
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_messages WHERE conversation_id = ? AND content = '超限的一轮'",
+                Long.class, conversationId)).isZero();
+    }
+
     /** 桩：按顺序回调思考、正文、结束。失败路径由各用例自己 doAnswer。 */    private void stubStream(String thinking, String content, TokenUsage usage) {
         doAnswer(invocation -> {
             AssistantConversation.Listener listener = invocation.getArgument(2);

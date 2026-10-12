@@ -8,6 +8,7 @@ import io.github.xiaou61.ai.SummaryCard;
 import io.github.xiaou61.ai.SummaryVisibility;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
+import io.github.xiaou61.ai.internal.support.UserRateLimiter;
 import io.github.xiaou61.ai.internal.provider.SummaryPrompt;
 import io.github.xiaou61.knowledge.EntryContent;
 import io.github.xiaou61.knowledge.KnowledgeApi;
@@ -44,7 +45,9 @@ public class SummaryService {
     private final CredentialService credentials;
     private final EntrySummarizer summarizer;
     private final EntrySummaryMapper mapper;
-    private final SummaryRateLimiter limiter;
+    private final UserRateLimiter limiter;
+    /** 限流口径来自配置（每分钟／每天），所以这里也要拿到它。 */
+    private final io.github.xiaou61.ai.internal.credential.AiProperties properties;
     /** 卡片与库里的 JSON 互转；用默认配置即可（不依赖容器里的 ObjectMapper）。 */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -52,12 +55,14 @@ public class SummaryService {
                    CredentialService credentials,
                    EntrySummarizer summarizer,
                    EntrySummaryMapper mapper,
-                   SummaryRateLimiter limiter) {
+                   UserRateLimiter limiter,
+                   io.github.xiaou61.ai.internal.credential.AiProperties properties) {
         this.knowledge = knowledge;
         this.credentials = credentials;
         this.summarizer = summarizer;
         this.mapper = mapper;
         this.limiter = limiter;
+        this.properties = properties;
     }
 
     /** 响应形状。`usage` 命中缓存时为 null；`source` 说明这份结果是谁生成的。 */
@@ -87,7 +92,7 @@ public class SummaryService {
             return cached.get();
         }
 
-        limiter.checkAndCount(userId);
+        limiter.checkAndCount(userId, "生成精简", properties.getPerMinuteLimit(), properties.getPerDayLimit());
         var access = credentials.access(userId)
                 .orElseThrow(() -> new BizException(ErrorCode.CONFLICT,
                         "尚未配置模型凭据，请先填写 baseUrl 与 API Key"));

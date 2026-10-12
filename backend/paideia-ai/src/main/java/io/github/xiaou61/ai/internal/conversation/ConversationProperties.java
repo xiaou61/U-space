@@ -38,6 +38,33 @@ public class ConversationProperties {
     /** 采样温度。对话比摘要需要一点变化，取中间值。 */
     private double temperature = 0.6;
 
+    /**
+     * 每用户每分钟可发起的对话轮数。
+     *
+     * <p>比精简那份（6）宽：一轮对话本身就是一次调用，正常追问很容易连着好几轮；
+     * 但也不能不限——它比一次精简贵（带上下文与思考）。
+     */
+    private int perMinuteLimit = 10;
+
+    /** 每用户每天可发起的对话轮数。 */
+    private int perDayLimit = 200;
+
+    public int getPerMinuteLimit() {
+        return perMinuteLimit;
+    }
+
+    public void setPerMinuteLimit(int perMinuteLimit) {
+        this.perMinuteLimit = perMinuteLimit;
+    }
+
+    public int getPerDayLimit() {
+        return perDayLimit;
+    }
+
+    public void setPerDayLimit(int perDayLimit) {
+        this.perDayLimit = perDayLimit;
+    }
+
     public int getMaxTokens() {
         return maxTokens;
     }

@@ -5,6 +5,7 @@ import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
+import io.github.xiaou61.ai.internal.support.UserRateLimiter;
 import io.github.xiaou61.knowledge.KnowledgeApi;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -39,19 +40,22 @@ public class ConversationService {
     private final CredentialService credentials;
     private final KnowledgeApi knowledge;
     private final MemoryStore memories;
+    private final UserRateLimiter limiter;
 
     ConversationService(ConversationMapper conversations,
                         ConversationMessageMapper messages,
                         ConversationProperties properties,
                         CredentialService credentials,
                         KnowledgeApi knowledge,
-                        MemoryStore memories) {
+                        MemoryStore memories,
+                        UserRateLimiter limiter) {
         this.conversations = conversations;
         this.messages = messages;
         this.properties = properties;
         this.credentials = credentials;
         this.knowledge = knowledge;
         this.memories = memories;
+        this.limiter = limiter;
     }
 
     /** 会话列表项。**不含消息内容**：列表只用来选，拉开某一条才取内容。 */
@@ -113,6 +117,10 @@ public class ConversationService {
         if (access.isEmpty()) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "尚未配置模型凭据，请先填写你自己的 API Key");
         }
+        // 限流放在凭据校验**之后**：没配凭据的请求根本不会打到上游，不该占用户的额度
+        // （与"命中缓存不计入"同一个口径）
+        limiter.checkAndCount(userId, "发送消息",
+                properties.getPerMinuteLimit(), properties.getPerDayLimit());
 
         appendMessage(conversationId, ConversationMessage.ROLE_USER, trimmed, null);
         // 滑动续期：聊到一半过期比"聊完就丢"更让人费解
