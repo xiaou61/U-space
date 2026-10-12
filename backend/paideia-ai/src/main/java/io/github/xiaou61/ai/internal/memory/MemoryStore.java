@@ -97,9 +97,26 @@ public class MemoryStore {
         return items;
     }
 
-    /** 本人全部记忆（设置页用）。 */
+    /**
+     * 本人全部记忆（设置页用，用户裁决 13）。
+     *
+     * <p>**不复用 {@link #recall}**：那个带上限（RECALL_LIMIT = 8，只为"进提示词的几行"服务）。
+     * 设置页要的是"它到底记住了我什么"，被截断会让界面撒谎。
+     *
+     * <p>ponytail: 这里给 200 条的显示上限，超出只影响设置页能一次看到多少（不会静默删数据）。
+     * 等真有人攒到那么多记忆再做分页。
+     */
+    private static final int LIST_LIMIT = 200;
+
     public List<MemoryItem> list(long userId) {
-        return recall(userId, null);
+        List<MemoryItem> items = new ArrayList<>();
+        for (MemoryRow row : mapper.selectStructuredRecent(userId, LIST_LIMIT)) {
+            items.add(new MemoryItem(MemoryItem.Source.STRUCTURED, row.getId(), row.getContent(), row.getCreatedAt()));
+        }
+        for (MemoryRow row : mapper.selectTextRecent(userId, LIST_LIMIT)) {
+            items.add(new MemoryItem(MemoryItem.Source.TEXT, row.getId(), row.getContent(), row.getCreatedAt()));
+        }
+        return items;
     }
 
     /** 逐条删除。返回是否真的删掉了一行（不是本人的行会返回 false，且**不泄漏它是否存在**）。 */

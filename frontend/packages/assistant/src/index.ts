@@ -13,6 +13,7 @@ export type { AssistantApi } from './client'
 export { ConversationPanel } from './conversation-panel'
 export { AssistantProvider, useAssistantContext } from './context'
 export type { AssistantContextValue } from './context'
+export { MemoryPanel } from './memory-panel'
 export { parseSseBlock, readEventStream } from './sse'
 export type { AssistantEvent, AssistantEventType } from './sse'
 export { SummaryCardView } from './summary-card'
@@ -21,6 +22,7 @@ export type {
   ConversationView,
   CredentialInput,
   CredentialView,
+  MemoryView,
   SummaryCard,
   SummarySection,
   SummaryView,

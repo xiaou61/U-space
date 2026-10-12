@@ -6,6 +6,7 @@ import type {
   ConversationView,
   CredentialInput,
   CredentialView,
+  MemoryView,
   SummaryView,
   SummaryVisibility,
 } from './types'
@@ -20,6 +21,10 @@ export interface AssistantApi {
   generate(entryId: number, visibility: SummaryVisibility): Promise<SummaryView>
   /** 建会话。`entryId` 可空——助手在任意页都能开，条目只是可选上下文。 */
   createConversation(entryId: number | null): Promise<ConversationView>
+  /** 本人记忆（严格私有，没有"看别人的"这种调用）。 */
+  memories(): Promise<MemoryView[]>
+  /** 逐条删除。返回是否真的删掉了一行（不是本人的会返回 false）。 */
+  deleteMemory(source: MemoryView['source'], id: number): Promise<boolean>
   /**
    * 发一轮消息，把 SSE 事件逐个回调出去。本方法返回时表示这一轮结束。
    *
@@ -75,6 +80,11 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         headers: JSON_HEADERS,
         body: JSON.stringify({ entryId }),
       }),
+
+    memories: () => client.requestEnvelope<MemoryView[]>(`${base}/memories`),
+
+    deleteMemory: (source, id) =>
+      client.requestEnvelope<boolean>(`${base}/memories/${source}/${id}`, { method: 'DELETE' }),
 
     sendMessage: async (conversationId, message, onEvent, signal) => {
       const response = await client.stream(`${base}/conversations/${conversationId}/messages`, {

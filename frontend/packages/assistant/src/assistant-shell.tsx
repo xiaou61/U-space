@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import type { AssistantApi } from './client'
 import { ConversationPanel } from './conversation-panel'
 import { CredentialDialog } from './credential-dialog'
+import { MemoryPanel } from './memory-panel'
 import { useAssistantContext } from './context'
 import { SummaryCardView } from './summary-card'
 import type { CredentialView, SummaryView, SummaryVisibility } from './types'
@@ -37,10 +38,12 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
    * （用户裁决：助手任意处可开，条目只是**可选**上下文）。条目变化时重算——"从没打开任何内容
    * 进到某个条目"这一步，正是最可能需要精简的时刻。
    */
-  const [tab, setTab] = useState<'chat' | 'summary'>(entryId === null ? 'chat' : 'summary')
+  const [tab, setTab] = useState<'chat' | 'summary' | 'memory'>(entryId === null ? 'chat' : 'summary')
 
   useEffect(() => {
-    setTab(entryId === null ? 'chat' : 'summary')
+    // 换条目只影响"对话/精简"的默认落点；用户手点过「记忆」就留在记忆页——
+    // 正在看"它记住了什么"时被跳走会很讨厌
+    setTab((current) => (current === 'memory' ? current : entryId === null ? 'chat' : 'summary'))
   }, [entryId])
 
   useEffect(() => {
@@ -163,10 +166,20 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
         >
           精简
         </Button>
+        <Button
+          variant={tab === 'memory' ? 'secondary' : 'ghost'}
+          size="sm"
+          data-testid="assistant-tab-memory"
+          onClick={() => setTab('memory')}
+        >
+          记忆
+        </Button>
       </nav>
 
       {tab === 'chat' ? (
         <ConversationPanel api={api} />
+      ) : tab === 'memory' ? (
+        <MemoryPanel api={api} />
       ) : entryId === null ? (
         <p className="text-muted-foreground text-sm" data-testid="assistant-no-entry">
           打开一条内容后可用。

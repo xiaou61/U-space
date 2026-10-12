@@ -39,6 +39,18 @@ test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', 
   await expect(page.getByTestId('assistant-credential-state')).toHaveText('未配置凭据')
 })
 
+test('记忆面板：能看到"它记住了什么"，并说明可逐条删除', async ({ page }) => {
+  await signIn(page, SEED_LEARNER)
+  await page.goto('/#/knowledge')
+  await page.getByTestId('assistant-launcher').click()
+  await page.getByTestId('assistant-tab-memory').click()
+
+  await expect(page.getByTestId('memory-panel')).toBeVisible()
+  await expect(page.getByTestId('memory-panel')).toContainText('可逐条删除')
+  // 种子账号没有记忆：这里断的是"空状态说得清楚"，而不是"列表里有什么"
+  await expect(page.getByTestId('memory-empty')).toHaveText('还没有任何记忆。')
+})
+
 test('任意页可开对话；未配凭据时发送给出明确提示，而不是静默失败', async ({ page }) => {
   // 这一轮会真的发 POST：没配凭据时后端在调模型**之前**就拒了，
   // 所以它验证的是"接线通了且失败可见"，不会产生任何上游调用与费用。

@@ -2,9 +2,13 @@ package io.github.xiaou61;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.platform.BizException;
+import io.github.xiaou61.security.AuthPort;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * 记忆两路的存取与召回（AC-004）。
@@ -27,6 +34,7 @@ import org.springframework.test.context.ActiveProfiles;
  * 集成测试一致。需要真实 MySQL 与 {@code PAIDEIA_TEST_DB_PASSWORD}，未配置时整类跳过。
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @EnabledIfEnvironmentVariable(named = "PAIDEIA_TEST_DB_PASSWORD", matches = ".+")
 class LearnerMemoryIntegrationTest {
@@ -36,6 +44,12 @@ class LearnerMemoryIntegrationTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    AuthPort authPort;
 
     private long userA;
     private long userB;
@@ -134,5 +148,59 @@ class LearnerMemoryIntegrationTest {
         assertThatThrownBy(() -> memories.rememberStructured(userA, "entry_understanding", 1L, "x".repeat(513)))
                 .isInstanceOf(BizException.class);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM ai_memories_text", Long.class)).isZero();
+    }
+
+    @Test
+    @DisplayName("记忆端点三态：匿名 401、他人看不到、本人可列出并逐条删除")
+    void memoryEndpointsEnforceOwnership() throws Exception {
+        long mine = memories.rememberText(userA, "甲说过的一句话");
+        memories.rememberStructured(userA, "entry_understanding", 3L, "第 3 条：还不懂");
+
+        // 匿名：两个动作都拒绝
+        assertThat(mockMvc.perform(get("/api/v1/ai/memories")).andReturn().getResponse().getStatus())
+                .isEqualTo(401);
+        assertThat(mockMvc.perform(delete("/api/v1/ai/memories/text/" + mine)).andReturn().getResponse().getStatus())
+                .isEqualTo(401);
+
+        // 他人：列表里没有甲的记忆（严格私有，用户裁决 3）
+        MvcResult others = mockMvc.perform(get("/api/v1/ai/memories").header("Authorization", token(userB)))
+                .andReturn();
+        assertThat(body(others)).doesNotContain("甲说过的一句话");
+
+        // 本人：能看到两条，且 source 回给了前端（删的时候要说明删哪一路）
+        MvcResult listed = mockMvc.perform(get("/api/v1/ai/memories").header("Authorization", token(userA)))
+                .andReturn();
+        assertThat(body(listed)).contains("甲说过的一句话").contains("structured").contains("text");
+
+        // 他人拿甲的 id 删：删不掉，且返回 false（不区分"不存在"与"不是你的"）
+        MvcResult theirs = mockMvc.perform(delete("/api/v1/ai/memories/text/" + mine)
+                        .header("Authorization", token(userB)))
+                .andReturn();
+        assertThat(body(theirs)).contains("false");
+        assertThat(memories.list(userA)).hasSize(2);
+
+        // 本人删：删掉后列表只剩结构化那条
+        MvcResult deleted = mockMvc.perform(delete("/api/v1/ai/memories/text/" + mine)
+                        .header("Authorization", token(userA)))
+                .andReturn();
+        assertThat(body(deleted)).contains("true");
+        assertThat(memories.list(userA)).hasSize(1);
+        assertThat(memories.list(userA).getFirst().source()).isEqualTo(MemoryStore.MemoryItem.Source.STRUCTURED);
+    }
+
+    @Test
+    @DisplayName("非法的来源段被拒，而不是猜着删某一路")
+    void rejectsUnknownSource() throws Exception {
+        assertThat(mockMvc.perform(delete("/api/v1/ai/memories/whatever/1")
+                        .header("Authorization", token(userA)))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+    }
+
+    private String token(long userId) {
+        return "Bearer " + authPort.issue(new AuthPort.Subject(Long.toString(userId), AuthPort.ROLE_LEARNER)).value();
+    }
+
+    private static String body(MvcResult result) throws Exception {
+        return result.getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 }

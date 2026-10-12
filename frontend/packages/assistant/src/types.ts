@@ -59,6 +59,18 @@ export interface ConversationView {
   updatedAt: string | null
 }
 
+/**
+ * 一条记忆（设置页用，用户裁决 13）。
+ *
+ * <p>`source` 必须回给删除动作：结构化与全文两路的 id **各自独立**，只说 id 会删错一路。
+ */
+export interface MemoryView {
+  source: 'structured' | 'text'
+  id: number
+  text: string
+  createdAt: string | null
+}
+
 /** 界面上的一条对话消息。与后端 `role` 一致。 */
 export interface ChatMessage {
   role: 'user' | 'assistant'
