@@ -1742,3 +1742,18 @@ schema_version: 1
 - 依据：WORK-006 `tasks.md` TASK-016、`design.md` 的测试策略；用户 2026-10-12「一直继续 task 到 16 不要停」
 - 本地提交：见下一笔
 - 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时。**这一项需要用户启动代理客户端后才能完成。**
+
+## 2026-10-12 20:07:30 +0800 · 远端推送核验：16 笔提交已上线
+
+- 类型：change
+- 变更：把 WORK-006 的 16 笔提交推到 `origin/master`。
+- 决策/事实：
+  1. **走直连、绕过那条按域固化的代理**：本机 `clash-verge-service` 在跑但**界面没启动**，代理端口 `127.0.0.1:7897` 不监听（实测 000）。直连首页 200，且**直连的 git smart-HTTP 端点这次通了**（`/info/refs?service=git-receive-pack` 返回 401 = 未带凭据时的正常应答，此前是 000/超时）。所以命令是 `git -c "http.https://github.com/.proxy=" -c "https.https://github.com/.proxy=" push`——**代理与直连哪条通用是会变的**，每次都先探测（呼应既有的"别固化方向"）。
+  2. **快进推送**：`1b94034..78f39f9`，无需强推。远端此前已在 `1b94034`（另一会话的前端提交），本地的历史包含它。
+  3. `push-check --record-push` **没能记录**：它走的是配置里的代理，查询失败（"远端核验：unknown / 更新历史：missing"）。**本条就是那次记录的替代品**，证据是我直接对远端求证的输出。
+- 验证：
+  - `git push` 退出码 **0**，输出 `1b94034..78f39f9  master -> master`。
+  - `git ls-remote origin master` → `78f39f94d72bdc0999dbc144398973e8ffb742fd`，与本地 HEAD 一致。
+  - 工作区干净。
+- 本地提交：见下一笔（本条 + 提交本身都是 `.agent/` 变动，所以 WORK-006 报告的 `verified_commit` 仍然成立）
+- 远端推送：**已执行并核验**（远端 HEAD = `78f39f9`）
