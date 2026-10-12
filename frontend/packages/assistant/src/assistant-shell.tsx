@@ -3,6 +3,7 @@ import { Sparkles, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import type { AssistantApi } from './client'
+import { ConversationPanel } from './conversation-panel'
 import { CredentialDialog } from './credential-dialog'
 import { useAssistantContext } from './context'
 import { SummaryCardView } from './summary-card'
@@ -29,6 +30,18 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [credentialOpen, setCredentialOpen] = useState(false)
+  /**
+   * 标签页。
+   *
+   * <p>默认值取决于有没有条目：打开某条内容时多半就是想精简它；没有条目时只剩对话可做
+   * （用户裁决：助手任意处可开，条目只是**可选**上下文）。条目变化时重算——"从没打开任何内容
+   * 进到某个条目"这一步，正是最可能需要精简的时刻。
+   */
+  const [tab, setTab] = useState<'chat' | 'summary'>(entryId === null ? 'chat' : 'summary')
+
+  useEffect(() => {
+    setTab(entryId === null ? 'chat' : 'summary')
+  }, [entryId])
 
   useEffect(() => {
     let alive = true
@@ -112,12 +125,12 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
     <aside
       className="border-border bg-card fixed right-4 bottom-4 z-40 flex max-h-[70vh] w-80 flex-col gap-3 overflow-y-auto rounded-lg border p-3 shadow-xl"
       data-testid="assistant-shell"
-      aria-label="AI 精简助手"
+      aria-label="AI 助手"
     >
       <header className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Sparkles className="size-4" />
-          <span className="text-sm font-medium">AI 精简</span>
+          <span className="text-sm font-medium">AI 助手</span>
           <Badge variant="outline" data-testid="assistant-credential-state">
             {credential?.configured === true ? `已配置 ····${credential.apiKeyLast4}` : '未配置凭据'}
           </Badge>
@@ -133,7 +146,28 @@ export function AssistantShell({ api }: { api: AssistantApi }) {
         </Button>
       </header>
 
-      {entryId === null ? (
+      <nav className="flex gap-1" data-testid="assistant-tabs">
+        <Button
+          variant={tab === 'chat' ? 'secondary' : 'ghost'}
+          size="sm"
+          data-testid="assistant-tab-chat"
+          onClick={() => setTab('chat')}
+        >
+          对话
+        </Button>
+        <Button
+          variant={tab === 'summary' ? 'secondary' : 'ghost'}
+          size="sm"
+          data-testid="assistant-tab-summary"
+          onClick={() => setTab('summary')}
+        >
+          精简
+        </Button>
+      </nav>
+
+      {tab === 'chat' ? (
+        <ConversationPanel api={api} />
+      ) : entryId === null ? (
         <p className="text-muted-foreground text-sm" data-testid="assistant-no-entry">
           打开一条内容后可用。
         </p>

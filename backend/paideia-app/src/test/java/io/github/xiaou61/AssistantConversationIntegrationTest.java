@@ -106,6 +106,7 @@ class AssistantConversationIntegrationTest {
         assertThat(mockMvc.perform(get("/api/v1/ai/conversations")).andReturn().getResponse().getStatus())
                 .isEqualTo(401);
         assertThat(mockMvc.perform(post("/api/v1/ai/conversations/1/messages")
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"你好\"}"))
                 .andReturn().getResponse().getStatus()).isEqualTo(401);
     }
@@ -164,6 +165,7 @@ class AssistantConversationIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
                         .header("Authorization", token(userB))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"偷看\"}"))
                 .andReturn();
@@ -182,6 +184,7 @@ class AssistantConversationIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
                         .header("Authorization", token(userA))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"你好\"}"))
                 .andReturn();
@@ -216,6 +219,7 @@ class AssistantConversationIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
                         .header("Authorization", token(userA))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"还在吗\"}"))
                 .andReturn();
@@ -314,6 +318,7 @@ class AssistantConversationIntegrationTest {
     private MvcResult sendMessage(String subject, long conversationId, String message) throws Exception {
         MvcResult started = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
                         .header("Authorization", token(subject))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"" + message + "\"}"))
                 .andExpect(request().asyncStarted())

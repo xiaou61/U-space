@@ -1,6 +1,14 @@
 import type { ApiClient } from '@paideia/core'
 
-import type { CredentialInput, CredentialView, SummaryView, SummaryVisibility } from './types'
+import { readEventStream } from './sse'
+import type {
+  ChatEvent,
+  ConversationView,
+  CredentialInput,
+  CredentialView,
+  SummaryView,
+  SummaryVisibility,
+} from './types'
 
 export interface AssistantApi {
   credential(): Promise<CredentialView>
@@ -10,13 +18,30 @@ export interface AssistantApi {
   summary(entryId: number): Promise<SummaryView | null>
   /** 生成或命中。这是唯一会花用户额度的动作。 */
   generate(entryId: number, visibility: SummaryVisibility): Promise<SummaryView>
+  /** 建会话。`entryId` 可空——助手在任意页都能开，条目只是可选上下文。 */
+  createConversation(entryId: number | null): Promise<ConversationView>
+  /**
+   * 发一轮消息，把 SSE 事件逐个回调出去。本方法返回时表示这一轮结束。
+   *
+   * <p>`signal` 用于"用户关掉面板/切换会话"时中断：不断开的话，上游调用会继续计费到
+   * 用户看不见的地方。
+   */
+  sendMessage(
+    conversationId: number,
+    message: string,
+    onEvent: (event: ChatEvent) => void,
+    signal?: AbortSignal,
+  ): Promise<void>
 }
 
 /**
- * AI 精简端点客户端。
+ * AI 助手端点客户端。
  *
  * <p>与知识库那份同样只包路径与请求体，鉴权与 401 刷新重放交给传入的 `ApiClient`——
  * 本包不认识令牌，也不需要知道它存在。
+ *
+ * <p>对话那条走 `client.stream`（SSE）：**不是** `requestEnvelope`，后者会把响应体读完再解析 JSON，
+ * 那样流式就退化成"等完整结果"了。
  */
 export function createAssistantApi(client: ApiClient): AssistantApi {
   const base = '/api/v1/ai'
@@ -43,5 +68,39 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         headers: JSON_HEADERS,
         body: JSON.stringify({ entryId, visibility }),
       }),
+
+    createConversation: (entryId) =>
+      client.requestEnvelope<ConversationView>(`${base}/conversations`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ entryId }),
+      }),
+
+    sendMessage: async (conversationId, message, onEvent, signal) => {
+      const response = await client.stream(`${base}/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ message }),
+        ...(signal === undefined ? {} : { signal }),
+      })
+      // 用量在线上是 `input`/`output`/`total`，界面用的是 `TokenUsage`。**只在这一处归一**：
+      // 分散到各个渲染点去换字段名，迟早有一条路径漏掉。
+      await readEventStream(response, (event) => {
+        const usage =
+          event.type === 'done' && event.usage !== undefined && event.usage !== null
+            ? {
+                inputTokens: event.usage.input,
+                outputTokens: event.usage.output,
+                totalTokens: event.usage.total,
+              }
+            : null
+        onEvent({
+          type: event.type,
+          delta: event.delta,
+          message: event.message,
+          empty: event.empty,
+          usage,
+        })
+      })    },
   }
 }

@@ -30,6 +30,11 @@ export interface ApiClient {
   request<T>(path: string, init?: RequestInit): Promise<T>
   /** 取统一结构的 data 字段；code 非 0 或 HTTP 失败时抛 ApiError。 */
   requestEnvelope<T>(path: string, init?: RequestInit): Promise<T>
+  /**
+   * 流式请求（SSE）：成功时返回**未读完**的 Response，由调用方读 `body` 的 reader。
+   * 非 2xx 时读完错误体并抛 {@link ApiError}。
+   */
+  stream(path: string, init?: RequestInit): Promise<Response>
 }
 
 const SUCCESS_CODE = 0
@@ -89,5 +94,42 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     return envelope.data as T
   }
 
-  return { request, requestEnvelope }
+  /**
+   * 发一个**流式**请求，把未读完的 `Response` 交回调用方（SSE 用）。
+   *
+   * <p>为什么不复用 {@link request}：那个会把响应体 `text()` 读完再解析 JSON。流式响应的全部价值
+   * 就在于"边到边读"，读完再返回等于把流式退化成一次性等待。
+   *
+   * <p>两条与普通请求不同的处理：
+   * <ul>
+   *   <li>`Accept` 声明为 `text/event-stream, application/json`。**不能只写前者**：服务端在开流
+   *       <b>之前</b>做的校验（未登录、会话不存在、没配凭据）要用普通 JSON 错误响应返回，
+   *       只接受 SSE 会让那些错误渲染不出来，退化成 500。带上 `application/json` 后，
+   *       成功仍是 SSE（该端点只 produces 这一种），失败则是可读的 JSON。</li>
+   *   <li>非 2xx 时把错误体读完并按统一结构抛 {@link ApiError}——错误是**有限**的，
+   *       必须在这层转成异常，否则调用方要先判断状态码再决定要不要当流读。</li>
+   * </ul>
+   *
+   * <p>鉴权与 401 刷新重放照旧：本方法走同一个 `fetchImpl`，`createAuthorizedFetch` 对它一样生效。
+   */
+  async function stream(path: string, init: RequestInit = {}): Promise<Response> {
+    const headers = new Headers(init.headers)
+    // 两个都声明：成功走 SSE，开流前的校验失败走 JSON（只写前者会让那些错误变成 500）
+    headers.set('Accept', 'text/event-stream, application/json')
+    const token = options.getToken?.() ?? null
+    if (token !== null && token !== '') {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+    const response = await doFetch(`${baseUrl}${path}`, { ...init, headers })
+    if (!response.ok) {
+      const body = parse(await response.text())
+      if (isEnvelope(body)) {
+        throw new ApiError(body.code, body.message, body.traceId)
+      }
+      throw new ApiError(response.status, `请求失败：HTTP ${response.status}`, null)
+    }
+    return response
+  }
+
+  return { request, requestEnvelope, stream }
 }

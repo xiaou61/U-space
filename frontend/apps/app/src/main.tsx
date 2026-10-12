@@ -42,6 +42,25 @@ function RefreshBridge() {
   return null
 }
 
+/**
+ * 助手壳的挂载门。
+ *
+ * <p><b>必须等真正登录之后再挂</b>：壳一挂载就会去读"我的凭据"，那是受保护端点。
+ * 未登录时——以及"刚刷新页面、只拿着 refresh token、状态还是 `loading`"的那一小段里——
+ * 发出去必然是 401。而这个 401 会走进带令牌的 fetch，被判成"会话过期"并触发一次刷新：
+ * 那次刷新既没有意义（本来就没有访问令牌），失败时还会把刚建立的会话清掉。
+ *
+ * <p>实测（WORK-006 TASK-003）：登录页上壳发出的两次 401 正是这条路径。它此前没被发现，
+ * 是因为壳把读凭据的失败**静默降级**成了"未配置凭据"——看起来像正常状态。
+ */
+function AssistantMount() {
+  const { status } = useAuth()
+  if (status !== 'signed-in') {
+    return null
+  }
+  return <AssistantShell api={assistantApi} />
+}
+
 const container = document.getElementById('root')
 if (container === null) {
   throw new Error('找不到挂载节点 #root')
@@ -57,7 +76,7 @@ createRoot(container).render(
             {/* 悬浮助手壳挂在路由之外：它要**贯穿全站**常驻，而不是每个页面自己摆一个 */}
             <AssistantProvider>
               <RouterProvider router={router} />
-              <AssistantShell api={assistantApi} />
+              <AssistantMount />
             </AssistantProvider>
           </AuthProvider>
         </QueryClientProvider>

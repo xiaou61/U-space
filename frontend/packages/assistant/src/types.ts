@@ -51,3 +51,36 @@ export interface CredentialInput {
 
 /** 生成时的可见性，由**生成者**选择（谁付费谁决定要不要分享）。 */
 export type SummaryVisibility = 'public' | 'private'
+
+/** 会话列表项。**不含消息内容**：列表只用来选，拉开某一条才取内容。 */
+export interface ConversationView {
+  id: number
+  entryId: number | null
+  updatedAt: string | null
+}
+
+/** 界面上的一条对话消息。与后端 `role` 一致。 */
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  /** 思考过程**只在当次显示**（服务端不落库），所以它挂在消息上、随会话消失而消失。 */
+  thinking: string
+  /** 助手消息的用量；上游没给或用户消息为 null。 */
+  usage: TokenUsage | null
+  /** 正文为空、服务端给了可见提示时为 true——界面据此区别"这是提示，不是回答"。 */
+  emptyHint: boolean
+}
+
+/**
+ * 回调给界面的对话事件——**用量已归一成 {@link TokenUsage}**。
+ *
+ * <p>与 `sse.ts` 的 {@link import('./sse').AssistantEvent} 分开：那个是"线上是什么形状"，
+ * 这个是"界面想要什么形状"。归一只有一处（`client.ts`），界面不必知道线上用 `input` 还是 `inputTokens`。
+ */
+export interface ChatEvent {
+  type: 'thinking' | 'content' | 'done' | 'error'
+  delta?: string
+  message?: string
+  usage?: TokenUsage | null
+  empty?: boolean
+}

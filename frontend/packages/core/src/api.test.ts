@@ -42,7 +42,6 @@ describe('createApiClient', () => {
     })
 
     const error = await client.requestEnvelope('/api/v1/me').catch((reason: unknown) => reason)
-
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ code: 502 })
   })
@@ -88,5 +87,40 @@ describe('createApiClient', () => {
 
     expect(error).toBeInstanceOf(ApiError)
     expect((error as ApiError).message).toContain('合法 JSON')
+  })
+
+  it('stream 用 text/event-stream 作为 Accept，并把未读完的响应交回调用方', async () => {
+    let seenAccept: string | null = null
+    const client = createApiClient({
+      fetchImpl: async (_input, init) => {
+        seenAccept = new Headers(init?.headers).get('Accept')
+        return new Response('event:content\ndata:{"delta":"你好"}\n\n', {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        })
+      },
+    })
+
+    const response = await client.stream('/api/v1/ai/conversations/1/messages', { method: 'POST' })
+
+    // 带 application/json 去要 text/event-stream 会被服务端 406；但**也不能只写 SSE**——
+    // 开流前的校验失败要用 JSON 返回，只接受 SSE 会让那些错误退化成 500。
+    expect(seenAccept).toBe('text/event-stream, application/json')
+    expect(response.body).not.toBeNull()
+    await expect(response.text()).resolves.toContain('data:{"delta":"你好"}')
+  })
+
+  it('stream 在非 2xx 时读完错误体并按统一结构抛 ApiError', async () => {
+    const client = createApiClient({
+      fetchImpl: async () =>
+        jsonResponse(404, envelope({ code: 40400, message: '会话不存在或已过期' })),
+    })
+
+    const error = await client.stream('/api/v1/ai/conversations/9/messages', { method: 'POST' }).catch(
+      (reason: unknown) => reason,
+    )
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ code: 40400, message: '会话不存在或已过期' })
   })
 })

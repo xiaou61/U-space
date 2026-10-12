@@ -1440,3 +1440,25 @@ schema_version: 1
   - 三条过程教训（都是"红在哪一行"而不是"是否非 0"）：① 容器里有**两个 `TaskExecutor`**（应用执行器与调度器），注入歧义直接让上下文起不来，用 `@Qualifier("applicationTaskExecutor")` 指定；② 断言"整段响应体不含某个数字"会撞上随机 `traceId`，改为断言 `$.data`；③ **MySQL 的 `JSON` 列会规范化存储**（键重排、冒号后加空格），紧凑串读回来已变形，必须按 JSON 取值断言。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-12 16:17:19 +0800 · WORK-006 TASK-003 完成：助手对话前端（并修掉两个真缺陷）
+
+- 类型：change
+- 变更：
+  - `@paideia/core`：给 `ApiClient` 加 `stream()`（SSE 用，返回未读完的 Response，非 2xx 仍转成 `ApiError`）+ 2 条用例。
+  - `@paideia/assistant`：新增 `sse.ts`（`parseSseBlock`／`readEventStream` **纯函数**，7 条用例覆盖跨字节块切断、`\r\n`、心跳注释、坏 JSON）、`conversation-panel.tsx`（消息列表、流式增量、**原生 `<details>` 做思考折叠**、用量返还、中断上游）、`types.ts` 加 `ChatEvent`／`ChatMessage`／`ConversationView`；`client.ts` 加 `createConversation`／`sendMessage`（**用量只在这一处归一**）；壳改为「对话／精简」两页，有条目时默认精简、无条目时默认对话。
+  - `apps/app`：`AssistantMount` 挂载门；e2e 新增"任意页可开对话、未配凭据时失败可见"。
+  - 后端：正文为空时把提示**也作为正文增量发出去**（原先只发 `done`，前端会留一个空气泡）；集成用例补上浏览器实际会发的 `Accept`。
+- **发现并修掉两个真缺陷（都不是本任务引入的）**：
+  1. **助手壳在登录门之外无条件挂载**（WORK-005 埋下，被"静默降级"掩盖）。`TokenStore.access()` 是**内存变量**（只有 refresh token 落存储），所以刷新页面后有一段状态仍为 `loading` 的窗口；壳在这两个时刻（未登录、刚刷新）都会去读受保护端点，必然拿到 401。而那个 401 走进 `createAuthorizedFetch` 会被判成"会话过期"、触发一次**毫无意义**的刷新（本来就没有访问令牌），失败时还会把刚建立的会话清掉。旧 e2e 之所以全绿，是因为壳把读凭据的失败静默降级成了"未配置凭据"——**看起来像正常状态**。修法：`status === 'signed-in'` 才挂载（一处守卫）。遗留：带令牌的 fetch 在"请求本来就没带令牌"时仍会尝试刷新，建议后续给 WORK-003 加一条同类守卫。
+  2. **SSE 客户端只声明 `Accept: text/event-stream`**（本任务引入，被我自己抓到）。服务端在**开流之前**做的校验（未登录 401／会话不存在 404／没配凭据 400）要用 JSON 返回，只接受 SSE 会让它们渲染不出来、退化成 **500**。修法：`Accept: text/event-stream, application/json`（成功仍是 SSE，因为该端点只 produces 这一种）。**集成测试此前没抓到**，因为它没发这个 Accept 头——已补上，浏览器与实际测试的请求头现在一致。
+- 依据：WORK-006 `design.md`、`tasks.md` TASK-003；用户裁决 2、8、14（流式、思考折叠、任意处可对话）
+- 验证（全部退出码 0）：
+  - `pnpm -r typecheck` → 11 个包全过；`pnpm -r test` → **75 条通过**（core 16、ui 17、knowledge 15、auth 13、assistant 10、platform-desktop 4）。
+  - 学习者端 e2e `pnpm --filter @paideia/app test:e2e` → **15 passed**；管理端 **7 passed**；展览页 **5 passed**。
+  - 后端集成 `AssistantConversationIntegrationTest` → **9 条通过**（含补上 Accept 后的 400/404 路径）。
+- 过程教训（两条，都是"别信看起来像产品的失败"）：
+  1. 我复现问题时起的**后台后端没关**（只放行 5173），admin e2e 的 `reuseExistingServer` 复用了它，于是 5174 来源的登录 POST 被拒 **403**，5 条管理端用例红——看着像产品坏了，其实是我自己的残留进程。关掉即 **7 passed**。**跑 e2e 前先确认 8080 上没有自己留下的后端。**
+  2. e2e 的 `signIn` 此前**点击后即返回**，没等登录完成；后面紧跟的"刷新页面→换访问令牌"会和"还没登录"的窗口抢时间，表现为随机 401。已改为等登录表单消失。
+- 本地提交：见下一笔
+- 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时（首页 200 但 `/info/refs` 000）。已探测：直连首页 200、代理 000、常见代理端口全 000。需要用户启动代理客户端后再推。

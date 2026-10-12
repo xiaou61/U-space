@@ -126,6 +126,11 @@ class AssistantConversationController {
                         public void onCompleted(TokenUsage usage) {
                             boolean noContent = content.toString().isBlank();
                             String text = noContent ? EMPTY_CONTENT_HINT : content.toString();
+                            if (noContent) {
+                                // 提示也要作为正文增量发出去：只发 done 的话前端会留一个空气泡，
+                                // 用户看到的是"助手什么都没说"，而不是"这次没产出正文"
+                                send(emitter, "content", Map.of("delta", EMPTY_CONTENT_HINT));
+                            }
                             conversations.complete(userId, conversationId, text, usage);
                             // empty=true 告诉前端"这段是提示，不是模型生成的正文"，免得把它当成回答渲染。
                             // 用 HashMap 而不是 Map.of：用量允许为 null，而 Map.of 见到 null 直接抛。

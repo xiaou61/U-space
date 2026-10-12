@@ -19,6 +19,9 @@ async function signIn(page: Page, account: { identifier: string; password: strin
   await page.getByTestId('login-identifier').fill(account.identifier)
   await page.getByTestId('login-password').fill(account.password)
   await page.getByTestId('login-submit').click()
+  // **必须等登录真的完成**：点击只是把请求发出去。不等的话，后面那一步
+  // （刷新页面后先要换访问令牌）会和"还没登录"的窗口抢时间，表现为随机 401。
+  await expect(page.getByTestId('login-submit')).toHaveCount(0)
 }
 
 test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', async ({ page }) => {
@@ -29,8 +32,30 @@ test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', 
   await page.getByTestId('assistant-launcher').click()
 
   await expect(page.getByTestId('assistant-shell')).toBeVisible()
+  // 没有条目时默认落在「对话」（助手任意处可开），精简那页才说"打开一条内容后可用"
+  await expect(page.getByTestId('conversation-input')).toBeVisible()
+  await page.getByTestId('assistant-tab-summary').click()
   await expect(page.getByTestId('assistant-no-entry')).toHaveText('打开一条内容后可用。')
   await expect(page.getByTestId('assistant-credential-state')).toHaveText('未配置凭据')
+})
+
+test('任意页可开对话；未配凭据时发送给出明确提示，而不是静默失败', async ({ page }) => {
+  // 这一轮会真的发 POST：没配凭据时后端在调模型**之前**就拒了，
+  // 所以它验证的是"接线通了且失败可见"，不会产生任何上游调用与费用。
+  await signIn(page, SEED_LEARNER)
+  await page.goto('/#/knowledge')
+  await page.getByTestId('assistant-launcher').click()
+
+  await expect(page.getByTestId('conversation-context')).toHaveText('没有条目上下文，可直接提问。')
+
+  await page.getByTestId('conversation-input').fill('解释一下导数')
+  await page.getByTestId('conversation-send').click()
+
+  await expect(page.getByTestId('conversation-error')).toContainText('尚未配置模型凭据')
+  // 用户那句话要留在界面上：他确实说过，失败不该把它抹掉
+  await expect(page.getByTestId('conversation-message-user')).toContainText('解释一下导数')
+  // 没成的那一轮不留空气泡
+  await expect(page.getByTestId('conversation-message-assistant')).toHaveCount(0)
 })
 
 test('打开条目后壳取到当前内容；没有凭据时给配置入口而不是报错，也不会发起调用', async ({ page }) => {
