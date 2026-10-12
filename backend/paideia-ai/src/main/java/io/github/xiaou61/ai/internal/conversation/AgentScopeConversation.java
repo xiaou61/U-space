@@ -111,7 +111,7 @@ class AgentScopeConversation implements AssistantConversation {
 
                 // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
                 conversation.add(roundResult.assistantMessage());
-                conversation.add(new ToolResultMessage(execute(request.userId(), requested)));
+                conversation.add(new ToolResultMessage(execute(request.userId(), requested, listener)));
             }
             // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱
             listener.onFailed(new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止"));
@@ -184,10 +184,14 @@ class AgentScopeConversation implements AssistantConversation {
      * 模型据此换个方式回答，比让整轮对话崩掉好。所以这里不额外设置错误状态——
      * 语义已经在那段文本里，多一层状态只会让读的人以为还有别的分支。
      */
-    private List<ToolResultBlock> execute(long userId, List<ToolUseBlock> requested) {
+    private List<ToolResultBlock> execute(long userId, List<ToolUseBlock> requested, Listener listener) {
         List<ToolResultBlock> results = new ArrayList<>();
         for (ToolUseBlock call : requested) {
             AssistantTools.Outcome outcome = tools.run(userId, call.getName(), call.getInput());
+            if (outcome.draft() != null) {
+                // 草稿立刻送到界面：用户的"要不要存"不该等模型把话说完才出现
+                listener.onDraft(outcome.draft());
+            }
             results.add(new ToolResultBlock(call.getId(), call.getName(),
                     TextBlock.builder().text(outcome.text()).build()));
         }

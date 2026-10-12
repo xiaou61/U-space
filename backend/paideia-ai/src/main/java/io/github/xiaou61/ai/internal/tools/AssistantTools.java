@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.tools;
 
 import io.agentscope.core.model.ToolSchema;
+import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.knowledge.KnowledgeApi;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class AssistantTools {
     static final String SEARCH_ENTRIES = "search_entries";
     static final String LIST_CATEGORIES = "list_categories";
     static final String MY_MARKS = "my_marks";
+    static final String DRAFT_NOTE = "draft_note";
 
     private static final int DEFAULT_LIMIT = 5;
     private static final int MAX_LIMIT = 20;
@@ -37,8 +39,21 @@ public class AssistantTools {
         this.knowledge = knowledge;
     }
 
-    /** 一次工具调用的结果。`error=true` 表示这次调用失败，由模型决定怎么应对。 */
-    public record Outcome(boolean error, String text) {
+    /**
+     * 一次工具调用的结果。
+     *
+     * <p>`error=true` 表示这次调用失败，由模型决定怎么应对；`draft` 非空表示这次调用产出了
+     * 一条**待确认的笔记草稿**（它不写库，只送到界面）。
+     */
+    public record Outcome(boolean error, String text, NoteDraft draft) {
+
+        static Outcome text(String text) {
+            return new Outcome(false, text, null);
+        }
+
+        static Outcome failed(String text) {
+            return new Outcome(true, text, null);
+        }
     }
 
     /** 交给模型的工具清单。描述写清"什么时候该用"，模型选不选得对主要靠它。 */
@@ -66,6 +81,15 @@ public class AssistantTools {
                                 + "只能读当前用户自己的标记，无法查询他人。")
                         .parameters(objectSchema(Map.of(
                                 "limit", Map.of("type", "integer", "description", "最多返回几条，默认 5，上限 20"))))
+                        .build(),
+                ToolSchema.builder()
+                        .name(DRAFT_NOTE)
+                        .description("起草一条给当前用户自己看的笔记。用户说「帮我记一条」「把这个记下来」时用它。"
+                                + "**它只是草稿，不会真的保存**——要用户点确认才会存进笔记。"
+                                + "正文写清完整内容（用户可能直接采用），标题一句话概括。")
+                        .parameters(objectSchema(Map.of(
+                                "title", Map.of("type", "string", "description", "笔记标题，一句话"),
+                                "body", Map.of("type", "string", "description", "笔记正文，可多行"))))
                         .build());
     }
 
@@ -77,15 +101,36 @@ public class AssistantTools {
     public Outcome run(long userId, String name, Map<String, Object> input) {
         try {
             return switch (name == null ? "" : name) {
-                case SEARCH_ENTRIES -> new Outcome(false, search(input));
-                case LIST_CATEGORIES -> new Outcome(false, categories());
-                case MY_MARKS -> new Outcome(false, marks(userId, input));
-                default -> new Outcome(true, "没有名为「" + name + "」的工具");
+                case SEARCH_ENTRIES -> Outcome.text(search(input));
+                case LIST_CATEGORIES -> Outcome.text(categories());
+                case DRAFT_NOTE -> draftNote(input);
+                case MY_MARKS -> Outcome.text(marks(userId, input));
+                default -> Outcome.failed("没有名为「" + name + "」的工具");
             };
         } catch (RuntimeException exception) {
             // 工具失败回到模型，不往上抛：一次坏查询不该让整轮对话失败
-            return new Outcome(true, "工具执行失败：" + messageOf(exception));
+            return Outcome.failed("工具执行失败：" + messageOf(exception));
         }
+    }
+
+    /**
+     * 起草一条笔记。
+     *
+     * <p><b>它不写库</b>：只把标题与正文包成草稿交出去，界面据此问用户"要不要存"。
+     * 这是"自主只建议不动作"的落点——模型能提议，不能落笔。
+     *
+     * <p>标题与正文是**工具参数**：结构化由 JSON Schema 承担，因此不需要 provider 的结构化输出，
+     * 也就不存在"工具与结构化输出不能同一次调用并用"那条限制（DeepSeek 的坑）。
+     */
+    private Outcome draftNote(Map<String, Object> input) {
+        String title = stringOf(input, "title");
+        String body = stringOf(input, "body");
+        if (body == null) {
+            // 空草稿没有意义：让模型知道这次没成，它可以补上再提一次
+            return Outcome.failed("草稿的正文不能为空");
+        }
+        NoteDraft draft = new NoteDraft(title, body);
+        return new Outcome(false, "已准备一条笔记草稿（标题：" + draft.title() + "），等待用户确认。", draft);
     }
 
     private String search(Map<String, Object> input) {

@@ -90,9 +90,17 @@ export interface ChatMessage {
  * 这个是"界面想要什么形状"。归一只有一处（`client.ts`），界面不必知道线上用 `input` 还是 `inputTokens`。
  */
 export interface ChatEvent {
-  type: 'thinking' | 'content' | 'done' | 'error'
+  type: 'thinking' | 'content' | 'draft' | 'done' | 'error'
   delta?: string
   message?: string
   usage?: TokenUsage | null
   empty?: boolean
+  /** 助手提出的一条**待确认**笔记草稿。落库要等用户点击。 */
+  draft?: { title: string; body: string }
+}
+
+/** 交给宿主存成笔记的输入。标题缺省时由宿主兜底。 */
+export interface NoteDraftInput {
+  title?: string
+  body: string
 }

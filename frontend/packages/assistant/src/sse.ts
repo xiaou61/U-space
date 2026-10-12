@@ -10,7 +10,7 @@
  */
 
 /** 服务端定义的四类事件。 */
-export type AssistantEventType = 'thinking' | 'content' | 'done' | 'error'
+export type AssistantEventType = 'thinking' | 'content' | 'draft' | 'done' | 'error'
 
 /**
  * `done` 事件里用量的**线上形状**（`input`/`output`/`total`）。
@@ -35,6 +35,8 @@ export interface AssistantEvent {
   usage?: TokenUsageWire | null
   /** `done` 且正文为空（服务端用可见提示兜底）时为 true。 */
   empty?: boolean
+  /** `draft` 事件：助手提出的一条**待确认**笔记草稿（它还没落库）。 */
+  draft?: { title: string; body: string }
 }
 
 /**
@@ -60,7 +62,7 @@ export function parseSseBlock(block: string): AssistantEvent | null {
   if (name === '' || dataLines.length === 0) {
     return null
   }
-  if (name !== 'thinking' && name !== 'content' && name !== 'done' && name !== 'error') {
+  if (name !== 'thinking' && name !== 'content' && name !== 'draft' && name !== 'done' && name !== 'error') {
     return null
   }
   let payload: Record<string, unknown> = {}
@@ -73,6 +75,13 @@ export function parseSseBlock(block: string): AssistantEvent | null {
   } catch {
     // 服务端恒发 JSON；解析不了说明连接被截断，这一块丢掉比抛出去打断整轮更好
     return null
+  }
+  if (name === 'draft') {
+    // 草稿的负载形状与其它事件不同（title/body），单独归一，免得让它以 title/body 两个
+    // 顶层字段混进事件类型里
+    const title = typeof payload.title === 'string' ? payload.title : ''
+    const body = typeof payload.body === 'string' ? payload.body : ''
+    return { type: 'draft', draft: { title, body } }
   }
   return { type: name, ...payload } as AssistantEvent
 }

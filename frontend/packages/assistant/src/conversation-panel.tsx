@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { AssistantApi } from './client'
 import { useAssistantContext } from './context'
-import type { ChatMessage } from './types'
+import type { ChatMessage, NoteDraftInput } from './types'
 
 /**
  * 对话面板：多轮 + 流式 + 思考折叠。
@@ -21,15 +21,15 @@ import type { ChatMessage } from './types'
  *
  * <p>没有条目上下文时照样能聊（用户裁决：助手任意处可开，条目只是**可选**上下文）。
  *
- * <p>`onSaveToNote` 由**应用**注入而不是本包直接调笔记接口：本包不认识笔记（它只认识助手），
+ * <p>`onSaveNote` 由**应用**注入而不是本包直接调笔记接口：本包不认识笔记（它只认识助手），
  * 让应用把"存进笔记"这件事接上，本包就不必知道笔记模块存在。
  */
 export function ConversationPanel({
   api,
-  onSaveToNote,
+  onSaveNote,
 }: {
   api: AssistantApi
-  onSaveToNote?: (text: string, entryId: number | null) => Promise<unknown>
+  onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
   const { entryId, entryTitle } = useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
@@ -41,6 +41,10 @@ export function ConversationPanel({
   const [savedIndexes, setSavedIndexes] = useState<number[]>([])
   /** 同上的"已记住"。 */
   const [rememberedIndexes, setRememberedIndexes] = useState<number[]>([])
+  /** 助手提出的待确认笔记草稿。用下标当 key 即可——它们只增不改。 */
+  const [drafts, setDrafts] = useState<{ title: string; body: string }[]>([])
+  /** 已保存的草稿下标。 */
+  const [savedDrafts, setSavedDrafts] = useState<number[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   // 换条目：中断当前流并重开一个会话
@@ -49,6 +53,7 @@ export function ConversationPanel({
     abortRef.current = null
     setConversationId(null)
     setMessages([])
+    setDrafts([])
     setError(null)
   }, [entryId])
 
@@ -90,6 +95,11 @@ export function ConversationPanel({
             patchLast((message) => ({ ...message, thinking: message.thinking + (event.delta ?? '') }))
           } else if (event.type === 'content') {
             patchLast((message) => ({ ...message, content: message.content + (event.delta ?? '') }))
+          } else if (event.type === 'draft') {
+            // 草稿是独立的一条待确认项，不并进消息正文
+            if (event.draft !== undefined) {
+              setDrafts((previous) => [...previous, event.draft as { title: string; body: string }])
+            }
           } else if (event.type === 'done') {
             patchLast((message) => ({
               ...message,
@@ -168,17 +178,17 @@ export function ConversationPanel({
               {message.role !== 'assistant' || message.content === '' || message.emptyHint ? null : (
                 <div className="mt-1 flex items-center gap-2">
                   {/* 存进笔记要宿主注入回调（本包不认识笔记）；没注入就不显示这个按钮 */}
-                  {onSaveToNote === undefined ? null : (
+                  {onSaveNote === undefined ? null : (
                     <Button
                       variant="ghost"
                       size="sm"
                       data-testid="conversation-save-to-note"
                       onClick={() => {
                         // 闭包里 TS 不再知道上面的 undefined 判断成立，所以这里再守一次
-                        if (onSaveToNote === undefined) {
+                        if (onSaveNote === undefined) {
                           return
                         }
-                        void onSaveToNote(message.content, entryId)
+                        void onSaveNote({ body: message.content }, entryId)
                           .then(() => {
                             setError(null)
                             setSavedIndexes((previous) => [...previous, index])
@@ -226,6 +236,44 @@ export function ConversationPanel({
           ))
         )}
       </div>
+
+      {/* 助手提出的笔记草稿：**点了才存**。它不是回答的一部分，所以单独放在消息区下面 */}
+      {drafts.length === 0 ? null : (
+        <div className="space-y-1" data-testid="conversation-drafts">
+          {drafts.map((draft, index) => (
+            <div key={index} className="border-border rounded border px-2 py-1" data-testid="conversation-draft">
+              <p className="text-xs font-medium">{draft.title}</p>
+              <p className="text-muted-foreground text-xs whitespace-pre-wrap">{draft.body}</p>
+              <div className="mt-1 flex items-center gap-2">
+                {onSaveNote === undefined ? null : (
+                  <Button
+                    size="sm"
+                    data-testid={`conversation-draft-save-${index}`}
+                    onClick={() => {
+                      if (onSaveNote === undefined) {
+                        return
+                      }
+                      void onSaveNote({ title: draft.title, body: draft.body }, entryId)
+                        .then(() => {
+                          setError(null)
+                          setSavedDrafts((previous) => [...previous, index])
+                        })
+                        .catch((cause: unknown) =>
+                          setError(cause instanceof Error ? cause.message : String(cause)),
+                        )
+                    }}
+                  >
+                    保存为笔记
+                  </Button>
+                )}
+                <span className="text-muted-foreground text-[11px]">
+                  {savedDrafts.includes(index) ? '已保存' : '助手只是拟好，点了才存'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error === null ? null : (
         <Alert variant="destructive" data-testid="conversation-error">

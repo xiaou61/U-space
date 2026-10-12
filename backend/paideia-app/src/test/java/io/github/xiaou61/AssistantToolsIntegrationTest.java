@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.jayway.jsonpath.JsonPath;
 import io.github.xiaou61.ai.internal.tools.AssistantTools;
 import io.github.xiaou61.security.AuthPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,9 @@ class AssistantToolsIntegrationTest {
 
     @Autowired
     AuthPort authPort;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     private final List<Long> createdEntries = new ArrayList<>();
     private String userA;
@@ -129,12 +133,43 @@ class AssistantToolsIntegrationTest {
     }
 
     @Test
-    @DisplayName("工具清单里**没有写工具**——写入只能经用户点击的那个确认端点")
-    void toolsAreReadOnly() {
-        // 这条是防回归：将来有人往工具集里加一个"写"工具，就等于绕过了"自主只建议不动作"
-        // （用户裁决 7）。断了它，加的人必须先想清楚这件事。
+    @DisplayName("工具清单里**没有会写库的工具**：draft_note 只拟草稿，写入只能经用户点击的确认端点")
+    void toolsCannotWrite() {
+        // 这条是防回归。将来有人往工具集里加一个真会写库的工具，就等于绕过了
+        // "自主只建议不动作"（用户裁决 7）——断了它，加的人必须先想清楚这件事。
+        // draft_note 在清单里是**因为**它只返回草稿（下面的用例证明它一行都没写）。
         assertThat(tools.schemas()).extracting(io.agentscope.core.model.ToolSchema::getName)
-                .containsExactlyInAnyOrder("search_entries", "list_categories", "my_marks");
+                .containsExactlyInAnyOrder("search_entries", "list_categories", "my_marks", "draft_note");
+    }
+
+    @Test
+    @DisplayName("draft_note 只拟草稿不写库；正文为空时明确失败")
+    void draftNoteStagesWithoutWriting() {
+        int before = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class);
+
+        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "draft_note",
+                Map.of("title", "草稿标题", "body", "草稿正文"));
+
+        assertThat(outcome.error()).isFalse();
+        assertThat(outcome.draft()).isNotNull();
+        assertThat(outcome.draft().title()).isEqualTo("草稿标题");
+        assertThat(outcome.text()).contains("等待用户确认");
+        // **关键**：拟草稿不落库。落库只能经 POST /api/v1/notes（用户点击后调）
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class)).isEqualTo(before);
+
+        // 空正文的草稿没有意义：失败回给模型，让它补上再提
+        AssistantTools.Outcome empty = tools.run(Long.parseLong(userA), "draft_note", Map.of("body", "   "));
+        assertThat(empty.error()).isTrue();
+        assertThat(empty.draft()).isNull();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class)).isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("draft_note 没给标题时用兜底标题，而不是生成一条列表里显示空白的笔记")
+    void draftNoteFallsBackToDefaultTitle() {
+        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "draft_note", Map.of("body", "只有正文"));
+        assertThat(outcome.draft()).isNotNull();
+        assertThat(outcome.draft().title()).isEqualTo("来自助手的笔记");
     }
 
     @Test

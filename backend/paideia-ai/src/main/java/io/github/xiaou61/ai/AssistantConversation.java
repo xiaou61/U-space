@@ -68,6 +68,14 @@ public interface AssistantConversation {
         /** 正文的增量。 */
         void onContent(String delta);
 
+        /**
+         * 助手产出了一条**笔记草稿**（不是笔记本身）。
+         *
+         * <p>由工具参数承载，界面据此显示"要不要存成笔记"；真正落库要等用户点击。
+         * 一轮里可能出现多次（模型分几次提）。
+         */
+        void onDraft(NoteDraft draft);
+
         /** 正常结束。{@code usage} 可能为 {@code null}（上游没给用量）。 */
         void onCompleted(TokenUsage usage);
 

@@ -8,7 +8,7 @@ import { CredentialDialog } from './credential-dialog'
 import { MemoryPanel } from './memory-panel'
 import { useAssistantContext } from './context'
 import { SummaryCardView } from './summary-card'
-import type { CredentialView, SummaryView, SummaryVisibility } from './types'
+import type { CredentialView, NoteDraftInput, SummaryView, SummaryVisibility } from './types'
 
 /**
  * 悬浮助手壳：贯穿学习者端的常驻入口。
@@ -25,11 +25,11 @@ import type { CredentialView, SummaryView, SummaryVisibility } from './types'
  */
 export function AssistantShell({
   api,
-  onSaveToNote,
+  onSaveNote,
 }: {
   api: AssistantApi
   /** 由应用注入：本包不认识笔记，只负责把"这一段话"交出去。 */
-  onSaveToNote?: (text: string, entryId: number | null) => Promise<unknown>
+  onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
   const { entryId, entryTitle, onlyMine, setOnlyMine } = useAssistantContext()
   const [expanded, setExpanded] = useState(false)
@@ -184,7 +184,7 @@ export function AssistantShell({
       </nav>
 
       {tab === 'chat' ? (
-        <ConversationPanel api={api} onSaveToNote={onSaveToNote} />
+        <ConversationPanel api={api} onSaveNote={onSaveNote} />
       ) : tab === 'memory' ? (
         <MemoryPanel api={api} />
       ) : entryId === null ? (

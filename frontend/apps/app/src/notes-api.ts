@@ -64,19 +64,24 @@ export function createNotesApi(client: ApiClient): NotesApi {
 export const notes = createNotesApi(api)
 
 /**
- * 把助手的一段话存成**一条新**笔记。
+ * 把助手给出的一段内容（整段回答，或它拟好的草稿）存成**一条新**笔记。
  *
  * <p>不往已有笔记里追加：「作为一段落进笔记」听起来是追加，但"追加到哪一条"要猜——同一轮里
  * 用户可能已经改过那条笔记。新建一条不破坏任何已有内容，用户想合并自己在笔记页里做。
  *
- * <p>标题取第一行非空内容的前 60 个字：模型产出的正文通常第一行就是要点，够用了。
- * 取不到就退成"来自助手的笔记"。
+ * <p>标题：助手已经拟好标题的草稿要**原样保留**它的标题；整段回答没有标题时才从正文第一行推
+ * （模型产出的正文通常第一行就是要点）。都取不到就退成"来自助手的笔记"。
  */
-export async function saveAssistantTextToNote(text: string, entryId: number | null): Promise<NoteView> {
-  const firstLine = text
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line !== '')
-  const title = firstLine === undefined ? '来自助手的笔记' : firstLine.slice(0, 60)
-  return notes.create({ entryId, title, body: text })
+export async function saveNote(
+  note: { title?: string; body: string },
+  entryId: number | null,
+): Promise<NoteView> {
+  const derived =
+    note.title ??
+    note.body
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line !== '')
+  const title = derived === undefined || derived === '' ? '来自助手的笔记' : derived.slice(0, 60)
+  return notes.create({ entryId, title, body: note.body })
 }

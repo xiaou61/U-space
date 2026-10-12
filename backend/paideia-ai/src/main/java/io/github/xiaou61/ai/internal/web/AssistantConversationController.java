@@ -2,6 +2,7 @@ package io.github.xiaou61.ai.internal.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.conversation.ConversationService;
 import io.github.xiaou61.platform.ApiResponse;
@@ -120,6 +121,16 @@ class AssistantConversationController {
                         public void onContent(String delta) {
                             content.append(delta);
                             send(emitter, "content", Map.of("delta", delta));
+                        }
+
+                        @Override
+                        public void onDraft(NoteDraft draft) {
+                            // 草稿走独立事件：前端据此显示"要不要存成笔记"的确认条，
+                            // 而不是把它当正文的一部分。落库要等用户点击（另一个端点）。
+                            Map<String, Object> payload = new HashMap<>();
+                            payload.put("title", draft.title());
+                            payload.put("body", draft.body());
+                            send(emitter, "draft", payload);
                         }
 
                         @Override

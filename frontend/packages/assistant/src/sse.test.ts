@@ -18,6 +18,20 @@ describe('parseSseBlock', () => {
     })
   })
 
+  it('draft 事件归一成 {title, body}，不把两个字段摊在事件顶层', () => {
+    expect(parseSseBlock('event:draft\ndata:{"title":"草稿","body":"正文\\n第二行"}')).toEqual({
+      type: 'draft',
+      draft: { title: '草稿', body: '正文\n第二行' },
+    })
+  })
+
+  it('draft 事件缺字段时不崩，缺的补成空串', () => {
+    expect(parseSseBlock('event:draft\ndata:{"body":"只有正文"}')).toEqual({
+      type: 'draft',
+      draft: { title: '', body: '只有正文' },
+    })
+  })
+
   it('注释心跳与认不出的事件名都返回 null', () => {
     expect(parseSseBlock(':keep-alive')).toBeNull()
     expect(parseSseBlock('event:ping\ndata:{}')).toBeNull()
