@@ -19,15 +19,14 @@ updated: 2026-10-12
 
 ## 验证结果
 
-| 层 | 数量与结果 | 证据 |
-| --- | --- | --- |
-| 后端全量 `mvn -B verify` | **159 条测试 0 失败 0 错误 0 跳过**（app 67、ai 26、knowledge 22、account 13、security 11、platform 7、persistence 4、web 9），约 2 分钟 | `logs/backend-verify.txt`（退出码 0） |
-| 前端单测 `pnpm -r test` | **66 条通过**（core 14、ui 17、knowledge 15、auth 13、platform-desktop 4、**assistant 3**） | `logs/frontend-unit.txt`（退出码 0） |
-| 类型检查 `pnpm -r typecheck` | 10 个包全过 | `logs/frontend-typecheck.txt`（退出码 0） |
-| 三端 e2e | **25 条通过**（学习者端 13、管理端 7、展览页 5） | `logs/e2e-app.txt`、`logs/e2e-admin.txt`、`logs/e2e-ui-kit.txt` |
-| 桌面产物 | 构建退出码 0；`app.asar` 里「管理端」**0** 次、「AI 精简」**1** 次 | `logs/build-desktop.txt` |
+- 后端全量 `mvn -B verify`：**159 条测试 0 失败 0 错误 0 跳过**（app 67、ai 26、knowledge 22、account 13、security 11、platform 7、persistence 4、web 9），约 2 分钟，退出码 0（`logs/backend-verify.txt`）。
+- 前端单测 `pnpm -r test`：**66 条通过**（core 14、ui 17、knowledge 15、auth 13、platform-desktop 4、**assistant 3**），退出码 0（`logs/frontend-unit.txt`）。
+- 类型检查 `pnpm -r typecheck`：10 个包全过，退出码 0（`logs/frontend-typecheck.txt`）。
+- 三端 e2e：**25 条通过**（学习者端 13、管理端 7、展览页 5）（`logs/e2e-app.txt`、`logs/e2e-admin.txt`、`logs/e2e-ui-kit.txt`）。
+- 桌面产物：构建退出码 0；`app.asar` 里「管理端」**0** 次、「AI 精简」**1** 次（`logs/build-desktop.txt`）。
+- 反向验证两条都咬住（见下文「反向验证」一节），证据 `logs/reverse-verification-ssrf.txt`、`logs/reverse-verification-cache.txt`。
 
-## 验收矩阵
+各验收标准的逐条命令、退出码、结果与证据位置见下表。
 
 | 检查项 | 命令 | 退出码 | 结果 | 证据 |
 | --- | --- | --- | --- | --- |
