@@ -1417,3 +1417,26 @@ schema_version: 1
   - **SQL 层覆盖的本地调整**：TASK-001 的 DB 级断言挪到 TASK-002 的集成用例（完整上下文跑真实 `V5` 迁移）。在 `paideia-ai` 内另起 DB 装配会重复它，且 `paideia-ai` 在反应堆里早于 `paideia-app`，那时 `V5` 还没建。已写进 `tasks.md` TASK-001 的验证条目。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-12 15:47:43 +0800 · WORK-006 TASK-002 完成：对话端口与 SSE 端点
+
+- 类型：change
+- 变更：
+  - 端口（包根）：`AssistantConversation`（`stream(Request, ModelAccess, Listener)`，回调式，签名无框架类型）、`ConversationTurn`（user/assistant 枚举）。
+  - 实现：`internal/conversation/AgentScopeConversation`（`stream(true)` + `DeepSeekFormatter` + SSRF 传输层复用，把 `ThinkingBlock`／`TextBlock` 分成两路回调）、`ConversationPrompt`（提示词与版本号 `assistant-chat-v1`）。
+  - 编排：`internal/conversation/ConversationService`（归属校验、上下文档装配、用户消息先写／助手消息成功后写、滑动续期、存储裁剪、条目上下文只取已发布）。
+  - 控制器：`internal/web/AssistantConversationController`（建会话／列会话为普通 JSON；发消息为 SSE，事件 `thinking`／`content`／`done`／`error`）。
+  - 集成用例：`paideia-app/.../AssistantConversationIntegrationTest`（**9 条**，覆盖 AC-001/002/003 并补上 TASK-001 的 SQL 层）。
+- 决策（实现选择，均已回填）：
+  1. **增量用框架自带的 `TextAccumulator`／`ThinkingAccumulator` 累积、取"比上次多出的后缀"**，不自己猜上游发的是 delta 还是累积快照——那两个累加器就是 AgentScope 处理流式的既定做法。
+  2. **所有校验在开流之前同步做完**（归属、空消息、缺凭据）：SSE 一旦开始就改不了 HTTP 状态码，把 403/404 塞进事件流会逼调用方去解析事件才知道失败。
+  3. **事件负载一律 JSON**：SSE 的 `data:` 行不能含裸换行，而正文必然有；前端 parse 一次即可，不必处理转义。
+  4. **助手消息只在成功时落库**（失败轮次不进上下文，但用户那条要留——他确实说过）；**正文为空但有思考**时落库与推送的都是可见提示，并用 `done.empty=true` 标出"这不是模型正文"。
+  5. `ConversationProperties.maxTokens` 取 **4096**（远大于精简那份的 1024）：思考 token 计入 `max_tokens`，给不足会静默返回空正文。
+- 依据：WORK-006 `design.md`、`tasks.md` TASK-002
+- 验证：
+  - `mvn -B -o -pl paideia-app -am test -Dtest=AssistantConversationIntegrationTest` → **9 条通过**（需 `PAIDEIA_TEST_DB_PASSWORD`）。
+  - **后端全量** `mvn -B -o verify` → **BUILD SUCCESS、0 失败 0 跳过**（2:47；paideia-app 76 条含新增 9 条、paideia-ai 31 条，`ModularityTest` 通过即模块边界未被破坏）。
+  - 三条过程教训（都是"红在哪一行"而不是"是否非 0"）：① 容器里有**两个 `TaskExecutor`**（应用执行器与调度器），注入歧义直接让上下文起不来，用 `@Qualifier("applicationTaskExecutor")` 指定；② 断言"整段响应体不含某个数字"会撞上随机 `traceId`，改为断言 `$.data`；③ **MySQL 的 `JSON` 列会规范化存储**（键重排、冒号后加空格），紧凑串读回来已变形，必须按 JSON 取值断言。
+- 本地提交：见下一笔
+- 远端推送：未执行

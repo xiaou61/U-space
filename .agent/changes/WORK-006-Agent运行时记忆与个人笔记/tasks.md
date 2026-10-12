@@ -50,7 +50,7 @@ approver_role: CTO
   - **SQL 层的覆盖落在 TASK-002 的集成用例**（本地调整，理由）：那个用例在完整上下文里跑真实的 `V5` 迁移并按 API 断言读写与过期。在 `paideia-ai` 里另起一套 DB 装配只会重复它，且会撞 Flyway 迁移顺序——`paideia-ai` 在反应堆里早于 `paideia-app`，那时 `V5` 还没建。
 
 
-### TASK-002 | pending | 对话端口与 SSE 端点
+### TASK-002 | done | 对话端口与 SSE 端点
 
 - 对应：`REQ-001`、`REQ-002`、`REQ-003`、`AC-001`、`AC-002`、`AC-003`
 - 依赖：TASK-001
