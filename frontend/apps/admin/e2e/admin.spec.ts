@@ -59,3 +59,15 @@ test('静态资源用相对路径，产物可放在任意来源下', async ({ pa
   const html = await page.content()
   expect(html).not.toContain('src="/assets/')
 })
+
+test('举报处理页：从侧栏进得去，空列表也说清楚', async ({ page }) => {
+  await signIn(page, ADMIN)
+  await expect(page.getByTestId('admin-console')).toBeVisible()
+
+  // 叶子菜单项的可访问名就是它的标签；带子菜单的那些才有 admin-menu-* 的 testid
+  await page.getByRole('link', { name: '举报处理' }).click()
+  await expect(page.getByRole('heading', { name: '举报处理' })).toBeVisible()
+  // 本地种子库没有举报：这里断的是"页面接上了、空状态说得清楚"，
+  // 举报→列表→下架→链接失效那条链路由后端集成用例覆盖（NoteReportIntegrationTest）
+  await expect(page.getByTestId('reports-empty')).toBeVisible()
+})

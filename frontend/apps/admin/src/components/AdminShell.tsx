@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  Flag,
   FolderTree,
   LayoutDashboard,
   Library,
@@ -37,6 +38,8 @@ const MENU: MenuItem[] = [
       { to: '/knowledge/entries', label: '条目管理', icon: FileText },
     ],
   },
+  // 举报处理是学习者端分享出去的内容的**唯一治理入口**（用户裁决 11：由管理员处理）
+  { to: '/reports', label: '举报处理', icon: Flag },
 ]
 
 /** 面包屑：按菜单层级写死的路径（首页固定在最前，不再逐级可点）。 */
@@ -44,6 +47,7 @@ const CRUMBS: Record<string, string[]> = {
   '/': ['总览'],
   '/knowledge/categories': ['知识库', '分类管理'],
   '/knowledge/entries': ['知识库', '条目管理'],
+  '/reports': ['举报处理'],
 }
 
 /**

@@ -3,6 +3,7 @@ import { Navigate, createHashRouter } from 'react-router'
 import { AdminHomePage } from './pages/AdminHomePage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
+import { NoteReportsPage } from './pages/NoteReportsPage'
 import { RequireAdmin } from './require-admin'
 
 /**
@@ -31,6 +32,14 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <KnowledgeCategoriesPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/reports',
+    element: (
+      <RequireAdmin>
+        <NoteReportsPage />
       </RequireAdmin>
     ),
   },

@@ -182,7 +182,7 @@ approver_role: CTO
   2. 学习者端的分享与撤回入口。
 - 验证：`pnpm --filter @paideia/app test:e2e`（分享后免登录打开可见 → 撤回后不可见）。
 
-### TASK-013 | pending | 举报与管理员下架
+### TASK-013 | done | 举报与管理员下架
 
 - 对应：`REQ-013`、`AC-013`
 - 依赖：TASK-011

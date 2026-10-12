@@ -116,6 +116,9 @@ public class SecurityConfiguration {
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
                         // 且不会有任何报错——只会在某天表现为"任何已登录的学习者都能改知识库"。
                         .requestMatchers("/api/v1/knowledge/admin/**").hasRole("ADMIN")
+                        // 笔记的举报处理。同样**必须排在任何更宽的 /api/v1/notes 规则（以及
+                        // anyRequest）之前**：顺序写反这条永不生效，且不会有任何报错。
+                        .requestMatchers("/api/v1/notes/admin/**").hasRole("ADMIN")
                         // AI 精简（WORK-005）：**只要有身份即可，不要求角色**。显式写一条而不是
                         // 靠下面的 anyRequest() 兜住，是为了让"它没有角色限制"成为一个可读的声明——
                         // 否则将来看到这个前缀没有规则，会以为漏配了。凭据与额度都是每个用户自己的，

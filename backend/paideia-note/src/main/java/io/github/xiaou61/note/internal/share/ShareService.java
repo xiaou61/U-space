@@ -32,11 +32,16 @@ public class ShareService {
      */
     private static final Duration TTL = Duration.ofDays(30);
 
+    /** 举报理由的长度上限：与列宽一致，超长在写入前报错。 */
+    private static final int MAX_REASON_CHARS = 500;
+
     private final NoteShareMapper shares;
+    private final NoteReportMapper reports;
     private final NoteService notes;
 
-    ShareService(NoteShareMapper shares, NoteService notes) {
+    ShareService(NoteShareMapper shares, NoteReportMapper reports, NoteService notes) {
         this.shares = shares;
+        this.reports = reports;
         this.notes = notes;
     }
 
@@ -92,5 +97,54 @@ public class ShareService {
     @Transactional
     public boolean revokeByAdmin(String shareId) {
         return shares.revokeByAdmin(shareId, Instant.now()) > 0;
+    }
+
+    /** 管理端列表行。 */
+    public record ReportView(long id, String shareId, String noteTitle, String reason, String status,
+                             Instant createdAt) {
+    }
+
+    /**
+     * 提交举报。
+     *
+     * <p>举报一条**不存在**的分享返回 404：那说明请求有问题，而不是"举报成功"。
+     * 但**已失效**的分享仍可举报——链接可能刚从别处打开就已经被撤回了，用户看到的仍是那份内容。
+     */
+    @Transactional
+    public void report(long userId, String shareId, String reason) {
+        String trimmed = reason == null ? "" : reason.trim();
+        if (trimmed.isEmpty()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "举报理由不能为空");
+        }
+        if (trimmed.length() > MAX_REASON_CHARS) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "举报理由不能超过 " + MAX_REASON_CHARS + " 个字符");
+        }
+        if (reports.countShare(shareId) == 0) {
+            throw new BizException(ErrorCode.NOT_FOUND, "分享不存在");
+        }
+        reports.upsert(shareId, userId, trimmed);
+    }
+
+    /** 管理端：举报列表。`status` 为空表示全部；待处理的排在最前。 */
+    public java.util.List<ReportView> listReports(String status) {
+        return reports.list(status, 100).stream()
+                .map(row -> new ReportView(row.getId(), row.getShareId(), row.getTitle(),
+                        row.getReason(), row.getStatus(), row.getCreatedAt()))
+                .toList();
+    }
+
+    /**
+     * 管理端下架：把被举报的那条分享撤下来，并把举报标为已处理。
+     *
+     * <p>两步在同一个事务里：只下架不标状态会让管理员反复看到同一条，只标状态不下架等于
+     * 什么都没做。分享已经被撤过也算成功（幂等）——管理员的目的达到了。
+     */
+    @Transactional
+    public boolean takedown(long reportId) {
+        NoteReportMapper.ReportRow report = reports.findById(reportId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "举报不存在"));
+        revokeByAdmin(report.getShareId());
+        reports.markTakenDown(reportId, Instant.now());
+        return true;
     }
 }
