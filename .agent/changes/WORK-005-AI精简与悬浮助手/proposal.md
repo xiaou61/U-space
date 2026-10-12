@@ -2,7 +2,7 @@
 artifact: proposal
 work_id: WORK-005
 work: AI 精简与悬浮助手
-status: draft
+status: approved
 mode: strict
 mode_reason: 首次调用外部模型供应商；用户自带密钥要加密落库（数据敏感）；代理端点会按用户给的地址发起服务端出站请求（SSRF 面）
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-004]
 related_to: [WORK-008]
 created: 2026-10-12
 updated: 2026-10-12
+approved_by: xiaou61
+approved_at: 2026-10-12 09:48:30 +0800
+approver_role: CTO
 ---
 
 # AI 精简与悬浮助手提案
