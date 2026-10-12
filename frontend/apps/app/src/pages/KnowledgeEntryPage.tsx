@@ -21,7 +21,7 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { api } from '../api'
-import { AccountBar } from '../components/AccountBar'
+import { LearnerHeader } from '../components/LearnerHeader'
 import { API_BASE_URL } from '../env'
 
 const knowledge = createKnowledgeApi(api)
@@ -66,7 +66,7 @@ export function KnowledgeEntryPage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<AccountBar />}>
+    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />}>
       <p className="mb-6 text-sm">
         <Link to="/knowledge" className="text-muted-foreground underline-offset-4 hover:underline">
           ← 返回知识库

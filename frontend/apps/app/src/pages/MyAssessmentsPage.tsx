@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import { api } from '../api'
-import { AccountBar } from '../components/AccountBar'
+import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
 
@@ -25,7 +25,7 @@ export function MyAssessmentsPage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="我的标记" actions={<AccountBar />}>
+    <AppShell title="Paideia" subtitle="我的标记" actions={<LearnerHeader />}>
       <PageHeader
         title="我标记过的内容"
         description="标记只是你自己的记录，用来挑出还需要再看一遍的内容。"

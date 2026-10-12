@@ -16,7 +16,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 
 import { api } from '../api'
-import { AccountBar } from '../components/AccountBar'
+import { LearnerHeader } from '../components/LearnerHeader'
 import { API_BASE_URL } from '../env'
 import { usePlatform } from '../platform'
 
@@ -43,7 +43,7 @@ export function HomePage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="骨架" actions={<AccountBar />}>
+    <AppShell title="Paideia" subtitle="骨架" actions={<LearnerHeader />}>
       <PageHeader
         title="Paideia 骨架"
         description="本页展示的是后端接口的真实返回，不是硬编码数据。"

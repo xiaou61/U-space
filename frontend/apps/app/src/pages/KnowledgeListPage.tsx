@@ -17,7 +17,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 
 import { api } from '../api'
-import { AccountBar } from '../components/AccountBar'
+import { LearnerHeader } from '../components/LearnerHeader'
 import { CategoryTree } from '../components/CategoryTree'
 
 /** 客户端只包一层路径拼装；令牌与 401 刷新都在 api 里。 */
@@ -51,7 +51,7 @@ export function KnowledgeListPage() {
   }
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<AccountBar />}>
+    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />}>
       <PageHeader title="知识库" description="按分类浏览或按关键词检索，打开条目阅读。" />
 
       <form onSubmit={onSubmit} className="mb-8 flex items-center gap-2">

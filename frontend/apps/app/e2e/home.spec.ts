@@ -70,3 +70,27 @@ test('登出后回到登录页', async ({ page }) => {
 
   await expect(page.getByTestId('login-form')).toBeVisible()
 })
+
+/**
+ * 缺陷回归（2026-10-12）：页头以前只有用户名与登出，**没有任何通往内容的入口**——
+ * 知识库那一簇页面彼此连通，却没有人从首页指向它们，用户只能手输地址。
+ *
+ * <p>这个盲区是测试自己造成的：此前每条用例都用 `page.goto('/#/knowledge')` 直达，
+ * 于是"页面能用"一直被验证，"用户走得到"从来没有。所以这条刻意**只点不输**地址。
+ */
+test('登录后从页头就能进入知识库，不必手输地址', async ({ page }) => {
+  await signIn(page)
+
+  await page.getByTestId('learner-nav-knowledge').click()
+  await expect(page).toHaveURL(/#\/knowledge$/)
+  await expect(page.getByTestId('entry-list')).toBeVisible()
+
+  // 条目页的地址是 /knowledge/entries/:id，仍该算在"知识库"这一档里（前缀匹配）
+  await page.getByTestId('entry-link-1').click()
+  await expect(page).toHaveURL(/#\/knowledge\/entries\/1$/)
+  await expect(page.getByTestId('learner-nav-knowledge')).toHaveAttribute('aria-current', 'page')
+
+  await page.getByTestId('learner-nav-my-assessments').click()
+  await expect(page).toHaveURL(/#\/my-assessments$/)
+  await expect(page.getByTestId('learner-nav-my-assessments')).toHaveAttribute('aria-current', 'page')
+})
