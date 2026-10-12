@@ -1503,3 +1503,25 @@ schema_version: 1
   - 前端 `pnpm -r typecheck` 全过、assistant 单测 10 条通过。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
+
+## 2026-10-12 17:09:04 +0800 · WORK-006 TASK-006 完成：只读工具与越权防护
+
+- 类型：change
+- 变更：
+  - **扩展 `KnowledgeApi`**（第二个消费者出现才加，仍守"不预先设计"的纪律）：`searchPublished(keyword, limit)`、`listCategories()`、`findMarks(userId, limit)`，值类型用嵌套 record（`EntryBrief`／`CategoryNode`／`MarkedEntry`），实现直接复用既有的 `EntryService.listPublished`（内含 ngram 判定与"只给已发布"）、`CategoryService.all`、`SelfAssessmentService.listMine`，不另写 SQL。
+  - `paideia-ai/internal/tools/AssistantTools`：三个只读工具 + 工具清单（`ToolSchema`）；失败**不抛异常**，作为可观察结果交回模型。
+  - `AssistantConversation.Request` 增加 `userId`（工具读数据只认它）；`AgentScopeConversation` 改为**工具循环**：每轮照常流式、用框架的 `ToolCallsAccumulator` 累积工具调用，没有工具调用即结束；最多 4 轮（`ponytail:` 兜底，防模型绕圈烧钱）。
+- 决策：
+  1. **工具参数里没有任何"读谁的数据"的字段**，归属由调用侧传入的 `userId` 决定——不是靠校验挡住模型换 id，而是那条路根本不存在。
+  2. **每一轮都照常流式**（不是"先非流式探一轮"）：工具前的中间说明（"我查一下…"）也是助手说的话，让用户看着它动比空等更符合流式的本意。代价是中间说明会一起落进那条助手消息——那是它说过的话，不是错误。
+  3. **工具结果不额外设置错误状态**：失败语义已写在文本里（"工具执行失败：…"），多一层状态只会让人以为还有别的分支。
+  4. **条数参数按信任边界处理**：模型可能给 0／负数／字符串／1000，统一夹到 [1,20]，坏输入退回默认而不是崩。
+  5. `KnowledgeApi` 侧另有 `saneLimit` 兜底（≤50），免得一次要一千条把上下文塞爆。
+- **已知缺口（如实记）**：**工具循环本身没有自动化覆盖**——"模型要工具→执行→回喂"需要一个真实上游，本环境没有、也不该花谁的 Key。这与 WORK-005 留下的"未做真连上游验证"同性质。工具**自身**的行为有 6 条集成用例。
+- 依据：WORK-006 `design.md`、`tasks.md` TASK-006；用户裁决 5（工具范围含只读）、7（自主只建议不动作）
+- 验证：
+  - `AssistantToolsIntegrationTest` → **6 条通过**：检索只给已发布（草稿不能经助手漏出去）、检索无结果给明确说法、分类行形状可判、**my_marks 只给调用者自己的标记**、未知工具名返回错误结果而不抛异常、条数参数越界被夹住（1000／0／-1／非数字都安全）。
+  - **后端全量 `mvn -B -o verify` → BUILD SUCCESS、0 失败 0 跳过**（2:31；app 91 条；`ModularityTest` 通过）。
+  - 一处小坑：自评标记的合法取值是 `understood`／`unsure`（我按 `not_yet` 写，测试 400）。读一眼控制器就不该猜。
+- 本地提交：见下一笔
+- 远端推送：未执行（等代理）

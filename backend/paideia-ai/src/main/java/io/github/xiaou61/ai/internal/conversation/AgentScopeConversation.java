@@ -1,15 +1,20 @@
 package io.github.xiaou61.ai.internal.conversation;
 
 import io.agentscope.core.agent.accumulator.TextAccumulator;
+import io.agentscope.core.agent.accumulator.ToolCallsAccumulator;
 import io.agentscope.core.agent.accumulator.ThinkingAccumulator;
 import io.agentscope.core.message.ContentBlock;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import io.agentscope.core.message.ThinkingBlock;
+import io.agentscope.core.message.ToolResultBlock;
+import io.agentscope.core.message.ToolResultMessage;
+import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.model.GenerateOptions;
+import io.agentscope.core.model.ToolSchema;
 import io.agentscope.core.model.transport.HttpTransportException;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import io.agentscope.extensions.model.openai.formatter.DeepSeekFormatter;
@@ -18,6 +23,7 @@ import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.provider.GuardedHttpTransport;
+import io.github.xiaou61.ai.internal.tools.AssistantTools;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import java.time.Duration;
@@ -43,12 +49,24 @@ import org.springframework.stereotype.Component;
 @Component
 class AgentScopeConversation implements AssistantConversation {
 
+    /**
+     * 一轮对话里最多允许多少次"模型要工具、我们回结果"的往返。
+     *
+     * <p>ponytail: 固定 4 轮。它是防"模型绕着同一个工具转圈把用户的钱烧光"的兜底，
+     * 不是功能上限——真出现"4 轮不够"的实测再提成配置。
+     */
+    private static final int MAX_TOOL_ROUNDS = 4;
+
     private final ConversationProperties properties;
     private final GuardedHttpTransport transport;
+    private final AssistantTools tools;
 
-    AgentScopeConversation(ConversationProperties properties, GuardedHttpTransport transport) {
+    AgentScopeConversation(ConversationProperties properties,
+                           GuardedHttpTransport transport,
+                           AssistantTools tools) {
         this.properties = properties;
         this.transport = transport;
+        this.tools = tools;
     }
 
     @Override
@@ -66,45 +84,114 @@ class AgentScopeConversation implements AssistantConversation {
                 .formatter(new DeepSeekFormatter())
                 .stream(true)
                 .generateOptions(options)
-                // 本轮没有工具。显式关掉这两个开关，免得将来加工具时才发现 DeepSeek
-                // "工具与结构化输出不可并用"这条限制（与精简那份同一处声明）。
+                // 仍显式关掉"原生结构化输出"：本项取结构化结果走**单独一次不带工具**的调用
+                // （见 TASK-010 的分流），不在这一层。DeepSeek 上工具与结构化输出不能并用的限制
+                // 就靠这个分工绕开。
                 .nativeStructuredOutput(false)
                 .nativeStructuredOutputWithTools(false)
                 .httpTransport(transport)
                 .build();
 
-        TextAccumulator content = new TextAccumulator();
-        ThinkingAccumulator thinking = new ThinkingAccumulator();
-        int[] emitted = {0, 0};
+        List<Msg> conversation = new ArrayList<>(toMessages(request));
+        List<ToolSchema> schemas = tools.schemas();
 
         try {
-            for (ChatResponse response : model.stream(toMessages(request), List.of(), options)
-                    .timeout(Duration.ofSeconds(properties.getRequestTimeoutSeconds()))
-                    .toIterable()) {
-                if (response.getContent() == null) {
-                    continue;
-                }
-                for (ContentBlock block : response.getContent()) {
-                    if (block instanceof ThinkingBlock block0) {
-                        thinking.add(block0);
-                        emit(thinking.getAccumulated(), emitted, 0, listener::onThinking);
-                    } else if (block instanceof TextBlock block0) {
-                        content.add(block0);
-                        emit(content.getAccumulated(), emitted, 1, listener::onContent);
-                    }
-                }
-                if (isFinished(response)) {
-                    listener.onCompleted(toUsage(response.getUsage()));
+            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+                Round roundResult = runRound(model, conversation, schemas, options, listener);
+                if (roundResult == null) {
+                    // 上游一轮都没吐出东西：按不可用处理
+                    listener.onFailed(upstreamUnavailable(null));
                     return;
                 }
+                List<ToolUseBlock> requested = roundResult.toolCalls();
+                if (requested.isEmpty()) {
+                    listener.onCompleted(roundResult.usage());
+                    return;
+                }
+
+                // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
+                conversation.add(roundResult.assistantMessage());
+                conversation.add(new ToolResultMessage(execute(request.userId(), requested)));
             }
-            // 流正常结束但没有结束事件：按正常结束处理，用量拿不到就给 null
-            listener.onCompleted(null);
+            // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱
+            listener.onFailed(new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止"));
         } catch (HttpTransportException exception) {
             listener.onFailed(toUpstreamFailure(exception));
         } catch (RuntimeException exception) {
             listener.onFailed(upstreamUnavailable(exception));
         }
+    }
+
+    /**
+     * 跑一轮：边收边把思考／正文的增量回调出去，同时累积这一轮请求的工具调用。
+     *
+     * <p>**每一轮都照常流式**（不是"先非流式试一轮再决定"）：工具的中间说明（"我查一下…"）
+     * 也是助手说的话，让用户看着它动比空等更接近流式本来的意思；最终轮的正文就是答案。
+     * 代价是中间说明会一起落进这条助手消息——那是"它说过的话"，不是错误。
+     */
+    private Round runRound(OpenAIChatModel model, List<Msg> conversation, List<ToolSchema> schemas,
+                           GenerateOptions options, Listener listener) {
+        TextAccumulator content = new TextAccumulator();
+        ThinkingAccumulator thinking = new ThinkingAccumulator();
+        ToolCallsAccumulator calls = new ToolCallsAccumulator();
+        int[] emitted = {0, 0};
+        ChatResponse last = null;
+
+        for (ChatResponse response : model.stream(conversation, schemas, options)
+                .timeout(Duration.ofSeconds(properties.getRequestTimeoutSeconds()))
+                .toIterable()) {
+            last = response;
+            if (response.getContent() == null) {
+                continue;
+            }
+            for (ContentBlock block : response.getContent()) {
+                if (block instanceof ThinkingBlock thinkingBlock) {
+                    thinking.add(thinkingBlock);
+                    emit(thinking.getAccumulated(), emitted, 0, listener::onThinking);
+                } else if (block instanceof TextBlock textBlock) {
+                    content.add(textBlock);
+                    emit(content.getAccumulated(), emitted, 1, listener::onContent);
+                } else if (block instanceof ToolUseBlock toolCall) {
+                    calls.add(toolCall);
+                }
+            }
+        }
+        if (last == null) {
+            return null;
+        }
+
+        List<ToolUseBlock> requested = calls.buildAllToolCalls();
+        List<ContentBlock> blocks = new ArrayList<>();
+        if (!thinking.getAccumulated().isEmpty()) {
+            blocks.add(TextBlock.builder().text("[思考] " + thinking.getAccumulated()).build());
+        }
+        if (!content.getAccumulated().isEmpty()) {
+            blocks.add(TextBlock.builder().text(content.getAccumulated()).build());
+        }
+        blocks.addAll(requested);
+        Msg assistant = Msg.builder().role(MsgRole.ASSISTANT).content(blocks).build();
+        return new Round(assistant, requested, toUsage(last.getUsage()));
+    }
+
+    /** 一轮的产物。 */
+    private record Round(Msg assistantMessage, List<ToolUseBlock> toolCalls, TokenUsage usage) {
+    }
+
+    /**
+     * 执行这一轮请求的工具，并包成给模型看的结果。
+     *
+     * <p>失败**不抛**：把错误文本当成结果交回去（文本里写明"工具执行失败"），
+     * 模型据此换个方式回答，比让整轮对话崩掉好。所以这里不额外设置错误状态——
+     * 语义已经在那段文本里，多一层状态只会让读的人以为还有别的分支。
+     */
+    private List<ToolResultBlock> execute(long userId, List<ToolUseBlock> requested) {
+        List<ToolResultBlock> results = new ArrayList<>();
+        for (ToolUseBlock call : requested) {
+            AssistantTools.Outcome outcome = tools.run(userId, call.getName(), call.getInput());
+            results.add(new ToolResultBlock(call.getId(), call.getName(),
+                    TextBlock.builder().text(outcome.text()).build()));
+        }
+        return results;
     }
 
     /** 只发"比上次多出来的那一段"。上游发了多少块就回调多少次，不必等结尾。 */
@@ -115,11 +202,6 @@ class AgentScopeConversation implements AssistantConversation {
         }
         emitted[slot] = accumulated.length();
         sink.accept(accumulated.substring(seen));
-    }
-
-    private static boolean isFinished(ChatResponse response) {
-        String reason = response.getFinishReason();
-        return reason != null && !reason.isBlank();
     }
 
     private List<Msg> toMessages(Request request) {

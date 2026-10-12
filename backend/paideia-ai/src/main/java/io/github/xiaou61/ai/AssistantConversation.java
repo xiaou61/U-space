@@ -29,13 +29,15 @@ public interface AssistantConversation {
     void stream(Request request, ModelAccess access, Listener listener);
 
     /**
+     * @param userId         当前调用者的账号 id。**工具读数据只认它**——模型无法提供或改写这个值
      * @param history        之前的对话（旧 → 新），供模型保持多轮上下文
      * @param userMessage    本轮用户输入
      * @param entryTitle     可选：当前条目标题（为空表示这轮没有条目上下文）
      * @param entryBody      可选：当前条目正文；超长由实现截断
      * @param memorySnippets 召回的记忆（本人私有），每条一行；为空表示这次没有可用记忆
      */
-    record Request(List<ConversationTurn> history,
+    record Request(long userId,
+                   List<ConversationTurn> history,
                    String userMessage,
                    String entryTitle,
                    String entryBody,

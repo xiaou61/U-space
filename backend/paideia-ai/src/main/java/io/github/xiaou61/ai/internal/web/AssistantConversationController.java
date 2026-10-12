@@ -107,7 +107,7 @@ class AssistantConversationController {
         StringBuilder content = new StringBuilder();
         try {
             assistant.stream(
-                    new AssistantConversation.Request(turn.history(), turn.userMessage(),
+                    new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
                             turn.entryTitle(), turn.entryBody(), turn.memorySnippets()),
                     turn.access(),
                     new AssistantConversation.Listener() {
