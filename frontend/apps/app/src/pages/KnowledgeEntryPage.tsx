@@ -16,6 +16,8 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAssistantContext } from '@paideia/assistant'
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { api } from '../api'
@@ -35,12 +37,23 @@ export function KnowledgeEntryPage() {
   const entryId = Number(params['id'])
   const valid = Number.isFinite(entryId)
   const queryClient = useQueryClient()
+  const { setEntry } = useAssistantContext()
 
   const entry = useQuery({
     queryKey: ['knowledge-entry', entryId],
     queryFn: () => knowledge.entry(entryId),
     enabled: valid,
   })
+
+  // 把"当前在读哪一条"交给悬浮壳：它是唯一知道这件事的地方。
+  // 离开页面时清空，壳随即回到"打开一条内容后可用"的状态。
+  useEffect(() => {
+    if (entry.data === undefined) {
+      return
+    }
+    setEntry({ id: entry.data.id, title: entry.data.title })
+    return () => setEntry(null)
+  }, [entry.data, setEntry])
 
   // 标记与取消共用一次 mutation：对用户来说是"改我的标记"，不是两个动作
   const assess = useMutation({

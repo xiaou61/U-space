@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -21,7 +22,9 @@ import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import io.github.xiaou61.security.AuthPort;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +75,13 @@ class AiSummaryIntegrationTest {
     private long entryId;
 
     /**
+     * 本用例建出来的条目 id。**必须在收尾时删掉**：测试库是整个 XML 测试集共享的，
+     * 留下的已发布条目会让知识库那边"列表只含种子内容"的断言失败——那是测试污染，
+     * 不是产品缺陷（第一版就是这么把 KnowledgeReadIntegrationTest 弄红的）。
+     */
+    private final List<Long> createdEntries = new ArrayList<>();
+
+    /**
      * 每个用例一组全新的用户 id：限流计数在进程内、**按用户累计**，若共用固定 id，
      * 同一批用例跑下来会互相把额度用掉，后面的用例就变成 429——那是测试自身的耦合，不是产品行为。
      */
@@ -80,6 +90,7 @@ class AiSummaryIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        createdEntries.clear();
         clearInvocations(summarizer);
         // 这两张表只有本模块在写，测试自己清干净就能做到用例间互不影响；
         // 不清的话"未配置凭据"这类断言会被上一个用例留下的行打破。
@@ -253,12 +264,7 @@ class AiSummaryIntegrationTest {
     @DisplayName("未发布条目不能生成")
     void draftEntryIsNotFound() throws Exception {
         saveCredential(userA);
-        MvcResult created = mockMvc.perform(post("/api/v1/knowledge/admin/entries")
-                        .header("Authorization", adminToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"草稿\",\"body\":\"内容\",\"categoryId\":null,\"status\":\"draft\"}"))
-                .andReturn();
-        long draftId = ((Number) JsonPath.read(body(created), "$.data")).longValue();
+        long draftId = createEntry("草稿 " + System.nanoTime(), "内容", "draft");
 
         MvcResult result = generate(userA, draftId, "public");
         assertThat(result.getResponse().getStatus()).isEqualTo(404);
@@ -286,14 +292,29 @@ class AiSummaryIntegrationTest {
     }
 
     private long createPublishedEntry(String title) throws Exception {
+        return createEntry(title, "正文内容，用于 AI 精简测试。", "published");
+    }
+
+    private long createEntry(String title, String content, String status) throws Exception {
         MvcResult created = mockMvc.perform(post("/api/v1/knowledge/admin/entries")
                         .header("Authorization", adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"" + title + "\",\"body\":\"正文内容，用于 AI 精简测试。\","
-                                + "\"categoryId\":null,\"status\":\"published\"}"))
+                        .content("{\"title\":\"" + title + "\",\"body\":\"" + content + "\","
+                                + "\"categoryId\":null,\"status\":\"" + status + "\"}"))
                 .andReturn();
         assertThat(created.getResponse().getStatus()).isEqualTo(200);
-        return ((Number) JsonPath.read(body(created), "$.data")).longValue();
+        long id = ((Number) JsonPath.read(body(created), "$.data")).longValue();
+        createdEntries.add(id);
+        return id;
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        for (long id : createdEntries) {
+            mockMvc.perform(delete("/api/v1/knowledge/admin/entries/" + id)
+                    .header("Authorization", adminToken()));
+        }
+        createdEntries.clear();
     }
 
     private String token(String subject) {

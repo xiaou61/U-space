@@ -48,7 +48,7 @@ approver_role: CTO
 - 步骤：按设计 4 条实现（https 必须、userinfo 拒绝、**全部**解析结果必须是公网、禁止重定向），并保证校验失败时请求不发出。
 - 验证：单测覆盖回环／私网／链路本地与云元数据／ULA／IPv4 映射／非 https／含 userinfo；集成测试证明拒绝时端口未被调用。
 
-## TASK-004 | doing | 生成、结构化输出与缓存可见性
+## TASK-004 | done | 生成、结构化输出与缓存可见性
 
 - 对应：REQ-001、REQ-002、REQ-004、REQ-005、REQ-007、REQ-008；AC-001、AC-003、AC-004、AC-006、AC-009、AC-010
 - 新建：`EntrySummary`／`EntrySummaryMapper`、`SummaryFingerprint`、`SummaryService`、`SummaryPrompt`、`SummarySchemaValidator`、`AgentScopeEntrySummarizer`、`AiSummaryController`
@@ -68,7 +68,7 @@ approver_role: CTO
 - 步骤：每用户每分钟 6 次、每日 60 次（生成计入，读缓存不计入）；超限 42900。计数用 `ConcurrentHashMap<userId, Window>` 并写 `ponytail:` 注释标明单实例天花板。
 - 验证：集成测试连续触发到 42900；日志里能看到四类指标名。
 
-## TASK-006 | todo | 前端 `packages/assistant`
+## TASK-006 | done | 前端 `packages/assistant`
 
 - 对应：REQ-001、REQ-005、REQ-006；AC-001、AC-010
 - 新建：`frontend/packages/assistant/`（`client.ts`、`types.ts`、`summary-card.tsx`、`assistant-shell.tsx`、`credential-dialog.tsx`、`context.tsx`、`index.ts`）
@@ -76,17 +76,23 @@ approver_role: CTO
 - 步骤：客户端接五个端点；卡片渲染结构化字段 + 来源与用量脚注；悬浮壳收起/展开两态、非条目页显示"打开一条内容后可用"、未配凭据时给配置入口；凭据弹窗三字段 + last4 回显；`AssistantProvider` 暴露 `setEntry`。
 - 验证：`pnpm --filter @paideia/assistant typecheck` 与单测（卡片渲染、客户端错误映射）；`source-coverage` 检查通过。
 
-## TASK-007 | todo | 学习者端挂载与 e2e
+## TASK-007 | done | 学习者端挂载与 e2e
 
 - 对应：AC-001（端到端）
 - 修改：`apps/app` 外壳挂载悬浮壳、条目页设置/清除上下文、`apps/app/e2e/`（新增一条 e2e：条目页能看到壳、未配凭据时显示配置入口、不是真实调用模型）
 - 验证：`pnpm --filter @paideia/app test:e2e`（本地跑，不指向线上）。
 
-## TASK-008 | todo | 全量回归与测试报告
+## TASK-008 | done | 全量回归与测试报告
 
 - 修改：`testing/plan.md`、`testing/report.md`
 - 步骤：跑 `mvn -B verify`、`pnpm -r typecheck`、`pnpm -r test`、三端 e2e、四项边界检查、桌面产物核对；按验收矩阵逐条落证据；把 DNS rebinding 等残余风险写进报告而不是省略。
 - 验证：报告 `status: passed` 且每条 AC 有命令 + 退出码 + 证据位置。
+
+## 报告状态
+
+`testing/report.md` 为 **`passed`**：10 条 AC 与两条反向验证都有命令 + 退出码 + 证据位置；
+**所有测试都不真连上游**（生成路径用桩覆盖）。残余风险（DNS rebinding、单实例限流、
+孤儿行、主密钥轮换即全体重填、AgentScope 年轻、未做真连冒烟）已写在报告里，没有省略。
 
 ## 完成条件
 

@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@paideia/assistant": "workspace:*",
     "@paideia/auth": "workspace:*",
     "@paideia/core": "workspace:*",
     "@paideia/knowledge": "workspace:*",

@@ -1,3 +1,4 @@
+import { AssistantProvider, AssistantShell, createAssistantApi } from '@paideia/assistant'
 import { AuthProvider, useAuth } from '@paideia/auth'
 import { ThemeProvider } from '@paideia/ui'
 import '@paideia/ui/styles.css'
@@ -10,6 +11,12 @@ import { auth } from './auth'
 import { platform } from './host'
 import { PlatformProvider } from './platform'
 import { router } from './router'
+
+/**
+ * AI 精简的客户端。与页面用的 `api` 同一个装配来源（带令牌、401 刷新重放），
+ * 因此它同样不认识令牌本身。
+ */
+const assistantApi = createAssistantApi(auth.api)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,7 +54,11 @@ createRoot(container).render(
         <QueryClientProvider client={queryClient}>
           <AuthProvider tokens={auth.tokens} api={auth.authApi}>
             <RefreshBridge />
-            <RouterProvider router={router} />
+            {/* 悬浮助手壳挂在路由之外：它要**贯穿全站**常驻，而不是每个页面自己摆一个 */}
+            <AssistantProvider>
+              <RouterProvider router={router} />
+              <AssistantShell api={assistantApi} />
+            </AssistantProvider>
           </AuthProvider>
         </QueryClientProvider>
       </ThemeProvider>
