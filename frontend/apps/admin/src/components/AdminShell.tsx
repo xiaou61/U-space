@@ -1,37 +1,49 @@
 import { ThemeToggle } from '@paideia/ui'
 import {
+  ChevronDown,
   ChevronRight,
   FileText,
   FolderTree,
   LayoutDashboard,
+  Library,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 
+interface MenuItem {
+  to: string
+  label: string
+  icon: typeof FileText
+  /** 有子项的是一级菜单，点了展开/收起，自身不跳转。 */
+  children?: MenuItem[]
+}
+
 /**
- * 侧边菜单。分组只为表达层级，`to` 与路由表一一对应。
+ * 侧边菜单。层级与路由表一一对应，父项只是分组、不指向任何页面。
  *
  * <p>放在管理端而不是设计系统里：学习者端是内容优先的单列阅读界面，两侧的信息架构本就
  * 不同，把侧栏做成共享组件等于给阅读界面塞一套它不需要的导航。
  */
-const MENU: { section: string | null; items: { to: string; label: string; icon: typeof FileText }[] }[] = [
-  { section: null, items: [{ to: '/', label: '总览', icon: LayoutDashboard }] },
+const MENU: MenuItem[] = [
+  { to: '/', label: '总览', icon: LayoutDashboard },
   {
-    section: '内容管理',
-    items: [
+    to: '/knowledge',
+    label: '知识库',
+    icon: Library,
+    children: [
       { to: '/knowledge/categories', label: '分类管理', icon: FolderTree },
       { to: '/knowledge/entries', label: '条目管理', icon: FileText },
     ],
   },
 ]
 
-/** 面包屑：按路由表写死的层级（首页固定在最前，不再逐级可点）。 */
+/** 面包屑：按菜单层级写死的路径（首页固定在最前，不再逐级可点）。 */
 const CRUMBS: Record<string, string[]> = {
   '/': ['总览'],
-  '/knowledge/categories': ['知识库管理', '分类管理'],
-  '/knowledge/entries': ['知识库管理', '条目管理'],
+  '/knowledge/categories': ['知识库', '分类管理'],
+  '/knowledge/entries': ['知识库', '条目管理'],
 }
 
 /**
@@ -47,6 +59,8 @@ const CRUMBS: Record<string, string[]> = {
 export function AdminShell({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  // 只记录"用户手动点过"的父菜单；没点过的跟着当前路由走
+  const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const crumbs = CRUMBS[pathname] ?? ['管理端']
 
   return (
@@ -68,37 +82,74 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
           )}
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto p-2">
-          {MENU.map((group, index) => (
-            <div key={group.section ?? `group-${index}`} className="space-y-1">
-              {group.section === null || collapsed ? null : (
-                <div className="text-muted-foreground px-2 pt-1 text-[11px] font-medium">
-                  {group.section}
-                </div>
-              )}
-              {group.items.map((item) => {
-                const active = pathname === item.to
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    aria-current={active ? 'page' : undefined}
-                    data-active={active ? 'true' : undefined}
-                    className={`flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors ${
-                      active
-                        ? 'bg-muted text-foreground font-medium'
-                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                    } ${collapsed ? 'justify-center' : ''}`}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    {collapsed ? null : <span className="truncate">{item.label}</span>}
-                  </Link>
-                )
-              })}
-            </div>
-          ))}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+          {MENU.map((item) => {
+            const Icon = item.icon
+            if (item.children === undefined) {
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  label={item.label}
+                  icon={Icon}
+                  collapsed={collapsed}
+                  active={pathname === item.to}
+                />
+              )
+            }
+
+            // 展开与否：用户手动点过的以手动为准，没点过就跟着当前路由走（进到子页面自动展开）
+            const open = toggled[item.label] ?? item.children.some((child) => child.to === pathname)
+            const active = item.children.some((child) => child.to === pathname)
+            return (
+              <div key={item.to}>
+                <button
+                  type="button"
+                  title={item.label}
+                  aria-expanded={open}
+                  data-testid={`admin-menu-${item.label}`}
+                  onClick={() => {
+                    // 收起状态下点父菜单先把侧栏展开——否则子项根本没地方显示
+                    if (collapsed) {
+                      setCollapsed(false)
+                      setToggled((current) => ({ ...current, [item.label]: true }))
+                      return
+                    }
+                    setToggled((current) => ({ ...current, [item.label]: !open }))
+                  }}
+                  className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm transition-colors ${
+                    active
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  } ${collapsed ? 'justify-center' : ''}`}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  {collapsed ? null : (
+                    <>
+                      <span className="flex-1 truncate text-left">{item.label}</span>
+                      <ChevronDown
+                        className={`size-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
+                      />
+                    </>
+                  )}
+                </button>
+                {open && !collapsed ? (
+                  <div className="border-border mt-1 ml-4 space-y-1 border-l pl-1">
+                    {item.children.map((child) => (
+                      <NavLink
+                        key={child.to}
+                        to={child.to}
+                        label={child.label}
+                        icon={child.icon}
+                        collapsed={false}
+                        active={pathname === child.to}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
         </nav>
 
         <div className="border-border border-t p-2">
@@ -140,5 +191,37 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
         <main className="bg-muted/60 flex-1 p-6">{children}</main>
       </div>
     </div>
+  )
+}
+
+/** 菜单项（一级与子项共用）：收起状态只剩图标，用 `title` 与无障碍名称兜住可读性。 */
+function NavLink({
+  to,
+  label,
+  icon: Icon,
+  collapsed,
+  active,
+}: {
+  to: string
+  label: string
+  icon: typeof FileText
+  collapsed: boolean
+  active: boolean
+}) {
+  return (
+    <Link
+      to={to}
+      title={label}
+      aria-current={active ? 'page' : undefined}
+      data-active={active ? 'true' : undefined}
+      className={`flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors ${
+        active
+          ? 'bg-muted text-foreground font-medium'
+          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+      } ${collapsed ? 'justify-center' : ''}`}
+    >
+      <Icon className="size-4 shrink-0" />
+      {collapsed ? null : <span className="truncate">{label}</span>}
+    </Link>
   )
 }

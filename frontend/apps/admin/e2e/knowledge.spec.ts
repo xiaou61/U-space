@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { ADMIN, ADMIN_ENTRY, LEARNER } from './env'
+
 /**
  * 管理端知识库的端到端检查：**录入 → 预览 → 发布 → 学习者能看到**。
  *
@@ -16,10 +18,8 @@ import { expect, test, type Page } from '@playwright/test'
  * `<select>`，所以 `selectOption()` 用不了，要点开再选），删除有确认弹窗。
  */
 
-const SEED_ADMIN = { identifier: 'seed-admin', password: 'seed-admin-password' }
-
 async function signIn(page: Page, account: { identifier: string; password: string }) {
-  await page.goto('/')
+  await page.goto(ADMIN_ENTRY)
   await expect(page.getByTestId('admin-sign-in')).toBeVisible()
   await page.getByTestId('login-identifier').fill(account.identifier)
   await page.getByTestId('login-password').fill(account.password)
@@ -38,9 +38,9 @@ function rowIn(page: Page, table: string, text: string) {
 }
 
 test('非管理员进不了管理区', async ({ page }) => {
-  await page.goto('/')
-  await page.getByTestId('login-identifier').fill('seed-learner')
-  await page.getByTestId('login-password').fill('seed-learner-password')
+  await page.goto(ADMIN_ENTRY)
+  await page.getByTestId('login-identifier').fill(LEARNER.identifier)
+  await page.getByTestId('login-password').fill(LEARNER.password)
   await page.getByTestId('login-submit').click()
 
   await expect(page.getByTestId('admin-denied')).toBeVisible()
@@ -52,7 +52,7 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
   const categoryName = `e2e 分类 ${stamp}`
   const entryTitle = `e2e 条目 ${stamp}`
 
-  await signIn(page, SEED_ADMIN)
+  await signIn(page, ADMIN)
 
   // 门与路由：首页的入口真的能到分类管理
   await page.getByTestId('admin-categories-link').click()

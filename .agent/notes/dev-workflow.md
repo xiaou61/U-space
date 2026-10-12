@@ -28,6 +28,23 @@
 
 **真正的瓶颈**是每个 SQL 都要过 SSH 隧道到远程 MySQL。唯一能大幅砍掉的办法是把测试库放本地（当前是"直连服务器 MySQL、不起本地实例"的既有取舍）。
 
+## 在线上跑 e2e（2026-10-12 起，改完直接部署再验）
+
+管理端的 e2e **可以不用本地任何东西**：设了 `E2E_BASE_URL` 就跳过 `webServer`，直接打已部署实例。界面类改动走这条最快——不用本地后端、不用本地 dev server、也不用那条 3307 隧道。
+
+```
+MSYS_NO_PATHCONV=1 E2E_BASE_URL=http://<服务器>:8081 E2E_ADMIN_PATH=/admin/index.html \
+  E2E_ADMIN_IDENTIFIER=… E2E_ADMIN_PASSWORD=… \
+  E2E_LEARNER_IDENTIFIER=… E2E_LEARNER_PASSWORD=… \
+  pnpm --filter @paideia/admin test:e2e
+```
+
+- 线上实测 **7 passed / 14.7 秒**（本地那条路 23–27 秒，且依赖隧道）。
+- `E2E_ADMIN_PATH` 必须给：部署形态是"一个 jar 同供 API 与前端静态"，站点根是学习者端，管理端在 `/admin/index.html`。
+- **账号必须给**：种子账号（`seed-admin`/`seed-learner`）不在线上——口令写在公开仓库里，放到公网可达的实例上等于开放管理权限。线上是 `admin` 与 `e2e-learner`（后者是为 e2e 建的普通学习者），口令见被忽略的 `backend/config/application-local.yml`。
+- **`MSYS_NO_PATHCONV=1` 不能省**：Git Bash 会把 `/admin/index.html` 这类值改写成 Windows 路径，测试会全红、且报错指向"元素找不到"，极易误判成界面坏了。
+- 这条路径的两个边界：① 它**真的写线上库**（知识库那条用例自己建、自己删）；② 注册/邮箱验证码那几条**只能在本机跑**——要靠内存信箱读验证码，线上是真实 SMTP。学习者端的 e2e 因此仍走本地那条。
+
 ## 踩过的坑
 
 - **不要用 `pnpm -r build`**：`apps/desktop` 的 `build` 会跑 `electron-builder`（下载 Electron 再打包），一轮接近 20 分钟。构建用 `pnpm --filter @paideia/<app> build` 或 `pnpm -r --filter '!@paideia/desktop' build`。
