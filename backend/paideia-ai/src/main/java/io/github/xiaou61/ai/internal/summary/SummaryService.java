@@ -1,0 +1,151 @@
+package io.github.xiaou61.ai.internal.summary;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.xiaou61.ai.EntrySummarizer;
+import io.github.xiaou61.ai.GeneratedSummary;
+import io.github.xiaou61.ai.SummaryCard;
+import io.github.xiaou61.ai.SummaryVisibility;
+import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.credential.CredentialService;
+import io.github.xiaou61.ai.internal.provider.SummaryPrompt;
+import io.github.xiaou61.knowledge.EntryContent;
+import io.github.xiaou61.knowledge.KnowledgeApi;
+import io.github.xiaou61.platform.BizException;
+import io.github.xiaou61.platform.ErrorCode;
+import java.time.Instant;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+
+/**
+ * 精简的读取与生成。
+ *
+ * <p>编排顺序：**取正文 → 找可见的缓存 →（没有才）调模型 → 落库**。端口只负责调模型，
+ * 凭据只在调用前一刻取，缓存与可见性都在这里。
+ *
+ * <p>两条不可动摇的规则：
+ * <ol>
+ *   <li>命中缓存时**不调模型**，且响应里的用量是 {@code null}（"本次没有产生调用"），
+ *       而不是 0（那会被读成"只花了 0 个 token"）。</li>
+ *   <li>失败与空结果**绝不落库**：校验器已经把空的挡掉，这里负责不写失败结果。</li>
+ * </ol>
+ */
+@Service
+public class SummaryService {
+
+    private static final Logger log = LoggerFactory.getLogger(SummaryService.class);
+
+    private final KnowledgeApi knowledge;
+    private final CredentialService credentials;
+    private final EntrySummarizer summarizer;
+    private final EntrySummaryMapper mapper;
+    private final SummaryRateLimiter limiter;
+    private final ObjectMapper objectMapper;
+
+    SummaryService(KnowledgeApi knowledge,
+                   CredentialService credentials,
+                   EntrySummarizer summarizer,
+                   EntrySummaryMapper mapper,
+                   SummaryRateLimiter limiter,
+                   ObjectMapper objectMapper) {
+        this.knowledge = knowledge;
+        this.credentials = credentials;
+        this.summarizer = summarizer;
+        this.mapper = mapper;
+        this.limiter = limiter;
+        this.objectMapper = objectMapper;
+    }
+
+    /** 响应形状。`usage` 命中缓存时为 null；`source` 说明这份结果是谁生成的。 */
+    public record SummaryView(SummaryCard card,
+                              boolean cached,
+                              String source,
+                              String visibility,
+                              TokenUsage usage,
+                              boolean truncated,
+                              Instant generatedAt) {
+    }
+
+    /** 只读：有可见结果就返回，没有返回空（**不触发生成**，也不计入限流）。 */
+    public Optional<SummaryView> read(long entryId, long userId) {
+        return knowledge.findPublishedContent(entryId)
+                .flatMap(content -> readCached(entryId, content.body(), userId));
+    }
+
+    /** 生成或命中。 */
+    public SummaryView generate(long entryId, long userId, SummaryVisibility visibility) {
+        EntryContent content = knowledge.findPublishedContent(entryId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "条目不存在或尚未发布"));
+
+        Optional<SummaryView> cached = readCached(entryId, content.body(), userId);
+        if (cached.isPresent()) {
+            log.info("ai.summary.cached entryId={} userId={}", entryId, userId);
+            return cached.get();
+        }
+
+        limiter.checkAndCount(userId);
+        var access = credentials.access(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.CONFLICT,
+                        "尚未配置模型凭据，请先填写 baseUrl 与 API Key"));
+        GeneratedSummary generated = summarizer.summarize(content.title(), content.body(), access);
+
+        EntrySummary row = new EntrySummary();
+        row.setEntryId(entryId);
+        row.setContentHash(SummaryFingerprint.of(content.body()));
+        row.setModel(access.model());
+        row.setPromptVersion(SummaryPrompt.VERSION);
+        row.setOwnerUserId(userId);
+        row.setVisibility(visibility.wireName());
+        row.setCardJson(toJson(generated.card()));
+
+        boolean stored = true;
+        try {
+            mapper.insert(row);
+        } catch (DuplicateKeyException exception) {
+            // 并发下同一指纹被同时生成：唯一键兜住，回读已有的那份，不把 500 抛给用户
+            stored = false;
+        }
+        log.info("ai.summary.generated entryId={} userId={} stored={} truncated={}",
+                entryId, userId, stored, generated.truncated());
+
+        if (!stored) {
+            return readCached(entryId, content.body(), userId).orElseGet(
+                    () -> view(generated.card(), false, "mine", visibility.wireName(),
+                            generated.usage(), generated.truncated(), Instant.now()));
+        }
+        return view(generated.card(), false, "mine", visibility.wireName(),
+                generated.usage(), generated.truncated(), Instant.now());
+    }
+
+    private Optional<SummaryView> readCached(long entryId, String body, long userId) {
+        return mapper.findVisible(entryId, SummaryFingerprint.of(body), SummaryPrompt.VERSION, userId)
+                .map(it -> view(fromJson(it.getCardJson()), true,
+                        it.getOwnerUserId() != null && it.getOwnerUserId() == userId ? "mine" : "others",
+                        it.getVisibility(), null, false, it.getCreatedAt()));
+    }
+
+    private static SummaryView view(SummaryCard card, boolean cached, String source, String visibility,
+                                    TokenUsage usage, boolean truncated, Instant generatedAt) {
+        return new SummaryView(card, cached, source, visibility, usage, truncated, generatedAt);
+    }
+
+    private String toJson(SummaryCard card) {
+        try {
+            return objectMapper.writeValueAsString(card);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("序列化卡片失败", exception);
+        }
+    }
+
+    private SummaryCard fromJson(String json) {
+        try {
+            return objectMapper.readValue(json, SummaryCard.class);
+        } catch (JsonProcessingException exception) {
+            // 落库的都是校验过的卡片，读不出来只可能是数据被外部改过
+            throw new IllegalStateException("已保存的卡片无法解析", exception);
+        }
+    }
+}

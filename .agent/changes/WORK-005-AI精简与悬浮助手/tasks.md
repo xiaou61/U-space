@@ -17,7 +17,7 @@ approver_role: CTO
 
 需求、提案、设计均已签署。八片按"能独立验证"切分，顺序即依赖顺序。
 
-## TASK-001 | todo | AI 模块骨架、依赖与 AgentScope 最小调用尖刺
+## TASK-001 | done | AI 模块骨架、依赖与 AgentScope 最小调用尖刺
 
 - 对应：设计「模块与包结构」；REQ-001
 - 新建：`backend/paideia-ai/`（`pom.xml`、`package-info.java`）、`io.github.xiaou61.ai` 包根与 `internal/{credential,summary,provider,web}` 子包
@@ -29,7 +29,7 @@ approver_role: CTO
   4. `KnowledgeApi` 加 `findPublishedContent(long entryId)` 与 `EntryContent`，并建它的实现类（WORK-004 记的"等第一个真实方法"时点）。
 - 验证：`mvn -B compile` 通过；`ModularityTest` 仍通过（模块边界）；尖刺结论已写进 design.md。
 
-## TASK-002 | todo | 凭据：加密落库与读写接口
+## TASK-002 | done | 凭据：加密落库与读写接口
 
 - 对应：REQ-003；AC-002
 - 新建：迁移（`ai_model_credentials` 与 `ai_entry_summaries` 两张表，编号取当时可用值）、`ModelCredential`／`ModelCredentialMapper`、`CredentialCipher`、`AiProperties`、`CredentialService`、`AiCredentialController`
@@ -41,14 +41,14 @@ approver_role: CTO
   5. 日志纪律：`toString`／异常信息／日志里不得出现 Key 或密文。
 - 验证：单测（加解密往返、篡改检测、主密钥缺失即失败）+ 集成测试（CRUD、只回 last4、日志无明文、匿名 401）。
 
-## TASK-003 | todo | SSRF 校验
+## TASK-003 | done | SSRF 校验
 
 - 对应：设计的 SSRF 节；AC-007
 - 新建：`UpstreamGuard`（+ 单测）
 - 步骤：按设计 4 条实现（https 必须、userinfo 拒绝、**全部**解析结果必须是公网、禁止重定向），并保证校验失败时请求不发出。
 - 验证：单测覆盖回环／私网／链路本地与云元数据／ULA／IPv4 映射／非 https／含 userinfo；集成测试证明拒绝时端口未被调用。
 
-## TASK-004 | todo | 生成、结构化输出与缓存可见性
+## TASK-004 | doing | 生成、结构化输出与缓存可见性
 
 - 对应：REQ-001、REQ-002、REQ-004、REQ-005、REQ-007、REQ-008；AC-001、AC-003、AC-004、AC-006、AC-009、AC-010
 - 新建：`EntrySummary`／`EntrySummaryMapper`、`SummaryFingerprint`、`SummaryService`、`SummaryPrompt`、`SummarySchemaValidator`、`AgentScopeEntrySummarizer`、`AiSummaryController`
@@ -61,7 +61,7 @@ approver_role: CTO
   6. `GET/POST /api/v1/ai/summaries`；错误映射按设计表（不泄露上游原始报文）。
 - 验证：单测（校验器、指纹）+ 集成测试（**计数桩**证明命中不再调用、可见性矩阵、正文改动失效、无凭据可读不可生成、错误映射）。
 
-## TASK-005 | todo | 限流与指标
+## TASK-005 | done | 限流与指标
 
 - 对应：REQ 之外的质量要求；AC-005 的一部分（42900）
 - 新建：进程内固定窗口限流器、指标计数（日志 + Actuator 可读）

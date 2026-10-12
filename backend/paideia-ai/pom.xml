@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.xiaou61</groupId>
+    <artifactId>paideia</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>paideia-ai</artifactId>
+  <name>paideia-ai</name>
+  <description>AI 精简：条目正文的结构化精简卡片，用户自带凭据（BYOK）经后端代理调用</description>
+
+  <!--
+    依赖方向：ai -> {platform, persistence, security, knowledge}。
+
+    **依赖 knowledge 是为了拿条目正文**（`KnowledgeApi.findPublishedContent`）——这是本模块
+    第一个真实的跨模块调用，也是 KNOWLEDGE 那边"等第一个真实方法出现再建实现类"的时点。
+
+    AgentScope 只在本模块的实现里出现：端口签名不含它的类型，将来换实现或升级框架都不动
+    业务代码（D-09 的要求）。版本刻意取 2.0.0 而不是更新的 2.0.4：本地仓库里 OpenAI 扩展
+    只有 2.0.0，核心与扩展取同一版本号才能保证二进制一致与离线可构建。
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-platform</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-knowledge</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.agentscope</groupId>
+      <artifactId>agentscope-core</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.agentscope</groupId>
+      <artifactId>agentscope-extensions-model-openai</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Boot 4 把测试切片拆到独立模块 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -116,6 +116,11 @@ public class SecurityConfiguration {
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
                         // 且不会有任何报错——只会在某天表现为"任何已登录的学习者都能改知识库"。
                         .requestMatchers("/api/v1/knowledge/admin/**").hasRole("ADMIN")
+                        // AI 精简（WORK-005）：**只要有身份即可，不要求角色**。显式写一条而不是
+                        // 靠下面的 anyRequest() 兜住，是为了让"它没有角色限制"成为一个可读的声明——
+                        // 否则将来看到这个前缀没有规则，会以为漏配了。凭据与额度都是每个用户自己的，
+                        // 不是管理操作。
+                        .requestMatchers("/api/v1/ai/**").authenticated()
                         // 附件读取**免鉴权**（用户裁决）：<img> 不携带 Authorization 头，
                         // 而本项目无 Cookie，要求登录就等于图片显示不出来。限定 GET：
                         // 上传挂在 /api/v1/knowledge/admin/files，不能因为放行读取把写入也放开。

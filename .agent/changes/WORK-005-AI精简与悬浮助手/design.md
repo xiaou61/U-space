@@ -87,6 +87,7 @@ KEY idx_ai_summary_read (entry_id, content_hash, model, prompt_version, visibili
 ```
 
 - **键里带 `content_hash`**：正文一改哈希即变，旧结果自然不再命中；不依赖"任何 UPDATE 都会刷时间戳"这个隐式前提。
+- **读过滤不含模型名**（模型名只在写入的唯一键里）。这是实施时发现的设计矛盾：把模型名也拿来过滤，等于要求"读的人必须先有一个模型名"，而没配凭据的用户恰恰没有——那样他们永远读不到任何公开结果，与需求"未配凭据者可读公开结果"直接冲突。模型名留在唯一键里已足够：它保证同一个人换模型再生成时不会被旧行顶掉。
 - **不建跨模块外键**：`entry_id`／`owner_user_id` 指向别的模块的表，加 FK 会把模块间的数据耦合写进数据库。代价是删条目/删用户会留下不可达的行（与既有的孤儿附件同类），列为已知缺口。
 - **只存已校验通过的卡片**；校验失败与空结果**一律不落库**。
 
@@ -168,7 +169,8 @@ public interface EntrySummarizer {
 
 - **一次调用，不启用 agent 运行时**：没有工具、没有记忆、没有多轮（属 WORK-006）。用的是 OpenAI 兼容模型 + DeepSeek formatter。
 - **显式关闭 natives 结构化输出与工具的耦合**：`nativeStructuredOutputWithTools(false)`。本项无工具，这条设置没有副作用，但它把"将来加工具会撞上 DeepSeek 那条限制"变成一次显式声明。
-- 结构化输出走框架的**合成工具回退路径**；返回后由 `SummarySchemaValidator` 做**字段级校验**：`headline` 非空、`sections` 非空、每节 `heading` 与 `body` 非空、总长度上限内。**空内容与校验失败都按失败处理，绝不入缓存。**
+- **结构化输出：要求模型只回一段 JSON，再由 `SummarySchemaValidator` 逐字段校验**（`headline` 非空、`sections` 非空、每节 `heading` 与 `body` 非空、长度上限内）。**空内容与校验失败都按失败处理，绝不入缓存。**
+  **这是对本文的一处实施偏离**（原设计写的是"走框架的合成工具回退路径"）：AgentScope 对 DeepSeek 的结构化输出要靠自己构造工具 schema 并解析工具调用参数，面比收益大；而校验器本来就不可少（原生路径也会字段漂移），少一层协议是净收益。两个 `nativeStructuredOutput*` 开关仍按原设计显式写成 `false`——那是给"将来加工具"留的显式声明。
 - **`max_tokens` 与思考模式**：默认**关闭思考**（`enableThinking(false)`），`max_tokens` 设 1024——卡片是短产物，且思考 token 会吃 `max_tokens` 并导致**静默空响应**（DeepSeek 实测）。若将来开思考，必须同时抬高 `max_tokens` 并**分开渲染思考与正文两类事件**（流式时才需要）。
 - **超长正文**：超过上限（8000 字符）按段落截断，并在卡片上标注"已按前 N 字生成"。
 - **提示词版本**：`SummaryPrompt.VERSION`（如 `v1`）进缓存键；改提示词等于换键，不复用旧结果。

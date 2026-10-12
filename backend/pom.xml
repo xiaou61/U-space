@@ -25,6 +25,7 @@
     <module>paideia-security</module>
     <module>paideia-account</module>
     <module>paideia-knowledge</module>
+    <module>paideia-ai</module>
     <module>paideia-app</module>
   </modules>
 
@@ -70,6 +71,11 @@
       <dependency>
         <groupId>io.github.xiaou61</groupId>
         <artifactId>paideia-knowledge</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.xiaou61</groupId>
+        <artifactId>paideia-ai</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

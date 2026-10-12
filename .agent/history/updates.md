@@ -1172,3 +1172,21 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:51:05 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-12 10:30:00 +0800 · WORK-005 实施：TASK-001—005（后端主体）
+
+- 类型：change
+- 变更：新建 `paideia-ai` 模块并落地后端主体（对应 TASK-001—005）：
+  - **模块与依赖**：`backend/pom.xml` 的 `<modules>` 与 `dependencyManagement`、`paideia-app/pom.xml` 三处注册；依赖 `io.agentscope:agentscope-core:2.0.0` 与 `agentscope-extensions-model-openai:2.0.0`（**同版本号**，本地仓库里 OpenAI 扩展只有 2.0.0；不引 starter）。
+  - **尖刺结论（不猜 API 的产出）**：`OpenAIChatModel.builder()` 提供 `apiKey/baseUrl/modelName/formatter/stream/generateOptions/nativeStructuredOutput/nativeStructuredOutputWithTools/httpTransport`；`ChatModelBase.stream(...)` 返回 `Flux<ChatResponse>`；`HttpTransport` 是三元接口，可装饰。默认传输实现 `OkHttpTransport` 有无参构造，于是 SSRF 校验可以做在**传输层**（每次出站前校验最终 URL），而不是只校验用户填的那个串。
+  - **迁移**：`V4__create_ai_tables.sql` 两张表（凭据、精简结果）。结果表唯一键含 `(entry_id, content_hash, model, prompt_version, owner_user_id)`，另有一条读索引。
+  - **凭据**：AES-GCM（`iv||ciphertext||tag`，每条独立 IV），主密钥 base64 的 32 字节；**缺失/非法/长度不对一律启动失败**（三种错误分开报），解密失败提示"请重新填写"。`ModelCredential.toString()` 刻意覆写以免日志泄密；接口只回 `apiKeyLast4`。
+  - **跨模块契约**：`KnowledgeApi` 新增 `findPublishedContent(long)`（只给已发布，不存在与未发布都返回空、调用方无法区分），并建 `KnowledgeApiImplementation`——这正是 WORK-004 记的"等第一个真实方法出现"的时点。
+  - **生成与缓存**：编排在 `SummaryService`（取正文 → 找可见缓存 → 未命中才调模型 → 落库）；命中缓存时用量返回 `null` 并标 `cached`；并发写用唯一键兜底回读；限流按用户固定窗口（每分钟 6／每天 60，读缓存不计入）。
+- **实施中的两处设计偏离**（都已回填 `design.md`，因为工件不该撒谎）：
+  1. **结构化输出不走框架的合成工具回退**，改成"要求模型只回 JSON + 字段级校验"。理由：自建工具 schema 与解析工具调用参数的面比收益大，而校验器本来就不可少。
+  2. **读缓存不按模型名过滤**（模型名只留在写入的唯一键里）。原设计把它当读过滤条件，实施时发现那样"没配凭据的用户永远读不到公开结果"——与需求"未配凭据者可读公开结果"直接冲突。
+- 依据：WORK-005 需求（已签署）、提案、设计、任务；用户 2026-10-12 指示「直接全做了」
+- 验证：`mvn -B -o compile -pl paideia-ai -am` = BUILD SUCCESS（含 AgentScope 离线解析）；新增三条纯函数单测类 **26 条全过、0.7 秒**（`UpstreamGuardTest` 16 条覆盖回环/私网/元数据/ULA/IPv4 映射/非 https/含凭据、`SummarySchemaValidatorTest` 5 条含"空内容必须判失败"、`CredentialCipherTest` 5 条含篡改检测与主密钥缺失即拒绝启动）。
+- 本地提交：见下一笔
+- 远端推送：未执行
