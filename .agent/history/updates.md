@@ -1190,3 +1190,22 @@ schema_version: 1
 - 验证：`mvn -B -o compile -pl paideia-ai -am` = BUILD SUCCESS（含 AgentScope 离线解析）；新增三条纯函数单测类 **26 条全过、0.7 秒**（`UpstreamGuardTest` 16 条覆盖回环/私网/元数据/ULA/IPv4 映射/非 https/含凭据、`SummarySchemaValidatorTest` 5 条含"空内容必须判失败"、`CredentialCipherTest` 5 条含篡改检测与主密钥缺失即拒绝启动）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-12 10:45:00 +0800 · WORK-005 实施完成并部署上线
+
+- 类型：change
+- 变更：WORK-005（AI 精简与悬浮助手）八片全部完成并上线。
+  - 后端：`paideia-ai` 模块（端口 + 凭据加密 + SSRF 校验含传输层二次校验 + 生成与缓存可见性 + 按用户限流）、`V4` 两张表、`KnowledgeApi.findPublishedContent` 及其实现、`/api/v1/ai/**` 的三条显式安全规则。
+  - 前端：新增 `@paideia/assistant`（客户端、结构化卡片、悬浮壳、凭据弹窗、内容上下文），学习者端在**路由之外**挂载（贯穿全站），条目页把当前条目交给壳；`globals.css` 登记 `@source`。
+  - 部署：服务器 `/opt/paideia-app/application.yml` 新增 `paideia.ai.master-key`（**在服务器上生成，未回显、未进仓库**）；`scripts/release.ps1` 54.3 秒完成发版。
+- 决策：
+  1. **不在仓库里生成或记录主密钥**：在服务器上用 `openssl rand -base64 32` 现场生成并写入那份只存在于服务器上的配置；`grep -q` 保证重复执行不会覆盖（轮换要显式做，不能悄悄发生）。
+  2. 主密钥放服务器 `application.yml` 而不是 systemd 环境变量：与既有的数据源口令、JWT 密钥、SMTP 授权码同一处，运维上只有一个地方要看。环境变量 `PAIDEIA_AI_MASTER_KEY` 仍可覆盖。
+- 依据：用户 2026-10-12「可以 你直接全做了吧」；WORK-005 需求（已签署）
+- 验证：
+  - 后端 `mvn -B verify` → **159 条 0 失败**（退出码 0）；前端单测 **66 条**；三端 e2e **25 条**（学习者端 13、管理端 7、展览页 5）；`pnpm -r typecheck` 10 包全过；桌面打包退出码 0 且 `app.asar` 里「管理端」0 次、「AI 精简」1 次。
+  - **两条反向验证都咬住**：SSRF 校验临时放行 → 16 条挂 15 条；缓存命中临时改为继续调用 → 调用次数断言失败。两次改动均已 `git checkout --` 还原。
+  - **一条过程教训**：第一次跑 SSRF 反向验证时漏了 `-am`，Maven 因解析不到兄弟模块直接失败——退出码非 0 看着像"咬住了"，其实测试没跑。判据不能只看"红了"，要看"红在哪一行"。
+  - 线上复验：`/actuator/health` = `UP`；匿名 `GET /api/v1/ai/credentials` = **401**；带令牌返回 `{configured:false,...}`（**响应里没有 Key 字段**）；`paideia` 库里已有 `ai_model_credentials`、`ai_entry_summaries` 两张表；学习者端产物里能搜到「AI 精简」（助手壳确实上线了）。
+- 本地提交：见下一笔
+- 远端推送：未执行（需用户明确授权）
