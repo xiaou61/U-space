@@ -1,12 +1,10 @@
-import { createKnowledgeAdminApi, type CategoryNode } from '@paideia/knowledge'
+import { type CategoryNode } from '@paideia/knowledge'
 import { Card, CardContent, CardHeader, CardTitle, Empty, EmptyDescription, EmptyHeader, EmptyTitle, PageHeader } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, FileText, FolderTree, FilePen } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { api } from '../api'
-
-const admin = createKnowledgeAdminApi(api)
+import { admin } from '../knowledge-shared'
 
 /**
  * 管理端首页：内容规模 + 管理入口。
@@ -61,14 +59,28 @@ export function AdminHomePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Link
-            to="/knowledge"
-            data-testid="admin-knowledge-link"
+            to="/knowledge/categories"
+            data-testid="admin-categories-link"
             className="border-border hover:bg-muted/60 flex items-center justify-between gap-4 rounded-md border px-3 py-3 transition-colors"
           >
             <span className="min-w-0">
-              <span className="block text-sm font-medium">知识库</span>
+              <span className="block text-sm font-medium">分类管理</span>
               <span className="text-muted-foreground mt-0.5 block text-xs">
-                分类、条目与关系的录入；发布前可用预览确认学习者看到的样子。
+                层级树；条目要挂在分类上，所以先有分类。
+              </span>
+            </span>
+            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+          </Link>
+
+          <Link
+            to="/knowledge/entries"
+            data-testid="admin-entries-link"
+            className="border-border hover:bg-muted/60 flex items-center justify-between gap-4 rounded-md border px-3 py-3 transition-colors"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">条目管理</span>
+              <span className="text-muted-foreground mt-0.5 block text-xs">
+                录入与发布；发布前可用预览确认学习者看到的样子。
               </span>
             </span>
             <ChevronRight className="text-muted-foreground size-4 shrink-0" />

@@ -9,6 +9,9 @@ import { expect, test, type Page } from '@playwright/test'
  * <p>数据用带时间戳的唯一名字，跑完删掉：种子库是共享的，重跑时不能让上一次的残留
  * （分类 slug 唯一）把自己顶掉。
  *
+ * <p>分类与条目是**两个页面**（侧栏两个菜单项），所以这条链路要跨页走：先在分类管理建分类，
+ * 切到条目管理录入与发布，最后回分类管理删掉造出来的分类（有条目挂在上面时会被拒）。
+ *
  * <p>选择器跟着界面走：列表是表格（行是 `<tr>`），下拉是设计系统的 `Select`（不是原生
  * `<select>`，所以 `selectOption()` 用不了，要点开再选），删除有确认弹窗。
  */
@@ -22,6 +25,11 @@ async function signIn(page: Page, account: { identifier: string; password: strin
   await page.getByTestId('login-password').fill(account.password)
   await page.getByTestId('login-submit').click()
   await expect(page.getByTestId('admin-console')).toBeVisible()
+}
+
+/** 在侧栏菜单里切换页面。 */
+async function openMenu(page: Page, label: string) {
+  await page.getByRole('link', { name: label }).click()
 }
 
 /** 在表格里按文本定位一行：**限定在对应表格内**，因为条目行也会显示分类名。 */
@@ -46,8 +54,8 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
 
   await signIn(page, SEED_ADMIN)
 
-  // 门与路由：首页的入口真的能到管理区
-  await page.getByTestId('admin-knowledge-link').click()
+  // 门与路由：首页的入口真的能到分类管理
+  await page.getByTestId('admin-categories-link').click()
   await expect(page.getByTestId('admin-category-list')).toBeVisible()
 
   // 建分类（弹窗表单）
@@ -56,6 +64,10 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
   await page.getByTestId('admin-category-slug').fill(`e2e-${stamp}`)
   await page.getByTestId('admin-category-create').click()
   await expect(page.getByTestId('admin-category-list')).toContainText(categoryName)
+
+  // 切到条目管理（分类与条目是两个页面）
+  await openMenu(page, '条目管理')
+  await expect(page.getByTestId('admin-entry-list')).toBeVisible()
 
   // 建草稿
   await page.getByTestId('admin-entry-new').click()
@@ -79,11 +91,14 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
   await page.getByTestId('admin-entry-save').click()
   await expect(rowIn(page, 'admin-entry-list', entryTitle)).toContainText('已发布')
 
-  // 收尾：删掉本次造的数据（删除要过确认弹窗）。先条目后分类：分类下还有条目时会被拒。
+  // 收尾：删掉本次造的数据（删除要过确认弹窗）
   await rowIn(page, 'admin-entry-list', entryTitle).getByRole('button', { name: '删除' }).click()
   await page.getByTestId('admin-delete-confirm').click()
   await expect(page.getByTestId('admin-entry-list')).not.toContainText(entryTitle)
 
+  // 回分类管理删分类：分类下还有条目时删不掉，所以顺序是"先条目后分类"
+  await openMenu(page, '分类管理')
+  await expect(page.getByTestId('admin-category-list')).toBeVisible()
   await rowIn(page, 'admin-category-list', categoryName).getByRole('button', { name: '删除' }).click()
   await page.getByTestId('admin-delete-confirm').click()
   await expect(page.getByTestId('admin-category-list')).not.toContainText(categoryName)

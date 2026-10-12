@@ -1,5 +1,12 @@
 import { ThemeToggle } from '@paideia/ui'
-import { ChevronRight, LayoutDashboard, Library, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import {
+  ChevronRight,
+  FileText,
+  FolderTree,
+  LayoutDashboard,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 
@@ -9,13 +16,23 @@ import { Link, useLocation } from 'react-router'
  * <p>放在管理端而不是设计系统里：学习者端是内容优先的单列阅读界面，两侧的信息架构本就
  * 不同，把侧栏做成共享组件等于给阅读界面塞一套它不需要的导航。
  */
-const MENU: { section: string | null; items: { to: string; label: string; icon: typeof Library }[] }[] = [
+const MENU: { section: string | null; items: { to: string; label: string; icon: typeof FileText }[] }[] = [
   { section: null, items: [{ to: '/', label: '总览', icon: LayoutDashboard }] },
-  { section: '内容管理', items: [{ to: '/knowledge', label: '知识库', icon: Library }] },
+  {
+    section: '内容管理',
+    items: [
+      { to: '/knowledge/categories', label: '分类管理', icon: FolderTree },
+      { to: '/knowledge/entries', label: '条目管理', icon: FileText },
+    ],
+  },
 ]
 
-/** 面包屑的末级：由路由表推出来的固定标题，不做逐级可点的通用面包屑（当前只有两级）。 */
-const TITLES: Record<string, string> = { '/': '总览', '/knowledge': '知识库管理' }
+/** 面包屑：按路由表写死的层级（首页固定在最前，不再逐级可点）。 */
+const CRUMBS: Record<string, string[]> = {
+  '/': ['总览'],
+  '/knowledge/categories': ['知识库管理', '分类管理'],
+  '/knowledge/entries': ['知识库管理', '条目管理'],
+}
 
 /**
  * 管理端外壳：左侧菜单 + 顶栏（面包屑 / 操作区）+ 内容区。
@@ -30,7 +47,7 @@ const TITLES: Record<string, string> = { '/': '总览', '/knowledge': '知识库
 export function AdminShell({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
-  const current = TITLES[pathname] ?? '管理端'
+  const crumbs = CRUMBS[pathname] ?? ['管理端']
 
   return (
     <div className="flex min-h-screen">
@@ -104,9 +121,15 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-border bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
           <nav aria-label="面包屑" className="flex min-w-0 items-center gap-1.5 text-sm">
-            <span className="text-muted-foreground">首页</span>
-            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-            <span className="truncate font-medium">{current}</span>
+            <span className="text-muted-foreground shrink-0">首页</span>
+            {crumbs.map((crumb, index) => (
+              <span key={crumb} className="flex min-w-0 items-center gap-1.5">
+                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                <span className={index === crumbs.length - 1 ? 'truncate font-medium' : 'text-muted-foreground truncate'}>
+                  {crumb}
+                </span>
+              </span>
+            ))}
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             {actions}

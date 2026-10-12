@@ -1,7 +1,8 @@
-import { createHashRouter } from 'react-router'
+import { Navigate, createHashRouter } from 'react-router'
 
 import { AdminHomePage } from './pages/AdminHomePage'
-import { KnowledgeAdminPage } from './pages/KnowledgeAdminPage'
+import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
+import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
 import { RequireAdmin } from './require-admin'
 
 /**
@@ -11,6 +12,9 @@ import { RequireAdmin } from './require-admin'
  * 所以这里不是被桌面壳逼的，而是"两端不要各有一套路由习惯"。
  *
  * <p>每个页面都包在 `RequireAdmin` 里，门只有一处。
+ *
+ * <p>分类与条目各占一条路由（对应侧栏两个菜单项）。`/knowledge` 留一条转向条目的重定向：
+ * 拆页之前只有这一个地址，留着免得已经打开的旧标签刷新后是一片空白。
  */
 export const router = createHashRouter([
   {
@@ -21,11 +25,20 @@ export const router = createHashRouter([
       </RequireAdmin>
     ),
   },
+  { path: '/knowledge', element: <Navigate to="/knowledge/entries" replace /> },
   {
-    path: '/knowledge',
+    path: '/knowledge/categories',
     element: (
       <RequireAdmin>
-        <KnowledgeAdminPage />
+        <KnowledgeCategoriesPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/knowledge/entries',
+    element: (
+      <RequireAdmin>
+        <KnowledgeEntriesPage />
       </RequireAdmin>
     ),
   },

@@ -1,9 +1,7 @@
 import {
   MarkdownBody,
-  createKnowledgeAdminApi,
   type AdminEntryDetail,
   type AdminEntrySummary,
-  type CategoryNode,
   type EntryInput,
 } from '@paideia/knowledge'
 import {
@@ -14,8 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -38,13 +34,11 @@ import {
   TableRow,
 } from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, RotateCcw, TriangleAlert, Upload } from 'lucide-react'
+import { Plus, RotateCcw, Upload } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 
-import { api } from '../api'
 import { API_BASE_URL } from '../env'
-
-const admin = createKnowledgeAdminApi(api)
+import { ConfirmDeleteDialog, Loading, admin, categoryOptions, flatten, type FlatCategory } from '../knowledge-shared'
 
 /** 每页条数。列表用前端分页：接口一次给一页（size=200），条目量到千级再改成服务端分页。 */
 const PAGE_SIZE = 10
@@ -68,32 +62,31 @@ const RELATION_TYPES = [
   { value: 'related', label: '相关' },
 ]
 
-interface PendingDelete {
-  kind: 'entry' | 'category'
-  id: number
-  name: string
+/** 后端时间戳是 UTC 的 ISO 串，列表里按浏览器本地时区显示——后台是给人看的钟点，不是给机器的。 */
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleString('zh-CN', { hour12: false })
 }
 
 /**
- * 知识库管理区：后台式的两块表格。
+ * 条目管理：录入、预览、发布与删除。
  *
- * <p>分类与条目各是一张卡片：列表用 `<Table>` 而不是卡片堆，工具栏在卡片头上，删除走
- * 确认弹窗，分页在卡片脚。这三样是"一眼看出这是后台"的东西，也是条目变多之后唯一还
- * 能用的形态。
+ * <p>与分类管理分开成两页（理由见 `KnowledgeCategoriesPage`），但**分类树仍要在这里取**——
+ * 新建条目要挂在分类上，编辑器里的分类下拉就是那两个页面共用的展开逻辑。
  *
  * <p><b>草稿预览复用学习者端的 `MarkdownBody`</b>，不另做一套渲染：预览的全部价值就是
  * "看到的就是学习者看到的"，另写一个渲染器等于让预览说谎。
  */
-export function KnowledgeAdminPage() {
+export function KnowledgeEntriesPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [creating, setCreating] = useState(false)
-  const [creatingCategory, setCreatingCategory] = useState(false)
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const editorOpen = creating || editingId !== null
 
   const categories = useQuery({
     queryKey: ['admin-knowledge-categories'],
@@ -103,8 +96,17 @@ export function KnowledgeAdminPage() {
     queryKey: ['admin-knowledge-entries', statusFilter],
     queryFn: () => admin.entries(statusFilter === 'all' ? undefined : statusFilter),
   })
+  // 关系目标要能选到**所有**条目，不能跟着表格上的状态筛选走；只有编辑器打开时才取。
+  // 与首页共用同一个缓存键，所以筛选为「全部」时不会多发一次请求。
+  const allEntries = useQuery({
+    queryKey: ['admin-knowledge-entries', 'all'],
+    queryFn: () => admin.entries(),
+    enabled: editorOpen,
+  })
 
   const flat = useMemo(() => flatten(categories.data ?? []), [categories.data])
+
+  const report = (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ['admin-knowledge-categories'] })
@@ -112,18 +114,8 @@ export function KnowledgeAdminPage() {
     await queryClient.invalidateQueries({ queryKey: ['admin-knowledge-entry'] })
   }
 
-  const report = (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))
-
-  const removeEntry = useMutation({
+  const remove = useMutation({
     mutationFn: (id: number) => admin.deleteEntry(id),
-    onSuccess: async () => {
-      setPendingDelete(null)
-      await invalidate()
-    },
-    onError: report,
-  })
-  const removeCategory = useMutation({
-    mutationFn: (id: number) => admin.deleteCategory(id),
     onSuccess: async () => {
       setPendingDelete(null)
       await invalidate()
@@ -142,8 +134,8 @@ export function KnowledgeAdminPage() {
   return (
     <>
       <PageHeader
-        title="知识库管理"
-        description="分类、条目与关系的录入；发布前可用预览确认学习者看到的样子。"
+        title="条目管理"
+        description="草稿不会出现在学习者端；发布后学习者即可浏览。"
         actions={
           <Button data-testid="admin-entry-new" onClick={() => setCreating(true)}>
             <Plus className="size-4" />
@@ -162,78 +154,7 @@ export function KnowledgeAdminPage() {
         </Alert>
       )}
 
-      <div className="mb-6">
-        <Card>
-          <CardHeader className="border-border border-b">
-            <CardTitle>分类</CardTitle>
-            <div className="text-muted-foreground text-xs">层级树；删除前必须先移走它的子分类与条目。</div>
-          </CardHeader>
-          <CardContent className="px-0">
-            <div className="px-(--card-spacing) pb-3">
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="admin-category-new"
-                onClick={() => setCreatingCategory(true)}
-              >
-                <Plus className="size-4" />
-                新建分类
-              </Button>
-            </div>
-
-            {categories.isPending ? <Loading label="加载分类…" /> : null}
-
-            <Table data-testid="admin-category-list">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20 pl-(--card-spacing)">ID</TableHead>
-                  <TableHead>名称</TableHead>
-                  <TableHead className="w-40">上级</TableHead>
-                  <TableHead className="w-56">标识</TableHead>
-                  <TableHead className="w-24 pr-(--card-spacing) text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {flat.length === 0 && !categories.isPending ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-muted-foreground h-20 text-center" data-testid="admin-category-empty">
-                      还没有分类
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-                {flat.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="text-muted-foreground pl-(--card-spacing) tabular-nums">
-                      {category.id}
-                    </TableCell>
-                    <TableCell style={{ paddingLeft: `${16 + category.depth * 18}px` }}>
-                      {category.name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{category.parentName ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{category.slug}</TableCell>
-                    <TableCell className="pr-(--card-spacing) text-right">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        data-testid={`admin-category-delete-${category.id}`}
-                        onClick={() => setPendingDelete({ kind: 'category', id: category.id, name: category.name })}
-                      >
-                        删除
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
-        <CardHeader className="border-border border-b">
-          <CardTitle>条目</CardTitle>
-          <div className="text-muted-foreground text-xs">草稿不会出现在学习者端；发布后学习者即可浏览。</div>
-        </CardHeader>
         <CardContent className="px-0">
           <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pb-3">
             <Select
@@ -339,7 +260,7 @@ export function KnowledgeAdminPage() {
                       size="xs"
                       className="text-destructive hover:text-destructive"
                       data-testid={`admin-entry-delete-${entry.id}`}
-                      onClick={() => setPendingDelete({ kind: 'entry', id: entry.id, name: entry.title })}
+                      onClick={() => setPendingDelete({ id: entry.id, name: entry.title })}
                     >
                       删除
                     </Button>
@@ -349,63 +270,36 @@ export function KnowledgeAdminPage() {
             </TableBody>
           </Table>
 
-          <Pagination
-            total={filtered.length}
-            current={current}
-            totalPages={totalPages}
-            onChange={setPage}
-          />
+          <Pagination total={filtered.length} current={current} totalPages={totalPages} onChange={setPage} />
         </CardContent>
       </Card>
 
-      {categories.isSuccess ? (
-        <EntryEditor
-          open={creating || editingId !== null}
-          entryId={editingId}
-          categories={flat}
-          entries={all}
-          onClose={() => {
-            setCreating(false)
-            setEditingId(null)
-          }}
-          onSaved={invalidate}
-          onError={report}
-        />
-      ) : null}
-
-      <CreateCategoryDialog
-        open={creatingCategory}
+      <EntryEditor
+        open={editorOpen}
+        entryId={editingId}
         categories={flat}
-        onClose={() => setCreatingCategory(false)}
-        onCreated={invalidate}
+        entries={allEntries.data?.items ?? []}
+        onClose={() => {
+          setCreating(false)
+          setEditingId(null)
+        }}
+        onSaved={invalidate}
         onError={report}
       />
 
       <ConfirmDeleteDialog
-        pending={pendingDelete}
-        busy={removeEntry.isPending || removeCategory.isPending}
+        open={pendingDelete !== null}
+        label="条目"
+        name={pendingDelete?.name ?? ''}
+        busy={remove.isPending}
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => {
-          if (pendingDelete === null) {
-            return
-          }
-          if (pendingDelete.kind === 'entry') {
-            removeEntry.mutate(pendingDelete.id)
-          } else {
-            removeCategory.mutate(pendingDelete.id)
+          if (pendingDelete !== null) {
+            remove.mutate(pendingDelete.id)
           }
         }}
       />
     </>
-  )
-}
-
-function Loading({ label }: { label: string }) {
-  return (
-    <p className="text-muted-foreground flex items-center gap-2 px-(--card-spacing) pb-3 text-sm">
-      <Spinner />
-      {label}
-    </p>
   )
 }
 
@@ -447,182 +341,6 @@ function Pagination({
         </Button>
       </div>
     </div>
-  )
-}
-
-function ConfirmDeleteDialog({
-  pending,
-  busy,
-  onCancel,
-  onConfirm,
-}: {
-  pending: PendingDelete | null
-  busy: boolean
-  onCancel: () => void
-  onConfirm: () => void
-}) {
-  if (pending === null) {
-    return null
-  }
-  return (
-    <Dialog open onOpenChange={() => onCancel()}>
-      <DialogContent className="sm:max-w-md" data-testid="admin-delete-dialog">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <TriangleAlert className="text-destructive size-4" />
-            确认删除
-          </DialogTitle>
-        </DialogHeader>
-        <p className="text-muted-foreground text-sm">
-          将删除{pending.kind === 'entry' ? '条目' : '分类'}「{pending.name}」，此操作不可撤销。
-          {pending.kind === 'category' ? '该分类下还有子分类或条目时会被拒绝。' : ''}
-        </p>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onCancel} data-testid="admin-delete-cancel">
-            取消
-          </Button>
-          <Button variant="destructive" disabled={busy} onClick={onConfirm} data-testid="admin-delete-confirm">
-            删除
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-interface FlatCategory {
-  id: number
-  name: string
-  slug: string
-  depth: number
-  /** 上级分类名：表格里显式列出来，光靠缩进说不清"缩进到哪一层算谁的孩子"。 */
-  parentName: string | null
-}
-
-/** 后端时间戳是 UTC 的 ISO 串，列表里按浏览器本地时区显示——后台是给人看的钟点，不是给机器的。 */
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString('zh-CN', { hour12: false })
-}
-
-function flatten(nodes: CategoryNode[], depth = 0, parentName: string | null = null): FlatCategory[] {
-  return nodes.flatMap((node) => [
-    { id: node.id, name: node.name, slug: node.slug, depth, parentName },
-    ...flatten(node.children, depth + 1, node.name),
-  ])
-}
-
-/** 分类下拉的选项：`null` 是"未分类/根分类"，用 `null` 而不是空串——空串是一个合法值，当哨兵会混淆。 */
-function categoryOptions(flat: FlatCategory[], noneLabel: string) {
-  return [
-    { value: null as number | null, label: noneLabel },
-    ...flat.map((category) => ({
-      value: category.id as number | null,
-      label: `${'\u3000'.repeat(category.depth)}${category.name}`,
-    })),
-  ]
-}
-
-function CreateCategoryDialog({
-  open,
-  categories,
-  onClose,
-  onCreated,
-  onError,
-}: {
-  open: boolean
-  categories: FlatCategory[]
-  onClose: () => void
-  onCreated: () => Promise<void>
-  onError: (cause: unknown) => void
-}) {
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [parentId, setParentId] = useState<number | null>(null)
-
-  const options = categoryOptions(categories, '（作为根分类）')
-
-  const create = useMutation({
-    mutationFn: () => admin.createCategory({ parentId, name: name.trim(), slug: slug.trim() }),
-    onSuccess: async () => {
-      setName('')
-      setSlug('')
-      setParentId(null)
-      await onCreated()
-      onClose()
-    },
-    onError,
-  })
-
-  if (!open) {
-    return null
-  }
-
-  const onSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    create.mutate()
-  }
-
-  return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent data-testid="admin-category-editor">
-        <DialogHeader>
-          <DialogTitle>新建分类</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="admin-category-parent">上级分类</Label>
-            <Select
-              items={options}
-              value={parentId}
-              onValueChange={(value) => setParentId(value)}
-            >
-              <SelectTrigger id="admin-category-parent" className="mt-1 w-full" data-testid="admin-category-parent">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((option) => (
-                  <SelectItem key={option.value ?? 'none'} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="admin-category-name">名称</Label>
-            <Input
-              id="admin-category-name"
-              className="mt-1"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="admin-category-name"
-            />
-          </div>
-          <div>
-            <Label htmlFor="admin-category-slug">标识（小写字母、数字、连字符）</Label>
-            <Input
-              id="admin-category-slug"
-              className="mt-1"
-              value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-              data-testid="admin-category-slug"
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
-              取消
-            </Button>
-            <Button
-              type="submit"
-              disabled={name.trim() === '' || slug.trim() === '' || create.isPending}
-              data-testid="admin-category-create"
-            >
-              确定
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
 
