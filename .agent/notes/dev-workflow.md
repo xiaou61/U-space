@@ -33,14 +33,14 @@
 管理端的 e2e **可以不用本地任何东西**：设了 `E2E_BASE_URL` 就跳过 `webServer`，直接打已部署实例。界面类改动走这条最快——不用本地后端、不用本地 dev server、也不用那条 3307 隧道。
 
 ```
-MSYS_NO_PATHCONV=1 E2E_BASE_URL=http://<服务器>:8081 E2E_ADMIN_PATH=/admin/index.html \
+MSYS_NO_PATHCONV=1 E2E_BASE_URL=http://<服务器>:8081 E2E_ADMIN_PATH=/admin/ \
   E2E_ADMIN_IDENTIFIER=… E2E_ADMIN_PASSWORD=… \
   E2E_LEARNER_IDENTIFIER=… E2E_LEARNER_PASSWORD=… \
   pnpm --filter @paideia/admin test:e2e
 ```
 
 - 线上实测 **7 passed / 14.7 秒**（本地那条路 23–27 秒，且依赖隧道）。
-- `E2E_ADMIN_PATH` 必须给：部署形态是"一个 jar 同供 API 与前端静态"，站点根是学习者端，管理端在 `/admin/index.html`。
+- `E2E_ADMIN_PATH` 必须给：部署形态是"一个进程同时供 API 与两个前端"，**两个前端各占一个地址**——学习者端在 `/`、管理端在 `/admin/`（`/admin` 与 `/admin/` 都由 view controller 转发到管理端的 index.html）。
 - **账号必须给**：种子账号（`seed-admin`/`seed-learner`）不在线上——口令写在公开仓库里，放到公网可达的实例上等于开放管理权限。线上是 `admin` 与 `e2e-learner`（后者是为 e2e 建的普通学习者），口令见被忽略的 `backend/config/application-local.yml`。
 - **`MSYS_NO_PATHCONV=1` 不能省**：Git Bash 会把 `/admin/index.html` 这类值改写成 Windows 路径，测试会全红、且报错指向"元素找不到"，极易误判成界面坏了。
 - 这条路径的两个边界：① 它**真的写线上库**（知识库那条用例自己建、自己删）；② 注册/邮箱验证码那几条**只能在本机跑**——要靠内存信箱读验证码，线上是真实 SMTP。学习者端的 e2e 因此仍走本地那条。

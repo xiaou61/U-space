@@ -1209,3 +1209,15 @@ schema_version: 1
   - 线上复验：`/actuator/health` = `UP`；匿名 `GET /api/v1/ai/credentials` = **401**；带令牌返回 `{configured:false,...}`（**响应里没有 Key 字段**）；`paideia` 库里已有 `ai_model_credentials`、`ai_entry_summaries` 两张表；学习者端产物里能搜到「AI 精简」（助手壳确实上线了）。
 - 本地提交：见下一笔
 - 远端推送：未执行（需用户明确授权）
+
+## 2026-10-12 11:05:00 +0800 · 前端拆成两个地址：学习者端 `/`、管理端 `/admin/`
+
+- 类型：change
+- 变更：用户要求「用户端和管理端分开，两个不同的地址」。落到可实施形态：
+  - 管理端入口从 `/admin/index.html` 改成 `/admin/`（`/admin` 与 `/admin/` 都转发到管理端的 index.html）。改动在 `paideia-web` 的 `WebCorsConfiguration.addViewControllers`（Spring 不会给子目录自动补 index，实测 `/admin/` 原本是 404），并把 `/admin` 加进静态放行列表（`/admin/**` 匹配不到不带斜杠的 `/admin`）。
+  - 两个前端各有独立静态根：`/opt/paideia-app/web/`（学习者端，占用 `/`）与 `/opt/paideia-app/web/admin/`（管理端，占用 `/admin/`）。旧地址 `/admin/index.html` 仍然可用（只是不再是对外公布的入口）。
+- 决策：**没有真的拆成两个端口/两个进程**，因为**这台机器对公网只开了一个端口**：实测 8080、80、81、8082、3000、8083、9090 全部超时（安全组挡），只有 8081 通（本轮把常见端口扫了一遍，之前的结论"81 也通"在 2026-10-12 复测不成立）。真拆两个端口需要用户在云控制台先放开一个端口；放开后起第二个实例即可（同一 jar，另一份配置只改 `server.port` 与 `static-locations`）——内存不是瓶颈（16G 总量、1.5G 已用）。
+- 依据：用户 2026-10-12「能不能用户端和管理端给我分开啊，分开部署，俩个不通的地址」；`always.md` 部署一节同步更新
+- 验证：部署 `release.ps1` 完成（健康检查通过）。公网实测：`GET /` = **200**；`GET /admin/` = **200** 且页面标题是 `Paideia · 管理端`（确认拿到的是管理端而不是学习者端）；`GET /admin` = **200**；`GET /admin/index.html` = **200**（旧链接不破坏）。**用新入口跑线上管理端 e2e：7 passed / 14.6 秒**（`E2E_ADMIN_PATH=/admin/`），证明不是"能打开但用不了"。
+- 本地提交：见下一笔
+- 远端推送：未执行

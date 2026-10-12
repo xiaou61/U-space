@@ -159,7 +159,7 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 
 ## 部署（2026-10-10 首次部署，供验收）
 
-- **形态：一个 jar 同时提供 API 与前端静态**（服务器上没有 Nginx、没有 Docker）。前端产物放 `/opt/paideia-app/web/`（学习者端在根，管理端在 `web/admin/`），由 `spring.web.resources.static-locations=file:/opt/paideia-app/web/` 提供。**管理端地址是 `/admin/index.html`**——Spring 不会给子目录自动补 index，要更干净的 `/admin/` 需要一条转发规则（本版没加）。
+- **形态：一个 jar 同时提供 API 与前端静态**（服务器上没有 Nginx、没有 Docker）。前端产物放 `/opt/paideia-app/web/`（学习者端在根，管理端在 `web/admin/`），由 `spring.web.resources.static-locations=file:/opt/paideia-app/web/` 提供。**两个前端各占一个地址：学习者端 `/`、管理端 `/admin/`**——但由**同一个进程**提供，因为这台机器对公网只开了一个端口（8080/80/81/8082 实测全部超时，只有 8081 通）。Spring 不会给子目录自动补 index，所以 `paideia-web` 的 `WebCorsConfiguration` 里加了两条 view controller 把 `/admin` 与 `/admin/` 转发到 `/admin/index.html`。**要拆成两个端口**：先在云安全组放开一个端口，再起第二个实例（同一 jar、另一份配置只改 `server.port` 与 `static-locations`）；内存不是瓶颈（16G 里用了 1.5G）。
 - **进程**：systemd 单元 **`paideia`**（`systemctl status/restart/stop paideia`），`ExecStart` 为 `/opt/jdk25/bin/java -jar /opt/paideia-app/app.jar --spring.config.additional-location=file:/opt/paideia-app/`，日志走 journald（`journalctl -u paideia`）。
 - **配置**：`/opt/paideia-app/application.yml` **只存在于服务器上**（含数据源口令、JWT 密钥、SMTP 授权码），由本地被忽略的配置生成，**绝不进仓库**。关键项：`server.port=8081`、`paideia.knowledge.upload-dir=/opt/paideia-app/uploads`。
 - **端口 8081**：服务器安全组只放开少数端口——实测 **8080 与 80 从公网不可达**（HTTP 000）、**8081 可达**。换端口只需改配置里的 `server.port` 再 `systemctl restart paideia`。
