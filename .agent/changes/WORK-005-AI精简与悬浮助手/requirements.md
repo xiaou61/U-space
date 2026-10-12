@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-005
 work: AI 精简与悬浮助手
-status: draft
+status: approved
 mode: strict
 mode_reason: 首次调用外部模型供应商；引入用户自带密钥的**加密落库**（数据敏感）与"谁付费谁的产物"这一新的共享语义；代理端点会把用户给的地址变成服务端出站请求（SSRF 面）
 workflow: full
@@ -10,13 +10,18 @@ depends_on: [WORK-004]
 related_to: [WORK-008]
 created: 2026-10-12
 updated: 2026-10-12
+approved_by: xiaou61
+approved_at: 2026-10-12 09:43:33 +0800
+approver_role: CTO
 ---
 
 # AI 精简与悬浮助手需求
 
-2026-10-12 起草。**未批准**，保持 `draft`。本项的范围最早记在 `WORK-004` 需求文末的「拆分后的后续工作项」，用户 2026-10-12 就其中若干开放项逐条裁决后正式建项。
+2026-10-12 起草，同日报 xiaou61（CTO）批准并签署。本项的范围最早记在 `WORK-004` 需求文末的「拆分后的后续工作项」，用户 2026-10-12 就其中若干开放项逐条裁决后正式建项。
 
-## 已确认事实（读源码与既有工件确认，2026-10-12）
+## 已确认事实
+
+（本节的标题**不能加括号后缀**：生命周期校验器按 `## 已确认事实` 精确匹配，加了后缀会被判成"缺少决策分层章节"。事实确认于 2026-10-12。）
 
 - 仓库**没有任何 AI 代码或依赖**：`backend/` 7 个模块（`paideia-platform`／`-web`／`-persistence`／`-security`／`-account`／`-knowledge`／`-app`）里既无 `agentscope` 也无 `openai`／`deepseek` 字样；前端各包同样没有。生产迁移只有三个文件（账号两张表 → 知识库五张表）。
 - **可用的内容与身份都已就绪**：WORK-004 已交付知识条目、正文渲染与学习者端条目页；当前用户身份只能取 `CurrentUser.subjectId()`／`role()`，接口层不接受客户端传 userId。

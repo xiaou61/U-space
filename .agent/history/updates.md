@@ -1132,3 +1132,13 @@ schema_version: 1
 - 验证：未运行（仅文档登记，无源码与行为变化）
 - 本地提交：见本轮提交
 - 远端推送：未执行
+
+## 2026-10-12 09:43:33 +0800 · WORK-005 · 签署 .agent/changes/WORK-005-AI精简与悬浮助手/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-005-AI精简与悬浮助手/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-005-AI精简与悬浮助手/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:43:33 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
