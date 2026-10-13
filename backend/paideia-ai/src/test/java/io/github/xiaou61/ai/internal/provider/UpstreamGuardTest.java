@@ -35,6 +35,8 @@ class UpstreamGuardTest {
             "https://100.64.0.1/v1",                // 运营商级 NAT
             "https://[fc00::1]/v1",                 // IPv6 唯一本地地址
             "https://[::ffff:127.0.0.1]/v1",        // IPv4 映射的回环
+            "https://[::127.0.0.1]/v1",             // IPv4-compatible 的回环（JDK 不转成 Inet4Address，易漏判）
+            "https://[::169.254.169.254]/v1",       // IPv4-compatible 的云元数据
             "不是地址",
     })
     @DisplayName("拒掉一切非公网 https 目标")

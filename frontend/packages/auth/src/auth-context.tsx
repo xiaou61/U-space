@@ -107,7 +107,14 @@ export function AuthProvider({
       setStatus('signed-out')
       return
     }
-    void refreshSession()
+    void refreshSession().then((ok) => {
+      // 失败也必须收敛 status：留在 'loading' 会让 RequireAuth 永远显示"正在确认登录状态…"、
+      // RequireGuest 返回 null（整页空白），onNeedsLogin 也永不触发——用户既进不去应用，
+      // 也回不到登录页。网络类失败时令牌仍然保留（见 refreshSession），重新登录即可。
+      if (!ok) {
+        setStatus((current) => (current === 'loading' ? 'signed-out' : current))
+      }
+    })
   }, [refreshSession, tokens])
 
   const value = useMemo<AuthContextValue>(

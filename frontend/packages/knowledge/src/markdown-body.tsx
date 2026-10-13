@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 import { extractHeadings } from './heading-slug'
@@ -51,56 +51,61 @@ export function MarkdownBody({
     })
   }, [headings])
 
+  // components 必须是稳定引用：react-markdown 按元素类型渲染自定义组件，每次渲染新建的对象
+  // 会让 h1–h4 被卸载重建，上面 effect 回填的 id 随旧节点一起丢；而该 effect 依赖 headings
+  // 不会重跑，于是父组件任意一次重渲染（例如点自评导致 isPending 变化）都会让标题锚点失效。
+  const components = useMemo<Components>(
+    () => ({
+      h1: (props) => <h1 className="mt-8 mb-3 text-xl font-semibold" {...props} />,
+      h2: (props) => <h2 className="mt-8 mb-3 text-lg font-semibold" {...props} />,
+      h3: (props) => <h3 className="mt-6 mb-2 text-base font-semibold" {...props} />,
+      h4: (props) => <h4 className="mt-6 mb-2 text-sm font-semibold" {...props} />,
+      p: (props) => <p className="my-3" {...props} />,
+      ul: (props) => <ul className="my-3 list-disc space-y-1 pl-6" {...props} />,
+      ol: (props) => <ol className="my-3 list-decimal space-y-1 pl-6" {...props} />,
+      blockquote: (props) => (
+        <blockquote className="border-border text-muted-foreground my-4 border-l-2 pl-4" {...props} />
+      ),
+      a: (props) => (
+        <a
+          {...props}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="underline underline-offset-2"
+        />
+      ),
+      // 代码块保持原样换行，避免长行把页面撑破
+      pre: (props) => (
+        <pre
+          className="bg-muted text-muted-foreground my-4 overflow-x-auto rounded-md p-3 font-mono text-xs"
+          {...props}
+        />
+      ),
+      code: (props) => <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" {...props} />,
+      table: (props) => (
+        <div className="my-4 overflow-x-auto">
+          <table className="w-full border-collapse text-xs" {...props} />
+        </div>
+      ),
+      th: (props) => <th className="border-border border-b px-2 py-1 text-left font-medium" {...props} />,
+      td: (props) => <td className="border-border border-b px-2 py-1" {...props} />,
+      img: (props) => (
+        <FigureWithLightbox
+          src={resolveMediaUrl(typeof props.src === 'string' ? props.src : '', mediaBaseUrl)}
+          alt={typeof props.alt === 'string' ? props.alt : ''}
+        />
+      ),
+    }),
+    [mediaBaseUrl],
+  )
+
   return (
     <div
       ref={container}
       data-testid="markdown-body"
       className={className ?? 'text-sm leading-7'}
     >
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: (props) => <h1 className="mt-8 mb-3 text-xl font-semibold" {...props} />,
-          h2: (props) => <h2 className="mt-8 mb-3 text-lg font-semibold" {...props} />,
-          h3: (props) => <h3 className="mt-6 mb-2 text-base font-semibold" {...props} />,
-          h4: (props) => <h4 className="mt-6 mb-2 text-sm font-semibold" {...props} />,
-          p: (props) => <p className="my-3" {...props} />,
-          ul: (props) => <ul className="my-3 list-disc space-y-1 pl-6" {...props} />,
-          ol: (props) => <ol className="my-3 list-decimal space-y-1 pl-6" {...props} />,
-          blockquote: (props) => (
-            <blockquote className="border-border text-muted-foreground my-4 border-l-2 pl-4" {...props} />
-          ),
-          a: (props) => (
-            <a
-              {...props}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="underline underline-offset-2"
-            />
-          ),
-          // 代码块保持原样换行，避免长行把页面撑破
-          pre: (props) => (
-            <pre
-              className="bg-muted text-muted-foreground my-4 overflow-x-auto rounded-md p-3 font-mono text-xs"
-              {...props}
-            />
-          ),
-          code: (props) => <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" {...props} />,
-          table: (props) => (
-            <div className="my-4 overflow-x-auto">
-              <table className="w-full border-collapse text-xs" {...props} />
-            </div>
-          ),
-          th: (props) => <th className="border-border border-b px-2 py-1 text-left font-medium" {...props} />,
-          td: (props) => <td className="border-border border-b px-2 py-1" {...props} />,
-          img: (props) => (
-            <FigureWithLightbox
-              src={resolveMediaUrl(typeof props.src === 'string' ? props.src : '', mediaBaseUrl)}
-              alt={typeof props.alt === 'string' ? props.alt : ''}
-            />
-          ),
-        }}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {markdown}
       </ReactMarkdown>
     </div>

@@ -111,5 +111,7 @@ describe('会话刷新', () => {
 
     // refresh 仍然有效，不能因为一次断网把用户登出
     expect(tokens.refresh()).toBe('refresh-1')
+    // 但 status 必须收敛：留在 'loading' 会让登录门永远转圈、反向门整页空白
+    expect(session!.status).toBe('signed-out')
   })
 })

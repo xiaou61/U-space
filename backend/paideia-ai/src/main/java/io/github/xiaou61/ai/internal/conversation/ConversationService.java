@@ -122,12 +122,15 @@ public class ConversationService {
         limiter.checkAndCount(userId, "发送消息",
                 properties.getPerMinuteLimit(), properties.getPerDayLimit());
 
+        // 先取历史、再写本轮消息：history() 取的是"最近 N 条"，写在前面的话这条用户消息
+        // 会同时出现在 history 里和 toMessages() 末尾追加的 userMessage 里，模型会看到两遍。
+        List<ConversationTurn> history = history(conversationId);
         appendMessage(conversationId, ConversationMessage.ROLE_USER, trimmed, null);
         // 滑动续期：聊到一半过期比"聊完就丢"更让人费解
         conversations.slideExpiry(conversationId, userId, now.plus(properties.getTtl()), now);
 
         EntryContext entry = entryContext(conversation.getEntryId());
-        return new TurnPreparation(conversationId, history(conversationId), trimmed,
+        return new TurnPreparation(conversationId, history, trimmed,
                 entry.title(), entry.body(), memorySnippets(userId, trimmed), access.get());
     }
 

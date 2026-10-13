@@ -1770,3 +1770,22 @@ schema_version: 1
 - 验证：`pnpm -r typecheck` 全过；学习者端 e2e **19 passed**（新增断言：匿名打开分享页时举报入口显示为登录引导）。
 - 本地提交：`438b0eb`（本条追加随下一笔）
 - 远端推送：见下一笔（推送 + 发版）
+
+## 2026-10-13 08:40:00 +0800 · 项目 · 二次审查（`8ac11d9..b4ef038`）并按"只修严重项"修完 9 条 high
+
+- 类型：implementation
+- 变更：① 对上次审查基线之后的**全部提交**做区间审查，报告 `.agent/reviews/2026-10-13-8ac11d9..b4ef038.md`（59 个提交 / 286 文件 / +28,204 行，分三段跑完，134 条：critical 0、high 9、medium 44、low 81）。② 按"只修严重项"的口径修完 **9 条 high**，涉及 8 个文件 + 1 个新迁移：
+  - `V10__pin_knowledge_table_collation.sql`（新）：知识库五张表补上 CHARSET/COLLATE——V3 的注释依赖大小写不敏感却没声明，与 V2 对账号表做的是同一件事。用新迁移而不是改 V3（V3 已执行过，改它会触发 Flyway 校验和不匹配）。
+  - `KnowledgeEntriesPage.tsx`：详情查询失败时不再退化成"新建"（此前 `detail.data ?? null` 让 EntryForm 以空表单渲染，用户点"编辑"保存后**静默新建出一条重复条目**）。
+  - `auth-context.tsx`：**修的是我自己上一轮引入的缺口**——挂载恢复失败时把 `status` 收敛到 `signed-out`。此前"只在 ApiError 时清会话"的分支既不清令牌也不改 status，`status` 会永远停在 `loading`：登录门一直转圈、反向门返回 null（整页空白）、`onNeedsLogin` 永不触发，用户既进不去也回不到登录页。测试补了状态收敛断言。
+  - `scripts/release.ps1`：`mvn`/`pnpm` 共四处补 `$LASTEXITCODE` 校验（`$ErrorActionPreference` 管不住原生命令；此前构建失败会继续打包发布，而 target 里仍是旧产物，表现为"发版成功但线上没生效"）。
+  - `markdown-body.tsx`：`components` 用 `useMemo` 固定引用（此前每次渲染新建对象 → h1–h4 被卸载重建 → effect 回填的标题 id 随旧节点丢失，而 effect 依赖 `headings` 不会重跑，父组件一重渲染锚点就失效）。
+  - `UpstreamGuard.java`：IPv6 判定的内嵌 IPv4 补上 `::a.b.c.d`（v4-compatible）形式。JDK 只把 `::ffff:` 转成 Inet4Address，`::127.0.0.1` 仍是 Inet6Address 且既非 `::1` 也不在 `fc00::/7`，此前一路判成**公网放行**（SSRF 绕过）。
+  - `ConversationService.java`：先取历史、再写本轮消息（此前本轮用户消息既进了 `history()`，又被 `toMessages()` 追加一次，模型看到两遍）。
+  - `packages/assistant/src/client.ts`：补透传 `draft` 字段（此前漏传，界面 `event.draft` 恒为 undefined，"保存为笔记"整条链路静默失效且不报错）。
+- 决策：medium/low 共 125 条按既定口径**不修、也不逐条分诊**。新迁移取当前下一个空号 V10。审查对象包含我自己上几笔修复，**属自审**，报告开头已写明可信度应低于独立审查。
+- 依据：`.agent/reviews/2026-10-13-8ac11d9..b4ef038.md`；用户 2026-10-13 指示"审查最近提交的这些全部"；`.agent/rules/always.md` 的"只修严重项"口径
+- 验证：后端 `mvn -B verify -Dspring-boot.repackage.skip=true` **BUILD SUCCESS**，112 个测试 0 失败（含 `UpstreamGuardTest` 18/18、`AssistantConversationIntegrationTest` 11/11、`KnowledgeAdminIntegrationTest` 9/9、`AccountAuthIntegrationTest` 13/13）；**V10 迁移在上下文启动时正常应用**。前端 `pnpm -r typecheck` 11 个包全过、`pnpm -r test` 全过（core 16、platform-desktop 4、ui 17、knowledge 15、assistant 12、auth 13）。**反向验证**：把 `UpstreamGuard` 退回旧版后，新加的两条用例（`https://[::127.0.0.1]/v1`、`https://[::169.254.169.254]/v1`）**当场失败**，证明它们确实会咬。**未跑 e2e**（需先构建产物）。
+- 环境：本轮用的是一把**新 key**——仓库外 ocr 配置里那把旧 key 已余额不足（`402 INSUFFICIENT_BALANCE`），新 key 已写入该配置并验证通过（连通 + 工具调用往返）。审查消耗约 3,658 万 tokens、44 分钟。
+- 本地提交：见本轮提交
+- 远端推送：未执行

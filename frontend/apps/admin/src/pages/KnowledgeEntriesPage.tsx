@@ -384,6 +384,19 @@ function EntryEditor({
     )
   }
 
+  if (entryId !== null && detail.isError) {
+    // 读详情失败时不能退化成"新建"：detail.data 为 undefined 时 EntryForm 会以空表单渲染，
+    // 用户点"编辑 #N"保存后反而新建出一条重复条目，而且全程没有任何提示。
+    return (
+      <Dialog open onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogTitle>条目读取失败</DialogTitle>
+          <p className="text-muted-foreground text-sm">请关闭后重试。</p>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <EntryForm
       // 换条目时用 key 强制重建，免得把上一条的内容留在表单里

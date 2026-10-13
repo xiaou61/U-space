@@ -121,6 +121,9 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
           delta: event.delta,
           message: event.message,
           empty: event.empty,
+          // 草稿必须透传：界面靠 event.draft 收集"待确认草稿"，
+          // 在这里漏掉会让"保存为笔记"整条链路静默失效且不报错
+          draft: event.draft,
           usage,
         })
       })    },

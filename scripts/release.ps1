@@ -60,6 +60,8 @@ if ($WithTests) {
     Step '后端全量测试' {
         Push-Location (Join-Path $repo 'backend')
         try { & mvn -B verify | Out-Null } finally { Pop-Location }
+        # $ErrorActionPreference 管不住原生命令：mvn 失败不会抛异常，必须自己看退出码
+        if ($LASTEXITCODE -ne 0) { throw "后端测试失败（退出码 $LASTEXITCODE）" }
     }
 }
 
@@ -69,6 +71,9 @@ Step '后端打包（增量）' {
         Remove-Item (Join-Path $repo 'backend\paideia-app\target\classes\db') -Recurse -Force -ErrorAction SilentlyContinue
         & mvn -B package -DskipTests | Out-Null
     } finally { Pop-Location }
+    # 不检查的话：打包失败时 target 里仍是上一次的旧 JAR，Copy-Item 照样成功，
+    # 最后把旧产物当新版本发出去——"发版成功但线上没生效"
+    if ($LASTEXITCODE -ne 0) { throw "后端打包失败（退出码 $LASTEXITCODE）" }
 }
 
 if (-not $SkipWeb) {
@@ -76,7 +81,10 @@ if (-not $SkipWeb) {
         Push-Location (Join-Path $repo 'frontend')
         try {
             & pnpm --filter '@paideia/app' build | Out-Null
+            # 同 mvn：pnpm 也是原生命令，构建失败时旧 dist 仍会被打进包并发出去
+            if ($LASTEXITCODE -ne 0) { throw "学习者端构建失败（退出码 $LASTEXITCODE）" }
             & pnpm --filter '@paideia/admin' build | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "管理端构建失败（退出码 $LASTEXITCODE）" }
         } finally { Pop-Location }
     }
 } else {

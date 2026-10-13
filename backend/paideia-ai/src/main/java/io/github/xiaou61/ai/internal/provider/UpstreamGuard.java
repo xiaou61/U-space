@@ -72,8 +72,10 @@ public class UpstreamGuard {
         }
         byte[] bytes = address.getAddress();
         if (bytes.length == 16) {
-            // IPv4 映射地址（::ffff:a.b.c.d）要按内网规则判，否则 127.0.0.1 能借它绕过去
-            if (isIpv4Mapped(bytes)) {
+            // 内嵌 IPv4 的两种写法都要落到 IPv4 规则：::ffff:a.b.c.d（v4-mapped）与 ::a.b.c.d（v4-compatible）。
+            // JDK 只把前者转成 Inet4Address；后者仍是 Inet6Address，且既不是 ::1 也不在 fc00::/7，
+            // 会一路走到 return true —— 于是 https://[::127.0.0.1]/ 这类内网目标被判成公网放行。
+            if (isIpv4Mapped(bytes) || isIpv4Compatible(bytes)) {
                 return isPublicIpv4(bytes[12], bytes[13], bytes[14], bytes[15]);
             }
             // IPv6 唯一本地地址 fc00::/7（isSiteLocalAddress 只覆盖已废弃的 fec0::/10）
@@ -94,6 +96,16 @@ public class UpstreamGuard {
             }
         }
         return (bytes[10] & 0xff) == 0xff && (bytes[11] & 0xff) == 0xff;
+    }
+
+    /** ::a.b.c.d（前 12 字节全零的 v4-compatible 形式）。它同样内嵌一个 IPv4，必须按 IPv4 规则判。 */
+    private static boolean isIpv4Compatible(byte[] bytes) {
+        for (int index = 0; index < 12; index++) {
+            if (bytes[index] != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isPublicIpv4(byte a, byte b, byte c, byte d) {
