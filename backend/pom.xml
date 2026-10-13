@@ -33,6 +33,12 @@
   <properties>
     <java.version>25</java.version>
     <spring-modulith.version>2.1.1</spring-modulith.version>
+    <!--
+      Flyway 刻意钉在高于 Boot BOM 的版本（BOM 当前给 12.4.0）。写在属性里而不是在子模块的
+      dependency 上硬编码，是为了只留一处：BOM 的 dependencyManagement 正是按这个属性名解析的，
+      在这里覆盖等于"有意识地抬版本"，而子模块里写 <version> 就成了绕过统一管理的散点。
+    -->
+    <flyway.version>13.10.0</flyway.version>
   </properties>
 
   <dependencyManagement>

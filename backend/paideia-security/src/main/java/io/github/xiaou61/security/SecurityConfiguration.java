@@ -50,11 +50,19 @@ public class SecurityConfiguration {
     @Bean
     JwtAuthService authPort(AuthProperties properties) {
         if (!properties.hasSecret()) {
+            if (!properties.allowEphemeralSecret()) {
+                // 失败而不是静默用随机密钥：重启即令全部令牌失效、多实例之间也无法互验，
+                // 误部署到共享环境只会在运行时才暴露。见 AuthProperties 的类注释。
+                throw new IllegalStateException("""
+                        未配置签名密钥 paideia.auth.secret（环境变量 PAIDEIA_AUTH_SECRET），且未显式允许临时密钥。
+                        二选一：
+                          · 配置固定密钥：paideia.auth.secret，至少 32 字符
+                          · 仅本地或骨架期：显式设置 paideia.auth.allow-ephemeral-secret=true
+                        """);
+            }
             log.warn("""
-                    未配置签名密钥 paideia.auth.secret（环境变量 PAIDEIA_AUTH_SECRET），已生成本次进程的随机密钥。
-                    后果：重启后此前签发的令牌全部失效，多实例之间也无法互相校验。
-                    部署到任何他人可访问的环境之前，必须配置固定密钥。
-                    """);
+                    paideia.auth.allow-ephemeral-secret=true 已显式开启，本次进程使用随机生成的签名密钥。
+                    后果：重启后此前签发的令牌全部失效，多实例之间也无法互相校验。""");
             return new JwtAuthService(properties.withSecret(randomSecret()));
         }
         return new JwtAuthService(properties);

@@ -50,9 +50,14 @@ public final class SmtpMailPort implements MailPort {
             helper.setSubject("Paideia 注册验证码");
             helper.setText(body(code, validFor), false);
             sender.send(message);
-        } catch (jakarta.mail.MessagingException | java.io.UnsupportedEncodingException exception) {
+        } catch (jakarta.mail.MessagingException | java.io.UnsupportedEncodingException
+                | org.springframework.mail.MailException exception) {
             // 发不出去就必须让注册流程失败：悄悄吞掉会让用户卡在"没收到验证码"而无人知道原因。
             // 异常消息里带上主机与端口（不含凭据），方便判断是配置问题还是网络问题。
+            //
+            // MailException 必须一并接住：sender.send() 抛的是 Spring 包装过的运行时异常
+            // （MessagingException 被包进 MailSendException），只 catch 上面两种的话，
+            // 真正发信失败时冒出去的是原始异常，既不带上主机端口、也不进这条统一的说明。
             throw new IllegalStateException(
                     "通过 %s:%d 发送验证码邮件失败：%s".formatted(
                             properties.host(), properties.port(), exception.getMessage()),

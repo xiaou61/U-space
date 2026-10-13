@@ -22,6 +22,11 @@ class AccountApiImplementation implements AccountApi {
 
     @Override
     public Optional<String> findRoleById(String userId) {
+        // 注释承诺"调用方传进来的可能是任何东西"，而 Long.valueOf(null) 抛的是 NPE、
+        // 不是 NumberFormatException——只 catch 后者的话 null 会冒泡成 500。
+        if (userId == null) {
+            return Optional.empty();
+        }
         try {
             return userMapper.findRoleById(Long.valueOf(userId));
         } catch (NumberFormatException exception) {

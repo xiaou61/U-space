@@ -54,11 +54,14 @@ export function createBridgeCache(
     get: (key) => mirror.get(key) ?? null,
     set: (key, value) => {
       mirror.set(key, value)
-      void bridge.set(key, value)
+      // 即发即忘会让"没落盘"彻底静默，而镜像已经改了——重启后用户的选择消失且没有任何线索。
+      // ponytail: 只留一条日志、不回滚镜像；要真正保证镜像与磁盘一致，得等 IPC 确认再改内存，
+      // 那会把同步的 get 语义拖进异步，暂不值当。
+      bridge.set(key, value).catch((cause) => console.warn('缓存写入失败：', key, cause))
     },
     remove: (key) => {
       mirror.delete(key)
-      void bridge.remove(key)
+      bridge.remove(key).catch((cause) => console.warn('缓存删除失败：', key, cause))
     },
   }
 }

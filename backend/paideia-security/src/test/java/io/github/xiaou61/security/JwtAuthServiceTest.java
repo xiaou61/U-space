@@ -19,7 +19,7 @@ class JwtAuthServiceTest {
     private static final AuthPort.Subject LEARNER = new AuthPort.Subject("learner-a", AuthPort.ROLE_LEARNER);
 
     private static JwtAuthService service(Duration ttl) {
-        return new JwtAuthService(new AuthProperties(SECRET, "paideia-test", ttl));
+        return new JwtAuthService(new AuthProperties(SECRET, "paideia-test", ttl, false));
     }
 
     @Test
@@ -103,7 +103,7 @@ class JwtAuthServiceTest {
     @DisplayName("另一个密钥签发的令牌不被接受")
     void rejectsTokenFromAnotherKey() {
         String foreignToken = new JwtAuthService(new AuthProperties(
-                "a-completely-different-secret-value-000000", "paideia-test", Duration.ofMinutes(5)))
+                "a-completely-different-secret-value-000000", "paideia-test", Duration.ofMinutes(5), false))
                 .issue(LEARNER)
                 .value();
 
@@ -133,15 +133,15 @@ class JwtAuthServiceTest {
     @Test
     @DisplayName("配置了过短的密钥时在构造阶段就失败，而不是用弱密钥跑起来")
     void rejectsWeakSecret() {
-        assertThatThrownBy(() -> new AuthProperties("too-short", "paideia", Duration.ofMinutes(5)))
+        assertThatThrownBy(() -> new AuthProperties("too-short", "paideia", Duration.ofMinutes(5), false))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("长度不足");
     }
 
     @Test
-    @DisplayName("未配置密钥时不抛异常，但要能被识别出来（由装配层补随机密钥并告警）")
+    @DisplayName("未配置密钥时记录层不报错，但装配层会拒绝启动（除非显式允许临时密钥）")
     void allowsMissingSecretAndReportsIt() {
-        AuthProperties properties = new AuthProperties(null, "paideia", Duration.ofMinutes(5));
+        AuthProperties properties = new AuthProperties(null, "paideia", Duration.ofMinutes(5), false);
 
         assertThat(properties.hasSecret()).isFalse();
         assertThat(properties.withSecret("x".repeat(40)).hasSecret()).isTrue();
@@ -150,7 +150,7 @@ class JwtAuthServiceTest {
     @Test
     @DisplayName("未指定签发者与存活期时使用默认值：15 分钟")
     void appliesDefaults() {
-        AuthProperties properties = new AuthProperties(SECRET, "  ", null);
+        AuthProperties properties = new AuthProperties(SECRET, "  ", null, false);
 
         assertThat(properties.issuer()).isEqualTo("paideia");
         // 这个默认值就是"登出后 access 仍可用的窗口"，改成 2 小时会悄悄放大暴露面，

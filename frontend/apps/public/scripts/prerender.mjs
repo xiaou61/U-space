@@ -24,7 +24,9 @@ if (!template.includes(MARKER)) {
   throw new Error(`index.html 里找不到标记 ${MARKER}，预渲染无处注入`)
 }
 
-await writeFile(indexFile, template.replace(MARKER, markup), 'utf8')
+// 替换值用函数而不是字符串：字符串形式下 markup 里的 $&、$1、$` 会被当成替换模式解析，
+// 而 markup 是 React 渲染出来的正文，出现一个字面量 $& 就会把注入内容改坏。
+await writeFile(indexFile, template.replace(MARKER, () => markup), 'utf8')
 await rm(path.join(appDir, 'dist-ssr'), { recursive: true, force: true })
 
 console.log(`预渲染完成：向 index.html 注入 ${markup.length} 个字符`)

@@ -1789,3 +1789,20 @@ schema_version: 1
 - 环境：本轮用的是一把**新 key**——仓库外 ocr 配置里那把旧 key 已余额不足（`402 INSUFFICIENT_BALANCE`），新 key 已写入该配置并验证通过（连通 + 工具调用往返）。审查消耗约 3,658 万 tokens、44 分钟。
 - 本地提交：见本轮提交
 - 远端推送：未执行
+
+## 2026-10-13 09:35:06  · 项目 · 补修上一轮遗留的 6 条 high（安全与健壮性收口）
+
+- 类型：implementation
+- 变更：把 2026-10-10 全库扫描里我此前判为"该修但没做／需拍板"的 high 补完，共 8 个文件：
+  - `SmtpMailPort`：catch 补上 `org.springframework.mail.MailException`——`sender.send()` 抛的是 Spring 包装过的运行时异常（把 `MessagingException` 包进 `MailSendException`），只 catch 后两者时，真正发信失败会绕过那条"带上主机与端口"的统一说明。
+  - `SecurityConfiguration` + `AuthProperties`：缺签名密钥不再静默改用随机密钥，改为**启动失败**，除非显式 `paideia.auth.allow-ephemeral-secret=true`（与邮件的 fail-fast 同一口径）。本地 profile 与测试 profile 都已配置密钥，因此无环境受影响。
+  - `AccountApiImplementation`：`findRoleById` 补 null 判断（`Long.valueOf(null)` 抛的是 NPE 而不是 `NumberFormatException`，只 catch 后者会冒泡成 500）。此前判"无可达调用方"，但改动只有两行，且该类注释本身就承诺"任何输入都不能变成 500"。
+  - `prerender.mjs`：替换值改用函数形式（字符串形式下 markup 里的 `$&`、`$1` 会被当成替换模式解析，破坏注入内容）。
+  - `platform-desktop/src/index.ts`：两处 IPC 写回补 `.catch` 与日志（此前即发即忘，"没落盘"完全静默，而内存镜像已经改了）。只记日志、不回滚镜像，取舍与升级路径写在该处 `ponytail:` 注释里。
+  - 父 POM：Flyway 版本从子模块的两处硬编码收成父 POM 的一个 `<flyway.version>` 属性。**先核实过**才动手：BOM 给的是 12.4.0、而现状是有意抬到 13.10.0，所以不能删版本号（那会静默降级），而是把它变成"有意识地覆盖统一管理的那一个属性"。
+  - `JwtAuthServiceTest`：5 处 `AuthProperties` 构造点补第 4 个参数，并把"未配置密钥"那条用例的措辞改准。
+- 决策：两条**不修**并给理由——`Digest` 无盐哈希（摘要只在进程内存、TTL 5~10 分钟，威胁模型被高估）、`SNAPSHOT` 版本（不是缺陷，属发布策略，留给用户定）；`AdminHomePage` 那条经查是**区间审查的过期条目**（同一区间的 `cac957b` 已把那段 health 代码重构掉），无需修。
+- 依据：`.agent/reviews/2026-10-10-scan-8ac11d9.md`（critical/high 段）；用户 2026-10-13 指示"继续给我修复"
+- 验证：后端 `mvn -B verify -Dspring-boot.repackage.skip=true` **BUILD SUCCESS**，116 个测试 0 失败（4 skipped）；前端 `pnpm -r typecheck` 11 个包 0 错、`pnpm -r test` 全过（77 条）。Flyway 那条用 `mvn -pl paideia-app dependency:tree -Dincludes=org.flywaydb` 复核解析结果仍是 `13.10.0`（不是 BOM 的 12.4.0），确认属性覆盖生效且没有降级。**未跑 e2e**。
+- 本地提交：见本轮提交
+- 远端推送：未执行

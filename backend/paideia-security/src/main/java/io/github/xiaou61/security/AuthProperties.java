@@ -6,9 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * 认证配置。
  *
- * <p>未配置 {@code secret} 时由装配层生成一次性随机密钥并告警（见
- * {@link SecurityConfiguration#authPort}）：这样骨架不配任何东西也能起来，
- * 而随机密钥无法被跨重启利用，风险远低于一个写死的默认密钥。
+ * <p>未配置 {@code secret} 时**不再自动**生成随机密钥：必须显式设置
+ * {@code paideia.auth.allow-ephemeral-secret=true}，否则装配层直接让应用启动失败
+ * （见 {@link SecurityConfiguration#authPort}）。随机密钥随进程生成，重启即令全部令牌失效、
+ * 多实例之间也无法互验——误部署到共享环境只会在运行时才暴露，所以它不能是默认行为。
  * 配置了密钥就校验强度，避免弱密钥悄悄生效。
  *
  * <p><b>默认存活期是 15 分钟</b>（WORK-003 决定）——这是"短 access + refresh 轮换"方案的一半：
@@ -17,7 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 需要更长可以在配置里显式覆盖（`paideia.auth.token-ttl`）。
  */
 @ConfigurationProperties(prefix = "paideia.auth")
-public record AuthProperties(String secret, String issuer, Duration tokenTtl) {
+public record AuthProperties(String secret, String issuer, Duration tokenTtl, boolean allowEphemeralSecret) {
 
     /** access 的默认存活期。改这个值等于改"登出后令牌还能用多久"的窗口。 */
     private static final Duration DEFAULT_TOKEN_TTL = Duration.ofMinutes(15);
@@ -41,7 +42,7 @@ public record AuthProperties(String secret, String issuer, Duration tokenTtl) {
 
     /** 换一个密钥，其余配置不变。 */
     public AuthProperties withSecret(String value) {
-        return new AuthProperties(value, issuer, tokenTtl);
+        return new AuthProperties(value, issuer, tokenTtl, allowEphemeralSecret);
     }
 
     private static boolean hasText(String value) {
