@@ -94,3 +94,32 @@ test('登录后从页头就能进入知识库，不必手输地址', async ({ pa
   await expect(page).toHaveURL(/#\/my-assessments$/)
   await expect(page.getByTestId('learner-nav-my-assessments')).toHaveAttribute('aria-current', 'page')
 })
+
+/**
+ * 首页与"点导航就变样"的回归（2026-10-13，用户报的）：
+ * ① 首页此前是骨架期诊断页，进去先看到的是 health 原始 JSON，**没有任何去处**；
+ * ② `我的笔记` 页当时自己拼了 div+header，没走 AppShell ⇒ 点导航时整页宽度、页头、页脚全变。
+ *
+ * <p>这两条都只能"点着走"才验得到，所以这里从首页卡片一路点进笔记页，并断言
+ * **三页共用同一套外壳**（页脚那句是 AppShell 独有的，三页都该有）。
+ */
+test('首页有去处；笔记页与知识库页共用同一套外壳', async ({ page }) => {
+  await signIn(page)
+
+  await expect(page.getByTestId('home-entries')).toBeVisible()
+  await expect(page.getByTestId('home-entry-knowledge')).toBeVisible()
+  const shellFooter = page.getByText('Paideia · 千人千面的 AI 个性化学习平台')
+  await expect(shellFooter).toBeVisible()
+
+  // 从首页卡片进笔记页（不是手输地址）
+  await page.getByTestId('home-entry-notes').click()
+  await expect(page).toHaveURL(/#\/notes$/)
+  await expect(page.getByTestId('notes-create')).toBeVisible()
+  // 同一个外壳：页脚还在（自己拼 div 的那版没有它）
+  await expect(shellFooter).toBeVisible()
+
+  // 再从页头切到知识库，外壳不变
+  await page.getByTestId('learner-nav-knowledge').click()
+  await expect(page.getByTestId('entry-list')).toBeVisible()
+  await expect(shellFooter).toBeVisible()
+})

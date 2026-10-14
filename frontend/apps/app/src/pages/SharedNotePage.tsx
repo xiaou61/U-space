@@ -1,4 +1,15 @@
-import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent, CardHeader, CardTitle, Spinner } from '@paideia/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  AppShell,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -66,8 +77,9 @@ export function SharedNotePage() {
   }, [shareId])
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="text-muted-foreground mb-6 text-sm">Paideia · 分享的笔记</h1>
+    // 同一个 AppShell：分享页是免登录的独立面，但**观感要与站内一致**——
+    // 不做的话点开一条分享链接会像跳到了另一个网站。
+    <AppShell title="Paideia" subtitle="分享的笔记">
 
       {error === null ? null : (
         <Alert variant="destructive">
@@ -165,6 +177,6 @@ export function SharedNotePage() {
           </CardContent>
         </Card>
       )}
-    </main>
+    </AppShell>
   )
 }

@@ -13,7 +13,9 @@ import {
   PageHeader,
   Spinner,
 } from '@paideia/ui'
+import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -30,6 +32,7 @@ interface SubjectResponse {
 }
 
 export function HomePage() {
+  const { user } = useAuth()
   const platform = usePlatform()
   const health = useQuery({
     queryKey: ['backend-health'],
@@ -43,12 +46,47 @@ export function HomePage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="骨架" actions={<LearnerHeader />}>
+    <AppShell title="Paideia" subtitle="首页" actions={<LearnerHeader />}>
       <PageHeader
-        title="Paideia 骨架"
-        description="本页展示的是后端接口的真实返回，不是硬编码数据。"
+        title={`你好，${user?.username ?? ''}`}
+        description="右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。"
       />
 
+      {/* 首页的第一件事是**把人送进去**：登录后落在 /，这里没有任何去处就等于没有首页 */}
+      <div className="mb-10 grid gap-4 sm:grid-cols-3" data-testid="home-entries">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Link to="/knowledge" data-testid="home-entry-knowledge">
+                知识库
+              </Link>
+            </CardTitle>
+            <CardDescription>按分类浏览、按关键词检索，打开条目阅读。</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Link to="/notes" data-testid="home-entry-notes">
+                我的笔记
+              </Link>
+            </CardTitle>
+            <CardDescription>随手记点什么，或让助手把答案存进来；也能只读分享。</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Link to="/my-assessments" data-testid="home-entry-assessments">
+                我的自评
+              </Link>
+            </CardTitle>
+            <CardDescription>你标记过「懂了／还不懂」的条目。</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <h2 className="text-muted-foreground mb-3 text-sm font-medium">运行状态</h2>
       <div className="space-y-6">
         <Card>
           <CardHeader>

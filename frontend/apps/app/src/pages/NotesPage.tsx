@@ -1,4 +1,15 @@
-import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent, Input, Spinner } from '@paideia/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  AppShell,
+  Button,
+  Card,
+  CardContent,
+  Input,
+  PageHeader,
+  Spinner,
+} from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
@@ -102,11 +113,10 @@ export function NotesPage() {
   })
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
-      <header className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-medium">我的笔记</h1>
-        <LearnerHeader />
-      </header>
+    // 用与其他页面**同一个** AppShell：自己拼 div+header 会让这一页的宽度、页头、页脚
+    // 与别处全不一样——"点导航时整页样式跳变"的观感就是这么来的。
+    <AppShell title="Paideia" subtitle="我的笔记" actions={<LearnerHeader />}>
+      <PageHeader title="我的笔记" description="随手记点什么，或让助手把答案存进来；只读分享也在这里。" />
 
       {error === null ? null : (
         <Alert variant="destructive" data-testid="notes-error" className="mb-4">
@@ -246,6 +256,6 @@ export function NotesPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppShell>
   )
 }
