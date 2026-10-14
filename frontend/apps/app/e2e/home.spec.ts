@@ -83,6 +83,10 @@ test('登录后从页头就能进入知识库，不必手输地址', async ({ pa
 
   await page.getByTestId('learner-nav-knowledge').click()
   await expect(page).toHaveURL(/#\/knowledge$/)
+  // 首屏是分类网格（二级结构的第一级），条目在点进去之后
+  await expect(page.getByTestId('category-grid')).toBeVisible()
+  await page.getByTestId('all-entries-card').click()
+  await expect(page).toHaveURL(/#\/knowledge\/entries$/)
   await expect(page.getByTestId('entry-list')).toBeVisible()
 
   // 条目页的地址是 /knowledge/entries/:id，仍该算在"知识库"这一档里（前缀匹配）
@@ -120,6 +124,6 @@ test('首页有去处；笔记页与知识库页共用同一套外壳', async ({
 
   // 再从页头切到知识库，外壳不变
   await page.getByTestId('learner-nav-knowledge').click()
-  await expect(page.getByTestId('entry-list')).toBeVisible()
+  await expect(page.getByTestId('category-grid')).toBeVisible()
   await expect(shellFooter).toBeVisible()
 })

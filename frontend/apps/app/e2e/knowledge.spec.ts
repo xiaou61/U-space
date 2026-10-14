@@ -24,16 +24,30 @@ test('未登录访问知识库被导向登录页', async ({ page }) => {
   await page.goto('/#/knowledge')
 
   await expect(page.getByTestId('login-identifier')).toBeVisible()
-  await expect(page.getByTestId('entry-list')).toHaveCount(0)
+  await expect(page.getByTestId('category-grid')).toHaveCount(0)
 })
 
 test('按分类浏览并打开条目，正文与目录都渲染出来', async ({ page }) => {
   await signIn(page, SEED_LEARNER)
   await page.goto('/#/knowledge')
+  await expect(page.getByTestId('category-grid')).toBeVisible()
 
-  // 分类树来自后端真实返回
-  await expect(page.getByTestId('category-tree')).toBeVisible()
-  await expect(page.getByTestId('category-backend-basics')).toBeVisible()
+  // 知识库是两级：先分类网格（来自后端真实返回），点进去才是条目
+  await expect(page.getByTestId('category-grid')).toBeVisible()
+  await expect(page.getByTestId('all-entries-card')).toBeVisible()
+  // "全部条目"这一档
+  await page.getByTestId('all-entries-card').click()
+  await expect(page).toHaveURL(/#\/knowledge\/entries$/)
+  await expect(page.getByTestId('entry-list')).toBeVisible()
+  // 回上一级、再从某个分类卡片进去（这是新加的那一跳）
+  await page.getByTestId('back-to-categories').click()
+  await expect(page.getByTestId('category-grid')).toBeVisible()
+  await page.getByTestId('category-grid').locator('a').first().click()
+  await expect(page).toHaveURL(/#\/knowledge\/categories\/\d+$/)
+  await expect(page.getByTestId('back-to-categories')).toBeVisible()
+
+  // 条目 3 在"后端基础"下，从分类页找不到它；回全部条目再点
+  await page.goto('/#/knowledge/entries')
   await expect(page.getByTestId('entry-list')).toBeVisible()
 
   // 条目 3 的正文里有表格：markdown 真的被渲染成元素，而不是把源码当纯文本显示
@@ -67,7 +81,8 @@ test('同分类内的上一篇／下一篇可用', async ({ page }) => {
 
 test('草稿对学习者不可见', async ({ page }) => {
   await signIn(page, SEED_LEARNER)
-  await page.goto('/#/knowledge')
+  // 条目列表在二级页（知识库首屏现在是分类网格）
+  await page.goto('/#/knowledge/entries')
 
   // 条目 4 是种子里的草稿：列表里没有，直接开地址也打不开
   await expect(page.getByTestId('entry-list')).not.toContainText('虚拟线程')
@@ -77,7 +92,7 @@ test('草稿对学习者不可见', async ({ page }) => {
 
 test('中文关键词能搜到，且搜不到草稿', async ({ page }) => {
   await signIn(page, SEED_LEARNER)
-  await page.goto('/#/knowledge')
+  await page.goto('/#/knowledge/entries')
 
   await page.getByTestId('knowledge-search').fill('依赖注入')
   await page.getByTestId('knowledge-search-submit').click()

@@ -142,7 +142,7 @@ export function NotesPage() {
               <Spinner />
             ) : (list.data ?? []).length === 0 ? (
               <p className="text-muted-foreground text-sm" data-testid="notes-empty">
-                还没有笔记。新建一条，或让助手把答案存进来。
+                还没有笔记。
               </p>
             ) : (
               <ul className="space-y-1" data-testid="notes-list">
@@ -183,19 +183,18 @@ export function NotesPage() {
                 />
                 <textarea
                   value={body}
-                  rows={16}
+                  rows={18}
                   aria-label="正文"
                   data-testid="note-body"
                   onChange={(event) => setBody(event.target.value)}
                   className="border-border bg-background w-full rounded border px-2 py-1 font-mono text-sm"
                 />
                 <div className="flex items-center gap-2">
-                  <Button size="sm" disabled={save.isPending} data-testid="note-save" onClick={() => save.mutate()}>
+                  <Button disabled={save.isPending} data-testid="note-save" onClick={() => save.mutate()}>
                     {save.isPending ? <Spinner /> : null}
                     保存
                   </Button>
                   <Button
-                    size="sm"
                     variant="outline"
                     disabled={remove.isPending}
                     data-testid="note-delete"
@@ -245,11 +244,9 @@ export function NotesPage() {
                       </div>
                     ))
                   )}
-                  <p className="text-muted-foreground text-xs">
-                    {justShared === null
-                      ? '链接不需要登录就能看，30 天后自动失效。'
-                      : '已生成，可以复制发给别人。不想给了点撤回。'}
-                  </p>
+                  {justShared === null ? null : (
+                    <p className="text-muted-foreground text-xs">已生成，复制发给别人即可。</p>
+                  )}
                 </div>
               </>
             )}

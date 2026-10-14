@@ -81,7 +81,8 @@ test('打开条目后壳取到当前内容；没有凭据时给配置入口而�
   })
 
   await signIn(page, SEED_LEARNER)
-  await page.goto('/#/knowledge')
+  // 条目列表在二级页；这条用例验的是助手取上下文，不是导航
+  await page.goto('/#/knowledge/entries')
   await page.getByTestId('entry-link-3').click()
 
   await page.getByTestId('assistant-launcher').click()

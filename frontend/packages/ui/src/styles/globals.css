@@ -199,12 +199,41 @@
    * 必须子集化才有意义）。字体回退是逐字符进行的，所以拉丁字体在前、CJK 在后。
    * 代价是"字距收紧"的质感只落在拉丁字母与数字上。末尾的泛型 sans-serif 不能删。
    */
+  /*
+   * 动效只做一件小事：内容"淡入上浮"。原来整站零过渡，切页与列表出现都是硬闪，
+   * 这也是"像一个 demo"的一部分。**不引动画库**：一个 keyframes 够用。
+   * 卡片悬停的上浮/描边变化用 Tailwind 的 transition 类，不在这里。
+   */
+  --animate-fade-up: fade-up 0.35s ease-out both;
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC',
     'Source Han Sans SC', 'WenQuanYi Micro Hei', sans-serif;
   --font-mono:
     'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, 'Microsoft YaHei UI', monospace;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 系统设了"减少动态效果"就全部关掉——动效是可访问性里明确要求尊重的一档。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer base {

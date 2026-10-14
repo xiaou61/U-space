@@ -3,7 +3,8 @@ import { createHashRouter } from 'react-router'
 
 import { HomePage } from './pages/HomePage'
 import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
-import { KnowledgeListPage } from './pages/KnowledgeListPage'
+import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
+import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NotesPage } from './pages/NotesPage'
@@ -42,11 +43,29 @@ export const router = createHashRouter([
       </RequireAuth>
     ),
   },
+  // 知识库是两级：先分类（卡片网格），点进去才是条目列表。
+  // 原来把分类塞进一个 16rem 侧栏、条目挤在旁边，一屏又空又单调（用户反馈）。
   {
     path: '/knowledge',
     element: (
       <RequireAuth>
-        <KnowledgeListPage />
+        <KnowledgeCategoriesPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/knowledge/entries',
+    element: (
+      <RequireAuth>
+        <CategoryEntriesPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/knowledge/categories/:categoryId',
+    element: (
+      <RequireAuth>
+        <CategoryEntriesPage />
       </RequireAuth>
     ),
   },
