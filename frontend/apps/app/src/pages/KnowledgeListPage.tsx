@@ -51,7 +51,7 @@ export function KnowledgeListPage() {
   }
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />}>
+    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />} wide>
       <PageHeader title="知识库" description="按分类浏览或按关键词检索，打开条目阅读。" />
 
       <form onSubmit={onSubmit} className="mb-8 flex items-center gap-2">
@@ -131,7 +131,7 @@ export function KnowledgeListPage() {
                 共 {entries.data.total} 条
               </p>
               {entries.data.items.map((item) => (
-                <Card key={item.id}>
+                <Card key={item.id} className="transition-shadow hover:shadow-card">
                   <CardContent className="pt-6">
                     <Link
                       to={`/knowledge/entries/${item.id}`}
@@ -140,10 +140,14 @@ export function KnowledgeListPage() {
                     >
                       {item.title}
                     </Link>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-3 flex items-center gap-3">
                       {item.categoryName === null ? null : (
-                        <Badge variant="outline">{item.categoryName}</Badge>
+                        <Badge variant="secondary">{item.categoryName}</Badge>
                       )}
+                      {/* 卡片光有标题会显得空：更新时间是现成的数据，把它露出来 */}
+                      <span className="text-muted-foreground text-xs">
+                        {new Date(item.updatedAt).toLocaleDateString('zh-CN')}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>

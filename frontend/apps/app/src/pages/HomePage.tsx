@@ -14,6 +14,7 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
+import { BookOpen, NotebookPen, Target } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 
@@ -54,8 +55,11 @@ export function HomePage() {
 
       {/* 首页的第一件事是**把人送进去**：登录后落在 /，这里没有任何去处就等于没有首页 */}
       <div className="mb-10 grid gap-4 sm:grid-cols-3" data-testid="home-entries">
-        <Card>
+        <Card className="transition-shadow hover:shadow-card">
           <CardHeader>
+            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
+              <BookOpen className="size-4" />
+            </span>
             <CardTitle>
               <Link to="/knowledge" data-testid="home-entry-knowledge">
                 知识库
@@ -64,8 +68,11 @@ export function HomePage() {
             <CardDescription>按分类浏览、按关键词检索，打开条目阅读。</CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="transition-shadow hover:shadow-card">
           <CardHeader>
+            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
+              <NotebookPen className="size-4" />
+            </span>
             <CardTitle>
               <Link to="/notes" data-testid="home-entry-notes">
                 我的笔记
@@ -74,8 +81,11 @@ export function HomePage() {
             <CardDescription>随手记点什么，或让助手把答案存进来；也能只读分享。</CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="transition-shadow hover:shadow-card">
           <CardHeader>
+            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
+              <Target className="size-4" />
+            </span>
             <CardTitle>
               <Link to="/my-assessments" data-testid="home-entry-assessments">
                 我的自评

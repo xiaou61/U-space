@@ -84,10 +84,10 @@ export function LearnerHeader() {
               to={item.to}
               aria-current={active ? 'page' : undefined}
               data-testid={item.testId}
-              className={`rounded-md px-2 py-1 text-sm transition-colors ${
+              className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
                 active
-                  ? 'text-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
               }`}
             >
               {item.label}

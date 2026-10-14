@@ -18,6 +18,7 @@ export function AppShell({
   subtitle,
   actions,
   children,
+  wide = false,
   className,
 }: {
   title: string
@@ -25,6 +26,8 @@ export function AppShell({
   /** 页头右侧的操作区，通常放 ThemeToggle 或应用自己的入口。 */
   actions?: ReactNode
   children: ReactNode
+  /** 列表/总览类页面用宽档：4xl 在 1440 屏上两侧留白太多，读起来像"没做完"。 */
+  wide?: boolean
   className?: string
 }) {
   return (
@@ -42,7 +45,9 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">{children}</main>
+      <main className={cn('mx-auto w-full flex-1 px-6 py-10', wide ? 'max-w-6xl' : 'max-w-4xl')}>
+        {children}
+      </main>
 
       <footer className="border-border text-muted-foreground border-t px-6 py-5 text-center text-xs">
         Paideia · 千人千面的 AI 个性化学习平台

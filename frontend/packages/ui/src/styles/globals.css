@@ -30,83 +30,105 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * 取值依据：Vercel 的 Geist 设计系统（vercel.com/geist）。它的组件包 @vercel/geistcn 没有发布到
- * 公开 npm，但令牌本身是他们站点编译产物里的公开事实，这里取的是实测值，不是凭观感调的：
+ * 2026-10-14 换向：用户在线上用过之后说"UI 特别一般、有点丑、完全是个 demo 级别"。
+ * 诊断出来的真因不是某个页面写错了，而是**调色板本身没有颜色**：
+ * 上一版整套令牌照 Vercel 的 Geist 取值——除破坏性红色外**每个颜色的饱和度都是 0%**
+ * （主色=近黑、accent/muted=浅灰），于是链接、选中态、悬停、标签、次要按钮**没有一处
+ * 能用上强调色**；再叠加"层次靠字号、留白与极细的线"这条方向，结果就是处处灰白、
+ * 每个页面同一个模子。那是一条**刻意定的方向**（文件原先的注释写着"不靠色阶堆叠"），
+ * 不是失误——现在它被推翻了。
  *
- *   用途        浅色                  深色
- *   页面底色    hsl(0 0% 100%) 纯白   hsl(0 0% 4%)
- *   正文        hsl(0 0% 9%)           hsl(0 0% 93%)
- *   次级文本    hsl(0 0% 30%)          hsl(0 0% 63%)
- *   默认边框    hsl(0 0% 92%)          hsl(0 0% 18%)
- *   组件底      hsl(0 0% 95%)          hsl(0 0% 10%)
+ * 新方向（用户选的是"引入现成设计件"，因此这里照 shadcn 主题预设的结构给值，不自己捏）：
+ *   1. **一个品牌色**（靖蓝）贯穿主按钮、链接、焦点环、选中态；accent 带品牌色相，
+ *      于是"悬停/选中"终于有话可说，而不是灰底灰字。
+ *   2. **语义色**（success/warning/info）——自评的懂／不懂、举报的待处理／已下架
+ *      从此不再一律是灰。
+ *   3. 底色由纯白改为**微冷白**，卡面仍纯白：卡片才"浮"得起来；圆角 6px→10px。
  *
- * 与上一版的差别不是"换了个好看的配色"，而是方向变了：底色由浅灰改纯白、卡面由半透明玻璃
- * 改为不透明 + 1px 细线、圆角由 12px 收到 6px。层次靠字号、留白与那条极细的线建立，
- * 而不是靠色阶堆叠——这是这套观感的骨架。
+ * 两条纪律不因换向而放松：颜色**只能**来自这里的令牌（tokens.test.ts 会拦硬编码），
+ * 且正文/次文本/主按钮/焦点环的对比度必须过 WCAG（theme/contrast.test.ts 会拦）。
  */
 :root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(0 0% 9%);
+  /* 底色不是纯白：卡面用纯白才能"浮"起来 */
+  --background: hsl(220 20% 98%);
+  --foreground: hsl(222 25% 12%);
   --card: hsl(0 0% 100%);
   --card-solid: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 9%);
+  --card-foreground: hsl(222 25% 12%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 9%);
-  --primary: hsl(0 0% 9%);
+  --popover-foreground: hsl(222 25% 12%);
+  /* 品牌靖蓝：主按钮、链接、选中态都用它 */
+  --primary: hsl(243 62% 44%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(0 0% 95%);
-  --secondary-foreground: hsl(0 0% 9%);
-  --muted: hsl(0 0% 95%);
-  --muted-foreground: hsl(0 0% 30%);
-  --accent: hsl(0 0% 95%);
-  --accent-foreground: hsl(0 0% 9%);
-  --destructive: hsl(0 72% 40%);
+  --secondary: hsl(243 30% 95%);
+  --secondary-foreground: hsl(243 45% 28%);
+  --muted: hsl(220 16% 95%);
+  --muted-foreground: hsl(220 12% 38%);
+  /* accent 是"悬停/选中"那一档，带品牌色相——灰底悬停是这套观感最像 demo 的地方 */
+  --accent: hsl(243 45% 95%);
+  --accent-foreground: hsl(243 50% 30%);
+  --destructive: hsl(0 65% 42%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(0 0% 92%);
+  /* 状态色：自评的懂／不懂、举报的待处理／已下架都靠它们，不再一律是灰 */
+  --success: hsl(152 55% 30%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(32 85% 34%);
+  --warning-foreground: hsl(0 0% 100%);
+  --info: hsl(199 75% 34%);
+  --info-foreground: hsl(0 0% 100%);
+  --border: hsl(220 14% 90%);
   /* 输入控件的线比普通分隔线略重一点，否则表单看起来"没有边界" */
-  --input: hsl(0 0% 88%);
-  /* 焦点环要单独满足 3:1（WCAG 1.4.11），所以它比边框重得多 */
-  --ring: hsl(0 0% 9% / 60%);
-  --overlay: hsl(0 0% 0% / 32%);
+  --input: hsl(220 14% 84%);
+  /* 焦点环要单独满足 3:1（WCAG 1.4.11），所以用纯色而不是半透明 */
+  --ring: hsl(243 62% 44%);
+  --overlay: hsl(222 30% 12% / 40%);
   /* 可选玻璃层的填充。默认卡面不用它，见文件末尾 .glass 的说明。 */
   --glass: hsl(0 0% 100% / 70%);
   --glass-blur: 12px;
-  --radius: 0.375rem;
+  /* 圆角从 6px 放到 10px：6px 是"企业后台"的味道，10px 才像近几年的产品 */
+  --radius: 0.625rem;
   /* 阴影一律是"1px 实线 + 多层低透明黑"，不是单层 box-shadow */
   --card-shadow:
-    0 1px 1px hsl(0 0% 0% / 2%), 0 2px 4px -1px hsl(0 0% 0% / 3%), 0 8px 16px -4px hsl(0 0% 0% / 4%);
+    0 1px 2px hsl(222 30% 12% / 4%), 0 2px 6px -1px hsl(222 30% 12% / 5%),
+    0 10px 20px -6px hsl(222 30% 12% / 6%);
   --popover-shadow:
-    0 1px 1px hsl(0 0% 0% / 2%), 0 8px 16px -4px hsl(0 0% 0% / 6%),
-    0 24px 32px -8px hsl(0 0% 0% / 8%);
+    0 1px 2px hsl(222 30% 12% / 5%), 0 8px 20px -4px hsl(222 30% 12% / 8%),
+    0 24px 40px -8px hsl(222 30% 12% / 10%);
 }
 
 .dark {
-  --background: hsl(0 0% 4%);
-  --foreground: hsl(0 0% 93%);
-  --card: hsl(0 0% 7%);
-  --card-solid: hsl(0 0% 7%);
-  --card-foreground: hsl(0 0% 93%);
-  --popover: hsl(0 0% 9%);
-  --popover-foreground: hsl(0 0% 93%);
-  --primary: hsl(0 0% 93%);
-  --primary-foreground: hsl(0 0% 4%);
-  --secondary: hsl(0 0% 10%);
-  --secondary-foreground: hsl(0 0% 93%);
-  --muted: hsl(0 0% 10%);
-  --muted-foreground: hsl(0 0% 63%);
-  --accent: hsl(0 0% 13%);
-  --accent-foreground: hsl(0 0% 93%);
-  --destructive: hsl(0 85% 72%);
-  --destructive-foreground: hsl(0 0% 4%);
-  --border: hsl(0 0% 18%);
-  --input: hsl(0 0% 24%);
-  --ring: hsl(0 0% 93% / 60%);
-  --overlay: hsl(0 0% 0% / 60%);
-  --glass: hsl(0 0% 9% / 70%);
-  --card-shadow: 0 1px 1px hsl(0 0% 0% / 30%), 0 8px 16px -4px hsl(0 0% 0% / 40%);
-  --popover-shadow: 0 1px 1px hsl(0 0% 0% / 40%), 0 16px 32px -8px hsl(0 0% 0% / 60%);
+  --background: hsl(222 22% 7%);
+  --foreground: hsl(220 16% 94%);
+  --card: hsl(222 20% 10%);
+  --card-solid: hsl(222 20% 10%);
+  --card-foreground: hsl(220 16% 94%);
+  --popover: hsl(222 20% 12%);
+  --popover-foreground: hsl(220 16% 94%);
+  /* 深色下主色必须变亮，否则按钮像"没上色" */
+  --primary: hsl(243 72% 74%);
+  --primary-foreground: hsl(243 60% 12%);
+  --secondary: hsl(222 16% 16%);
+  --secondary-foreground: hsl(243 40% 88%);
+  --muted: hsl(222 14% 16%);
+  --muted-foreground: hsl(220 12% 66%);
+  --accent: hsl(243 24% 20%);
+  --accent-foreground: hsl(243 60% 88%);
+  --destructive: hsl(0 80% 70%);
+  --destructive-foreground: hsl(0 60% 10%);
+  --success: hsl(152 45% 62%);
+  --success-foreground: hsl(152 60% 10%);
+  --warning: hsl(35 80% 64%);
+  --warning-foreground: hsl(32 80% 12%);
+  --info: hsl(199 70% 66%);
+  --info-foreground: hsl(199 80% 10%);
+  --border: hsl(222 14% 20%);
+  --input: hsl(222 14% 26%);
+  --ring: hsl(243 72% 74%);
+  --overlay: hsl(0 0% 0% / 62%);
+  --glass: hsl(222 20% 12% / 70%);
+  --card-shadow: 0 1px 2px hsl(0 0% 0% / 35%), 0 10px 20px -6px hsl(0 0% 0% / 45%);
+  --popover-shadow: 0 1px 2px hsl(0 0% 0% / 45%), 0 18px 36px -8px hsl(0 0% 0% / 60%);
 }
-
 /*
  * inline 让工具类直接引用上面的变量而不是把值内联进每个类，
  * 这是主题能在运行时切换的前提（否则 .dark 里的值永远不会生效）。
@@ -129,6 +151,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -138,14 +166,15 @@
   --shadow-popover: var(--popover-shadow);
 
   /*
-   * 圆角按 Geist 的 materials 规范映射：base/small = 6px，menu/modal/large = 12px。
-   * 组件源码里按钮与输入框用 rounded-lg、对话框用 rounded-xl、徽章用胶囊，
-   * 这样映射后它们正好落在 6px 与 12px 两档上，不必去改每个组件的类名。
+   * 圆角**从 --radius 派生**，不再各写一个死值。
+   * 原先的 4/6/6/12 是照 Geist 的 materials 规范写死的，于是 :root 里的 --radius
+   * 改什么都不生效（实测：改成 0.625rem 毫无变化）——那种"两处定义、一处是摆设"
+   * 是最难发现的坑。组件不动：按钮/输入 rounded-lg、对话框 rounded-xl。
    */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 6px;
-  --radius-xl: 12px;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   /*
    * 标题阶梯。Geist 的标题是 semibold + 负字距，且字距随字号收紧（32px 约 -0.04em）。
