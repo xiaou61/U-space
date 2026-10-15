@@ -2091,3 +2091,18 @@ schema_version: 1
 - 验证：无源码改动，故无测试；工件内部一致性用 grep 复核（`.agent` 下除历史日志外已无 `WORK-008` 残留）
 - 本地提交：见下一笔
 - 远端推送：见下一笔
+
+## 2026-10-15 15:30:00 +0800 · WORK-007 · RustFS 服务器端尖刺（验证通过）
+
+- 类型：change（服务器侧试验，**仓库无源码改动**）
+- 用户要求：「中间件的验证就都放到服务器上」「对象存储我其实也是做成插件这种，就是我以后想换的话是可以随时换的这种，可扩展性高一点的」「你先验证 RustFS，弄好后有什么需要我确定的再给我说」。
+- **本轮核实到的 RustFS 事实（从服务器走 GitHub API，我本机到 GitHub 不通所以之前拿不到）**：**34,934 star / 1,592 fork / 49 open issues**；**Apache-2.0**；仓库 2023-11-23 建、**当天（2026-10-15）仍在提交**；可见发布 100+ 条，最早的可见 tag 是 `1.0.0-alpha.24`(2025-07-16)；**GA=1.0.0(2026-09-16)、1.0.1(2026-10-03)**、另有 1.0.2-preview.1(2026-10-14)；发 `.deb/.rpm/zip`；README 的兼容矩阵标注 S3 Core Features=Available、Single Node Mode=Available。
+- **安装方式：解包不安装**（`dpkg -x`）。原因：机器上 9000 端口**从公网可达**，而官方单元的 `RUSTFS_ADDRESS` 默认是 `:9000`（全网卡）+ 默认凭据，`dpkg -i` 会直接把对象存储暴露出去；解包后手工用环境变量起，也便于一条命令彻底删除。
+- **运行现状（仍在跑，等你决定去留）**：`/opt/rustfs-trial/`（440MB，含 75MB 的 deb、venv、data），二进制 `root/usr/bin/rustfs`，随机凭据写在 `creds.env`(600)，数据目录 `data/`；**只监听 `127.0.0.1:9000`(S3) 与 `127.0.0.1:9001`(控制台)**；启动到 ready 约 10 秒，**RSS 145–170MB**，启动时 CPU 约 5%。
+- **S3 协议验证（boto3，9 项全过）**：建桶 / 用 **UUID 作为 key** 上传 / `head_object` 能取回 **ContentType 与长度**（端口注释里"contentType 给 S3 做对象元数据"的预判成立）/ 读回内容一致 / 列表 / **预签名 URL 直读 200**（含 `X-Amz-Signature`+`Expires`，裁决 ③B 技术上可行）/ 删对象 / 删桶。
+- **Java 侧可行性**：`software.amazon.awssdk:s3:2.31.0` 能从 Maven Central 拉到（本机 `mvn dependency:get` 成功）——「第二个实现」没有未知风险了。
+- 两个附带事实：① `dl.min.io` 已 **410**（MinIO 客户端也不能从官方下了，与社区版停维护一致）；② RustFS 启动日志里有一次**外发更新检查**（"Current version is up to date"）——常驻进程会对外发起请求，正式部署时要考虑关掉或放行。
+- 未做（等用户裁决）：**没写任何 Java 实现**、**生产未切换**、**没装 systemd 单元**。
+- 卸载一条命令：`pkill -f 'rustf[s] server'; rm -rf /opt/rustfs-trial`
+- 本地提交：见下一笔（仅本记录与需求稿）
+- 远端推送：见下一笔
