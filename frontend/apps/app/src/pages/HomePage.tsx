@@ -10,7 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  PageHeader,
   Spinner,
 } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
@@ -48,10 +47,21 @@ export function HomePage() {
 
   return (
     <AppShell title="Paideia" subtitle="首页" actions={<LearnerHeader />}>
-      <PageHeader
-        title={`你好，${user?.username ?? ''}`}
-        description="右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。"
-      />
+      {/*
+        hero：首页先给一个"这是一块地方"的第一印象。用 token 里的渐变（accent → 底色），
+        不引任何图片；右侧不放插画，免得又变成一屏空白。
+      */}
+      <section className="border-border from-accent via-background to-background mb-10 rounded-2xl border bg-gradient-to-br px-8 py-10">
+        <h1 className="text-3xl font-semibold tracking-tight">你好，{user?.username ?? ''}</h1>
+        <p className="text-muted-foreground mt-3 max-w-2xl text-[0.9375rem] leading-7">
+          右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。
+        </p>
+        <div className="mt-7">
+          <Button render={<Link to="/knowledge" />} data-testid="hero-open-knowledge">
+            去知识库
+          </Button>
+        </div>
+      </section>
 
       {/* 首页的第一件事是**把人送进去**：登录后落在 /，这里没有任何去处就等于没有首页 */}
       <div className="mb-10 grid gap-4 sm:grid-cols-3" data-testid="home-entries">

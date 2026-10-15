@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { LEARNER } from './env'
+
 /**
  * 我的笔记（AC-010 的界面一半）。
  *
@@ -10,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
  * 否则重复跑会互相看见对方的残留。
  */
 
-const SEED_LEARNER = { identifier: 'seed-learner', password: 'seed-learner-password' }
+const SEED_LEARNER = LEARNER
 
 async function signIn(page: Page, account: { identifier: string; password: string }) {
   await page.goto('/')

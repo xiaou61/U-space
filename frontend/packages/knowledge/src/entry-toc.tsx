@@ -23,9 +23,9 @@ export function EntryToc({ markdown }: { markdown: string }) {
     <nav
       aria-label="正文目录"
       data-testid="entry-toc"
-      className="border-border bg-muted/40 mb-8 rounded-md border p-4"
+      className="border-border border-l pl-4"
     >
-      <div className="text-muted-foreground mb-2 text-xs font-medium">目录</div>
+      <div className="text-muted-foreground mb-3 text-xs font-medium">本页目录</div>
       <ul className="space-y-1">
         {headings.map((heading) => (
           <li key={heading.id} style={{ paddingLeft: `${(heading.level - 1) * 12}px` }}>
@@ -35,7 +35,7 @@ export function EntryToc({ markdown }: { markdown: string }) {
                 const target = document.getElementById(heading.id)
                 target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
-              className="text-muted-foreground hover:text-foreground text-left text-xs underline-offset-2 hover:underline"
+              className="text-muted-foreground hover:text-foreground text-left text-xs leading-6 underline-offset-2 transition-colors hover:underline"
             >
               {heading.text}
             </button>

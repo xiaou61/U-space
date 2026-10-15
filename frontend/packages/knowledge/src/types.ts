@@ -15,12 +15,14 @@ export interface PageResult<T> {
   items: T[]
 }
 
-/** 列表项：**不含正文**（后端列表查询刻意不取 body）。 */
+/** 列表项：**不含正文**（后端列表查询刻意不取 body），但带一句截断的摘要。 */
 export interface EntrySummary {
   id: number
   title: string
   categoryId: number | null
   categoryName: string | null
+  /** 正文前 200 字（未清洗）；可能为 null（老数据或正文为空）。 */
+  excerpt: string | null
   updatedAt: string
 }
 

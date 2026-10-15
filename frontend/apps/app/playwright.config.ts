@@ -4,6 +4,9 @@ import { defineConfig, devices } from '@playwright/test'
 const BACKEND_DIR = '../../../backend'
 const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
 
+/** 指向已部署实例：设了就跳过本地 webServer（也就**不需要 3307 隧道**）。 */
+const REMOTE_BASE_URL = process.env.E2E_BASE_URL
+
 export default defineConfig({
   testDir: './e2e',
   // 后端是有状态资源，并行执行会让多个 worker 抢同一端口与同一份数据
@@ -11,7 +14,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: REMOTE_BASE_URL ?? 'http://127.0.0.1:5173',
     // 首次重试才留 trace：稳定运行时零开销，失败时会话可完整回放
     trace: 'on-first-retry',
   },
@@ -21,7 +24,9 @@ export default defineConfig({
    * 同时拉起后端与前端。只起前端会拿到代理错误而不是后端真实返回，
    * 那验证不了「页面展示的是接口真实数据」这条验收标准。
    */
-  webServer: [
+  webServer: REMOTE_BASE_URL
+    ? undefined
+    : [
     {
       /**
        * 用 local profile 启动后端：应用现在必须有数据源才能起来，

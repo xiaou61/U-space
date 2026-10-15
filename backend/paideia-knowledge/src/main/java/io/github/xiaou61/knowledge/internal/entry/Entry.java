@@ -17,6 +17,8 @@ public class Entry {
     private Long categoryId;
     private String title;
     private String body;
+    /** **只有列表查询填充**（`LEFT(body, 200)`）；详情查询不填，为 null。 */
+    private String excerpt;
     /** draft | published */
     private String status;
     private Instant publishedAt;
@@ -53,6 +55,14 @@ public class Entry {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getExcerpt() {
+        return excerpt;
+    }
+
+    public void setExcerpt(String excerpt) {
+        this.excerpt = excerpt;
     }
 
     public String getStatus() {

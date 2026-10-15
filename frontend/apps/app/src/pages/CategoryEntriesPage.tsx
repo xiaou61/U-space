@@ -23,6 +23,20 @@ import { LearnerHeader } from '../components/LearnerHeader'
 const knowledge = createKnowledgeApi(api)
 
 /**
+ * 摘要是**正文前 200 字**，里面还带着 markdown 记号（`##`、`**`、链接语法）。
+ * 卡片上要的是"读得懂的一句话"，所以把最常见的几种记号抹掉——**不渲染 markdown**：
+ * 摘要里出现半截的表格/代码块只会更难看。
+ */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[`*_>#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
  * 某个分类（或全部）下的条目列表——分类那一层的**二级页**。
  *
  * <p>同一个组件服务两条路由：`/knowledge/categories/:categoryId`（某个分类）与 `/knowledge/entries`
@@ -126,9 +140,16 @@ export function CategoryEntriesPage() {
                 <Link
                   to={`/knowledge/entries/${item.id}`}
                   data-testid={`entry-link-${item.id}`}
-                  className="group flex h-full flex-col justify-between gap-4"
+                  className="group flex h-full flex-col justify-between gap-3"
                 >
-                  <span className="text-base font-medium leading-snug">{item.title}</span>
+                  <span>
+                    <span className="text-base font-medium leading-snug">{item.title}</span>
+                    {item.excerpt === null || item.excerpt === '' ? null : (
+                      <span className="text-muted-foreground mt-1.5 line-clamp-2 block text-sm leading-relaxed">
+                        {plainText(item.excerpt)}
+                      </span>
+                    )}
+                  </span>
                   <span className="flex items-center gap-3">
                     {item.categoryName === null ? null : <Badge variant="secondary">{item.categoryName}</Badge>}
                     <span className="text-muted-foreground text-xs">

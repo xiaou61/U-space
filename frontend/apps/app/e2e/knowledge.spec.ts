@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { LEARNER } from './env'
+
 /**
  * 学习者端知识库的端到端检查。
  *
@@ -10,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
  * 种来源下会失效，所以整个应用用 Hash。
  */
 
-const SEED_LEARNER = { identifier: 'seed-learner', password: 'seed-learner-password' }
+const SEED_LEARNER = LEARNER
 
 async function signIn(page: Page, account: { identifier: string; password: string }) {
   await page.goto('/')

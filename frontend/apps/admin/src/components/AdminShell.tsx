@@ -218,10 +218,10 @@ function NavLink({
       title={label}
       aria-current={active ? 'page' : undefined}
       data-active={active ? 'true' : undefined}
-      className={`flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors ${
+      className={`flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm transition-colors ${
         active
-          ? 'bg-muted text-foreground font-medium'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+          ? 'bg-accent text-accent-foreground font-medium'
+          : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
       } ${collapsed ? 'justify-center' : ''}`}
     >
       <Icon className="size-4 shrink-0" />

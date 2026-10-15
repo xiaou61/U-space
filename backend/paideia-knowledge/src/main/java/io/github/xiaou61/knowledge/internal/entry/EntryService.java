@@ -46,8 +46,12 @@ public class EntryService {
         this.selfAssessmentService = selfAssessmentService;
     }
 
-    /** 列表项：**不含正文**。正文可能有几十 KB，列表里取回来纯属浪费。 */
-    public record EntrySummary(Long id, String title, Long categoryId, String categoryName, Instant updatedAt) {
+    /**
+     * 列表项：**不含正文**（正文可能有几十 KB），但带一句**截断的摘要**——只给标题的列表
+     * 卡片会显得空荡（用户反馈"页面过于单调"）。
+     */
+    public record EntrySummary(Long id, String title, Long categoryId, String categoryName,
+                               String excerpt, Instant updatedAt) {
     }
 
     /** 关系与相邻条目用的最小引用。 */
@@ -106,6 +110,7 @@ public class EntryService {
                         row.getTitle(),
                         row.getCategoryId(),
                         nameOf(categoriesById, row.getCategoryId()),
+                        row.getExcerpt(),
                         row.getUpdatedAt()))
                 .toList();
         return PageResult.of(total, page, items);

@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { LEARNER } from './env'
+
 /**
  * 悬浮助手壳的端到端检查（AC-001 的界面一半）。
  *
@@ -11,7 +13,7 @@ import { expect, test, type Page } from '@playwright/test'
  * 按钮是禁用而不是报错。
  */
 
-const SEED_LEARNER = { identifier: 'seed-learner', password: 'seed-learner-password' }
+const SEED_LEARNER = LEARNER
 
 async function signIn(page: Page, account: { identifier: string; password: string }) {
   await page.goto('/')

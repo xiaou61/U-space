@@ -239,7 +239,7 @@ export function KnowledgeEntriesPage() {
                     {entry.categoryName ?? '未分类'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={entry.status === 'published' ? 'outline' : 'secondary'}>
+                    <Badge variant={entry.status === 'published' ? 'success' : 'warning'}>
                       {entry.status === 'published' ? '已发布' : '草稿'}
                     </Badge>
                   </TableCell>

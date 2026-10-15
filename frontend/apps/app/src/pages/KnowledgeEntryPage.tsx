@@ -66,7 +66,7 @@ export function KnowledgeEntryPage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />}>
+    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />} wide>
       <p className="mb-6 text-sm">
         <Link to="/knowledge" className="text-muted-foreground underline-offset-4 hover:underline">
           ← 返回知识库
@@ -94,7 +94,8 @@ export function KnowledgeEntryPage() {
       ) : null}
 
       {entry.isSuccess ? (
-        <article>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]">
+          <article className="min-w-0">
           <PageHeader
             title={entry.data.title}
             description={
@@ -104,7 +105,6 @@ export function KnowledgeEntryPage() {
             }
           />
 
-          <EntryToc markdown={entry.data.body} />
           <MarkdownBody markdown={entry.data.body} mediaBaseUrl={API_BASE_URL} />
 
           <div className="mt-8">
@@ -151,7 +151,18 @@ export function KnowledgeEntryPage() {
             <RelationList title="相关内容" items={entry.data.related} testId="entry-related" />
             <RelationList title="看完这篇再看" items={entry.data.dependents} testId="entry-dependents" />
           </section>
-        </article>
+          </article>
+
+          {/*
+            目录移到右侧粘性侧栏：长文里"边读边看我在哪"比在正文上方摆一个框有用；
+            小屏没有侧栏空间，此时不显示（窄屏目录价值本来也低）。
+          */}
+          <aside className="hidden lg:block">
+            <div className="lg:sticky lg:top-20">
+              <EntryToc markdown={entry.data.body} />
+            </div>
+          </aside>
+        </div>
       ) : null}
     </AppShell>
   )

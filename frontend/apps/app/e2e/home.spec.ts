@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { LEARNER } from './env'
+
 /**
  * 学习者端的端到端检查。
  *
@@ -10,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
  * <p>种子账号来自 db/devdata（只有测试会加载它），口令是固定的测试值。
  */
 
-const SEED_LEARNER = { identifier: 'seed-learner', password: 'seed-learner-password' }
+const SEED_LEARNER = LEARNER
 
 async function signIn(page: Page) {
   await page.goto('/')
