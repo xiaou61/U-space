@@ -57,3 +57,62 @@ MSYS_NO_PATHCONV=1 E2E_BASE_URL=http://<服务器>:8081 E2E_ADMIN_PATH=/admin/ \
 ## 提交节奏的理由
 
 本仓库可能同时有多个会话在同一工作区改动，攒着不提交会让"哪些改动属于谁"变得不可判定，也让误操作的回退范围变大。分笔提交把回退粒度压到一轮。
+
+## 附件存储：对象存储（WORK-007，2026-10-15 起）
+
+**形态**：附件走自建 S3 兼容服务 **RustFS 1.0.1**，与后端**同机**（服务器没有 Docker）。
+
+| 项 | 位置/取值 |
+| --- | --- |
+| systemd 单元 | `rustfs`（enabled + active，`Restart=always`） |
+| 二进制 | `/usr/local/bin/rustfs`（来自官方 `.deb`，**解包而不是 `dpkg -i`**） |
+| 数据 | `/var/lib/rustfs/data`（桶 `paideia-attachments`） |
+| 配置 | `/etc/rustfs/rustfs.env`（**600，仅 root**，凭据随机生成；`*.bak-*` 是改动前的备份） |
+| 监听 | **`0.0.0.0:9000`（S3 API，刻意对公网开放）**；控制台**已关闭**（`RUSTFS_CONSOLE_ENABLE=false`） |
+| 应用侧 | `/opt/paideia-app/application.yml` 的 `paideia.knowledge.storage: s3` + `s3.*`（endpoint 用**公网地址**，因为浏览器要直连它） |
+| 应用日志 | 启动时打一行 `附件存储：对象存储 <endpoint> 桶 <bucket>`（**不含凭据**） |
+
+**为什么对象存储要对公网开放**：读路径是"后端 302 → 预签名 URL → 浏览器直连对象存储"，所以浏览器必须够得着它。加固是配套的：控制台关闭、桶私有（无匿名策略，任何读取都要有效签名）、凭据随机且只在 600 文件里、签名有效期 7 天。
+
+**为什么没开 9000 以外的口**：这台机器上非 80/443/8080 的端口本来就公网可达（云安全组只管那三个），所以"开放"和"只开这一个口"是同一件事。
+
+### 切换与回滚
+
+```yaml
+# /opt/paideia-app/application.yml
+paideia:
+  knowledge:
+    storage: s3        # 改回 local 即回退
+```
+
+改完 `systemctl restart paideia` 生效（**不做运行时不重启热切**：存储位置会变，热切需要额外的一致性设计）。
+
+**⚠️ 回滚是有损的**：切回 `local` 之后，期间上传到对象存储的附件**会 404**（字节在对象存储里，本地目录没有）。切换前先确认这个损失面可接受——2026-10-15 首次切换时线上附件为 **0 条**，所以那次损失面为零。
+
+### 新环境要手动建桶（应用**不自动建桶**）
+
+故意不自动建：配错桶名时自动建会让"附件看起来全都消失了"（其实进了另一个桶），极难排查。新环境先建一次：
+
+```bash
+python3 -c "import boto3; boto3.client('s3', endpoint_url='http://<host>:9000', aws_access_key_id='<AK>', aws_secret_access_key='<SK>', region_name='us-east-1').create_bucket(Bucket='paideia-attachments')"
+```
+
+（或者用 `mc mb`；注意 `dl.min.io` 已 410，mc 要从 GitHub 下。）
+
+### 两个参数与它们的理由
+
+- `presign-ttl: 7d`——预签名 URL 的有效期。
+- `redirect-cache: 1h`——**302 跳转本身**允许被浏览器缓存多久，必须**小于** presign-ttl（装配期会拦住反过来的配置）。
+  这条参数是为了补一个副作用：签名 URL 每次都不同，而浏览器缓存按完整 URL 索引，所以"每次都换签名"会把本项之前靠"id 不变"换来的一年浏览器缓存打到 0。让 302 自己缓存一小时，同一小时内的重复加载直接用缓存里的跳转，既不回后端也不回对象存储。
+
+### 排障
+
+```bash
+systemctl status rustfs; journalctl -u rustfs -n 50          # 对象存储侧
+journalctl -u paideia | grep 附件存储                          # 应用选了哪个后端
+curl -i http://<host>:8081/api/v1/knowledge/files/<uuid>      # 期望 302 + Location 指向 :9000
+curl -sL -o /tmp/a.png http://<host>:8081/api/v1/knowledge/files/<uuid>   # 跟随后应拿到字节
+```
+
+**跑集成/契约测试需要两条隧道**：3307（MySQL）与 9000（对象存储）。契约测试的 S3 那条以环境变量为开关（`PAIDEIA_KNOWLEDGE_S3_ENDPOINT`），没有隧道时**跳过而不是失败**。
+
