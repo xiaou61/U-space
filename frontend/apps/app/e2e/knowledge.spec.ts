@@ -88,9 +88,12 @@ test('分类网格 → 分类页 → 条目列表 → 条目正文，一级级�
   await page.getByTestId('category-grid').locator('a').first().click()
   await expect(page).toHaveURL(/#\/knowledge\/categories\/\d+$/)
   await expect(page.getByTestId('back-to-categories')).toBeVisible()
-  await expect(page.getByTestId('entry-list')).toBeVisible()
+  // 二级页必须给出明确状态：有列表，或明确的空态。**不能假定第一个分类里有条目**——
+  // 测试库里真的存在空分类（集成测试建过又没删掉的），线上每条分类都非空，两种库都要能跑。
+  await expect(page.getByTestId('entry-list').or(page.getByTestId('entry-empty'))).toBeVisible()
 
-  // 进正文：标题对得上、"markdown 真被渲染成元素"
+  // 进正文走"全部条目"这条路：它覆盖全库，不依赖某个分类是否为空
+  await openAllEntries(page)
   const title = await firstEntryTitle(page)
   await firstEntryLink(page).click()
   await expect(page).toHaveURL(/#\/knowledge\/entries\/\d+$/)
@@ -98,9 +101,9 @@ test('分类网格 → 分类页 → 条目列表 → 条目正文，一级级�
 
   const body = page.getByTestId('markdown-body')
   await expect(body).toBeVisible()
-  // 把源码当纯文本显示时，这里既不会有段落元素也不会有标题元素
+  // 把源码当纯文本显示时这里一个块级元素都不会有。**不要顺带断言"必有标题"**：
+  // 纯散文条目是合法内容（本地种子里就有一条），标题渲染交给下面那条目录用例。
   expect(await body.locator('p, ul, ol, pre, table, blockquote').count()).toBeGreaterThan(0)
-  expect(await body.locator('h1, h2, h3, h4').count()).toBeGreaterThan(0)
 })
 
 test('目录与正文标题一一对应，且点击不改地址栏', async ({ page }) => {
@@ -155,6 +158,10 @@ test('同分类内的上一篇／下一篇能往返', async ({ page }) => {
   let verified = false
   for (const testId of testIds) {
     await page.goto(`/#/knowledge/entries/${testId.replace('entry-link-', '')}`)
+    // **先等页面进入确定状态再判**：`entry-next` 只在条目加载成功后才渲染，
+    // 直接问"有没有链接"会在查询还没回来时一律得到"没有"，于是整条用例静默跳过
+    // （实测就栽在这：本地明明有相邻两篇，却因为这一脚永远走到 skip）。
+    await expect(page.getByTestId('entry-next')).toBeVisible()
     const next = page.getByTestId('entry-next').getByRole('link')
     if ((await next.count()) === 0) {
       continue
