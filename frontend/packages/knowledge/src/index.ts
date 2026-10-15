@@ -27,6 +27,7 @@ export { resolveMediaUrl } from './media'
 export { plainText } from './plain-text'
 export { SelfAssessmentButtons } from './self-assessment'
 export { MarkdownBody } from './markdown-body'
+export { MarkdownField } from './markdown-field'
 export { KnowledgeNeighborhood } from './neighborhood'
 export type {
   AssessedItem,

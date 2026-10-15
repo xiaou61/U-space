@@ -71,7 +71,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
     <div className="flex min-h-screen">
       <aside
         className={`border-border bg-card sticky top-0 flex h-screen shrink-0 flex-col border-r transition-[width] duration-200 ${
-          collapsed ? 'w-14' : 'w-52'
+          collapsed ? 'w-14' : 'w-56'
         }`}
       >
         <div className="border-border flex h-14 items-center gap-2.5 border-b px-3">
@@ -124,7 +124,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
                   className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm transition-colors ${
                     active
                       ? 'text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
                   } ${collapsed ? 'justify-center' : ''}`}
                 >
                   <Icon className="size-4 shrink-0" />
@@ -218,10 +218,10 @@ function NavLink({
       title={label}
       aria-current={active ? 'page' : undefined}
       data-active={active ? 'true' : undefined}
-      className={`flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm transition-colors ${
+      className={`flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm transition-colors ${
         active
-          ? 'bg-accent text-accent-foreground font-medium'
-          : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+          ? 'border-border bg-accent text-accent-foreground font-medium'
+          : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground border-transparent'
       } ${collapsed ? 'justify-center' : ''}`}
     >
       <Icon className="size-4 shrink-0" />

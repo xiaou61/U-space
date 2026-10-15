@@ -1,48 +1,66 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { signIn } from './session'
 
 /**
  * 我的笔记（AC-010 的界面一半）。
  *
- * <p>走真实后端：建档→改名改正文→保存→**重新加载页面**（证明真的落了库，而不是只活在内存里）
- * →删除。删除的二次确认**从 `window.confirm` 换成了应用自己的对话框**（2026-10-15），
- * 所以这里点的是界面上的按钮，不再接管原生对话框。
+ * <p>三条与实现同步的约定：
+ * <ul>
+ *   <li><b>新建走独立的一页</b>（`/notes/new`），建完回到列表页并自动选中那条。2026-10-15 用户
+ *       要求"新建应该是弹窗或者一个页面，因为后面要在这上面加很多功能"——所以这里点的是
+ *       `notes-create` → 在 `new-note-*` 上写内容 → `new-note-create`。</li>
+ *   <li><b>删除/切走用应用自己的对话框</b>，不再接管 `window.confirm`。</li>
+ *   <li><b>草稿状态必须说得清</b>：改过就有 `note-dirty`，保存后回到「与服务端一致」。</li>
+ * </ul>
  *
  * <p>种子账号的笔记是持久的，所以每条用例自己建、自己删，并且标题带唯一后缀——
  * 否则重复跑会互相看见对方的残留。
  */
 
-test('从导航进入笔记：建档→编辑→保存→重载仍在→删除', async ({ page }) => {
+/** 走"新建笔记"独立页建一条，回来时列表页应当已经选中它。 */
+async function createNote(page: Page, title: string, body: string): Promise<void> {
+  await page.getByTestId('notes-create').click()
+  await expect(page).toHaveURL(/#\/notes\/new$/)
+  await page.getByTestId('new-note-title').fill(title)
+  if (body !== '') {
+    await page.getByTestId('new-note-body').fill(body)
+  }
+  await page.getByTestId('new-note-create').click()
+  // 回到列表页，并且刚建的那条已经打开
+  await expect(page).toHaveURL(/#\/notes$/)
+  await expect(page.getByTestId('note-title')).toHaveValue(title)
+}
+
+test('新建走独立页：建档→改一次并保存→重载仍在→删除', async ({ page }) => {
   await signIn(page)
   // 入口在主导航里（"某个页面忘了加入口"是 2026-10-12 修过的真缺陷，这里顺带钉住）
   await page.getByTestId('learner-nav-notes').click()
   await expect(page.getByTestId('notes-placeholder')).toBeVisible()
 
-  await page.getByTestId('notes-create').click()
-  // 等编辑器真的换到新那条：不然紧接着的 fill 可能落到上一条的输入框上
-  await expect(page.getByTestId('note-title')).toHaveValue('未命名笔记')
-
   const title = `e2e 笔记 ${Date.now()}`
-  await page.getByTestId('note-title').fill(title)
-  await page.getByTestId('note-body').fill('正文第一版')
+  await createNote(page, title, '正文第一版')
 
-  // 改过之后"存了没有"必须说得清，而不是只有一个保存按钮
+  // 创建即保存，所以一回来就该是"与服务端一致"，正文也从服务端读到
+  await expect(page.getByTestId('note-body')).toHaveValue('正文第一版')
+  await expect(page.getByTestId('note-dirty')).toHaveCount(0)
+
+  // 列表里出现标题与**摘要**——摘要是后端列表查询截的（LEFT(body,200)）
+  await expect(page.getByTestId('notes-list')).toContainText(title)
+  await expect(page.getByTestId('notes-list')).toContainText('正文第一版')
+
+  // 改一次再保存："存了没有"必须说得清
+  await page.getByTestId('note-body').fill('正文第二版')
   await expect(page.getByTestId('note-dirty')).toBeVisible()
   await page.getByTestId('note-save').click()
   await expect(page.getByTestId('note-dirty')).toHaveCount(0)
   await expect(page.getByTestId('note-save-state')).toHaveText('与服务端一致')
 
-  // 保存后列表里出现新标题，并且**带上了摘要**——摘要是后端列表查询截的（LEFT(body,200)），
-  // 所以这一条同时验了"列表带摘要"这条新行为
-  await expect(page.getByTestId('notes-list')).toContainText(title)
-  await expect(page.getByTestId('notes-list')).toContainText('正文第一版')
-
   // 重新加载：内容是从库里读回来的，不是内存里的草稿
   await page.reload()
   await page.getByTestId('learner-nav-notes').click()
   await page.getByTestId('notes-list').getByText(title).click()
-  await expect(page.getByTestId('note-body')).toHaveValue('正文第一版')
+  await expect(page.getByTestId('note-body')).toHaveValue('正文第二版')
 
   // 删除要二次确认：现在是应用自己的对话框
   await page.getByTestId('note-delete').click()
@@ -53,16 +71,83 @@ test('从导航进入笔记：建档→编辑→保存→重载仍在→删除',
   await expect(page.getByText(title)).toHaveCount(0)
 })
 
+test('新建页能预览 markdown；详情里改没改说得清', async ({ page }) => {
+  await signIn(page)
+  await page.getByTestId('learner-nav-notes').click()
+
+  const title = `e2e 状态 ${Date.now()}`
+  await page.getByTestId('notes-create').click()
+  await expect(page).toHaveURL(/#\/notes\/new$/)
+  await page.getByTestId('new-note-title').fill(title)
+  // 用模板字符串写正文：里面的换行就是 markdown 的换行，不写成 \n 转义
+  await page.getByTestId('new-note-body').fill(`## 小标题
+
+一条带 **粗体** 的正文`)
+
+  // 新建页的预览：markdown 真的被渲染成元素，而不是把源码当文字显示
+  await page.getByTestId('new-note-tab-preview').click()
+  await expect(page.getByTestId('new-note-preview').getByRole('heading', { name: '小标题' })).toBeVisible()
+  await expect(page.getByTestId('new-note-preview')).toContainText('粗体')
+
+  await page.getByTestId('new-note-tab-edit').click()
+  await page.getByTestId('new-note-create').click()
+  await expect(page.getByTestId('note-title')).toHaveValue(title)
+
+  // 详情页里再改一次：徽章与底部文案都要跟着翻
+  await page.getByTestId('note-body').fill('改过的正文')
+  await expect(page.getByTestId('note-dirty')).toBeVisible()
+  await expect(page.getByTestId('note-meta')).toContainText('尚未保存')
+  await page.getByTestId('note-save').click()
+  await expect(page.getByTestId('note-dirty')).toHaveCount(0)
+  await expect(page.getByTestId('note-meta')).toContainText('最后编辑')
+
+  // 详情页的预览也能渲染
+  await page.getByTestId('note-tab-preview').click()
+  await expect(page.getByTestId('note-preview')).toContainText('改过的正文')
+
+  // 收尾
+  await page.getByTestId('note-delete').click()
+  await page.getByTestId('note-confirm').click()
+  await expect(page.getByText(title)).toHaveCount(0)
+})
+
+test('新建时可以把笔记挂到一条知识库条目上', async ({ page }) => {
+  await signIn(page)
+
+  // 先从条目列表拿一条真实存在的条目当检索词（不写死标题，线上库与本地种子不一样）
+  await page.goto('/#/knowledge/entries')
+  const entryTitle = (await page.getByTestId('entry-list').locator('[data-testid=entry-title]').first().innerText()).trim()
+  expect(entryTitle).not.toBe('')
+
+  await page.getByTestId('learner-nav-notes').click()
+  const title = `e2e 挂靠 ${Date.now()}`
+  await page.getByTestId('notes-create').click()
+  await page.getByTestId('new-note-title').fill(title)
+
+  await page.getByTestId('new-note-entry-search').fill(entryTitle)
+  await expect(page.getByTestId('new-note-entry-results')).toBeVisible()
+  await page.getByTestId('new-note-entry-results').locator('button').first().click()
+
+  // 选中后变成一枚可取消的标签
+  await expect(page.getByTestId('new-note-entry')).toBeVisible()
+  await page.getByTestId('new-note-create').click()
+
+  // 详情页的元信息行会写明它来自哪条条目
+  await expect(page.getByTestId('note-entry')).toContainText('来自知识库条目')
+
+  // 收尾
+  await page.getByTestId('note-delete').click()
+  await page.getByTestId('note-confirm').click()
+  await expect(page.getByText(title)).toHaveCount(0)
+})
+
 test('分享：链接免登录可读，撤回后立刻失效', async ({ page, browser }) => {
   await signIn(page)
   await page.getByTestId('learner-nav-notes').click()
-  await page.getByTestId('notes-create').click()
-  await expect(page.getByTestId('note-title')).toHaveValue('未命名笔记')
 
   const title = `e2e 分享 ${Date.now()}`
-  await page.getByTestId('note-title').fill(title)
-  await page.getByTestId('note-body').fill('分享出去的正文')
-  await page.getByTestId('note-save').click()
+  await createNote(page, title, '分享出去的正文')
+
   await page.getByTestId('note-share').click()
   // 打开只读分享对话框；**打开本身不产生副作用**，要显式点"生成"（原来点一下按钮就生成了）
   await page.getByTestId('note-share-create').click()
@@ -94,82 +179,68 @@ test('分享：链接免登录可读，撤回后立刻失效', async ({ page, br
   await expect(page.getByText(title)).toHaveCount(0)
 })
 
-test('编辑器：改没改、存没存说得清；正文能预览', async ({ page }) => {
-  await signIn(page)
-  await page.getByTestId('learner-nav-notes').click()
-  await page.getByTestId('notes-create').click()
-  await expect(page.getByTestId('note-title')).toHaveValue('未命名笔记')
-
-  const title = `e2e 状态 ${Date.now()}`
-  await page.getByTestId('note-title').fill(title)
-  // 用模板字符串写正文：里面的换行就是 markdown 的换行，不写成 \n 转义
-  await page.getByTestId('note-body').fill(`## 小标题
-
-一条带 **粗体** 的正文`)
-
-  await expect(page.getByTestId('note-dirty')).toBeVisible()
-  await expect(page.getByTestId('note-meta')).toContainText('尚未保存')
-
-  // 预览：markdown 真的被渲染成元素，而不是把源码当文字显示
-  await page.getByTestId('note-tab-preview').click()
-  await expect(page.getByTestId('note-preview').getByRole('heading', { name: '小标题' })).toBeVisible()
-  await expect(page.getByTestId('note-preview')).toContainText('粗体')
-
-  // 回到编辑、保存，状态翻转
-  await page.getByTestId('note-tab-edit').click()
-  await page.getByTestId('note-save').click()
-  await expect(page.getByTestId('note-dirty')).toHaveCount(0)
-  await expect(page.getByTestId('note-meta')).toContainText('最后编辑')
-
-  // 收尾
-  await page.getByTestId('note-delete').click()
-  await page.getByTestId('note-confirm').click()
-  await expect(page.getByText(title)).toHaveCount(0)
-})
-
 test('带着未保存的改动切走，会先问一句而不是静默丢掉', async ({ page }) => {
   await signIn(page)
   await page.getByTestId('learner-nav-notes').click()
 
   const kept = `e2e 拦截A ${Date.now()}`
-  await page.getByTestId('notes-create').click()
-  await expect(page.getByTestId('note-title')).toHaveValue('未命名笔记')
-  await page.getByTestId('note-title').fill(kept)
-  await page.getByTestId('note-save').click()
-
+  await createNote(page, kept, '先保存下来的那条')
   const editing = `e2e 拦截B ${Date.now()}`
-  await page.getByTestId('notes-create').click()
-  await expect(page.getByTestId('note-title')).toHaveValue('未命名笔记')
-  // 记下它的 id：这条**从没保存过**，列表里始终叫「未命名笔记」，只能按 id 找它
-  const unfinishedTestId =
-    (await page.getByTestId('notes-list').locator('button[data-testid^="note-item-"]').first().getAttribute('data-testid')) ?? ''
-  await page.getByTestId('note-title').fill(editing)
+  await createNote(page, editing, '第二条')
+  await expect(page.getByTestId('note-title')).toHaveValue(editing)
+
+  // 在 B 上改而不保存
   await page.getByTestId('note-body').fill('还没保存的内容')
   await expect(page.getByTestId('note-dirty')).toBeVisible()
-  // 点回第一条：必须弹确认
+
+  // 点回 A：必须弹确认
   await page.getByTestId('notes-list').getByText(kept).click()
   await expect(page.getByTestId('note-confirm-dialog')).toBeVisible()
   await page.getByRole('button', { name: '取消' }).click()
-  // 取消之后仍在原来那条上
+  // 取消之后仍在 B 上，改动还在
   await expect(page.getByTestId('note-title')).toHaveValue(editing)
+  await expect(page.getByTestId('note-body')).toHaveValue('还没保存的内容')
 
-  // 这次确认丢掉，切过去
+  // 这次确认丢掉，切到 A
   await page.getByTestId('notes-list').getByText(kept).click()
   await page.getByTestId('note-confirm').click()
   await expect(page.getByTestId('note-title')).toHaveValue(kept)
 
   // 收尾：两条都删掉（种子账号的笔记是持久的，留着会污染下一轮）
-  for (const target of [unfinishedTestId, kept]) {
-    if (target.startsWith('note-item-')) {
-      await page.getByTestId(target).click()
-    } else {
-      await page.getByTestId('notes-list').getByText(target).click()
-    }
+  for (const target of [kept, editing]) {
+    await page.getByTestId('notes-list').getByText(target).click()
     await page.getByTestId('note-delete').click()
     await page.getByTestId('note-confirm').click()
+    await expect(page.getByText(target)).toHaveCount(0)
   }
-  await expect(page.getByText(kept)).toHaveCount(0)
-  await expect(page.getByTestId(unfinishedTestId)).toHaveCount(0)
+})
+
+test('新建页没写东西就能直接返回；写了东西才拦一下', async ({ page }) => {
+  await signIn(page)
+  await page.getByTestId('learner-nav-notes').click()
+
+  // 空着返回：不该多问一句
+  await page.getByTestId('notes-create').click()
+  await page.getByTestId('new-note-back').click()
+  await expect(page).toHaveURL(/#\/notes$/)
+  await expect(page.getByTestId('new-note-discard')).toHaveCount(0)
+
+  // 写了内容再取消：先拦一下，且"继续写"要能回到编辑状态
+  await page.getByTestId('notes-create').click()
+  await page.getByTestId('new-note-title').fill(`e2e 丢弃 ${Date.now()}`)
+  await page.getByTestId('new-note-cancel').click()
+  await expect(page.getByTestId('new-note-discard')).toBeVisible()
+  await expect(page).toHaveURL(/#\/notes\/new$/)
+  await page.getByTestId('new-note-discard').getByRole('button', { name: '继续写' }).click()
+  await expect(page.getByTestId('new-note-discard')).toHaveCount(0)
+
+  // 这次真的丢掉并返回，且**没有创建任何笔记**（列表里不该多出「未命名笔记」）
+  const before = await page.getByTestId('new-note-title').inputValue()
+  expect(before.startsWith('e2e 丢弃')).toBe(true)
+  await page.getByTestId('new-note-cancel').click()
+  await page.getByTestId('new-note-discard-confirm').click()
+  await expect(page).toHaveURL(/#\/notes$/)
+  await expect(page.getByTestId(`notes-list`)).not.toContainText(before)
 })
 
 test('跟着助手的回答走：回答上带"存进笔记"入口（本环境没凭据，只验入口的挂载规则）', async ({ page }) => {

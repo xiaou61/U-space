@@ -1,8 +1,31 @@
-import { Alert, AlertDescription, AlertTitle, Badge, Button, Card, CardContent, PageHeader, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@paideia/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  PageHeader,
+  Spinner,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 
 import { api } from '../api'
+import { ConfirmDeleteDialog } from '../knowledge-shared'
 
 /** 一条举报。`noteTitle` 可能为空——笔记可能已经被作者删了。 */
 interface Report {
@@ -32,6 +55,9 @@ export function NoteReportsPage() {
 
   const reports = useQuery({ queryKey: ['note-reports'], queryFn: list })
 
+  /** 待确认下架的那条。原生 `window.confirm` 在这里与整站观感不一致，也带不了上下文。 */
+  const [pending, setPending] = useState<{ id: number; title: string } | null>(null)
+
   const remove = useMutation({
     mutationFn: takedown,
     onSuccess: () => {
@@ -53,13 +79,32 @@ export function NoteReportsPage() {
       )}
 
       <Card>
-        <CardContent className="py-4">
+        <CardContent className="px-0">
+          <div className="border-border flex items-center justify-between gap-4 border-b px-(--card-spacing) py-3">
+            <div>
+              <h2 className="text-sm font-medium">被举报的分享</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                下架后链接立刻不可读，且不可恢复。
+              </p>
+            </div>
+            {reports.isSuccess ? (
+              <span className="text-muted-foreground shrink-0 text-xs" data-testid="reports-total">
+                共 {reports.data.length} 条 · 待处理 {reports.data.filter((item) => item.status === 'pending').length} 条
+              </span>
+            ) : null}
+          </div>
           {reports.isLoading ? (
             <Spinner />
           ) : (reports.data ?? []).length === 0 ? (
-            <p className="text-muted-foreground text-sm" data-testid="reports-empty">
-              还没有人举报。
-            </p>
+            <Empty data-testid="reports-empty">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ShieldCheck />
+                </EmptyMedia>
+                <EmptyTitle>还没有人举报</EmptyTitle>
+                <EmptyDescription>学习者分享出去的笔记如果有人举报，会出现在这里等着处理。</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <Table>
               <TableHeader>
@@ -76,7 +121,10 @@ export function NoteReportsPage() {
                     <TableCell className="max-w-xs truncate">{report.noteTitle ?? '（笔记已删除）'}</TableCell>
                     <TableCell className="max-w-md whitespace-pre-wrap">{report.reason}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" data-testid={`report-status-${report.id}`}>
+                      <Badge
+                        variant={report.status === 'pending' ? 'warning' : 'secondary'}
+                        data-testid={`report-status-${report.id}`}
+                      >
                         {report.status === 'pending' ? '待处理' : '已下架'}
                       </Badge>
                     </TableCell>
@@ -87,11 +135,7 @@ export function NoteReportsPage() {
                           variant="outline"
                           disabled={remove.isPending}
                           data-testid={`report-takedown-${report.id}`}
-                          onClick={() => {
-                            if (window.confirm('下架这条分享？链接会立刻失效，不可恢复。')) {
-                              remove.mutate(report.id)
-                            }
-                          }}
+                          onClick={() => setPending({ id: report.id, title: report.noteTitle ?? '（笔记已删除）' })}
                         >
                           下架
                         </Button>
@@ -104,6 +148,22 @@ export function NoteReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDeleteDialog
+        open={pending !== null}
+        title="确认下架这条分享？"
+        label="分享"
+        name={pending?.title ?? ''}
+        confirmLabel="下架"
+        hint="链接会立刻失效，已经拿到链接的人也打不开了。"
+        busy={remove.isPending}
+        onCancel={() => setPending(null)}
+        onConfirm={() => {
+          if (pending !== null) {
+            remove.mutate(pending.id)
+          }
+        }}
+      />
     </div>
   )
 }

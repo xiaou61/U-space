@@ -1,5 +1,5 @@
 import {
-  MarkdownBody,
+  MarkdownField,
   type AdminEntryDetail,
   type AdminEntrySummary,
   type EntryInput,
@@ -14,6 +14,7 @@ import {
   CardContent,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -156,7 +157,14 @@ export function KnowledgeEntriesPage() {
 
       <Card>
         <CardContent className="px-0">
-          <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pb-3">
+          <div className="border-border flex flex-wrap items-center gap-2 border-b px-(--card-spacing) py-3">
+            <div className="mr-2">
+              <h2 className="text-sm font-medium">条目</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs" data-testid="admin-entry-total-top">
+                {entries.isSuccess ? `共 ${entries.data.total} 条` : '加载中…'}
+                {filtered.length === all.length ? '' : ` · 筛出 ${filtered.length} 条`}
+              </p>
+            </div>
             <Select
               items={STATUS_FILTER_ITEMS}
               value={statusFilter}
@@ -175,7 +183,7 @@ export function KnowledgeEntriesPage() {
             </Select>
 
             <Input
-              className="h-7 w-56"
+              className="h-9 w-56"
               placeholder="按标题筛选"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
@@ -496,6 +504,9 @@ function EntryForm({
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-3xl" data-testid="admin-entry-editor">
         <DialogHeader>
           <DialogTitle>{detail === null ? '新建条目' : `编辑条目 #${detail.id}`}</DialogTitle>
+          <DialogDescription>
+            草稿不会出现在学习者端；发布后学习者即可浏览。正文用 markdown 写，随时切到预览确认它长什么样。
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -510,11 +521,11 @@ function EntryForm({
             />
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <div>
               <Label htmlFor="admin-entry-category">分类</Label>
               <Select items={categoryItems} value={categoryId} onValueChange={(value) => setCategoryId(value)}>
-                <SelectTrigger id="admin-entry-category" className="mt-1 w-56" data-testid="admin-entry-category">
+                <SelectTrigger id="admin-entry-category" className="mt-1 w-full" data-testid="admin-entry-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -533,7 +544,7 @@ function EntryForm({
                 value={status}
                 onValueChange={(value) => setStatus(value as 'draft' | 'published')}
               >
-                <SelectTrigger id="admin-entry-status" className="mt-1 w-32" data-testid="admin-entry-status">
+                <SelectTrigger id="admin-entry-status" className="mt-1 w-full" data-testid="admin-entry-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -548,32 +559,19 @@ function EntryForm({
           </div>
 
           <div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="admin-entry-body">正文（markdown）</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                data-testid="admin-entry-preview-toggle"
-                onClick={() => setPreview((current) => !current)}
-              >
-                {preview ? '回到编辑' : '预览'}
-              </Button>
-            </div>
-            {preview ? (
-              // 预览与学习者端用同一个渲染组件：这样"预览"才等于"学习者看到的"
-              <div className="border-border mt-1 rounded-md border p-4" data-testid="admin-entry-preview">
-                <MarkdownBody markdown={body} mediaBaseUrl={API_BASE_URL} />
-              </div>
-            ) : (
-              <textarea
-                id="admin-entry-body"
-                className="border-input bg-background mt-1 block h-64 w-full rounded-md border p-3 font-mono text-xs"
+            <Label>正文（markdown）</Label>
+            {/* 与学习者端的笔记用**同一个** MarkdownField：预览等于最终效果这件事，
+                两边由同一份实现兑现 */}
+            <div className="mt-1">
+              <MarkdownField
                 value={body}
-                onChange={(event) => setBody(event.target.value)}
-                data-testid="admin-entry-body"
+                onChange={setBody}
+                testIdPrefix="admin-entry"
+                mediaBaseUrl={API_BASE_URL}
+                rows={14}
+                placeholder="用 markdown 写正文…"
               />
-            )}
+            </div>
 
             <div className="mt-2">
               {/* 原生 <input type="file"> 会渲染出英文的"Choose File"，这是这个弹窗里最扎眼的

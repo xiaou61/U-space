@@ -95,6 +95,15 @@ export function KnowledgeCategoriesPage() {
 
       <Card>
         <CardContent className="px-0">
+          <div className="border-border flex flex-wrap items-center justify-between gap-2 border-b px-(--card-spacing) py-3">
+            <div>
+              <h2 className="text-sm font-medium">分类</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs" data-testid="admin-category-total">
+                {categories.isSuccess ? `共 ${flat.length} 个（含各级子分类）` : '加载中…'}
+              </p>
+            </div>
+          </div>
+
           {categories.isPending ? <Loading label="加载分类…" /> : null}
           {categories.isError ? (
             <div className="px-(--card-spacing) pb-3">

@@ -7,6 +7,7 @@ import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
+import { NoteNewPage } from './pages/NoteNewPage'
 import { NotesPage } from './pages/NotesPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SharedNotePage } from './pages/SharedNotePage'
@@ -82,6 +83,15 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <NotesPage />
+      </RequireAuth>
+    ),
+  },
+  // 新建是**独立的一页**而不是"点一下生成一条空的"：这里以后还要长模板、标签、AI 摘要
+  {
+    path: '/notes/new',
+    element: (
+      <RequireAuth>
+        <NoteNewPage />
       </RequireAuth>
     ),
   },

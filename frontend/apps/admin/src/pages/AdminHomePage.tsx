@@ -37,7 +37,7 @@ export function AdminHomePage() {
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.label}>
+          <Card key={stat.label} className="hover:shadow-card transition-shadow">
             <CardContent className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-muted-foreground text-xs">{stat.label}</div>
@@ -45,7 +45,7 @@ export function AdminHomePage() {
                   {stat.value === undefined ? '…' : stat.value}
                 </div>
               </div>
-              <span className="bg-muted text-muted-foreground grid size-9 shrink-0 place-items-center rounded-md">
+              <span className="tile-surface border-border text-primary grid size-10 shrink-0 place-items-center rounded-lg border">
                 <stat.icon className="size-4" />
               </span>
             </CardContent>
@@ -61,29 +61,29 @@ export function AdminHomePage() {
           <Link
             to="/knowledge/categories"
             data-testid="admin-categories-link"
-            className="border-border hover:bg-muted/60 flex items-center justify-between gap-4 rounded-md border px-3 py-3 transition-colors"
+            className="border-border hover:border-primary/40 hover:bg-accent/40 group flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5"
           >
             <span className="min-w-0">
-              <span className="block text-sm font-medium">分类管理</span>
+              <span className="group-hover:text-primary block text-sm font-medium transition-colors">分类管理</span>
               <span className="text-muted-foreground mt-0.5 block text-xs">
                 层级树；条目要挂在分类上，所以先有分类。
               </span>
             </span>
-            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+            <ChevronRight className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-colors" />
           </Link>
 
           <Link
             to="/knowledge/entries"
             data-testid="admin-entries-link"
-            className="border-border hover:bg-muted/60 flex items-center justify-between gap-4 rounded-md border px-3 py-3 transition-colors"
+            className="border-border hover:border-primary/40 hover:bg-accent/40 group flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5"
           >
             <span className="min-w-0">
-              <span className="block text-sm font-medium">条目管理</span>
+              <span className="group-hover:text-primary block text-sm font-medium transition-colors">条目管理</span>
               <span className="text-muted-foreground mt-0.5 block text-xs">
                 录入与发布；发布前可用预览确认学习者看到的样子。
               </span>
             </span>
-            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+            <ChevronRight className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-colors" />
           </Link>
 
           <Empty>

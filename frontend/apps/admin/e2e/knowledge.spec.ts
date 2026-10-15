@@ -78,12 +78,13 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
   const row = rowIn(page, 'admin-entry-list', entryTitle)
   await expect(row).toContainText('草稿')
 
-  // 草稿预览：与学习者端共用同一个渲染组件，因此这里能看到渲染后的标题而不是 markdown 源码
+  // 草稿预览：与学习者端共用**同一个 MarkdownField**（编辑/预览两个标签），
+  // 因此这里能看到渲染后的标题，而不是 markdown 源码
   await row.getByRole('button', { name: '编辑' }).click()
-  await page.getByTestId('admin-entry-preview-toggle').click()
+  await page.getByTestId('admin-entry-tab-preview').click()
   await expect(page.getByTestId('admin-entry-preview')).toContainText('小节标题')
   await expect(page.getByTestId('admin-entry-preview')).not.toContainText('## 小节标题')
-  await page.getByTestId('admin-entry-preview-toggle').click()
+  await page.getByTestId('admin-entry-tab-edit').click()
 
   // 发布：把状态改成已发布再保存（设计系统的 Select：点开触发器再选，exact 避开"仅已发布"）
   await page.getByTestId('admin-entry-status').click()

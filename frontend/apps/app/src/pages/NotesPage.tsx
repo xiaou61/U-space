@@ -1,5 +1,5 @@
 import { formatRelative } from '@paideia/core'
-import { MarkdownBody, plainText } from '@paideia/knowledge'
+import { MarkdownField, plainText } from '@paideia/knowledge'
 import {
   Alert,
   AlertDescription,
@@ -21,13 +21,10 @@ import {
   Input,
   PageHeader,
   Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Copy, NotebookPen, Plus, Search, Trash2 } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -52,16 +49,31 @@ import { notes, type NoteSummary } from '../notes-api'
  */
 export function NotesPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [selected, setSelected] = useState<number | null>(null)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [tab, setTab] = useState('edit')
   const [filter, setFilter] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   /** 待确认的破坏性动作：删除，或"带着未保存的改动切走"。 */
   const [pending, setPending] = useState<{ kind: 'delete' } | { kind: 'switch'; id: number } | null>(null)
+
+  /**
+   * 从"新建笔记"页回来时带上刚创建那条的 id（路由 state），这里把它选中。
+   *
+   * <p>用路由 state 而不是全局状态：它天然只作用于"这一次跳转"，刷新页面不会莫名其妙地
+   * 选中某条笔记，也不需要把"当前选中"提到全局。
+   */
+  useEffect(() => {
+    const created = (location.state as { selected?: number } | null)?.selected
+    if (created !== undefined) {
+      setSelected(created)
+      void navigate('.', { replace: true, state: null })
+    }
+  }, [location.state, navigate])
 
   const list = useQuery({ queryKey: ['notes'], queryFn: () => notes.list() })
   const detail = useQuery({
@@ -102,7 +114,6 @@ export function NotesPage() {
       adoptedId.current = selected
       setTitle(detail.data.title)
       setBody(detail.data.body)
-      setTab('edit')
       setCopied(false)
       return
     }
@@ -118,16 +129,6 @@ export function NotesPage() {
   }
 
   const fail = (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))
-
-  const create = useMutation({
-    mutationFn: () => notes.create({ entryId: null, title: '未命名笔记', body: '' }),
-    onSuccess: (created) => {
-      setError(null)
-      setSelected(created.id)
-      invalidate()
-    },
-    onError: fail,
-  })
 
   const save = useMutation({
     mutationFn: () => notes.update(selected as number, { entryId: detail.data?.entryId ?? null, title, body }),
@@ -236,13 +237,10 @@ export function NotesPage() {
         {/* ── 列表 ── */}
         <div className="border-border bg-card flex flex-col overflow-hidden rounded-xl border">
           <div className="border-border space-y-2.5 border-b p-3.5">
-            <Button
-              className="w-full"
-              disabled={create.isPending}
-              data-testid="notes-create"
-              onClick={() => create.mutate()}
-            >
-              {create.isPending ? <Spinner /> : <Plus className="size-4" />}
+            {/* 新建走**独立的一页**（/notes/new）：标题、正文、挂靠条目都在那边写，
+                列表页只负责浏览与整理。见 NoteNewPage 的说明 */}
+            <Button className="w-full" data-testid="notes-create" onClick={() => void navigate('/notes/new')}>
+              <Plus className="size-4" />
               新建笔记
             </Button>
             <div className="relative">
@@ -317,11 +315,7 @@ export function NotesPage() {
         {/* ── 编辑器 ── */}
         {/* Tabs 的 Root 包住整个编辑器：编辑/预览两个面板与上面的标签必须同属一个 Root，
             分成两个 Root 靠外部状态对齐是能跑但很脆的写法 */}
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(String(value))}
-          className="border-border bg-card flex min-h-[26rem] flex-col overflow-hidden rounded-xl border"
-        >
+        <div className="border-border bg-card flex min-h-[26rem] flex-col overflow-hidden rounded-xl border">
           {selected === null ? (
             <Empty data-testid="notes-placeholder" className="border-0">
               <EmptyHeader>
@@ -345,14 +339,7 @@ export function NotesPage() {
           ) : (
             <>
               <div className="border-border flex flex-wrap items-center gap-2 border-b px-5 py-2.5">
-                <TabsList variant="line">
-                  <TabsTrigger value="edit" data-testid="note-tab-edit">
-                    编辑
-                  </TabsTrigger>
-                  <TabsTrigger value="preview" data-testid="note-tab-preview">
-                    预览
-                  </TabsTrigger>
-                </TabsList>
+                <span className="text-muted-foreground text-xs">正在编辑</span>
                 <div className="ml-auto flex items-center gap-2">
                   {dirty ? (
                     <Badge variant="warning" data-testid="note-dirty">
@@ -393,28 +380,8 @@ export function NotesPage() {
                   )}
                 </p>
 
-                <TabsContent value="edit">
-                  <textarea
-                    value={body}
-                    rows={16}
-                    aria-label="正文（markdown）"
-                    data-testid="note-body"
-                    placeholder="用 markdown 写点什么…"
-                    onChange={(event) => setBody(event.target.value)}
-                    className="border-border bg-background focus:border-ring w-full resize-y rounded-lg border p-4 font-mono text-sm leading-7 outline-none"
-                  />
-                </TabsContent>
-                <TabsContent value="preview">
-                  {body.trim() === '' ? (
-                    <p className="text-muted-foreground py-6 text-sm" data-testid="note-preview-empty">
-                      还没有正文。
-                    </p>
-                  ) : (
-                    <div className="border-border rounded-lg border p-4" data-testid="note-preview">
-                      <MarkdownBody markdown={body} />
-                    </div>
-                  )}
-                </TabsContent>
+                {/* key 让换一条笔记时编辑/预览回到"编辑"（否则上一条停在预览，下一条一进来就是预览） */}
+                <MarkdownField key={selected ?? 'none'} value={body} onChange={setBody} testIdPrefix="note" />
               </div>
 
               <div className="border-border flex items-center gap-3 border-t px-5 py-3">
@@ -428,7 +395,7 @@ export function NotesPage() {
               </div>
             </>
           )}
-        </Tabs>
+        </div>
       </div>
 
       {/* 分享：链接免登录可读，30 天到期，可提前撤回（用户裁决 12） */}

@@ -1,8 +1,12 @@
 import { createKnowledgeAdminApi, type CategoryNode } from '@paideia/knowledge'
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -64,19 +68,22 @@ export function Loading({ label }: { label: string }) {
  */
 export function ConfirmDeleteDialog({
   open,
+  title = '确认删除',
   label,
   name,
   hint,
+  confirmLabel = '删除',
   busy,
   onCancel,
   onConfirm,
 }: {
   open: boolean
-  /** 被删对象的类别名，如「条目」「分类」。 */
+  /** 标题与确认按钮可定制："下架一条分享"与"删除一条条目"不是同一件事，文案不该硬编。 */
+  title?: string
   label: string
   name: string
-  /** 额外提醒，例如分类下还有子分类时会被拒。 */
   hint?: string
+  confirmLabel?: string
   busy: boolean
   onCancel: () => void
   onConfirm: () => void
@@ -90,18 +97,24 @@ export function ConfirmDeleteDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TriangleAlert className="text-destructive size-4" />
-            确认删除
+            {title}
           </DialogTitle>
+          <DialogDescription>
+            将删除{label}「{name}」。这一步没有撤销，请确认。
+          </DialogDescription>
         </DialogHeader>
-        <p className="text-muted-foreground text-sm">
-          将删除{label}「{name}」，此操作不可撤销。{hint ?? ''}
-        </p>
+        {hint === undefined ? null : (
+          <Alert variant="destructive">
+            <AlertTitle>注意</AlertTitle>
+            <AlertDescription>{hint}</AlertDescription>
+          </Alert>
+        )}
         <DialogFooter>
           <Button variant="ghost" onClick={onCancel} data-testid="admin-delete-cancel">
             取消
           </Button>
           <Button variant="destructive" disabled={busy} onClick={onConfirm} data-testid="admin-delete-confirm">
-            删除
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
