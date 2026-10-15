@@ -2295,3 +2295,58 @@ schema_version: 1
 - 未做：**未写任何代码**、未动数据库、未处理 WORK-007 的遗留（要用户点头才动）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-15 18:01:31 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-007-对象存储接入/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-007-对象存储接入/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:31 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:01:32 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-007-对象存储接入/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-007-对象存储接入/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:32 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:01:34 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-007-对象存储接入/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-007-对象存储接入/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:34 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:01:35 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-007-对象存储接入/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-007-对象存储接入/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:35 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:45:00 +0800 · WORK-007 · 清理校验问题（用户要求"007有问题也清理一下"）
+
+- 类型：maintenance
+- 用户原话：「007有问题也清理一下吧」。**结果：`validate` 对 WORK-007 由"未通过"变为"通过"**（仅剩"绑定提交之后工作区又有改动"这条固有警告）。
+- **先读了校验器实现，不靠猜**（`scripts/project_validate.py` + `project_status.py`），得到两条硬规则：
+  - `heading_present` 用 `^##\s+名称\s*$` **精确匹配**——**带任何后缀的标题都不算数**。所以 `## 目标（草案）`、`## 用户决定（2026-10-15…）` 这类全部无效。要求的标题集合：核心 `目标`/`验收标准`；决策分层 `已确认事实`/`用户决定`/`实现选择`/`待确认问题`（四个都要）。
+  - 结构化证据表必须落在 **`检查证据`/`证据矩阵`/`验证结果`/`验收矩阵`** 这四个标题之一下面；每行需"检查项(且含 `AC-N`) / 命令 / 退出码(数字或 `人工`/`manual`) / 结果(必须是 `通过`/`passed` 等精确词) / 证据"齐全，否则判 `invalid`。
+- **`requirements.md` 的处置**：标题改为精确名（`## 已确认事实`/`## 用户决定`/`## 实现选择`/`## 待确认问题`/`## 目标`/`## 验收标准`），括注信息移进正文首行；新增**决定 6（对象存储可对公网开放，加固做全）**；把原「验收要点」改写成 `AC-1..AC-8` 编号清单（与报告的矩阵一一对应）；原「待你裁决」的 5 组备选**改名保留以存档**并标注已被决定取代；"本工件仍是 draft"那条过时陈述改为"已批准 + 已实施上线"。
+- **`testing/report.md` 的处置**：原「验收矩阵」是 `AC|判定|证据` 三列，被校验器当成结构化证据表但列不全 → 判 invalid。改写为五列 `检查项|命令|退出码|结果|证据`，覆盖 **AC-1..AC-8** 每一条。**口径照实分两档**：4 行退出码是本次复跑的实测（0），4 行写 `人工` 并在证据列标明"原验证时记录、本轮未复跑（需构建/SSH/外网）"——**不把没跑过的当跑过**。
+- 复跑的具体证据：`SecurityConfiguration.java` 138/142（GET-only 放行）、`FileIds.isUuid` 6 处调用点、迁移最大号仍 **V9**（未新增）、`FileStorageConfiguration` 的 4 处 `@ConditionalOnProperty`、`dev-workflow.md:90` 的"回滚是有损的"。
+- **未处理（刻意留）**：`WORK-009`/`WORK-010` 的 requirements 有同类"决策分层"警告（标题带后缀、且缺 `## 实现选择` 一级章节）。它们是刚签署的工件、且**不阻断任何事**，本轮不为它改已批准工件——**留到各自实施轮次一并处理**（已在待办里记下这条规则：以后起草直接写精确标题）。
+- 未做：**未写任何代码**、未改 WORK-007 的历史 log 条目。
+- 本地提交：见下一笔
+- 远端推送：未执行

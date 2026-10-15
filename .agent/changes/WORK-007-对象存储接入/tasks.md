@@ -10,6 +10,9 @@ created: 2026-10-15
 updated: 2026-10-15
 signed_by: xiaou61 (CTO)
 signed_at: 2026-10-15
+approved_by: xiaou61
+approved_at: 2026-10-15 18:01:35 +0800
+approver_role: CTO
 ---
 
 # 任务 · 对象存储接入

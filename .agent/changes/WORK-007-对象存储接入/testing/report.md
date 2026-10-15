@@ -18,16 +18,18 @@ verified_at: 2026-10-15
 
 ## 验收矩阵
 
-| AC | 判定 | 证据 |
-| --- | --- | --- |
-| AC-1 可换性：同一批用例在两种实现下都不改测试代码地通过 | ✅ | `FileStorageContractTest` **2 运行 / 0 失败 / 0 跳过**（本地临时目录 + 连真机 RustFS）。同一份 `assertContract` 跑两遍，含预签名 URL 真取回 200 且字节一致 |
-| AC-2 契约不变：正文里的 `/api/v1/knowledge/files/{id}` 形状不变，端点仍只放行 GET | ✅ | 线上 `GET /api/v1/knowledge/files/<uuid>` 返回 **302**；`SecurityConfiguration` 未改（仍 `HttpMethod.GET` + `permitAll`）；管理端 e2e 8 passed 未受影响 |
-| AC-3 不可枚举：id 仍是 UUID 且被两个实现共同校验 | ✅ | `FileIds.isUuid` 单点共用；契约测试含"非 UUID 的 id 读必须为空、删必须 false"两条断言 |
-| AC-4 元数据不搬家：`knowledge_files` 表与写入路径不变 | ✅ | 无迁移；`FileService.upload` 仍是"先校验→落盘→插表，插表失败删对象"；上传返回 id/url/type/size/name 形状未变 |
-| AC-5 生产可用：线上附件可上传、可在学习者端渲染 | ✅ | 上传 420×150 测试图 → 条目 id=17 发布 → 学习者端 `img.complete=true, naturalWidth=420, naturalHeight=150`；`curl -L` 取回 2932 字节与原文件 `cmp` 一致；截图存证 |
-| AC-6 回滚路径明确且写明有损 | ✅ | `dev-workflow.md` 写明"改回 local + 重启"与"S3 期间上传的附件会 404"；首次切换时线上附件 **0 条**（`knowledge_files` 0 行、正文 0 处引用、目录为空），损失面为零 |
-| AC-7 暴露面受控 | ✅ | 外部实测：`9000 → 403`（可达且拒绝未签名请求）、`9001 → 000`（控制台关闭不可达）；桶私有、凭据 24/40 位随机且只在 `/etc/rustfs/rustfs.env`(600)；应用日志只打 endpoint 与桶名 |
-| AC-8 配置错误 fail fast | ✅ | `FileStorageConfigurationTest` 5 条：默认→local、显式 local→local、s3→S3FileStorage、s3 缺凭据→上下文启动失败、`redirect-cache >= presign-ttl`→启动失败 |
+**证据口径**：`退出码` 列写**实测数字**的 4 行，是 2026-10-15 清理工件时**复跑**的本地只读检查；写 **人工** 的 4 行是**原验证时的人工核验记录、本轮未复跑**（需构建 / SSH / 外网）——已在「证据」列逐行标明，不把没跑过的当跑过。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| AC-1 可换性：同一批附件用例在两种实现下不改测试代码地通过 | `mvn -pl paideia-knowledge -am verify`（含 `FileStorageContractTest`） | 人工 | 通过 | 原验证记录：BUILD SUCCESS；契约测试 **2 运行 / 0 失败 / 0 跳过**（本地临时目录 + 连真机 RustFS），同一份 `assertContract` 跑两遍，含预签名 URL 真取回 200 且字节一致。本轮未复跑（需构建与 S3 隧道） |
+| AC-2 契约不变：`/api/v1/knowledge/files/{id}` 形状不变，端点仍只放行 GET | `grep -n "HttpMethod.GET" backend/paideia-security/src/main/java/io/github/xiaou61/security/SecurityConfiguration.java` | 0 | 通过 | 2026-10-15 复跑：命中 `/api/v1/public/shares/**`(138) 与 `/api/v1/knowledge/files/**`(142)，均 `permitAll()`；线上实测该端点返回 302 |
+| AC-3 不可枚举：id 仍是 UUID 且被两个实现共同校验 | `grep -rn "FileIds\." backend/paideia-knowledge/src/main/java` | 0 | 通过 | 2026-10-15 复跑：`S3FileStorage` 3 处（76/99/124）+ `LocalFileStorage` 3 处（66/84…），全部调 `FileIds.isUuid`；`FileIds.java` 存在 |
+| AC-4 元数据不搬家：`knowledge_files` 表与写入路径不变 | `ls backend/paideia-app/src/main/resources/db/migration/` | 0 | 通过 | 2026-10-15 复跑：最大迁移号仍是 **V9**，本项**未新增任何迁移** |
+| AC-5 生产可用：线上附件可上传、学习者端可渲染 | 线上 `curl -L /api/v1/knowledge/files/<uuid>`，再取学习者端 `img.naturalWidth / naturalHeight` | 人工 | 通过 | 原验证记录（需 SSH，本轮未复跑）：302 → 200、2932 字节与原文件 `cmp` 一致；学习者端图片 `naturalWidth=420 / naturalHeight=150` 真实渲染，截图存证 |
+| AC-6 回滚路径明确且写明有损 | `grep -n "有损" .agent/notes/dev-workflow.md` | 0 | 通过 | 2026-10-15 复跑：命中"**回滚是有损的**：切回 `local` 后期间上传的附件会 404"（第 90 行），并记明首次切换时线上附件 0 条、损失面为零 |
+| AC-7 暴露面受控：控制台关闭、桶私有、凭据只在 600 文件 | 外部探测 `:9000` / `:9001` 的 HTTP 状态码 | 人工 | 通过 | 原验证记录（需外网，本轮未复跑）：`9000 → 403`（可达且拒绝未签名请求）、`9001 → 000`（控制台关闭）；凭据 24/40 位随机且只在 `/etc/rustfs/rustfs.env`(600)；应用日志只打 endpoint 与桶名 |
+| AC-8 配置错误 fail fast | `mvn -pl paideia-knowledge -am test`（`FileStorageConfigurationTest` 5 条） | 人工 | 通过 | 原验证记录：5 条全过——默认→local、显式 local→local、s3→S3FileStorage、s3 缺凭据→上下文启动失败、`redirect-cache >= presign-ttl`→启动失败。本轮未复跑 |
 
 ## 反向验证（"这条要是坏了，哪个断言会红"）
 
