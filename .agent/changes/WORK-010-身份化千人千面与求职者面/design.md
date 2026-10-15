@@ -2,12 +2,15 @@
 artifact: design
 work_id: WORK-010
 work: 身份化千人千面与求职者面
-status: draft
+status: approved
 workflow: full
 depends_on: [proposal]
 related_to: [WORK-004, WORK-006, WORK-009]
 created: 2026-10-15
 updated: 2026-10-15
+approved_by: xiaou61
+approved_at: 2026-10-15 17:57:34 +0800
+approver_role: CTO
 ---
 
 # 设计 · 身份化千人千面与求职者面

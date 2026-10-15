@@ -2254,3 +2254,44 @@ schema_version: 1
 - 未做：**未写任何代码**、未签署 `WORK-010` 的三件、未改 WORK-007 的任何工件。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-15 17:57:33 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-010-身份化千人千面与求职者面/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-010-身份化千人千面与求职者面/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:33 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:57:34 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-010-身份化千人千面与求职者面/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-010-身份化千人千面与求职者面/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:34 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:57:35 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-010-身份化千人千面与求职者面/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-010-身份化千人千面与求职者面/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:35 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:30:00 +0800 · WORK-010 · 其余三件签署；一项校验器陷阱
+
+- 类型：decision
+- 用户回复「现在还有哪些需要我确认的吗。如果没有就可以签署了」。核对后**无阻断项**，遂用 `approve` 盖章 `WORK-010` 的 **proposal / design / tasks**（签署人 `xiaou61（CTO）`，2026-10-15 17:57:33–17:57:35）。**签署人与时间由命令写入，模型未自行填写。**
+- 签之前已补上不自洽处（见上一条 18:20）：`design.md` §5.1 定死"题源 = 知识库已发布条目""**用户笔记默认不参与面试素材**（要参与需用户显式勾选，取保守方向）""不限时、题量由用户主动结束控制"。
+- **⚠️ 记录一条校验器陷阱（会误导判断，务必记住）**：`WORK-010` 四件全部签署后，之前那条「**进入开发实现前必须完成硬依赖：WORK-009**」的**报错消失了**。**这不代表依赖已满足**——是校验器在阶段推进后的短路行为（与既有教训「需求未批准时会提前返回、走不到归因检查」同源）。**`WORK-009` 未实施完成前，`WORK-010` 依然不得开工。** 别拿"validate 没报依赖错"当放行依据。
+- 现状：`WORK-009` 四件 + `WORK-010` 四件**全部签署完毕**。`validate` 剩下唯一的错误是 `WORK-007` 的结构化测试证据不完整（历史遗留，非本轮产生）。
+- 未做：**未写任何代码**、未动数据库、未处理 WORK-007 的遗留（要用户点头才动）。
+- 本地提交：见下一笔
+- 远端推送：未执行
