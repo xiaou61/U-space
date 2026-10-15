@@ -12,7 +12,12 @@ import { LEARNER } from './env'
 export async function signIn(page: Page): Promise<void> {
   await page.goto('/')
   const identifier = page.getByTestId('login-identifier')
-  if ((await identifier.count()) === 0) {
+  const signedIn = page.getByTestId('learner-nav-knowledge')
+
+  // **等一个确定状态**，不能只问"有没有登录表单"：带会话进来时 App 启动有一段"加载中"，
+  // 那一刻既没有表单也还没进站，问得太早会直接返回、后续断言全部落空（实测 16 条红）。
+  await expect(identifier.or(signedIn)).toBeVisible({ timeout: 20_000 })
+  if (await signedIn.isVisible()) {
     return
   }
   await identifier.fill(LEARNER.identifier)
