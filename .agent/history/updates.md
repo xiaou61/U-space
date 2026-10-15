@@ -2176,3 +2176,66 @@ schema_version: 1
 - 未做：**未写任何代码**、未签署任何工件、未动数据库。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-15 17:50:05 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-009-AI网关与积分配额/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-009-AI网关与积分配额/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:05 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:50:30 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-009-AI网关与积分配额/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-009-AI网关与积分配额/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:30 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:50:31 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-009-AI网关与积分配额/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-009-AI网关与积分配额/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:31 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:50:32 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-009-AI网关与积分配额/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-009-AI网关与积分配额/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:32 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 17:50:34 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-010-身份化千人千面与求职者面/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-010-身份化千人千面与求职者面/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:34 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-15 18:05:00 +0800 · WORK-009 四件签署 / WORK-010 其余三件起草
+
+- 类型：decision
+- **用户授权签署**（原话：「签署一下吧」）。**已用 `approve` 入口盖章**（签署人 `xiaou61（CTO）`，时间 2026-10-15 17:50:05–17:50:34）：`WORK-009` 的 **requirements / proposal / design / tasks 四件** + `WORK-010` 的 **requirements**。**签署人与时间由 `approve` 写入，模型未自行填写**（Skill 明确要求）。
+- 签署后 `validate`：`WORK-009` 那条「需求尚未形成，但已经存在下游工件」**已消失**，改为 `WORK-010` 的「方案尚未确认，但已经存在下游工件」——门槛随签署往下推。剩下与新建项相关的实质报错只有 `WORK-010` 的「进入开发实现前必须完成硬依赖 WORK-009」，那是**我们主动声明的依赖、且现在本来就不该开工**。
+- **`WORK-010` 其余三件起草完成**（`proposal.md` / `design.md` / `tasks.md`，均 `draft`）。关键设计决策：**身份** = `learner_profiles` 一行 + 代码里的枚举注册表（**不建表**：一期只有一个真值）；**harness** = 提示词 + 工具子集的可切换组合，给 `AssistantConversation.Request` 加 `harness` 入参（**不新开端口方法**——复用同一条"流式 + 逐轮累加 + 工具循环"，那是本项目最容易出错的一段，不复制第二份）；**本项只动 1 张既有表**（`ai_conversations` 加可空 `harness`，NULL = 通用助手，**对既有数据行为不变**）；**自评桥**用 `(user_id, kind, ref_id)` 唯一键 + `ON DUPLICATE KEY UPDATE` 实现覆盖语义，且**只对这条来源覆盖**（用户手点「记住这条」写的全文记忆仍是追加，两张表各管各的）；**点评结果单独建表** `ai_interview_evaluations`（塞进消息文本就没法查"进度与弱项"了）。
+- **两处「无法端到端验收」的缺口已写进 design/tasks，并要求测试计划照实写明（是缺口、不是漏测）**：① 一期只有"求职者"一个身份 → 多身份切换路径走不到，只能用"人工造第二个身份"覆盖数据层；② `identityDefault` 一期恒为 `assistant` → "不同身份的默认行为不同"验不了，只能验"页面显式给 harness"这半段。
+- **开工前置**：`WORK-010` 硬依赖 `WORK-009`，后者未实施完成前**不得开工**（`validate` 会拦）。
+- **一条给后续起草的教训**：`validate` 对**已批准**的 requirements 要求"决策分层章节"三件齐（`已确认事实` / `用户决定` / `实现选择`），`WORK-009`、`WORK-010`、`WORK-007` 都因缺 `## 实现选择` 一级章节而报警告。**以后起草把这节直接写成一级章节就不会中招**（本次未回改已批准工件——那属于实施后改动，要重签）。
+- 未做：**未写任何代码**、未动数据库；`WORK-010` 的三件**未签署**。
+- 本地提交：见下一笔
+- 远端推送：未执行

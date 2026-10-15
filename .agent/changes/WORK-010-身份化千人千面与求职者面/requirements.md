@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-010
 work: 身份化千人千面与求职者面
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增一个横切的"身份"维度（触及用户数据模型与多张既有用户私有表）、新增按场景/身份分化的 AI 行为（提示词与工具分层）、并新增第一个身份面的多轮带工具 AI 能力；涉及数据、公共接口、安全（越权面）与架构
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-009]
 related_to: [WORK-004, WORK-006, WORK-009]
 created: 2026-10-15
 updated: 2026-10-15
+approved_by: xiaou61
+approved_at: 2026-10-15 17:50:34 +0800
+approver_role: CTO
 ---
 
 # 身份化千人千面与求职者面需求

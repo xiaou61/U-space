@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-009
 work: AI 网关与积分配额
-status: draft
+status: approved
 mode: strict
 mode_reason: 推翻纯 BYOK，改变 AI 调用的凭据来源与计费路径；涉及数据（新增积分账户与流水）、安全（平台持有上游凭据、额度校验与防刷、越权面）、公共行为（额度不足时的接口语义）与部署（上游凭据配置）
 workflow: full
@@ -10,6 +10,9 @@ depends_on: []
 related_to: [WORK-006, WORK-010]
 created: 2026-10-15
 updated: 2026-10-15
+approved_by: xiaou61
+approved_at: 2026-10-15 17:50:05 +0800
+approver_role: CTO
 ---
 
 # AI 网关与积分配额需求

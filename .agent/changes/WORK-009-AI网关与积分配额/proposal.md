@@ -2,12 +2,15 @@
 artifact: proposal
 work_id: WORK-009
 work: AI 网关与积分配额
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-006, WORK-010]
 created: 2026-10-15
 updated: 2026-10-15
+approved_by: xiaou61
+approved_at: 2026-10-15 17:50:30 +0800
+approver_role: CTO
 ---
 
 # 提案 · AI 网关与积分配额
