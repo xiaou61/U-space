@@ -2,12 +2,14 @@
 artifact: proposal
 work_id: WORK-007
 work: 对象存储接入
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-004]
 created: 2026-10-15
 updated: 2026-10-15
+signed_by: xiaou61 (CTO)
+signed_at: 2026-10-15
 ---
 
 # 提案 · 对象存储接入

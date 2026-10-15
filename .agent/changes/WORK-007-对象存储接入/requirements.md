@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-007
 work: 对象存储接入
-status: draft
+status: approved
 mode: strict
 mode_reason: 引入一个新的外部基础设施组件（S3 兼容对象存储）并改变附件读写路径与部署形态，涉及部署与数据（既有附件）；但底层 FileStorage 端口已存在，业务代码不受影响
 workflow: full
@@ -10,6 +10,8 @@ depends_on: []
 related_to: [WORK-004]
 created: 2026-10-10
 updated: 2026-10-15
+signed_by: xiaou61 (CTO)
+signed_at: 2026-10-15
 ---
 
 # 对象存储接入需求
