@@ -9,3 +9,12 @@ export const LEARNER = {
   identifier: process.env.E2E_LEARNER_IDENTIFIER ?? 'seed-learner',
   password: process.env.E2E_LEARNER_PASSWORD ?? 'seed-learner-password',
 }
+
+/**
+ * 打的是已部署实例而不是本机（见 `playwright.config.ts`）。
+ *
+ * <p>**有些用例只在本地成立**：它们依赖 `db/devdata` 的种子内容（那条草稿、那几篇文章），
+ * 线上库里没有这些数据。这类用例用 `test.skip(REMOTE, …)` 明说，而不是让它们在线上红成一片——
+ * 远程一轮里混进这种红，看起来就像界面坏了（实测踩过）。
+ */
+export const REMOTE = Boolean(process.env.E2E_BASE_URL)
