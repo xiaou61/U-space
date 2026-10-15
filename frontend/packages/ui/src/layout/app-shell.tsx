@@ -10,8 +10,12 @@ import { ThemeToggle } from '../theme/theme-toggle'
  * <p>刻意只做布局，不含路由、不含角色判断、不读后端 —— 三个应用（学习者端、管理端、
  * 展览页）的导航与权限各不相同，那些属于各自应用；共用的只是"页面长什么样"。
  *
- * <p>页头是一条实底 + 细分隔线的横条（不是玻璃浮层）：这套观感靠一条极细的线划分层次。
- * 页面的主标题由各页面自己用 text-2xl 那一档写，这里的标题只是应用标识，所以不是 heading。
+ * <p>页头照文档站/学习产品的通例做成**一条能装下"品牌 + 导航 + 搜索 + 账号"的固定横条**：
+ * 左边是品牌（色块标识 + 名称 + 当前位置），中间留给导航与搜索（由各应用通过 `actions` 传入，
+ * 里面自己摆一个 `flex-1` 撑开），右边固定是主题开关。高度只有 56px，不抢内容。
+ *
+ * <p>**品牌标识是色块 + 首字母**，不引图标也不是图片：这块地方是"这是一件产品"最便宜的信号，
+ * 而它必须跟着主题走，所以颜色只来自令牌。
  */
 export function AppShell({
   title,
@@ -23,58 +27,82 @@ export function AppShell({
 }: {
   title: string
   subtitle?: ReactNode
-  /** 页头右侧的操作区，通常放 ThemeToggle 或应用自己的入口。 */
+  /** 页头右侧的操作区：通常放应用自己的导航 + 账号区。 */
   actions?: ReactNode
   children: ReactNode
-  /** 列表/总览类页面用宽档：4xl 在 1440 屏上两侧留白太多，读起来像"没做完"。 */
+  /** 列表/总览类页面用宽档：窄档在 1440 屏上两侧留白太多，读起来像"没做完"。 */
   wide?: boolean
   className?: string
 }) {
   return (
     <div className={cn('flex min-h-screen flex-col', className)}>
-      <header className="border-border bg-background sticky top-0 z-10 flex items-center justify-between gap-4 border-b px-6 py-2.5">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold">{title}</div>
-          {subtitle === undefined ? null : (
-            <div className="text-muted-foreground truncate text-xs">{subtitle}</div>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {actions}
-          <ThemeToggle />
+      <header className="border-border bg-background/95 sticky top-0 z-30 border-b">
+        <div className="mx-auto flex h-14 w-full max-w-[86rem] items-center gap-3 px-6">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <span
+              aria-hidden
+              className="from-primary to-primary/75 text-primary-foreground flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-sm font-bold"
+            >
+              {title.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">{title}</span>
+            {subtitle === undefined ? null : (
+              <span className="border-border text-muted-foreground hidden rounded-full border px-2 py-0.5 text-xs sm:inline-block">
+                {subtitle}
+              </span>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {actions}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <main className={cn('mx-auto w-full flex-1 px-6 py-10', wide ? 'max-w-6xl' : 'max-w-4xl')}>
+      <main className={cn('mx-auto w-full flex-1 px-6 py-10', wide ? 'max-w-[86rem]' : 'max-w-3xl')}>
         {children}
       </main>
 
-      <footer className="border-border text-muted-foreground border-t px-6 py-5 text-center text-xs">
-        Paideia · 千人千面的 AI 个性化学习平台
+      <footer className="border-border mt-8 border-t px-6 py-6">
+        <div className="text-muted-foreground mx-auto flex w-full max-w-[86rem] flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className="bg-primary/10 text-primary flex size-5 items-center justify-center rounded text-[0.625rem] font-bold">
+            {title.slice(0, 1).toUpperCase()}
+          </span>
+          <span>Paideia · 千人千面的 AI 个性化学习平台</span>
+        </div>
       </footer>
     </div>
   )
 }
 
 /**
- * 页面的主标题。放在外壳的内容区里，用字号阶梯里最大的一档 + 负字距，
- * 让层次由字号建立而不是由色块建立。
+ * 页面的主标题。
+ *
+ * <p>字号用了阶梯里最大的一档（40px）——参考的文档站与学习产品在正文页都是这个量级，
+ * 32px 在中英混排里撑不住"这是一篇文章"的第一印象。副标题从 14px 提到 16px 并放宽行高，
+ * 它是**导语**不是标签。可选的 `eyebrow` 放所属分类这类"当前位置"信息。
  */
 export function PageHeader({
   title,
   description,
+  eyebrow,
   actions,
 }: {
   title: string
   description?: ReactNode
+  eyebrow?: ReactNode
   actions?: ReactNode
 }) {
   return (
-    <div className="mb-10 flex items-start justify-between gap-6">
+    <div className="mb-8 flex items-end justify-between gap-6">
       <div className="min-w-0">
-        <h1 className="text-2xl">{title}</h1>
+        {eyebrow === undefined ? null : (
+          <div className="text-primary mb-2 text-xs font-medium tracking-wide">{eyebrow}</div>
+        )}
+        <h1 className="text-3xl">{title}</h1>
         {description === undefined ? null : (
-          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-base leading-7">{description}</p>
         )}
       </div>
       {actions === undefined ? null : <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -82,25 +110,30 @@ export function PageHeader({
   )
 }
 
-/** 页面里的一节：标题 + 说明 + 内容，展览页与各应用页面共用。 */
+/** 页面里的一节：标签 + 说明 + 内容，各应用页面共用。 */
 export function Section({
   title,
   description,
+  actions,
   children,
   className,
 }: {
   title: string
   description?: ReactNode
+  actions?: ReactNode
   children: ReactNode
   className?: string
 }) {
   return (
     <section className={cn('mb-12', className)}>
-      <div className="mb-4">
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        {description === undefined ? null : (
-          <p className="text-muted-foreground mt-1 text-sm">{description}</p>
-        )}
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg">{title}</h2>
+          {description === undefined ? null : (
+            <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+          )}
+        </div>
+        {actions === undefined ? null : <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
       {children}
     </section>

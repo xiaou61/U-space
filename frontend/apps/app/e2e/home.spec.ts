@@ -20,9 +20,9 @@ test.describe('未登录', () => {
   test('未登录访问学习者端会被导向登录页，登录后进入首页', async ({ page }) => {
   await page.goto('/')
 
-  // 未登录时看到的是登录表单，而不是任何内容
+  // 未登录时看到的是登录表单，而不是任何内容（站内导航只在登录后存在）
   await expect(page.getByTestId('login-form')).toBeVisible()
-  await expect(page.getByTestId('health-status')).toHaveCount(0)
+  await expect(page.getByTestId('learner-nav-knowledge')).toHaveCount(0)
 
   await signIn(page)
 
@@ -31,16 +31,24 @@ test.describe('未登录', () => {
   })
 })
 
-test('首页展示后端返回的真实健康状态', async ({ page }) => {
+/**
+ * 首页原来那一段「运行状态」（平台类型 / 健康检查原始 JSON / 当前身份）**已按用户要求删掉**
+ * （2026-10-15：诊断信息的读者是开发者，不是学习者）。这里保留它真正要验的两件事，但重新
+ * 落在**学习者看得见的东西**上：① 宿主标识挂在 `<html data-platform>` 上，仍是测试与排障的锚点；
+ * ② 首页上的数字确实来自接口——拿它与条目列表页报的总数对照，两边都来自后端才可能相等。
+ */
+test('首页的数字来自后端，宿主标识挂在 html 上', async ({ page }) => {
   await signIn(page)
 
-  // 平台能力来自 Platform 端口，说明适配器链路是通的
-  await expect(page.getByTestId('platform-kind')).toHaveText('web')
+  await expect(page.locator('html')).toHaveAttribute('data-platform', 'web')
 
-  // 必须是后端真实返回：状态值与原始响应体都来自接口
-  await expect(page.getByTestId('health-status')).toHaveText('UP')
-  await expect(page.getByTestId('health-raw')).toContainText('"status"')
-  await expect(page.getByTestId('health-raw')).toContainText('liveness')
+  const stat = page.getByTestId('home-stat-entries')
+  // 数据没回来时这里只有标签，所以先等数字出现再读
+  await expect(stat).toContainText(/\d/)
+  const shown = (await stat.innerText()).replace(/[^\d]/g, '')
+
+  await page.goto('/#/knowledge/entries')
+  await expect(page.getByTestId('entry-total')).toContainText(shown)
 })
 
 test('每个请求都带上后端返回的追踪标识', async ({ page }) => {
@@ -50,20 +58,24 @@ test('每个请求都带上后端返回的追踪标识', async ({ page }) => {
   expect(response.headers()['x-trace-id']).toBeTruthy()
 })
 
-test('受保护接口在没有令牌时被拒，带着身份时返回主体', async ({ page }) => {
+test('受保护接口在没有令牌时被拒，带着身份时读得到内容', async ({ page }) => {
   // 不带 Authorization：能拿到接口地址，不等于能读到内容
   const unauthorized = await page.request.get('/api/v1/me')
   expect(unauthorized.status()).toBe(401)
 
-  // 带着令牌（已登录）时它返回身份——两者对照才说明授权确实在起作用
+  // 带着令牌（已登录）时受保护的数据真的读得到：首页的「最近更新」来自 /api/v1/knowledge/entries
   await signIn(page)
-  await expect(page.getByTestId('identity-subject')).not.toHaveText('未登录')
+  await expect(
+    page.getByTestId('home-recent').locator('a[href*="/knowledge/entries/"]').first(),
+  ).toBeVisible()
 })
 
 test('登出后回到登录页', async ({ page }) => {
   await signIn(page)
   await expect(page.getByTestId('current-user')).toBeVisible()
 
+  // 登出收在账号菜单里（低频且危险的动作不再摆在页头）
+  await page.getByTestId('account-menu-trigger').click()
   await page.getByTestId('logout').click()
 
   await expect(page.getByTestId('login-form')).toBeVisible()
@@ -88,8 +100,8 @@ test('登录后从页头就能进入知识库，不必手输地址', async ({ pa
   await expect(page.getByTestId('entry-list')).toBeVisible()
 
   // 条目页的地址是 /knowledge/entries/:id，仍该算在"知识库"这一档里（前缀匹配）
-  await page.getByTestId('entry-link-1').click()
-  await expect(page).toHaveURL(/#\/knowledge\/entries\/1$/)
+  await page.getByTestId('entry-list').locator('a[data-testid^="entry-link-"]').first().click()
+  await expect(page).toHaveURL(/#\/knowledge\/entries\/\d+$/)
   await expect(page.getByTestId('learner-nav-knowledge')).toHaveAttribute('aria-current', 'page')
 
   await page.getByTestId('learner-nav-my-assessments').click()

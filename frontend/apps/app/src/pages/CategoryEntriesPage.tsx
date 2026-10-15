@@ -6,16 +6,19 @@ import {
   AppShell,
   Badge,
   Button,
-  Card,
-  CardContent,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Input,
   PageHeader,
   Spinner,
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, ChevronLeft } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router'
+import { ArrowRight, ChevronLeft, FileText, Search } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -44,12 +47,21 @@ function plainText(markdown: string): string {
  *
  * <p><b>检索是"回车/点按钮"而不是输入即搜</b>：中文输入法在拼字过程中会连续触发 change 事件，
  * 按字数防抖会把"并发"这种词的中间态（拼音或半截字）也发出去。提交式检索没有这个问题。
+ *
+ * <p><b>检索状态以地址栏（`?q=`）为准</b>：页头的搜索框按完回车就是跳到这个地址，而不是自己
+ * 再实现一遍检索。好处是刷新、后退、把链接发给别人，看到的都还是同一批结果。输入框里的草稿
+ * 是本地状态，地址栏变了就跟着变（否则"已经在列表页时从页头再搜一次"不会生效）。
  */
 export function CategoryEntriesPage() {
   const { categoryId } = useParams<{ categoryId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const scopedId = categoryId === undefined ? null : Number(categoryId)
-  const [draft, setDraft] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const keyword = searchParams.get('q') ?? ''
+  const [draft, setDraft] = useState(keyword)
+
+  useEffect(() => {
+    setDraft(keyword)
+  }, [keyword])
 
   const categories = useQuery({
     queryKey: ['knowledge-categories'],
@@ -65,33 +77,51 @@ export function CategoryEntriesPage() {
   const current = categories.data?.find((node) => node.id === scopedId)
   const title = scopedId === null ? '全部条目' : (current?.name ?? '分类')
 
+  /** 关键词只写地址栏：查询键跟着它走，界面因此不会有第二份"当前检索词"。 */
+  const applyKeyword = (next: string) => {
+    const params = new URLSearchParams(searchParams)
+    if (next === '') {
+      params.delete('q')
+    } else {
+      params.set('q', next)
+    }
+    setSearchParams(params, { replace: true })
+  }
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
-    setKeyword(draft.trim())
+    applyKeyword(draft.trim())
   }
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />} wide>
+    <AppShell title="Paideia" actions={<LearnerHeader />} wide>
       <Link
         to="/knowledge"
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm transition-colors"
+        className="text-muted-foreground hover:text-foreground mb-5 inline-flex items-center gap-1 text-sm transition-colors"
         data-testid="back-to-categories"
       >
         <ChevronLeft className="size-4" />
         所有分类
       </Link>
 
-      <PageHeader title={title} description={scopedId === null ? '按更新时间排列。' : '这个分类下的条目。'} />
+      <PageHeader
+        eyebrow="知识库"
+        title={title}
+        description={scopedId === null ? '按更新时间排列。' : '这个分类下的条目。'}
+      />
 
       <form onSubmit={onSubmit} className="mb-6 flex items-center gap-2">
-        <Input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="搜索标题或正文"
-          aria-label="搜索知识条目"
-          data-testid="knowledge-search"
-          className="max-w-md"
-        />
+        <div className="relative max-w-md flex-1">
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <Input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="搜索标题或正文"
+            aria-label="搜索知识条目"
+            data-testid="knowledge-search"
+            className="h-10 rounded-full pl-9"
+          />
+        </div>
         <Button type="submit" data-testid="knowledge-search-submit">
           搜索
         </Button>
@@ -100,14 +130,16 @@ export function CategoryEntriesPage() {
             type="button"
             variant="ghost"
             data-testid="knowledge-search-clear"
-            onClick={() => {
-              setDraft('')
-              setKeyword('')
-            }}
+            onClick={() => applyKeyword('')}
           >
             清除
           </Button>
         )}
+        {entries.isSuccess ? (
+          <span className="text-muted-foreground ml-auto text-xs" data-testid="entry-total">
+            共 {entries.data.total} 条
+          </span>
+        ) : null}
       </form>
 
       {entries.isPending ? (
@@ -122,44 +154,55 @@ export function CategoryEntriesPage() {
           <AlertDescription>{(entries.error as Error).message}</AlertDescription>
         </Alert>
       ) : null}
+
       {entries.isSuccess && entries.data.items.length === 0 ? (
-        <p className="text-muted-foreground text-sm" data-testid="entry-empty">
-          没有符合条件的条目
-        </p>
+        <Empty data-testid="entry-empty">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText />
+            </EmptyMedia>
+            <EmptyTitle>没有符合条件的条目</EmptyTitle>
+            <EmptyDescription>换个关键词，或回到所有分类看看。</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : null}
 
       {entries.isSuccess && entries.data.items.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2" data-testid="entry-list">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="entry-list">
           {entries.data.items.map((item, index) => (
-            <Card
+            <Link
               key={item.id}
-              className="animate-fade-up hover:border-primary/40 hover:shadow-card transition-all hover:-translate-y-0.5"
+              to={`/knowledge/entries/${item.id}`}
+              data-testid={`entry-link-${item.id}`}
+              className="border-border bg-card hover:border-primary/40 hover:shadow-card group animate-fade-up flex flex-col overflow-hidden rounded-xl border transition-all hover:-translate-y-0.5"
               style={{ animationDelay: `${index * 30}ms` }}
             >
-              <CardContent className="p-5">
-                <Link
-                  to={`/knowledge/entries/${item.id}`}
-                  data-testid={`entry-link-${item.id}`}
-                  className="group flex h-full flex-col justify-between gap-3"
+              {/* 卡片封面：色块 + 分类。没有它，卡片就是一排"标题孤零零浮在空白里" */}
+              <span className="tile-surface border-border flex h-20 items-center justify-between border-b px-4">
+                {item.categoryName === null ? (
+                  <span className="text-muted-foreground text-xs">未分类</span>
+                ) : (
+                  <Badge variant="secondary">{item.categoryName}</Badge>
+                )}
+                <ArrowRight className="text-muted-foreground group-hover:text-primary size-4 transition-colors" />
+              </span>
+              <span className="flex flex-1 flex-col p-4">
+                <span
+                  data-testid="entry-title"
+                  className="group-hover:text-primary line-clamp-2 font-medium transition-colors"
                 >
-                  <span>
-                    <span className="text-base font-medium leading-snug">{item.title}</span>
-                    {item.excerpt === null || item.excerpt === '' ? null : (
-                      <span className="text-muted-foreground mt-1.5 line-clamp-2 block text-sm leading-relaxed">
-                        {plainText(item.excerpt)}
-                      </span>
-                    )}
+                  {item.title}
+                </span>
+                {item.excerpt === null || plainText(item.excerpt) === '' ? null : (
+                  <span className="text-muted-foreground mt-2 line-clamp-3 flex-1 text-sm leading-6">
+                    {plainText(item.excerpt)}
                   </span>
-                  <span className="flex items-center gap-3">
-                    {item.categoryName === null ? null : <Badge variant="secondary">{item.categoryName}</Badge>}
-                    <span className="text-muted-foreground text-xs">
-                      {new Date(item.updatedAt).toLocaleDateString('zh-CN')}
-                    </span>
-                    <ArrowRight className="text-muted-foreground group-hover:text-primary ml-auto size-4 transition-colors" />
-                  </span>
-                </Link>
-              </CardContent>
-            </Card>
+                )}
+                <span className="text-muted-foreground mt-3 text-xs">
+                  {new Date(item.updatedAt).toLocaleDateString('zh-CN')}
+                </span>
+              </span>
+            </Link>
           ))}
         </div>
       ) : null}

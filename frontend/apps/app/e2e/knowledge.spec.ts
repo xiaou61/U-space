@@ -22,12 +22,14 @@ function firstEntryLink(page: Page) {
 }
 
 /**
- * 列表卡片里第一行文字就是标题（后面是摘要、分类、日期，都占整行）。
- * 用它当检索词与断言值，就不必给标题单独加测试钩子。
+ * 列表卡片里条目的标题。
+ *
+ * <p>**必须按 `entry-title` 取，不能取"卡片的第一行"**：卡片现在顶着一块封面色块
+ * （里面是分类徽章），它在 DOM 里排在标题前面——按第一行取会读到"未分类"这三个字，
+ * 三条用例因此一起红（2026-10-15 实测）。
  */
 async function firstEntryTitle(page: Page): Promise<string> {
-  const raw = await firstEntryLink(page).innerText()
-  const title = raw.split('\n').map((line) => line.trim()).find((line) => line !== '') ?? ''
+  const title = (await firstEntryLink(page).getByTestId('entry-title').innerText()).trim()
   expect(title).not.toBe('')
   return title
 }

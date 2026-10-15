@@ -11,12 +11,12 @@ import {
   AlertDescription,
   AlertTitle,
   AppShell,
-  Badge,
   PageHeader,
   Spinner,
 } from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAssistantContext } from '@paideia/assistant'
+import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 
@@ -27,10 +27,13 @@ import { API_BASE_URL } from '../env'
 const knowledge = createKnowledgeApi(api)
 
 /**
- * 条目详情：正文目录 + md 渲染 + 上一篇／下一篇 + 反向链接。
+ * 条目详情：**一栏阅读正文 + 右侧常驻目录**。
  *
- * <p>三块阅读辅助都是"从当前条目往外看"，因此都放在正文之后，不打断阅读流：
- * 目录在正文之前（它本来就是给你跳的），相邻与反向链接在正文之后。
+ * <p>照文档站的正文页排：左栏是阅读区（宽度上限 46rem 左右，汉字一行 30 多字最好读），
+ * 右侧是常驻目录，正文之后才是"上一篇／下一篇"与关系列表——三块阅读辅助都不打断阅读流。
+ *
+ * <p>上下篇做成**卡片**而不是两个文字链接：它们是长文里唯一的"继续读"出口，
+ * 而文字链接在一屏里几乎看不见。
  */
 export function KnowledgeEntryPage() {
   const params = useParams()
@@ -66,12 +69,15 @@ export function KnowledgeEntryPage() {
   })
 
   return (
-    <AppShell title="Paideia" subtitle="知识库" actions={<LearnerHeader />} wide>
-      <p className="mb-6 text-sm">
-        <Link to="/knowledge" className="text-muted-foreground underline-offset-4 hover:underline">
-          ← 返回知识库
-        </Link>
-      </p>
+    <AppShell title="Paideia" actions={<LearnerHeader />} wide>
+      <Link
+        to="/knowledge"
+        className="text-muted-foreground hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm transition-colors"
+        data-testid="back-to-categories"
+      >
+        <ChevronLeft className="size-4" />
+        返回知识库
+      </Link>
 
       {!valid ? (
         <Alert variant="destructive" data-testid="entry-state">
@@ -94,67 +100,39 @@ export function KnowledgeEntryPage() {
       ) : null}
 
       {entry.isSuccess ? (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]">
-          <article className="min-w-0">
-          <PageHeader
-            title={entry.data.title}
-            description={
-              entry.data.categoryName === null ? null : (
-                <Badge variant="outline">{entry.data.categoryName}</Badge>
-              )
-            }
-          />
-
-          <MarkdownBody markdown={entry.data.body} mediaBaseUrl={API_BASE_URL} />
-
-          <div className="mt-8">
-            <SelfAssessmentButtons
-              current={entry.data.selfAssessment}
-              disabled={assess.isPending}
-              onChange={(next) => assess.mutate(next)}
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_15rem]">
+          <article className="min-w-0 lg:max-w-[46rem]">
+            <PageHeader
+              eyebrow={entry.data.categoryName === null ? '知识库' : entry.data.categoryName}
+              title={entry.data.title}
             />
-          </div>
 
-          <nav className="border-border mt-12 grid gap-4 border-t pt-6 sm:grid-cols-2">
-            <div data-testid="entry-previous">
-              <div className="text-muted-foreground mb-1 text-xs">上一篇</div>
-              {entry.data.previous === null ? (
-                <span className="text-muted-foreground text-sm">没有了</span>
-              ) : (
-                <Link
-                  to={`/knowledge/entries/${entry.data.previous.id}`}
-                  className="text-sm underline-offset-4 hover:underline"
-                >
-                  {entry.data.previous.title}
-                </Link>
-              )}
+            <MarkdownBody markdown={entry.data.body} mediaBaseUrl={API_BASE_URL} />
+
+            <div className="mt-10">
+              <SelfAssessmentButtons
+                current={entry.data.selfAssessment}
+                disabled={assess.isPending}
+                onChange={(next) => assess.mutate(next)}
+              />
             </div>
-            <div data-testid="entry-next" className="sm:text-right">
-              <div className="text-muted-foreground mb-1 text-xs">下一篇</div>
-              {entry.data.next === null ? (
-                <span className="text-muted-foreground text-sm">没有了</span>
-              ) : (
-                <Link
-                  to={`/knowledge/entries/${entry.data.next.id}`}
-                  className="text-sm underline-offset-4 hover:underline"
-                >
-                  {entry.data.next.title}
-                </Link>
-              )}
-            </div>
-          </nav>
 
-          <KnowledgeNeighborhood entry={entry.data} />
+            <nav className="border-border mt-12 grid gap-4 border-t pt-8 sm:grid-cols-2">
+              <NeighborCard side="previous" entry={entry.data.previous} testId="entry-previous" />
+              <NeighborCard side="next" entry={entry.data.next} testId="entry-next" />
+            </nav>
 
-          <section className="mt-8 grid gap-6 sm:grid-cols-3">
-            <RelationList title="需要先看" items={entry.data.prerequisites} testId="entry-prerequisites" />
-            <RelationList title="相关内容" items={entry.data.related} testId="entry-related" />
-            <RelationList title="看完这篇再看" items={entry.data.dependents} testId="entry-dependents" />
-          </section>
+            <KnowledgeNeighborhood entry={entry.data} />
+
+            <section className="mt-10 grid gap-6 sm:grid-cols-3">
+              <RelationList title="需要先看" items={entry.data.prerequisites} testId="entry-prerequisites" />
+              <RelationList title="相关内容" items={entry.data.related} testId="entry-related" />
+              <RelationList title="看完这篇再看" items={entry.data.dependents} testId="entry-dependents" />
+            </section>
           </article>
 
           {/*
-            目录移到右侧粘性侧栏：长文里"边读边看我在哪"比在正文上方摆一个框有用；
+            目录在右侧常驻：长文里"边读边看我在哪"比在正文上方摆一个框有用；
             小屏没有侧栏空间，此时不显示（窄屏目录价值本来也低）。
           */}
           <aside className="hidden lg:block">
@@ -165,6 +143,40 @@ export function KnowledgeEntryPage() {
         </div>
       ) : null}
     </AppShell>
+  )
+}
+
+/** 上一篇／下一篇。两端结构相同、方向相反，合成一个组件。 */
+function NeighborCard({
+  side,
+  entry,
+  testId,
+}: {
+  side: 'previous' | 'next'
+  entry: EntryRef | null
+  testId: string
+}) {
+  const next = side === 'next'
+  return (
+    <div data-testid={testId} className={next ? 'sm:text-right' : undefined}>
+      <div className="text-muted-foreground mb-2 flex items-center gap-1 text-xs">
+        {next ? null : <ArrowLeft className="size-3.5" />}
+        {next ? '下一篇' : '上一篇'}
+        {next ? <ArrowRight className="size-3.5" /> : null}
+      </div>
+      {entry === null ? (
+        <span className="text-muted-foreground text-sm">没有了</span>
+      ) : (
+        <Link
+          to={`/knowledge/entries/${entry.id}`}
+          className={`border-border hover:border-primary/40 hover:bg-accent/40 block rounded-lg border p-3.5 transition-all ${
+            next ? 'sm:ml-auto' : ''
+          }`}
+        >
+          <span className="text-sm font-medium">{entry.title}</span>
+        </Link>
+      )}
+    </div>
   )
 }
 

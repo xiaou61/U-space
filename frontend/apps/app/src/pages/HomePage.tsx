@@ -1,200 +1,293 @@
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  AppShell,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Spinner,
-} from '@paideia/ui'
+import { createKnowledgeApi } from '@paideia/knowledge'
+import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
-import { BookOpen, NotebookPen, Target } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router'
+import { ArrowRight, BookOpen, Layers, NotebookPen, Search, Target } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
-import { API_BASE_URL } from '../env'
-import { usePlatform } from '../platform'
 
-interface HealthResponse {
-  status: string
-  groups?: string[]
+const knowledge = createKnowledgeApi(api)
+
+/** 摘要带着 markdown 记号，卡片上要的是"读得懂的一句话"，所以把常见记号抹掉（不渲染 md）。 */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[`*_>#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
-interface SubjectResponse {
-  subject: string
-}
+const QUICK_LINKS = [
+  {
+    to: '/knowledge',
+    testId: 'home-entry-knowledge',
+    icon: BookOpen,
+    title: '知识库',
+    description: '按分类浏览、按关键词检索，打开条目阅读。',
+  },
+  {
+    to: '/notes',
+    testId: 'home-entry-notes',
+    icon: NotebookPen,
+    title: '我的笔记',
+    description: '随手记点什么，或让助手把答案存进来。',
+  },
+  {
+    to: '/my-assessments',
+    testId: 'home-entry-assessments',
+    icon: Target,
+    title: '我的自评',
+    description: '你标记过「懂了／还不懂」的条目。',
+  },
+]
 
+/**
+ * 首页 = 仪表盘。
+ *
+ * <p><b>这里曾经是骨架期的"诊断页"</b>：进去先看到健康检查的原始 JSON 与平台类型，
+ * 真正的去处只有下面三张卡。用户 2026-10-15 明确要求去掉那段（"运行状态什么的，这个就去掉呗"）
+ * ——诊断信息的读者是开发者，不是学习者，它放在首页只会让人以为这是一套演示环境。
+ * 平台标识改挂在 `<html data-platform>` 上（见 `main.tsx`），测试与排障仍有锚点。
+ *
+ * <p>现在首页回答三件事：**我在哪、最近有什么可读、我的学习痕迹**。三个数字都来自接口，
+ * 没有一条是写死的。
+ */
 export function HomePage() {
   const { user } = useAuth()
-  const platform = usePlatform()
-  const health = useQuery({
-    queryKey: ['backend-health'],
-    queryFn: () => api.request<HealthResponse>('/actuator/health'),
+  const navigate = useNavigate()
+  const [keyword, setKeyword] = useState('')
+
+  // 一次请求同时供"条目总数"与"最近更新"两块用：首页不该为两个数字打两次接口
+  const entries = useQuery({
+    queryKey: ['knowledge-entries', null, '', 'home'],
+    queryFn: () => knowledge.entries({ size: 4 }),
   })
-  // 受保护接口：身份只从令牌解析。登录之后这里会返回当前主体的标识，
-  // 而在没有令牌时后端会拒为 401（e2e 用不带令牌的直连请求断言这一点）。
-  const identity = useQuery({
-    queryKey: ['backend-identity'],
-    queryFn: () => api.requestEnvelope<SubjectResponse>('/api/v1/me').then((data) => data.subject),
+  const categories = useQuery({
+    queryKey: ['knowledge-categories'],
+    queryFn: () => knowledge.categories(),
   })
+  const assessments = useQuery({
+    queryKey: ['my-assessments'],
+    queryFn: () => knowledge.myAssessments(),
+  })
+
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault()
+    const trimmed = keyword.trim()
+    if (trimmed !== '') {
+      navigate(`/knowledge/entries?q=${encodeURIComponent(trimmed)}`)
+    }
+  }
 
   return (
-    <AppShell title="Paideia" subtitle="首页" actions={<LearnerHeader />}>
-      {/*
-        hero：首页先给一个"这是一块地方"的第一印象。用 token 里的渐变（accent → 底色），
-        不引任何图片；右侧不放插画，免得又变成一屏空白。
-      */}
-      <section className="border-border from-accent via-background to-background mb-10 rounded-2xl border bg-gradient-to-br px-8 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight">你好，{user?.username ?? ''}</h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl text-[0.9375rem] leading-7">
-          右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。
-        </p>
-        <div className="mt-7">
-          <Button render={<Link to="/knowledge" />} data-testid="hero-open-knowledge">
-            去知识库
-          </Button>
+    <AppShell title="Paideia" subtitle="首页" actions={<LearnerHeader />} wide>
+      {/* hero：左边是"你要做什么"，右边是"最近有什么"——右侧放真实内容而不是插画，
+          一屏之内既有行动也有去处，不会只剩一大片留白 */}
+      <section className="border-border from-accent via-background to-background mb-8 grid gap-8 rounded-2xl border bg-gradient-to-br p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">
+        <div className="min-w-0">
+          <div className="text-primary mb-3 text-xs font-medium tracking-wide">
+            千人千面 · 个性化学习
+          </div>
+          <h1 className="text-3xl">你好，{user?.username ?? ''}</h1>
+          <p className="text-muted-foreground mt-3 max-w-xl text-base leading-7">
+            右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。
+          </p>
+
+          <form onSubmit={submitSearch} className="mt-7 flex max-w-lg items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="搜一条内容，例如「依赖注入」"
+                aria-label="搜索知识库"
+                data-testid="home-search"
+                className="h-11 rounded-full pl-9"
+              />
+            </div>
+            <Button type="submit" size="lg" data-testid="home-search-submit">
+              搜索
+            </Button>
+          </form>
+
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <Button variant="outline" render={<Link to="/knowledge" />} data-testid="hero-open-knowledge">
+              去知识库
+            </Button>
+            <Button variant="ghost" render={<Link to="/knowledge/entries" />}>
+              看全部条目
+            </Button>
+          </div>
         </div>
+
+        <Card className="overflow-hidden py-0" data-testid="home-recent">
+          <div className="border-border flex items-center justify-between border-b px-5 py-3.5">
+            <h2 className="text-sm font-medium">最近更新</h2>
+            <Link
+              to="/knowledge/entries"
+              className="text-muted-foreground hover:text-foreground text-xs"
+            >
+              全部 →
+            </Link>
+          </div>
+          {entries.isPending ? (
+            <div className="text-muted-foreground flex items-center gap-2 p-5 text-sm">
+              <Spinner />
+              加载中…
+            </div>
+          ) : null}
+          {entries.isError ? (
+            <p className="text-muted-foreground p-5 text-sm">
+              暂时读不到内容（{(entries.error as Error).message}）
+            </p>
+          ) : null}
+          {entries.isSuccess ? (
+            <ul className="divide-border divide-y">
+              {entries.data.items.slice(0, 4).map((entry) => (
+                <li key={entry.id}>
+                  <Link
+                    to={`/knowledge/entries/${entry.id}`}
+                    className="hover:bg-accent/40 group flex items-start gap-3 px-5 py-3.5 transition-colors"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="group-hover:text-primary block truncate text-sm font-medium transition-colors">
+                        {entry.title}
+                      </span>
+                      {entry.excerpt === null || plainText(entry.excerpt) === '' ? null : (
+                        <span className="text-muted-foreground mt-1 line-clamp-1 block text-xs">
+                          {plainText(entry.excerpt)}
+                        </span>
+                      )}
+                    </span>
+                    <ArrowRight className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0 transition-colors" />
+                  </Link>
+                </li>
+              ))}
+              {entries.data.items.length === 0 ? (
+                <li className="text-muted-foreground p-5 text-sm">知识库里还没有内容。</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </Card>
       </section>
 
-      {/* 首页的第一件事是**把人送进去**：登录后落在 /，这里没有任何去处就等于没有首页 */}
-      <div className="mb-10 grid gap-4 sm:grid-cols-3" data-testid="home-entries">
-        <Card className="transition-shadow hover:shadow-card">
-          <CardHeader>
-            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
-              <BookOpen className="size-4" />
-            </span>
-            <CardTitle>
-              <Link to="/knowledge" data-testid="home-entry-knowledge">
-                知识库
-              </Link>
-            </CardTitle>
-            <CardDescription>按分类浏览、按关键词检索，打开条目阅读。</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card className="transition-shadow hover:shadow-card">
-          <CardHeader>
-            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
-              <NotebookPen className="size-4" />
-            </span>
-            <CardTitle>
-              <Link to="/notes" data-testid="home-entry-notes">
-                我的笔记
-              </Link>
-            </CardTitle>
-            <CardDescription>随手记点什么，或让助手把答案存进来；也能只读分享。</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card className="transition-shadow hover:shadow-card">
-          <CardHeader>
-            <span className="bg-accent text-accent-foreground mb-2 flex size-9 items-center justify-center rounded-lg">
-              <Target className="size-4" />
-            </span>
-            <CardTitle>
-              <Link to="/my-assessments" data-testid="home-entry-assessments">
-                我的自评
-              </Link>
-            </CardTitle>
-            <CardDescription>你标记过「懂了／还不懂」的条目。</CardDescription>
-          </CardHeader>
-        </Card>
+      {/* 三个数字：都来自接口 */}
+      <div className="mb-12 grid gap-4 sm:grid-cols-3" data-testid="home-stats">
+        <StatCard
+          testId="home-stat-entries"
+          label="可读条目"
+          value={entries.data?.total}
+          to="/knowledge/entries"
+        />
+        <StatCard
+          testId="home-stat-categories"
+          label="分类"
+          value={categories.data?.length}
+          to="/knowledge"
+        />
+        <StatCard
+          testId="home-stat-assessments"
+          label="我标记过"
+          value={assessments.data?.length}
+          to="/my-assessments"
+        />
       </div>
 
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium">运行状态</h2>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>运行环境</CardTitle>
-            <CardDescription>平台能力来自 Platform 端口，界面代码不认识宿主。</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">平台</dt>
-              <dd className="m-0">
-                <Badge variant="secondary" data-testid="platform-kind">
-                  {platform.kind}
-                </Badge>
-              </dd>
-              <dt className="text-muted-foreground">后端基址</dt>
-              <dd className="m-0 font-mono text-xs" data-testid="api-base">
-                {API_BASE_URL === '' ? '同源（开发期由 Vite 代理转发）' : API_BASE_URL}
-              </dd>
-            </dl>
-          </CardContent>
-        </Card>
+      <Section
+        title="按分类浏览"
+        description="先看分类，点进去才是条目。"
+        actions={
+          <Button variant="ghost" size="sm" render={<Link to="/knowledge" />}>
+            全部分类
+          </Button>
+        }
+      >
+        {categories.isPending ? (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Spinner />
+            加载分类…
+          </p>
+        ) : null}
+        {categories.isSuccess && categories.data.length === 0 ? (
+          <p className="text-muted-foreground text-sm">还没有建分类。</p>
+        ) : null}
+        {categories.isSuccess && categories.data.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-categories">
+            {categories.data.slice(0, 6).map((category) => (
+              <Link
+                key={category.id}
+                to={`/knowledge/categories/${category.id}`}
+                className="border-border bg-card hover:border-primary/40 hover:shadow-card group flex items-center justify-between rounded-xl border p-4 transition-all hover:-translate-y-0.5"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="tile-surface border-border flex size-9 shrink-0 items-center justify-center rounded-lg border">
+                    <Layers className="text-primary size-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{category.name}</span>
+                    <span className="text-muted-foreground block text-xs">
+                      {category.children.length === 0 ? '暂无子分类' : `${category.children.length} 个子分类`}
+                    </span>
+                  </span>
+                </span>
+                <ArrowRight className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </Section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>后端健康检查 · GET /actuator/health</CardTitle>
-            <CardDescription>这个端点是公开的，不需要令牌。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {health.isPending && (
-              <p className="text-muted-foreground flex items-center gap-2 text-sm" data-testid="health-state">
-                <Spinner />
-                查询中…
-              </p>
-            )}
-            {health.isError && (
-              <Alert variant="destructive" data-testid="health-state">
-                <AlertTitle>请求失败</AlertTitle>
-                <AlertDescription>{(health.error as Error).message}</AlertDescription>
-              </Alert>
-            )}
-            {health.isSuccess && (
-              <>
-                <p className="m-0 text-sm" data-testid="health-state">
-                  状态：
-                  <strong data-testid="health-status">{health.data.status}</strong>
-                </p>
-                <pre
-                  data-testid="health-raw"
-                  className="bg-muted text-muted-foreground overflow-x-auto rounded-md p-3 font-mono text-xs"
+      <Section title="快捷入口">
+        <div className="grid gap-4 sm:grid-cols-3" data-testid="home-entries">
+          {QUICK_LINKS.map((item) => (
+            <Card key={item.to} className="hover:shadow-card transition-shadow">
+              <CardContent className="pt-6">
+                <span className="tile-surface border-border mb-3 flex size-10 items-center justify-center rounded-lg border">
+                  <item.icon className="text-primary size-5" />
+                </span>
+                <Link
+                  to={item.to}
+                  data-testid={item.testId}
+                  className="block font-medium underline-offset-4 hover:underline"
                 >
-                  {JSON.stringify(health.data, null, 2)}
-                </pre>
-              </>
-            )}
-            <Button variant="outline" size="sm" onClick={() => void health.refetch()}>
-              重新查询
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>当前身份 · GET /api/v1/me</CardTitle>
-            <CardDescription>
-              受保护接口。身份只从请求令牌解析，不接受客户端传入的用户标识。
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {identity.isPending && (
-              <p className="text-muted-foreground flex items-center gap-2 text-sm" data-testid="identity-state">
-                <Spinner />
-                查询中…
-              </p>
-            )}
-            {identity.isSuccess && (
-              <p className="m-0 text-sm" data-testid="identity-state">
-                已认证：<strong data-testid="identity-subject">{identity.data}</strong>
-              </p>
-            )}
-            {identity.isError && (
-              <p className="m-0 text-sm" data-testid="identity-state">
-                <span data-testid="identity-subject">未登录</span>
-                <span className="text-muted-foreground">（{(identity.error as Error).message}）</span>
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  {item.title}
+                </Link>
+                <p className="text-muted-foreground mt-1.5 text-sm leading-6">{item.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </Section>
     </AppShell>
+  )
+}
+
+/** 首页上的一个数字。数据还没回来时显示占位而不是 0——0 是一个有意义的数字，不能拿它顶替"不知道"。 */
+function StatCard({
+  label,
+  value,
+  to,
+  testId,
+}: {
+  label: string
+  value: number | undefined
+  to: string
+  testId: string
+}) {
+  return (
+    <Link
+      to={to}
+      data-testid={testId}
+      className="border-border bg-card hover:border-primary/40 hover:shadow-card flex items-baseline justify-between rounded-xl border p-5 transition-all hover:-translate-y-0.5"
+    >
+      <span className="text-muted-foreground text-sm">{label}</span>
+      <span className="text-2xl font-semibold tracking-tight">
+        {value === undefined ? <Spinner className="size-4" /> : value}
+      </span>
+    </Link>
   )
 }

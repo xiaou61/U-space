@@ -288,6 +288,22 @@
 
 @layer components {
   /*
+   * 卡片顶部那块"封面"。
+   *
+   * 参考的文档站与学习产品里，卡片上方都有一块带纹样的浅色区，卡片因此有"封面"而不是只有
+   * 两行字——用户对上一版的反馈原话是"这种空白是干什么的呢"。纹样用点阵画（**不用图片**，
+   * 因此没有额外请求，也不吃懒加载），颜色取自令牌，深浅两套主题各自成立。
+   *
+   * 用法：给它一个高度（如 `h-24`）+ 内容居中，下半部分再放标题与摘要。
+   */
+  .tile-surface {
+    background-color: var(--accent);
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 12px 12px;
+    background-position: -1px -1px;
+  }
+
+  /*
    * 可选玻璃层，**默认不使用**。
    *
    * Vercel 官方的对外设计规范（vercel.com/design.md）把 "glass effects" 列进 Hard reject，

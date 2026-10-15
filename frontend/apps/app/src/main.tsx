@@ -68,6 +68,15 @@ if (container === null) {
   throw new Error('找不到挂载节点 #root')
 }
 
+/**
+ * 宿主标识挂在 `<html data-platform>` 上。
+ *
+ * <p>它原本是首页"运行状态"那一块里的一枚可见徽章，2026-10-15 用户要求去掉那一段。但
+ * "当前跑在哪个宿主上"确实是 e2e 要断言的东西（桌面端必须用 desktop 实现），所以它没有消失，
+ * 只是从**界面**挪到了**元数据**：测试读属性，用户看不到。
+ */
+document.documentElement.dataset['platform'] = platform.kind
+
 createRoot(container).render(
   <StrictMode>
     <PlatformProvider platform={platform}>

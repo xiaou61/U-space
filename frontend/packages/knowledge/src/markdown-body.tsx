@@ -65,7 +65,10 @@ export function MarkdownBody({
       ul: (props) => <ul className="my-4 list-disc space-y-1.5 pl-6" {...props} />,
       ol: (props) => <ol className="my-4 list-decimal space-y-1.5 pl-6" {...props} />,
       blockquote: (props) => (
-        <blockquote className="border-border text-muted-foreground my-4 border-l-2 pl-4" {...props} />
+        <blockquote
+          className="border-info/50 bg-info/5 my-6 rounded-r-lg border-l-4 px-4 py-1 [&>p:first-child]:mt-3 [&>p:last-child]:mb-3"
+          {...props}
+        />
       ),
       a: (props) => (
         <a
@@ -78,11 +81,13 @@ export function MarkdownBody({
       // 代码块保持原样换行，避免长行把页面撑破
       pre: (props) => (
         <pre
-          className="bg-muted text-muted-foreground my-4 overflow-x-auto rounded-md p-3 font-mono text-xs"
+          className="bg-muted border-border my-5 overflow-x-auto rounded-lg border p-3.5 font-mono text-xs leading-6"
           {...props}
         />
       ),
-      code: (props) => <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs" {...props} />,
+      code: (props) => (
+        <code className="bg-muted border-border rounded border px-1.5 py-0.5 font-mono text-[0.8125rem]" {...props} />
+      ),
       table: (props) => (
         <div className="my-4 overflow-x-auto">
           <table className="w-full border-collapse text-xs" {...props} />
