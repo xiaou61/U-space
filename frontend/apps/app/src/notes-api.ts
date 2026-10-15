@@ -2,11 +2,12 @@ import type { ApiClient } from '@paideia/core'
 
 import { api } from './api'
 
-/** 列表项：**不含正文**（服务端就不返回），列表页只要标题与时间。 */
+/** 列表项：**不含正文全文**，带一段服务端截好的摘要（前 200 字，未清洗）。 */
 export interface NoteSummary {
   id: number
   entryId: number | null
   title: string
+  excerpt: string | null
   updatedAt: string | null
 }
 

@@ -1,4 +1,4 @@
-import { createKnowledgeApi } from '@paideia/knowledge'
+import { createKnowledgeApi, plainText } from '@paideia/knowledge'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
@@ -10,16 +10,6 @@ import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
-
-/** 摘要带着 markdown 记号，卡片上要的是"读得懂的一句话"，所以把常见记号抹掉（不渲染 md）。 */
-function plainText(markdown: string): string {
-  return markdown
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[`*_>#]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
 const QUICK_LINKS = [
   {

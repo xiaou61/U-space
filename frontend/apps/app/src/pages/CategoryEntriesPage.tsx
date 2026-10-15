@@ -1,4 +1,4 @@
-import { createKnowledgeApi } from '@paideia/knowledge'
+import { createKnowledgeApi, plainText } from '@paideia/knowledge'
 import {
   Alert,
   AlertDescription,
@@ -24,20 +24,6 @@ import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
-
-/**
- * 摘要是**正文前 200 字**，里面还带着 markdown 记号（`##`、`**`、链接语法）。
- * 卡片上要的是"读得懂的一句话"，所以把最常见的几种记号抹掉——**不渲染 markdown**：
- * 摘要里出现半截的表格/代码块只会更难看。
- */
-function plainText(markdown: string): string {
-  return markdown
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[`*_>#]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
 /**
  * 某个分类（或全部）下的条目列表——分类那一层的**二级页**。

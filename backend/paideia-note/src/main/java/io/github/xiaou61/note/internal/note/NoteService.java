@@ -45,8 +45,8 @@ public class NoteService {
     public record NoteView(Long id, Long entryId, String title, String body, Instant createdAt, Instant updatedAt) {
     }
 
-    /** 列表项：不带正文（列表页用）。 */
-    public record NoteSummary(Long id, Long entryId, String title, Instant updatedAt) {
+    /** 列表项：不带正文，带一段截断的摘要（列表页用）。 */
+    public record NoteSummary(Long id, Long entryId, String title, String excerpt, Instant updatedAt) {
     }
 
     @Transactional
@@ -62,7 +62,7 @@ public class NoteService {
 
     public List<NoteSummary> list(long userId) {
         return mapper.listByUser(userId, LIST_LIMIT).stream()
-                .map(note -> new NoteSummary(note.getId(), note.getEntryId(), note.getTitle(), note.getUpdatedAt()))
+                .map(note -> new NoteSummary(note.getId(), note.getEntryId(), note.getTitle(), note.getExcerpt(), note.getUpdatedAt()))
                 .toList();
     }
 

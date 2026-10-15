@@ -37,9 +37,15 @@ interface NoteMapper {
             """)
     Optional<Note> findByIdAndUser(@Param("id") long id, @Param("userId") long userId);
 
-    /** 列表不带正文：列表页只要标题与时间，把正文一起取回来会让一个几百条的列表变得很重。 */
+    /**
+     * 列表带一段**截断的正文**（前 200 字），不带全文。
+     *
+     * <p>原来只给标题，列表里两条"未命名笔记"因此长得一模一样、分不出谁是谁——用户
+     * 2026-10-15 的反馈正是"这里还是太简单了"。摘要与知识库列表同一做法（`LEFT(body, 200)`）：
+     * 长度由 SQL 定，而不是把全文拽回来再在内存里截。
+     */
     @Select("""
-            SELECT id, user_id, entry_id, title, created_at, updated_at
+            SELECT id, user_id, entry_id, title, LEFT(body, 200) AS excerpt, created_at, updated_at
             FROM notes
             WHERE user_id = #{userId}
             ORDER BY updated_at DESC, id DESC

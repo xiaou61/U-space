@@ -18,6 +18,9 @@ class Note {
     private Instant createdAt;
     private Instant updatedAt;
 
+    /** 只有列表查询会填：正文前 200 字。写入路径不带它。 */
+    private String excerpt;
+
     Long getId() {
         return id;
     }
@@ -72,5 +75,13 @@ class Note {
 
     void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getExcerpt() {
+        return excerpt;
+    }
+
+    public void setExcerpt(String excerpt) {
+        this.excerpt = excerpt;
     }
 }

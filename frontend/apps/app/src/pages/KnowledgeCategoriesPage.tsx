@@ -1,4 +1,4 @@
-import { createKnowledgeApi } from '@paideia/knowledge'
+import { createKnowledgeApi, plainText } from '@paideia/knowledge'
 import {
   Alert,
   AlertDescription,
@@ -23,16 +23,6 @@ import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
-
-/** 摘要带着 markdown 记号，列表上要的是"读得懂的一句话"，所以把常见记号抹掉。 */
-function plainText(markdown: string): string {
-  return markdown
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[`*_>#]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
 /**
  * 知识库首屏：**分类卡片网格**（取代原来的左侧窄树）。
