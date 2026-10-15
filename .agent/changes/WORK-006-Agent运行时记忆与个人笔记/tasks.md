@@ -6,7 +6,7 @@ status: approved
 mode: strict
 workflow: full
 depends_on: [WORK-004, WORK-005]
-related_to: [WORK-008]
+related_to: [WORK-007]
 created: 2026-10-12
 updated: 2026-10-12
 approved_by: xiaou61

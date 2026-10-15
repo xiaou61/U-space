@@ -7,7 +7,7 @@ mode: strict
 mode_reason: 首次引入 agent 运行时；首次出现平台的大宗用户私有数据及其生命周期；新增第二处免鉴权读端点
 workflow: full
 depends_on: [WORK-004, WORK-005]
-related_to: [WORK-008]
+related_to: [WORK-007]
 created: 2026-10-12
 updated: 2026-10-12
 approved_by: xiaou61

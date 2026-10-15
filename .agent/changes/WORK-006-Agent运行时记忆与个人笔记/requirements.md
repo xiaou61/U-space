@@ -7,7 +7,7 @@ mode: strict
 mode_reason: 首次引入 agent 运行时（多轮、工具、记忆、流式与思考展示）；首次出现平台的大宗用户私有数据（会话、记忆、笔记）及其生命周期；新增第二处免鉴权读端点（分享链接）；跨 paideia-ai、paideia-knowledge、前端与部署
 workflow: full
 depends_on: [WORK-004, WORK-005]
-related_to: [WORK-008]
+related_to: [WORK-007]
 created: 2026-10-12
 updated: 2026-10-12
 approved_by: xiaou61
@@ -24,7 +24,7 @@ approver_role: CTO
 1. **前置已完成**：WORK-004（知识库：条目、层级分类、条目关系、附件、学习者自评标记）与 WORK-005（AI 精简与悬浮助手）均已实施完成并上线。
 2. **WORK-005 已铺好的地基**：新建了 `backend/paideia-ai` 模块与薄端口；AgentScope Java 2.0.0（core + OpenAI 扩展）已引入，只用"模型 + formatter"最小面；凭据 AES-GCM 加密落库（主密钥由 `PAIDEIA_AI_MASTER_KEY` 或服务器配置注入）；SSRF 守卫（含传输层二次校验）；结果缓存；按用户限流；token 用量返还用户。业务代码不直接依赖 AgentScope 类型。
 3. **模型侧硬约束（实测记录在案）**：① DeepSeek 的思考 token 计入 `max_tokens`，给不足会**静默返回空内容**；② **工具调用与结构化输出不能在同一次调用并用**；③ AgentScope 对 OpenAI 系走"合成工具 + 强制工具调用"的回退路径，不是 provider 原生 schema（WORK-005 已显式固定 `nativeStructuredOutputWithTools(false)`）。
-4. **编号**：`WORK-006` 是 `.agent/changes/WORK-004-知识库/requirements.md` 文末与 `.agent/notes/deferred-scope.md` **文字上预留**给本项的号。Skill 编号分配器当前给出 `next_work_id = WORK-009`，但本项沿用 006：007 已并入本项（见「用户决定」第 6 条）、008 已被对象存储占用，而 WORK-008 当初正是为避开 005/006/007 这三个保留号才取 008——同一套约定。
+4. **编号**：`WORK-006` 是 `.agent/changes/WORK-004-知识库/requirements.md` 文末与 `.agent/notes/deferred-scope.md` **文字上预留**给本项的号。Skill 编号分配器当前给出 `next_work_id = WORK-009`，但本项沿用 006：007 已并入本项（见「用户决定」第 6 条）、008 已被对象存储占用，而 WORK-007 当初正是为避开 005/006/007 这三个保留号才取 008——同一套约定。
 5. **服务器形态**：单实例；无 Docker；只有 8081 对公网可达；**无定时任务基设**（无 cron/scheduler 运行时）。16 GB 内存、当前约 1.5 GB 已用。
 6. **免鉴权面的现状**：全项目唯一免鉴权读接口是 `GET /files/{uuid}`，其安全性依赖"UUID 不可枚举"。管理端与学习者端各占一个地址（`/admin/` 与 `/`）。
 7. **仓库纪律**：本仓库是公开仓库，任何凭据、连接串、服务器地址不得进入被跟踪文件；另一个会话可能并发改动同一工作区。
@@ -166,7 +166,7 @@ WORK-005 让平台第一次调用外部模型，但那次是**一次调用、没
 
 - `depends_on WORK-004`（知识库，已完成）：条目、分类层级、关系与自评标记是本项工具与笔记的挂靠对象；本项不改其数据模型，只在其上增加归属为用户的数据。
 - `depends_on WORK-005`（AI 精简与悬浮助手，已完成）：本项复用它的 `paideia-ai` 模块、薄端口、凭据加密、SSRF 守卫与限流，并把助手壳从"只有精简"扩展为"可对话"。**本项会实质扩展 WORK-005 建立的端口与前端助手包**——按关系规则，实施前须复核 WORK-005 的稳定规格未被破坏。
-- `related_to WORK-008`（对象存储接入，draft、本期不实现）：本项的分享产物与笔记若带附件，仍走既有 `FileStorage` 端口；本项**不**依赖对象存储，也不改变附件读写路径。
+- `related_to WORK-007`（对象存储接入，draft、本期不实现）：本项的分享产物与笔记若带附件，仍走既有 `FileStorage` 端口；本项**不**依赖对象存储，也不改变附件读写路径。
 
 ## 验收标准
 
