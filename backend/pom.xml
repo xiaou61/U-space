@@ -39,10 +39,23 @@
       在这里覆盖等于"有意识地抬版本"，而子模块里写 <version> 就成了绕过统一管理的散点。
     -->
     <flyway.version>13.10.0</flyway.version>
+    <!--
+      AWS SDK v2（对象存储用）。与 flyway 同一做法：版本写在属性里、由 BOM 统一解析，
+      子模块只依赖 artifactId。它比 Boot BOM 里的任何东西都独立，所以必须自己管版本。
+    -->
+    <awssdk.version>2.31.0</awssdk.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <!-- AWS SDK v2 的 BOM：s3 / auth / regions / http-client 各件的版本由它统一解析 -->
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.springframework.modulith</groupId>
         <artifactId>spring-modulith-bom</artifactId>

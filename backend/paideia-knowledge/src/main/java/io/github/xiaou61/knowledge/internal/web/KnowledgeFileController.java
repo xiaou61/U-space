@@ -2,9 +2,12 @@ package io.github.xiaou61.knowledge.internal.web;
 
 import io.github.xiaou61.knowledge.internal.file.FileService;
 import io.github.xiaou61.platform.ApiResponse;
+import java.net.URI;
 import java.time.Duration;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
+import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,6 +55,24 @@ class KnowledgeFileController {
      */
     @GetMapping("/files/{id}")
     ResponseEntity<byte[]> read(@PathVariable("id") String id) {
+        // 对象存储后端能给出有签名的直读 URL：**跳过去**，字节不再经过后端。
+        //
+        // 选 302 而不是"前端另调一个接口换 URL"：正文 markdown 里存的永远是本站路径
+        // `/api/v1/knowledge/files/{id}`，浏览器自己跟着跳，**前端与正文零改动**，
+        // 而这条端点的安全规则（只放行 GET、靠 id 不可枚举）一个字都不用改。
+        //
+        // 缓存头必须**允许短时缓存**：签名 URL 每次都不同，浏览器按完整 URL 索引缓存，
+        // 不允许缓存等于把本项之前那层长缓存彻底丢掉；给一小时（小于签名有效期）则同一小时内的
+        // 重复加载直接用缓存里的跳转，既不回后端也不回对象存储。
+        Optional<FileService.DirectRedirect> direct = fileService.directRedirect(id);
+        if (direct.isPresent()) {
+            FileService.DirectRedirect redirect = direct.get();
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(redirect.url()))
+                    .cacheControl(CacheControl.maxAge(redirect.cacheFor()).cachePrivate())
+                    .build();
+        }
+
         FileService.FileContent content = fileService.read(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(content.contentType()))

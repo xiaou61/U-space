@@ -1,5 +1,6 @@
 package io.github.xiaou61.knowledge.internal.file;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -27,4 +28,18 @@ public interface FileStorage {
 
     /** 删除；不存在时返回 false。用于"插表失败后回滚刚写的文件"。 */
     boolean delete(String id);
+
+    /**
+     * 能直读就给一个有签名的 URL，不能就给空（调用方自己把字节流出去）。
+     *
+     * <p><b>写成 default 是刻意的</b>：端口对实现的要求仍然只有上面三个必答项，
+     * "能不能直读"在这里是**能力**而不是**义务**——本地磁盘没有"直读"这个东西，
+     * 它返回空，调用方照旧流字节，行为与本项之前一模一样。
+     *
+     * <p>对象存储实现返回的是**带签名、有有效期**的 URL：拿到它就等于拿到那段内容的读取权，
+     * 所以调用方不要把它写进日志、也不要长期缓存（有效期由调用方按场景给）。
+     */
+    default Optional<String> presignedGetUrl(String id, Duration ttl) {
+        return Optional.empty();
+    }
 }

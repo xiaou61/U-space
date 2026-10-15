@@ -43,6 +43,15 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
+    <!--
+      对象存储（WORK-007）。**只本模块依赖**：附件读写是这一个模块的事，别的模块通过
+      FileStorage 端口间接用到它，不该各自再引一遍 SDK。版本由根 pom 的 AWS BOM 统一给。
+    -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

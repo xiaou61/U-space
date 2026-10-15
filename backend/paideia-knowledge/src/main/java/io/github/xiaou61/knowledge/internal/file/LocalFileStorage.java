@@ -63,7 +63,7 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public Optional<byte[]> read(String id) {
-        if (!isUuid(id)) {
+        if (!FileIds.isUuid(id)) {
             // id 来自数据库，理论上是自己写进去的；仍然校一次形状，避免任何"拼接路径"的可能
             return Optional.empty();
         }
@@ -81,7 +81,7 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public boolean delete(String id) {
-        if (!isUuid(id)) {
+        if (!FileIds.isUuid(id)) {
             return false;
         }
         try {
@@ -92,15 +92,4 @@ public class LocalFileStorage implements FileStorage {
         }
     }
 
-    private static boolean isUuid(String value) {
-        if (value == null || value.length() != 36) {
-            return false;
-        }
-        try {
-            UUID.fromString(value);
-            return true;
-        } catch (IllegalArgumentException exception) {
-            return false;
-        }
-    }
 }

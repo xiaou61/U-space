@@ -3,6 +3,7 @@ package io.github.xiaou61.knowledge.internal.file;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.dao.DataAccessException;
@@ -79,6 +80,31 @@ public class FileService {
         }
 
         return new UploadedFile(id, "/api/v1/knowledge/files/" + id, sniffed, content.length, originalName);
+    }
+
+    /**
+     * 可直读时的跳转信息：URL + **这个 302 本身允许被缓存多久**。
+     *
+     * <p>两个值必须成对给出：签名 URL 每次都是新的，而浏览器缓存按完整 URL 索引——如果 302
+     * 不允许缓存，本项之前靠"id 不变"换来的一年浏览器缓存就彻底没了（每次都回后端换签名）。
+     */
+    public record DirectRedirect(String url, Duration cacheFor) {
+    }
+
+    /**
+     * 问后端实现：这个附件能不能直读（给出有签名的 URL）？
+     *
+     * <p><b>先查库再签名</b>：读端点免鉴权。若拿任意 id 直接去签名，这个端点就成了"任意 id 都能
+     * 换到一个签名"的预言机；而"库里有没有这条记录"这件事本来就不该由它泄漏出去。
+     * 库里没有 → 与读取一样给 404。
+     *
+     * <p>库里**有**记录但实现不支持直读（本地目录）→ 返回空，调用方照旧流字节。
+     */
+    public Optional<DirectRedirect> directRedirect(String id) {
+        storedFileMapper.findById(id).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "附件不存在"));
+        return storage
+                .presignedGetUrl(id, properties.getS3().getPresignTtl())
+                .map(url -> new DirectRedirect(url, properties.getS3().getRedirectCache()));
     }
 
     public FileContent read(String id) {
