@@ -1,6 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-import { LEARNER } from './env'
+import { signIn } from './session'
 
 /**
  * 悬浮助手壳的端到端检查（AC-001 的界面一半）。
@@ -13,21 +13,8 @@ import { LEARNER } from './env'
  * 按钮是禁用而不是报错。
  */
 
-const SEED_LEARNER = LEARNER
-
-async function signIn(page: Page, account: { identifier: string; password: string }) {
-  await page.goto('/')
-  await expect(page.getByTestId('login-identifier')).toBeVisible()
-  await page.getByTestId('login-identifier').fill(account.identifier)
-  await page.getByTestId('login-password').fill(account.password)
-  await page.getByTestId('login-submit').click()
-  // **必须等登录真的完成**：点击只是把请求发出去。不等的话，后面那一步
-  // （刷新页面后先要换访问令牌）会和"还没登录"的窗口抢时间，表现为随机 401。
-  await expect(page.getByTestId('login-submit')).toHaveCount(0)
-}
-
 test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge')
 
   await expect(page.getByTestId('assistant-launcher')).toBeVisible()
@@ -42,7 +29,7 @@ test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', 
 })
 
 test('记忆面板：能看到"它记住了什么"，并说明可逐条删除', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
   await page.getByTestId('assistant-tab-memory').click()
@@ -56,7 +43,7 @@ test('记忆面板：能看到"它记住了什么"，并说明可逐条删除', 
 test('任意页可开对话；未配凭据时发送给出明确提示，而不是静默失败', async ({ page }) => {
   // 这一轮会真的发 POST：没配凭据时后端在调模型**之前**就拒了，
   // 所以它验证的是"接线通了且失败可见"，不会产生任何上游调用与费用。
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
 
@@ -82,7 +69,7 @@ test('打开条目后壳取到当前内容；没有凭据时给配置入口而�
     }
   })
 
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   // 条目列表在二级页；这条用例验的是助手取上下文，不是导航
   await page.goto('/#/knowledge/entries')
   await page.getByTestId('entry-link-3').click()

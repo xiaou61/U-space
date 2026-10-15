@@ -1,6 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-import { LEARNER } from './env'
+import { signIn } from './session'
 
 /**
  * 我的笔记（AC-010 的界面一半）。
@@ -12,19 +12,8 @@ import { LEARNER } from './env'
  * 否则重复跑会互相看见对方的残留。
  */
 
-const SEED_LEARNER = LEARNER
-
-async function signIn(page: Page, account: { identifier: string; password: string }) {
-  await page.goto('/')
-  await expect(page.getByTestId('login-identifier')).toBeVisible()
-  await page.getByTestId('login-identifier').fill(account.identifier)
-  await page.getByTestId('login-password').fill(account.password)
-  await page.getByTestId('login-submit').click()
-  await expect(page.getByTestId('login-submit')).toHaveCount(0)
-}
-
 test('从导航进入笔记：建档→编辑→保存→重载仍在→删除', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   // 入口在主导航里（"某个页面忘了加入口"是 2026-10-12 修过的真缺陷，这里顺带钉住）
   await page.getByTestId('learner-nav-notes').click()
   await expect(page.getByTestId('notes-placeholder')).toBeVisible()
@@ -54,7 +43,7 @@ test('从导航进入笔记：建档→编辑→保存→重载仍在→删除',
 })
 
 test('分享：链接免登录可读，撤回后立刻失效', async ({ page, browser }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.getByTestId('learner-nav-notes').click()
   await page.getByTestId('notes-create').click()
 
@@ -90,7 +79,7 @@ test('分享：链接免登录可读，撤回后立刻失效', async ({ page, br
 })
 
 test('跟着助手的回答走：回答上带"存进笔记"入口（本环境没凭据，只验入口的挂载规则）', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
   await page.getByTestId('assistant-tab-chat').click()

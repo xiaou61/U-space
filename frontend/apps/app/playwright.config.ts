@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+import { AUTH_FILE } from './e2e/global-setup'
+
 /** 后端工作目录与产物。运行 e2e 前需要先在 backend 目录执行 `mvn -B -DskipTests package`。 */
 const BACKEND_DIR = '../../../backend'
 const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
@@ -8,6 +10,8 @@ const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
 const REMOTE_BASE_URL = process.env.E2E_BASE_URL
 
 export default defineConfig({
+  // 登录一次、全体用例复用（线上有登录限流，逐条登录必撞 429）
+  globalSetup: './e2e/global-setup.ts',
   testDir: './e2e',
   // 后端是有状态资源，并行执行会让多个 worker 抢同一端口与同一份数据
   fullyParallel: false,
@@ -15,6 +19,7 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: REMOTE_BASE_URL ?? 'http://127.0.0.1:5173',
+    storageState: AUTH_FILE,
     // 首次重试才留 trace：稳定运行时零开销，失败时会话可完整回放
     trace: 'on-first-retry',
   },

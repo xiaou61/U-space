@@ -1,6 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-import { LEARNER } from './env'
+import { signIn } from './session'
 
 /**
  * 学习者端知识库的端到端检查。
@@ -12,16 +12,6 @@ import { LEARNER } from './env'
  * 种来源下会失效，所以整个应用用 Hash。
  */
 
-const SEED_LEARNER = LEARNER
-
-async function signIn(page: Page, account: { identifier: string; password: string }) {
-  await page.goto('/')
-  await expect(page.getByTestId('login-identifier')).toBeVisible()
-  await page.getByTestId('login-identifier').fill(account.identifier)
-  await page.getByTestId('login-password').fill(account.password)
-  await page.getByTestId('login-submit').click()
-}
-
 test('未登录访问知识库被导向登录页', async ({ page }) => {
   await page.goto('/#/knowledge')
 
@@ -30,7 +20,7 @@ test('未登录访问知识库被导向登录页', async ({ page }) => {
 })
 
 test('按分类浏览并打开条目，正文与目录都渲染出来', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge')
   await expect(page.getByTestId('category-grid')).toBeVisible()
 
@@ -70,7 +60,7 @@ test('按分类浏览并打开条目，正文与目录都渲染出来', async ({
 })
 
 test('同分类内的上一篇／下一篇可用', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   // 条目 1 与「接口与实现分离」同属分类 1，且后者更晚发布（见 devdata 的 V952）。
   // 别的已发布条目各占一个分类，所以那两个字段只有在同分类有两篇时才非空。
   await page.goto('/#/knowledge/entries/1')
@@ -82,7 +72,7 @@ test('同分类内的上一篇／下一篇可用', async ({ page }) => {
 })
 
 test('草稿对学习者不可见', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   // 条目列表在二级页（知识库首屏现在是分类网格）
   await page.goto('/#/knowledge/entries')
 
@@ -93,7 +83,7 @@ test('草稿对学习者不可见', async ({ page }) => {
 })
 
 test('中文关键词能搜到，且搜不到草稿', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge/entries')
 
   await page.getByTestId('knowledge-search').fill('依赖注入')
@@ -107,7 +97,7 @@ test('中文关键词能搜到，且搜不到草稿', async ({ page }) => {
 })
 
 test('自评标记刷新后仍在，并出现在「我标记过的内容」里', async ({ page }) => {
-  await signIn(page, SEED_LEARNER)
+  await signIn(page)
   await page.goto('/#/knowledge/entries/1')
 
   const understood = page.getByTestId('self-assessment-understood')
