@@ -74,7 +74,7 @@ export function HomePage() {
   }
 
   return (
-    <AppShell title="Paideia" subtitle="首页" actions={<LearnerHeader />} wide>
+    <AppShell title="Paideia" actions={<LearnerHeader />} wide>
       {/* hero：左边是"你要做什么"，右边是"最近有什么"——右侧放真实内容而不是插画，
           一屏之内既有行动也有去处，不会只剩一大片留白 */}
       <section className="border-border from-accent via-background to-background mb-8 grid gap-8 rounded-2xl border bg-gradient-to-br p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">

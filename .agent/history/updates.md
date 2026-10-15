@@ -2036,3 +2036,44 @@ schema_version: 1
 - **又一个验证陷阱（值得记）**：部署后我用 `goto` 打开线上页面量 DOM，量到的是**旧 bundle**——浏览器把入口 HTML 缓存住了，于是"我改的 `flex-col` 没生效"这个结论是假的（实际早就生效了）。**量之前先带一个缓存穿透参数**（`?v=<时间戳>`）或强制 reload，别拿缓存页下结论。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
+
+## 2026-10-15 14:15:00 +0800 · 自托管 Firecrawl 复检：公网入口整段 502（已修），extract 仍坏
+
+- 类型：ops/fix（服务器侧，未改仓库任何文件）
+- 起因：用户转来**另一个 AI 会话**对同一台生产机（`36.212.5.130`）做的"体检报告"，问"确保完全没问题了吧"。逐项实测后发现报告**漏掉了最严重的一条**：那台服务的公网入口在它自己改动期间对所有人返回 502。
+- **故障与根因**：`/opt/firecrawl/docker-compose.override.yaml` 在 14:00 被改（给 api 注入 `SEARXNG_ENDPOINT`）并重建了 `api` 容器，容器拿到新 IP；而 `auth-proxy`（nginx）里的 `proxy_pass http://api:3002` **只在配置加载时解析一次并缓存 IP**，仍指向旧地址 → 14:00:30 起全部请求 502。已用 `docker exec firecrawl-auth-proxy-1 nginx -s reload` 修复（立刻回到 200）。
+- **定位证据（这套办法可复用）**：同一时刻「容器内 `wget http://api:3002/` = OK」「宿主机 `curl 127.0.0.1:3002` = 200」「同一容器里的 nginx = 502」三者并存，即证明是 nginx 缓存解析问题而非连通性问题。另外不带 token 得 401、带 token 得 502，说明鉴权已通过、挂在 nginx→api 这一段。
+- **"是不是我本地开着外网"的排除法**：服务器本机打自己的 `127.0.0.1:3003` 同样 502（与客户端网络无关）；本机走代理与不走代理结果一致、且 0.08 秒返回（真网络问题会超时）。
+- 复检结果（穿公网入口 `3003` + token，14:05–14:08）：scrape ✅ / map ✅ / crawl ✅（completed 1/1）/ search ✅（中英文各 5 条）。**extract ❌ HTTP 500**：`Failed to generate schema after all attempts. Last error: Failed to parse URL from /responses`，根因是 `OPENAI_API_KEY` 与 `OPENAI_BASE_URL` 两个变量**存在但为空**（与另一会话的根因判断一致），但它描述成"HTTP 200 但 data: null"是错的——实际是 500 明确报错；且 `/v1/extract` 已废弃，响应里提示改用 `/v2/scrape` + json 格式。
+- **报告里的引擎结论已被实测推翻**：quark 现在 **0 条**（`Alibaba CAPTCHA detected`，suspended 900s），bing 与 duckduckgo 各 **10 条**可用（说明 SearXNG 的宿主代理确实接上了）。api 日志 `Using searxng search` 证实搜索真的走 SearXNG（不是回退直连 DDG）。
+- **教训**：另一会话"逐项验证通过"却漏掉整段 502，是因为它测的是 `127.0.0.1:3002`，绕过了反代。**验证必须走用户实际用的那扇门（3003 + token）。**
+- 复发风险：只要 `api` 容器再被重建，502 就会重演。两个后手：① 每次重建后 reload nginx；② 在 `nginx.conf` 加 `resolver 127.0.0.11 valid=10s;` 并用变量 `proxy_pass`（注意用变量后 nginx **不再自动拼接 URI**，要写成 `proxy_pass $upstream$request_uri;`）。
+- 未做（需用户裁决，或为避免与在跑的会话抢文件）：extract 的 LLM key 给不给；`SEARXNG_ENGINES` 去掉已挂的 quark；`nginx.conf` 的防复发改法。**另一个 AI 会话仍在同一台机上作业，因此我未改写它的 `docker-compose.override.yaml` 与 `nginx.conf`。**
+- 本地提交：无（未改仓库代码；服务器侧动作仅一次 `nginx -s reload`，可逆、不重建容器）
+- 远端推送：不适用
+
+## 2026-10-15 14:25:00 +0800 · 给自托管 Firecrawl 接上 DeepSeek，extract 从 500 修好
+
+- 类型：ops/change（服务器侧，未改仓库任何文件）
+- 起因：extract 是**唯一调 LLM** 的能力（scrape/map/crawl/search 都是 0 token 消耗，search 走自建 SearXNG）；原先 `OPENAI_API_KEY` / `OPENAI_BASE_URL` 存在但**为空** → `/v1/extract` 500。用户问清消耗量后裁决「可以的给 弄吧」。
+- 变更：`/opt/firecrawl/.env` 追加 `OPENAI_API_KEY`（**值不入库、只在服务器，权限从 644 收紧到 600**）、`OPENAI_BASE_URL=https://api.deepseek.com`、`MODEL_NAME=deepseek-flash`；备份 `.env.bak-20261015-before-llm`；`docker compose up -d api` 重建 api；**重建后立刻 `docker exec firecrawl-auth-proxy-1 nginx -s reload`**（否则重演当天那次整段 502）。
+- **关键点：`MODEL_NAME` 必须设。** 代码里把 `gpt-4o-mini`（39 处）与 `gemini-3.5-flash` 写成默认模型名，只给 key 与 base URL 会拿着 OpenAI 的模型名去打 DeepSeek。
+- 验证（全程穿公网入口 3003）：`/v1/extract` **HTTP 200**、30.3s、`topics: 9` 结构完整；它提示的替代接口 `/v2/scrape` + `formats:[{type:"json",...}]` 也 200、17.4s。公网入口全程 200，未再出现 502。
+- 顺带量到的成本事实：`react.dev/learn` 正文 19,264 字符 = **4,821 input token**（约 4 字符/token；**中文页约 1.5 字符/token，同字符数更贵**）。一次 schema 生成 8.6s、输出 702 token（其中 502 是推理）。**响应里的 `llmUsage` 对自定义模型恒为 0**（firecrawl 不认识 deepseek-flash，`tokensBilled` 是它内部计费数、不是模型 token），api 日志每次 extract 报 4 条 `No pricing information found for model: deepseek-flash`——**无害噪声，它把成本记成 $0**。**余额差值复测 < ¥0.01**（同页重复调用命中缓存），按 token 与官方单价推算新页面单次约 ¥0.01–0.06。
+- 官方单价（实测查得，每百万 token，低峰=高峰一半）：flash 输入未命中 $0.15/$0.30、**命中 $0.003/$0.006**、输出 $0.6/$1.2。
+- 未做（用户未要求）：`SEARXNG_ENGINES` 里已被 CAPTCHA 封的 quark；`nginx.conf` 的防复发改法。**另一个 AI 会话仍可能在同一台机上作业。**
+- 本地提交：无（未改仓库代码）
+- 远端推送：不适用
+
+## 2026-10-15 14:40:00 +0800 · 自评页页头重复标签 + 原生 select（用户报的观感问题）
+
+- 类型：change
+- 用户反馈：「我的笔记点到我的自评的时候，上面为什么多了一个我的标记，导致这样样式其实挺丑的」。
+- **真因**：`MyAssessmentsPage` 给 `AppShell` 传了 `subtitle="我的标记"`，那个位置标签渲染在品牌与导航之间，而它既**与导航里的「我的自评」重复**、又**不可点**（不像旁边的导航胶囊）。这是我上一轮清知识库那几页时漏掉的一页——同类问题当时只清了三处，没做全量排查。
+- 变更：
+  1. 三处页头位置标签全部去掉（自评页「我的标记」、首页「首页」、分享页「分享的笔记」）——nav 已经说清在哪一页，再挂个不可点的标签只会把品牌区挤乱。
+  2. 顺手修掉同一页的另一个老毛病：筛选从**原生 `<select>`** 换成设计系统的 `Select`（这个项目明确禁过原生控件，深色主题下它的下拉样式跟整站对不上）。筛选项用显式 `'all'` 而不是空串：base-ui 的 Select 把空串当"没选中"，会去显示占位符。
+  3. 列表整页过了一遍：语义色徽章（懂了=success / 还不懂=warning，原来是两种分不出来的灰）、相对时间、`共 N 条`、空态换带图标的 `Empty`、窄档改宽档。
+- 验证：typecheck 通过；本地 `knowledge.spec.ts` 8 passed；部署 75.2 秒；**线上 learner e2e 25 passed / 1 skipped（跳过的是"种子草稿"，线上没有那条草稿）、线上 admin e2e 8 passed**；线上截图核验自评页（页头无重复标签、筛选用设计系统下拉、列表有徽章与时间）。
+- 本地提交：见下一笔
+- 远端推送：见下一笔

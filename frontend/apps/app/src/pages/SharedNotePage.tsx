@@ -79,7 +79,7 @@ export function SharedNotePage() {
   return (
     // 同一个 AppShell：分享页是免登录的独立面，但**观感要与站内一致**——
     // 不做的话点开一条分享链接会像跳到了另一个网站。
-    <AppShell title="Paideia" subtitle="分享的笔记">
+    <AppShell title="Paideia">
 
       {error === null ? null : (
         <Alert variant="destructive">
