@@ -279,6 +279,42 @@ class MemoryAutoExtractionIntegrationTest {
     }
 
     @Test
+    @DisplayName("AC-003：判定「这条已不成立」时真的把它删掉")
+    void deleteActionRemovesTheRow() {
+        long existing = memories.rememberText(user, "他当时说要考公");
+        long conversationId = newConversationWithTurns(ROUNDS);
+        when(extractor.extract(any(), any())).thenReturn(new MemoryExtractor.MemoryExtraction(
+                List.of(new MemoryCandidate(MemoryCandidate.Action.DELETE, MemoryCandidate.Store.TEXT,
+                        existing, null, null, null, "他改主意了")), null));
+
+        extraction.scheduleIfDue(user, conversationId);
+        awaitExtractorCalls(user, 1);
+        awaitMemoryCount(0);
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_memories_text WHERE user_id = ?", Long.class, user)).isZero();
+    }
+
+    @Test
+    @DisplayName("AC-004：余额不足时跳过整理，且**一个上游请求都不发**")
+    void insufficientCreditsSkipsExtraction() {
+        // 把余额花光：整理也要花钱，而"钱不够就别发请求"是 AC-004 的另一半
+        long broke = user + 1;
+        credits.adjust(broke, 100_000, 0L, "test");
+        credits.adjust(broke, -100_000, 0L, "清零");
+        long conversationId = conversations.create(broke, null);
+        for (int i = 0; i < ROUNDS; i++) {
+            conversations.complete(broke, conversationId, "第 " + i + " 轮回答", null);
+        }
+
+        extraction.scheduleIfDue(broke, conversationId);
+        awaitExtractorCalls(broke, 1);
+
+        verify(extractor, times(0)).extract(any(), any());
+        assertThat(memories.list(broke, 0, 0)).isEmpty();
+    }
+
+    @Test
     @DisplayName("AC-010：自动整理的消耗单独记一行流水，与对话的消耗分得开")
     void extractionIsRecordedInLedger() {
         long conversationId = newConversationWithTurns(ROUNDS);
