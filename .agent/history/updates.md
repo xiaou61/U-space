@@ -2910,3 +2910,16 @@ schema_version: 1
 - 结论（未改动任何代码）：一次全量 ≈ **10–12 分钟**；最大杠杆是**把测试库放本地实例**以消掉每条 SQL 的跨省公网 RTT，其余手段都只是小杠杆；已证无效的两条（合并上下文、加 forkCount）留在"别再试一遍"里
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-16 18:09:54 +0800 · WORK-013 · 实施完成：记忆自动整理 + 三开关控制面；数据库改公网直连
+
+- 类型：implementation
+- 变更（后端 paideia-ai）：迁移 V12（两路记忆表加 source/conversation_id/ref_message_id/reason，默认 manual 不回填；新增 ai_user_settings；会话加整理游标）；新契约 `MemoryExtractor` + `MemoryCandidate`；实现 `MemoryCandidateParser`/`MemoryExtractionPrompt`(memory-extract-v1)/`MemoryExtractionService`/`MemoryProperties`/`MemoryKinds` + `internal/settings/*` + `AgentScopeMemoryExtractor` + `AiSettingsController`；触发点放在 `AssistantConversationController` 的 `emitter.complete()` 之后；记账走预扣/结算 + 流水种类 `MEMORY_EXTRACT`；错误码新增 `MEMORY_DISABLED`(40910→409)；注销级联加 `ai_user_settings`
+- 变更（前端 @paideia/assistant）：记忆面板三块（三开关含"会消耗积分、每 6 轮"说明 → 来源标签/理由/筛选/加载更多 → 清空并关闭二次确认）；总开关关着时「记住这条」禁用并给原因；新增 `memory-panel.test.tsx` 7 条
+- 决策：单飞用条件 UPDATE 抢游标（`<=>`，不加锁，抢到即推进⇒失败不重跑）；判重不检索、把已有记忆（≤40 条）直接给模型看（不做向量）；`kind` 白名单三值、越界落全文路；「空内容」按故障处理、整次放弃；`UPDATE`/`DELETE` 的 targetId 只收正整数且 WHERE 带 user_id；修了一处前后端契约不一致（清空返回 `{cleared, settings}`，界面显示"已清空 N 条"）
+- 变更（数据库，用户明确要求，规则里本就写了这条路径）：`bind-address` 127.0.0.1→0.0.0.0（备份 `mysqld.cnf.bak-2026-10-16`），**只新建 `paideia_test@'%'` 且只授权 `paideia_test.*`**；生产库 `paideia` 没有任何可远程登录账号（原先只有 @127.0.0.1/@localhost，未改）；凭据入被忽略的 `backend/config/remote-db.local.env`；两个 playwright 配置默认 JDBC 改 `36.212.5.130:3306`，口令只从环境变量来；`.agent/rules/always.md` 与 `notes/dev-workflow.md` 已同步事实、风险与回滚
+- 依据：`.agent/changes/WORK-013-AI记忆的自动提取与控制面/{requirements,proposal,design,tasks}.md`、`testing/report.md`
+- 验证（全程无隧道）：`mvn -B test` BUILD SUCCESS（paideia-app 130 运行/0 失败/4 跳过；paideia-ai 43，含解析器单测 11 条）；`MemoryAutoExtractionIntegrationTest` **12 条 0 失败**（覆盖 AC-001..010 + 单飞 + 欠费跳过）；**反向验证**：游标 `<=>` 改成 `=` → 12 条红 9 条，改回后全绿；学习者端 e2e **33 passed**、管理端 **8 passed**；前端 typecheck 0、单测 ui 93/assistant 23/knowledge 20/core 22/auth 13/desktop 4；本机 TCP 连 3306 拿到 MySQL 8.0.46 握手、线上健康 UP
+- 如实登记的未验证项：**提炼质量无断言**（只能靠真实使用看）；并发跑时 ui 的 markdown 套件曾 transform 失败（单独复跑 93/93）；面板来源筛选无 e2e；DELETE 不留动作历史（设计里的非目标）
+- 本地提交：70e1b7f（实施）、472df61（报告 + 补两条用例）、本条目单独一笔
+- 远端推送：未执行
