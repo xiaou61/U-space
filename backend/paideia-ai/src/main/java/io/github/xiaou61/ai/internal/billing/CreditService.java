@@ -19,11 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><b>扣减失败一律不发起上游请求</b>（REQ-006）：预留在调用之前同步完成，失败就直接抛
  * {@link ErrorCode#INSUFFICIENT_CREDITS}，界面据此给可操作提示。
  *
- * <p><b>单次调用有硬上限</b>（REQ-010）：结算时用量折算出的积分会被截到
- * {@code maxCreditsPerCall}。它同时封住了"预留估少了"时的超额扣减。
+ * <p><b>流水只记净额（2026-10-16 用户要求的改动）</b>：预留是**实现细节**，不该出现在用户看的
+ * 历史里。所以预留只动余额、**不写流水**；一次调用在流水里就是**一行**（真实消耗多少就写多少）。
+ * 代价与补偿：崩在"预留后、结算前"的那笔不再有 {@code RESERVE} 行可查，改由**不变式
+ * 「余额 == 初始余额 + 流水求和」是否成立**来发现——正常路径下这个等式严格成立，
+ * 不成立就说明有一笔未结算的预留（见 {@code design.md} §12 的已知缺口 1）。
  *
  * <p><b>账面永远不为负</b>：所有扣减都走带条件的 UPDATE；真的扣不动时**不扣**，把差额写进
- * 流水备注留痕（供人工对账），而不是让余额变负或抛错把已经产生的回答吞掉。
+ * 流水备注留痕，而不是让余额变负或抛错把已经产生的回答吞掉。
  */
 @Service
 public class CreditService {
@@ -78,6 +81,8 @@ public class CreditService {
     /**
      * 预留：从余额里先扣掉预留额。
      *
+     * <p>**只动余额、不写流水**（见类注释）：它是实现细节，不是一次发生的交易。
+     *
      * @return 实际预留的额度（调用方要把它带回来做结算）
      * @throws BizException {@link ErrorCode#INSUFFICIENT_CREDITS} 余额不足；**此时尚未发起任何上游请求**
      */
@@ -94,21 +99,23 @@ public class CreditService {
                     "积分不足，本次需要预留 " + amount + " 分（当前 " + balance(userId) + " 分）。"
                             + "当前没有自动充值，请联系管理员。");
         }
-        write(userId, -amount, CreditLedger.KIND_RESERVE, null, null, null, null, null, null);
         return amount;
     }
 
     /**
-     * 结算：按**实际用量**算出该扣多少，与预留的差额补退。
+     * 结算：按**实际用量**算出该扣多少，与预留的差额补退；流水只写**一行净额**。
      *
-     * <p>三步各自的意义：
+     * <p>三步：
      * <ol>
      *   <li>折算并**截到单次上限**（REQ-010）；</li>
-     *   <li>实际 ≤ 预留 → 退还差额（这是常态）；</li>
-     *   <li>实际 &gt; 预留 → 补扣差额；补不动（余额不够）就**不扣**，差额写进备注留痕。</li>
+     *   <li>实际 &lt; 预留 → 退还差额（常态）；实际 &gt; 预留 → 补扣差额，补不动就**不扣**、
+     *       差额写进备注留痕（账面永不为负）；</li>
+     *   <li>把**真实扣掉的那一笔**写成一行 {@code SETTLE}。净额为 0 时不写行——
+     *       "没有消耗"就是没有流水。</li>
      * </ol>
      *
-     * <p>用量为 {@code null}（上游没给）时按 0 计——**退还全部预留**：没有依据就不该扣。
+     * <p>用量为 {@code null}（上游没给）时按 0 计——**退还全部预留**，于是净额为 0、不写流水：
+     * 没有依据就不该扣。
      */
     @Transactional
     public void settle(long userId, long reserved, String model, Integer inputTokens, Integer outputTokens,
@@ -119,34 +126,40 @@ public class CreditService {
         long actual = Math.min(
                 billing.creditsFor(model, orZero(inputTokens), orZero(outputTokens)),
                 billing.getMaxCreditsPerCall());
-        if (actual >= reserved) {
+
+        long deducted = reserved;
+        String note = null;
+        if (actual < reserved) {
+            accounts.add(userId, reserved - actual);
+            deducted = actual;
+        } else if (actual > reserved) {
             long excess = actual - reserved;
-            if (excess > 0 && accounts.deductIfEnough(userId, excess) == 1) {
-                write(userId, -excess, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens,
-                        refMessageId, null, null);
-            } else if (excess > 0) {
-                log.warn("ai.credit.settle_shortfall userId={} reserved={} actual={}", userId, reserved, actual);
-                write(userId, 0, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens, refMessageId, null,
-                        "余额不足以补扣差额 " + excess + " 分");
+            if (accounts.deductIfEnough(userId, excess) == 1) {
+                deducted = actual;
             } else {
-                // 实际恰好等于预留：写一条 0 的锚点，让"这次调用被结算过"在流水里看得见
-                write(userId, 0, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens, refMessageId, null, null);
+                log.warn("ai.credit.settle_shortfall userId={} reserved={} actual={}", userId, reserved, actual);
+                note = "余额不足以补扣差额 " + excess + " 分";
             }
-            return;
         }
-        long refund = reserved - actual;
-        accounts.add(userId, refund);
-        write(userId, refund, CreditLedger.KIND_REFUND, model, inputTokens, outputTokens, refMessageId, null, null);
+        if (deducted > 0) {
+            write(userId, -deducted, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens,
+                    refMessageId, null, note);
+        }
     }
 
-    /** 全额退还：上游一轮都没返回用量、或这次调用根本没发生。 */
+    /**
+     * 全额退还：上游一轮都没返回用量、或这次调用根本没发生。
+     *
+     * <p>**不写流水**：净额为零——余额回到预留前的样子，就没有"发生过一笔交易"这回事。
+     * 调用失败这件事本身在 SSE 与日志里可见，不需要在账本上留一条金额为 0 的行。
+     */
     @Transactional
     public void refund(long userId, long reserved, Long refMessageId, String note) {
         if (!billing.isEnabled() || reserved <= 0) {
             return;
         }
         accounts.add(userId, reserved);
-        write(userId, reserved, CreditLedger.KIND_REFUND, null, null, null, refMessageId, null, note);
+        log.info("ai.credit.refunded userId={} reserved={} reason={}", userId, reserved, note);
     }
 
     /**

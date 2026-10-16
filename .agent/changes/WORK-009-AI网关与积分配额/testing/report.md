@@ -28,7 +28,7 @@ verified_at: 2026-10-16
 | AC-003 余额不足：402 且**上游零请求** | `mvn -f backend/pom.xml test`（含 `AiCreditIntegrationTest`） | 0 | 通过 | 0 分用户发消息得 **402**，`verify(assistant, never()).stream(...)` 通过，且不落用户消息 |
 | AC-004 并发不超扣：余额永不为负 | 同上（`AiCreditIntegrationTest` 的 20 线程并发预扣用例） | 0 | 通过 | 余额正好够 5 次时**恰好 5 个成功**，最终余额为 `0` |
 | AC-005 管理员调整可审计：操作人 / 时间 / 对象 / 数量 | 同上（`AiCreditIntegrationTest` 加线上 audit 查询） | 0 | 通过 | 集成用例断言 audit 响应含原因、`operator_user_id` 非空；线上 `ai_credit_ledger` 的两条 ADJUST `operator_user_id=3`、note「上线初始发放…」 |
-| AC-006 逐条可对账：消耗流水与真实用量一致 | 线上 `SELECT kind,delta,model,input_tokens,output_tokens FROM paideia.ai_credit_ledger WHERE user_id=4` | 人工 | 通过 | `RESERVE -1000` → `REFUND +998`（`model=deepseek-flash`、`in=358`、`out=578`）：358×1/1000=0、578×4/1000=2 → 实扣 **2**，余额 100000→**99998**，账实相符 |
+| AC-006 逐条可对账：消耗流水与真实用量一致 | `mvn -f backend/pom.xml -pl paideia-app -am test -Dtest=AiCreditIntegrationTest`（含"一行净额 + 预留不写流水"的断言） | 0 | 通过 | **5 运行 / 0 失败**：断言一次调用**只写一行** `SETTLE −150`、且 `kind IN ('RESERVE','REFUND')` 的行数为 **0**。线上实测（2026-10-16 改动前）为 `RESERVE −1000` → `REFUND +998`，按 `in=358`、`out=578` 折算实扣 **2**、余额 100000→**99998**，同样账实相符 |
 | AC-007 注销清零：积分两表随注销删净 | `mvn -f backend/pom.xml -pl paideia-app -am test -Dtest=AccountDeletionCascadeIntegrationTest` | 0 | 通过 | 该用例清单已含 `ai_credit_accounts` 与 `ai_credit_ledger` 并种了数据，注销后逐表断言行数为 0 |
 | AC-008 价目表改配置即生效 | `mvn -f backend/pom.xml test`（`AiCreditIntegrationTest#settleIsTraceableToTheMessage`） | 0 | 通过 | 断言"退还 = 预留 1000 − 150"，而 **150 正是测试配置 `input:100/output:200` 对 500/500 token 的折算值**——改配置即改扣减数 |
 | AC-009 凭据不泄漏：响应与日志都没有明文 | `git grep -l "sk-"`（被跟踪文件）＋ 线上 `journalctl -u paideia`，再 grep `ai.billing` | 人工 | 通过 | 被跟踪文件中**无命中**；启动日志只打 model、baseUrl、enabled，**连截断都不打**；`GET /api/v1/ai/credentials` 不再返回 last4 |

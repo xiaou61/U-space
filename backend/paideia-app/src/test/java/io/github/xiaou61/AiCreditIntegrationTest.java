@@ -147,7 +147,7 @@ class AiCreditIntegrationTest {
     }
 
     @Test
-    @DisplayName("AC-006：结算写流水，且消耗类流水能对上那条助手消息")
+    @DisplayName("AC-006：结算只写一行净额，能对上那条助手消息；预留不进流水")
     void settleIsTraceableToTheMessage() throws Exception {
         long userId = Long.parseLong(userA);
         credits.adjust(userId, 10_000, 1L, "用例发放");
@@ -160,10 +160,15 @@ class AiCreditIntegrationTest {
                 "SELECT id FROM ai_messages WHERE conversation_id = ? AND role = 'assistant'",
                 Long.class, conversationId);
         // 价格：500 input → 500×100/1000 = 50；500 output → 500×200/1000 = 100；合计 150
-        Long refunded = jdbcTemplate.queryForObject(
-                "SELECT delta FROM ai_credit_ledger WHERE kind = 'REFUND' AND ref_message_id = ?",
+        Long delta = jdbcTemplate.queryForObject(
+                "SELECT delta FROM ai_credit_ledger WHERE kind = 'SETTLE' AND ref_message_id = ?",
                 Long.class, messageId);
-        assertThat(refunded).as("退还 = 预留 1000 − 实际 150").isEqualTo(RESERVE - 150);
+        assertThat(delta).as("一次调用只写一行净额：−150").isEqualTo(-150L);
+        // **预留与退还都不进流水**（2026-10-16 用户要求）：它们是实现细节，不是用户看得懂的交易。
+        // 于是"一次调用在历史里就是一行"，而不是预扣−1000、退还+998 两行。
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_credit_ledger WHERE kind IN ('RESERVE', 'REFUND')", Long.class))
+                .as("预扣与退还不写流水").isZero();
         assertThat(credits.balance(userId)).isEqualTo(10_000 - 150);
     }
 
