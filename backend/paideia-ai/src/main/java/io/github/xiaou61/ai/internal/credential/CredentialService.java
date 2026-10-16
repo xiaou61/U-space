@@ -1,80 +1,61 @@
 package io.github.xiaou61.ai.internal.credential;
 
 import io.github.xiaou61.ai.ModelAccess;
+import io.github.xiaou61.ai.internal.billing.BillingProperties;
 import io.github.xiaou61.ai.internal.provider.UpstreamGuard;
-import io.github.xiaou61.platform.BizException;
-import io.github.xiaou61.platform.ErrorCode;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 /**
- * 凭据的存取。
+ * 凭据的来源。
  *
- * <p>三条纪律，都有测试盯着：
- * <ol>
- *   <li><b>明文只在内存里走一趟</b>：收到 → 校验 → 加密 → 落库，之后只在调用前临时解开。</li>
- *   <li><b>回给界面的永远只有后四位</b>，任何接口都不返回 Key（连密文也不返回）。</li>
- *   <li><b>保存前先过 SSRF 校验</b>：baseUrl 会被服务端拿去发起请求，不能等到调用时才发现它是内网。</li>
- * </ol>
+ * <p><b>WORK-009 起，AI 的上游凭据由平台统一持有</b>（放配置、不入库）。用户不再自带 Key，因此这里
+ * 不再有"保存 / 删除"这类写路径，也不再加密任何东西——**没有秘密要落在库里**。
+ *
+ * <p><b>为什么 {@code userId} 参数还在</b>：凭据是"在这个用户的上下文里解析"的。将来若允许个别用户
+ * 自带 Key 作为例外，这里是唯一的接入点，而两个调用点（会话与精简）不必再改一次。
+ *
+ * <p>明文 Key 只在构造 {@link ModelAccess} 这一刻从配置里读出来，随这次调用走完即丢——与 WORK-006
+ * 定下的纪律一致（不进日志、不进响应、不被长期持有）。
  */
 @Service
 public class CredentialService {
 
-    private final ModelCredentialMapper mapper;
-    private final CredentialCipher cipher;
-    private final UpstreamGuard guard;
+    private final BillingProperties billing;
 
-    CredentialService(ModelCredentialMapper mapper, CredentialCipher cipher, UpstreamGuard guard) {
-        this.mapper = mapper;
-        this.cipher = cipher;
-        this.guard = guard;
-    }
-
-    /** 界面用的脱敏视图。**没有 Key 字段**，这是刻意的：加一个就会有人把它填上。 */
-    public record CredentialView(boolean configured, String baseUrl, String model, String apiKeyLast4) {
-
-        static CredentialView absent() {
-            return new CredentialView(false, null, null, null);
+    CredentialService(BillingProperties billing, UpstreamGuard guard) {
+        this.billing = billing;
+        BillingProperties.PlatformCredential credential = billing.getPlatformCredential();
+        if (credential != null && credential.configured()) {
+            // 启动时校验一次：这份 baseUrl 之后会被服务端拿去发请求，配成内网应当立刻可见。
+            // 运行期还有 GuardedHttpTransport 兜第二道（它能看见最终拼出来的地址）。
+            guard.assertAllowed(credential.getBaseUrl());
         }
     }
 
-    public CredentialView view(long userId) {
-        return mapper.findByUser(userId)
-                .map(it -> new CredentialView(true, it.getBaseUrl(), it.getModel(), it.getApiKeyLast4()))
-                .orElseGet(CredentialView::absent);
+    /**
+     * 界面用的视图。
+     *
+     * <p>**连末四位都不给**：平台 Key 不是用户的 Key，把它的任何片段放到用户界面上都没有意义，
+     * 只会多一处需要解释的东西。用户界面需要知道的只有"配没配"。
+     */
+    public record CredentialView(boolean configured, String baseUrl, String model) {
     }
 
-    public CredentialView save(long userId, String baseUrl, String model, String apiKey) {
-        String trimmedUrl = baseUrl == null ? "" : baseUrl.trim();
-        String trimmedModel = model == null ? "" : model.trim();
-        String trimmedKey = apiKey == null ? "" : apiKey.trim();
-        if (trimmedUrl.isEmpty() || trimmedModel.isEmpty() || trimmedKey.isEmpty()) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "baseUrl、模型名与 API Key 都不能为空");
+    public CredentialView view() {
+        BillingProperties.PlatformCredential credential = billing.getPlatformCredential();
+        if (credential == null || !credential.configured()) {
+            return new CredentialView(false, null, null);
         }
-        // 越早越好：这份 baseUrl 之后会被服务端拿去发起请求
-        guard.assertAllowed(trimmedUrl);
-
-        ModelCredential credential = new ModelCredential();
-        credential.setUserId(userId);
-        credential.setBaseUrl(trimmedUrl);
-        credential.setModel(trimmedModel);
-        credential.setApiKeyCipher(cipher.encrypt(trimmedKey));
-        credential.setApiKeyLast4(last4(trimmedKey));
-        mapper.upsert(credential);
-        return view(userId);
+        return new CredentialView(true, credential.getBaseUrl(), credential.getModel());
     }
 
-    public void delete(long userId) {
-        mapper.deleteByUser(userId);
-    }
-
-    /** 取一份可用于调用的凭据；未配置返回空（调用方负责给出"尚未配置"的提示）。 */
+    /** 取一份可用于调用的凭据；平台未配置时返回空（调用方给出"平台尚未配置"的提示）。 */
     public Optional<ModelAccess> access(long userId) {
-        return mapper.findByUser(userId)
-                .map(it -> new ModelAccess(it.getBaseUrl(), it.getModel(), cipher.decrypt(it.getApiKeyCipher())));
-    }
-
-    private static String last4(String key) {
-        return key.length() <= 4 ? key : key.substring(key.length() - 4);
+        BillingProperties.PlatformCredential credential = billing.getPlatformCredential();
+        if (credential == null || !credential.configured()) {
+            return Optional.empty();
+        }
+        return Optional.of(new ModelAccess(credential.getBaseUrl(), credential.getModel(), credential.getApiKey()));
     }
 }

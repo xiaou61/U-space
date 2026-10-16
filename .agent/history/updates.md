@@ -2350,3 +2350,53 @@ schema_version: 1
 - 未做：**未写任何代码**、未改 WORK-007 的历史 log 条目。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 09:05:00 +0800 · WORK-009 实施：T-01..T-10、T-14 完成，T-11..T-13 后端完成而前端未做
+
+- 类型：implementation
+- 用户指示：「007有问题也清理一下吧。然后是009你直接一直给我做到task都做完了再给我说」。WORK-007 的清理已在上一笔完成（`validate` 通过）。
+
+### T-01 修工具循环漏记 token（本项的技术核心）
+- **端口改动**：`AssistantConversation.Listener` 新增 `onUsage(TokenUsage)`（流终止时成功/失败都调一次，先于结果回调），`onCompleted()` 去掉用量参数。**理由写在端口注释里**：用量与结果是两件事——调用可能失败，但烧掉的 token 是真的。
+- **实现改动**：`AgentScopeConversation.stream` 逐轮 `add(累计, 本轮用量)`，**四条终止路径全部上报**（正常结束、上游空响应、绕满 4 轮放弃、上游异常）。原先只上报最后一轮，绕满轮次那条路径一笔都不记。
+- **抽了个可替换的缝**：`buildModel(ModelAccess, GenerateOptions)` 返回 `io.agentscope.core.model.Model`（原为直接 new `OpenAIChatModel`）；`runRound` 的形参类型随之放宽到 `Model`。
+- **新测试 `ConversationUsageAccumulationTest`（4 条，paideia-ai 内，无 DB）**：两轮求和、绕满轮次仍上报、上游空响应按已发生计、`add` 的 null 安全。**为什么要在模型层做假**：既有的会话集成测试把**整个端口**桩掉了，桩里根本没有循环，所以这个 bug 一直看不见。
+- **反向验证做过**：把 `total = add(total, roundResult.usage())` 退回 `total = roundResult.usage()` → 正是那两条断言多轮求和的用例变红（4 条里 2 红），另两条不受影响；随后恢复。**实测：4 运行 / 0 失败 / 0 跳过**。
+
+### T-02/T-03/T-04 平台凭据 + 来源切换 + 用户侧端点下线
+- 新增 `BillingProperties`（`paideia.ai.billing`：enabled / platform-credential / pricing / reserveFloor / maxCreditsPerCall / reserveFactor）与 `BillingConfiguration`。
+- `CredentialService` 改为从平台配置取凭据（构造期过一遍 SSRF 校验，失败即启动失败）；`userId` 参数**刻意保留**（将来"个别用户自带 Key"例外的唯一接入点）。`view()` 不再返回 last4——那是平台的 Key，不是用户的。
+- `AiCredentialController` 只留 GET。**删除**（已无人引用）：`CredentialCipher`、`ModelCredential`、`ModelCredentialMapper`、`CredentialCipherTest`；`AiProperties.masterKey` 与测试 yml 里的 master-key 一并去掉（没有秘密要保护了）。
+- 错误文案改为「平台尚未配置 AI 服务，请联系管理员」。测试里的 `configureCredential` / `saveCredential` 改成**空方法并保留调用点**（它们现在表达"这一条需要 AI 可用"），`missingCredentialIsVisible` 改为**临时清空平台凭据 + finally 复原**（上下文在测试类间缓存，留个空凭据会让后面全挂）。
+
+### T-05/T-06/T-07 积分两张表 + 扣减 + 价目
+- 迁移 **V11**：`ai_credit_accounts`（余额，整数）+ `ai_credit_ledger`（只增不改）。**流水自带 model/input/output**——设计里原本写的是"join ai_messages"，但精简那一路的用量没有落库的地方，靠 join 会永远查不到那一半消耗。
+- `CreditService`：`reserve`（一条带 `balance >= ?` 的原子 UPDATE，影响行数即判据）/ `settle`（按用量折算、**截到单次上限**、实际<预留则退差额）/ `refund` / `adjust`；分期四类流水 ADJUST/RESERVE/SETTLE/REFUND。
+- 价目表 `creditsFor`：整数、向下取整、**有调用就至少 1 分**；**没配到价目按 0 扣**（宁可漏扣不误扣）。`ErrorCode` 新增 `INSUFFICIENT_CREDITS(40200)`。
+
+### T-08/T-09/T-10 接入两个调用点 + 额度拦截 + 单次上限
+- `ConversationService.prepare` 在**限流之后、调模型之前**预扣；`TurnPreparation` 带 `reservedCredits`；`complete()` 改为**返回消息 id**（结算的 `ref_message_id` 要对上它）。
+- 控制器新增 `settleOnce(settled, ...)`：**只结算一次的闸**。理由：`onCompleted` 里结算完还会往 SSE 写 `done`，写事件可能抛（客户端断开）落到外层 catch → **同一次调用退两遍，白送钱**。拿不到用量就整笔退。
+- `SummaryService.generate` 同样预扣；上游抛异常时**显式退款**（"失败不落库"只管消息，钱那一步得显式退）。
+- REQ-010 单次上限由 `settle` 里的截断实现（同时封住"预留估少了"的超额扣减）。
+
+### T-11/T-12/T-13 端点与安全（后端完成，前端未做）
+- 新增 `AiCreditController`（`/api/v1/ai/credits`，本人余额+明细，**不含 operatorUserId**）与 `AiCreditAdminController`（`/api/v1/ai/admin/credits`：audit / 查余额 / adjust）。
+- `SecurityConfiguration` 新增 `/api/v1/ai/admin/**` 的 `hasRole("ADMIN")`，**排在更宽的 `/api/v1/ai/**` 之前**并写明顺序写反的后果。
+- **前端未做**：管理端"积分调整 + 用量审计"两页、学习者端余额与明细界面、以及前端 `credentials` PUT/DELETE 调用的下线。**AC-005/AC-010 因此尚未端到端验收。**
+
+### T-14 注销级联
+- `AiUserDeletionListener` 清单加入 `ai_credit_ledger` 与 `ai_credit_accounts`（用户决定 8：一并删）；`AccountDeletionCascadeIntegrationTest` 的清单与种子数据同步加两表。
+
+### 测试与验证（据实报）
+- **真跑了**：`mvn -f backend/pom.xml test` → **BUILD SUCCESS**。模块明细：platform 11、web 9、persistence 0、security 11、account 13、knowledge **25 运行 / 1 跳过**、**paideia-ai 32 运行 / 0 跳过**（含本次新增的 `ConversationUsageAccumulationTest` 4 条）、**paideia-app 119 运行 / 118 跳过**。
+- **没跑的是大头**：`paideia-app` 的 **118 条全 Skipped**（缺 `PAIDEIA_TEST_DB_PASSWORD` 与 3307 隧道）。**本次新增的 `AiCreditIntegrationTest`（5 条，AC-003/004/005/006/010+越权回归）与改动过的 `AssistantConversationIntegrationTest`(11)/`AiSummaryIntegrationTest`(7) 全部 skipped，一条都没有真执行。** 隧道需要服务器 SSH 口令，`quick-server` 的包装器只支持远程执行、不支持本地端口转发，口令又不许写进命令参数——非交互环境下拿不到。
+- 因此 **AC-001/002/003/004/005/006/007/010 目前只有"代码就位"这一层证据，没有执行过的证据**；AC-002 另有 paideia-ai 单测的真证据。
+
+### 文档（T-16）
+- `.agent/notes/dev-workflow.md` 新增「AI 计费与平台凭据」一节：凭据来源、预留-结算口径、价目表改法、回滚档位、两条顺序敏感约束、三条已知缺口、集成测试的跳过陷阱与隧道限制。
+- `always.md` 的 DeepSeek 条目补一句：**Key 由平台持有、用户按积分消耗**，原三条 BYOK 裁决撤销，本期无充值。
+- 未做：T-15 部署（**阻塞——需要用户提供上游 API Key**）。
+
+- 本地提交：见下一笔
+- 远端推送：未执行

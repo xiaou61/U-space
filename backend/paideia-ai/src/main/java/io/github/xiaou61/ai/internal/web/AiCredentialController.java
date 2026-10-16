@@ -2,29 +2,24 @@ package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.platform.ApiResponse;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 模型凭据端点。
+ * AI 服务的状态端点（原"模型凭据端点"）。
  *
- * <p>只对**已登录用户**开放，不要求任何角色：这是每个用户自己的凭据与自己的额度，
- * 不是管理操作。安全配置里为此显式写了一条规则（避免将来被误读成漏配）。
+ * <p><b>WORK-009 起只读</b>：上游凭据由平台在部署配置里持有，用户不再配置 Key，所以保存（PUT）与
+ * 删除（DELETE）两条写路径已下线。留一个 GET 是因为界面仍需要知道"平台配没配"——没配时该把
+ * AI 入口做成不可用，而不是让用户点了才收到一个错误。
  *
- * <p>响应里**永远没有 Key**：只有 {@code apiKeyLast4}，够用户确认"我配的是哪一把"，
- * 不够任何人拿它去调用。
+ * <p>只对**已登录用户**开放，不要求任何角色：这是"服务可用不可用"的公共信息，不是管理操作。
+ *
+ * <p>响应里**没有任何 Key 片段**（连末四位也不给）：那是平台的 Key，不是用户的。
  */
 @RestController
 @RequestMapping("/api/v1/ai/credentials")
 class AiCredentialController {
-
-    /** 入参：三样都必填。校验在服务层做（那里还能顺手做 SSRF 校验）。 */
-    record CredentialRequest(String baseUrl, String model, String apiKey) {
-    }
 
     private final CredentialService credentials;
 
@@ -34,19 +29,8 @@ class AiCredentialController {
 
     @GetMapping
     ApiResponse<CredentialService.CredentialView> get() {
-        return ApiResponse.ok(credentials.view(AiRequester.require()));
-    }
-
-    /** 保存（有则覆盖）。同一个用户只有一份凭据，换 Key 就是覆盖。 */
-    @PutMapping
-    ApiResponse<CredentialService.CredentialView> put(@RequestBody CredentialRequest request) {
-        return ApiResponse.ok(credentials.save(AiRequester.require(),
-                request.baseUrl(), request.model(), request.apiKey()));
-    }
-
-    @DeleteMapping
-    ApiResponse<Void> delete() {
-        credentials.delete(AiRequester.require());
-        return ApiResponse.ok(null);
+        // 仍要求登录：这是产品内的状态，不是公开探针
+        AiRequester.require();
+        return ApiResponse.ok(credentials.view());
     }
 }

@@ -49,10 +49,20 @@ paideia:
     # 也不该和生产/本地开发用的目录混在一起。
     upload-dir: ${java.io.tmpdir}/paideia-test-uploads
   ai:
-    # 测试专用主密钥（32 字节的 base64，明文内容就是 "paideia-test-ai-master-key-00001"）。
-    # 与测试 JWT 密钥同理：只用于测试，任何真实环境都必须用 PAIDEIA_AI_MASTER_KEY 提供自己的。
-    # **缺了它整个应用起不来**（凭据加密不允许降级为明文），所以这里必须有。
-    master-key: cGFpZGVpYS10ZXN0LWFpLW1hc3Rlci1rZXktMDAwMDE=
+    # 平台统一持有的上游凭据（WORK-009）。测试里**从不真的打到上游**——会话与精简都把端口/模型桩掉了；
+    # 这里只需要"配置齐全"，好让"平台尚未配置"那条分支不被误触发（那条分支由用例临时清空它来验）。
+    # 地址取 1.1.1.1：SSRF 校验只放行公网地址，写 localhost 会让上下文起不来。
+    billing:
+      enabled: true
+      platform-credential:
+        base-url: https://1.1.1.1/v1
+        model: deepseek-flash
+        api-key: test-only-platform-key-never-used
+      # 价目表：每千 token 的积分。给一组好算的值，方便断言扣减（100/千 input、200/千 output）。
+      pricing:
+        deepseek-flash:
+          input: 100
+          output: 200
   mail:
     # 测试环境没有真实 SMTP：**显式**开启日志降级，否则装配层会让上下文起不来。
     # 测试取验证码靠 @Primary 的 InMemoryMailPort（见 AccountAuthTestSupport），这一项只为让装配通过。

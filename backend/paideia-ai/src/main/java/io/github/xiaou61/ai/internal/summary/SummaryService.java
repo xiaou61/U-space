@@ -7,6 +7,7 @@ import io.github.xiaou61.ai.GeneratedSummary;
 import io.github.xiaou61.ai.SummaryCard;
 import io.github.xiaou61.ai.SummaryVisibility;
 import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.ai.internal.support.UserRateLimiter;
 import io.github.xiaou61.ai.internal.provider.SummaryPrompt;
@@ -50,19 +51,22 @@ public class SummaryService {
     private final io.github.xiaou61.ai.internal.credential.AiProperties properties;
     /** 卡片与库里的 JSON 互转；用默认配置即可（不依赖容器里的 ObjectMapper）。 */
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final CreditService credits;
 
     SummaryService(KnowledgeApi knowledge,
                    CredentialService credentials,
                    EntrySummarizer summarizer,
                    EntrySummaryMapper mapper,
                    UserRateLimiter limiter,
-                   io.github.xiaou61.ai.internal.credential.AiProperties properties) {
+                   io.github.xiaou61.ai.internal.credential.AiProperties properties,
+                   CreditService credits) {
         this.knowledge = knowledge;
         this.credentials = credentials;
         this.summarizer = summarizer;
         this.mapper = mapper;
         this.limiter = limiter;
         this.properties = properties;
+        this.credits = credits;
     }
 
     /** 响应形状。`usage` 命中缓存时为 null；`source` 说明这份结果是谁生成的。 */
@@ -95,8 +99,26 @@ public class SummaryService {
         limiter.checkAndCount(userId, "生成精简", properties.getPerMinuteLimit(), properties.getPerDayLimit());
         var access = credentials.access(userId)
                 .orElseThrow(() -> new BizException(ErrorCode.CONFLICT,
-                        "尚未配置模型凭据，请先填写 baseUrl 与 API Key"));
-        GeneratedSummary generated = summarizer.summarize(content.title(), content.body(), access);
+                        "平台尚未配置 AI 服务，请联系管理员"));
+        // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
+        // 放在限流之后：被限流的那次本来就不该占用户的额度。
+        long reserved = credits.reserve(userId, credits.estimate());
+        GeneratedSummary generated;
+        try {
+            generated = summarizer.summarize(content.title(), content.body(), access);
+        } catch (RuntimeException failure) {
+            // 调用没成功 → 预留全额退回。**失败不落库不够**：钱那一步得显式退。
+            credits.refund(userId, reserved, null, "上游失败或返回不可用结果");
+            throw failure;
+        }
+        TokenUsage usage = generated.usage();
+        if (usage == null) {
+            // 上游没给用量：没有依据就不扣（宁可漏扣，审计页上看得出来）
+            credits.refund(userId, reserved, null, "上游未返回用量");
+        } else {
+            credits.settle(userId, reserved, access.model(),
+                    usage.inputTokens(), usage.outputTokens(), null);
+        }
 
         EntrySummary row = new EntrySummary();
         row.setEntryId(entryId);

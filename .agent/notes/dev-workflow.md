@@ -116,3 +116,42 @@ curl -sL -o /tmp/a.png http://<host>:8081/api/v1/knowledge/files/<uuid>   # 跟�
 
 **跑集成/契约测试需要两条隧道**：3307（MySQL）与 9000（对象存储）。契约测试的 S3 那条以环境变量为开关（`PAIDEIA_KNOWLEDGE_S3_ENDPOINT`），没有隧道时**跳过而不是失败**。
 
+## AI 计费与平台凭据（WORK-009，2026-10-16 起）
+
+**凭据来源变了**：AI 的上游 Key 由**平台**持有、放**部署配置**（`paideia.ai.billing.platform-credential.{base-url,model,api-key}`，环境变量占位），**不入库**。用户不再配置 Key，`/api/v1/ai/credentials` 只剩 GET（返回"配没配"，**连末四位也不给**）。随之删掉的是用户加密存 Key 的那张表 `ai_model_credentials` 与 `CredentialCipher`——**没有秘密要落库了**，`paideia.ai.master-key` 也不用再配（老配置里还留着它无害，只是没人读）。
+
+**积分**：每用户一个余额（`ai_credit_accounts`）+ 一条**只增不改**的流水（`ai_credit_ledger`，自带 model/input/output，**不靠 join** 别的表）。流程是**先预留、后按实际用量结算**：
+
+- 预留额 = `max-credits-per-call × reserve-factor`（默认 5000 × 0.2 = **1000**）。余额不够时**一个上游请求都不发**，返回 HTTP **402**（业务码 40200，界面据此提示"积分不足，当前没有自动充值，请联系管理员"）。
+- 结算按价目表折算并**截到单次上限**；实际 < 预留就退还差额。**拿不到用量就整笔退**——没有依据就不扣。
+- **本期没有充值**：积分唯一入口是管理端 `POST /api/v1/ai/admin/credits/{userId}/adjust`（带 delta 与 note，操作人与原因进流水）。
+
+**价目表改法**（改配置即生效，不用重新构建）：
+
+```yaml
+paideia:
+  ai:
+    billing:
+      pricing:
+        deepseek-flash:
+          input: 100     # 每千 input token 的积分
+          output: 200    # 每千 output token 的积分
+```
+
+**没配到价目就按 0 扣**（宁可漏扣、不误扣）：审计页上"有用量但 0 扣减"一眼看得出来。
+
+**回滚档位一**：`paideia.ai.billing.enabled=false` → 回到"平台凭据 + 不计量"，用户无感，已生成的流水不受影响。**不写**整表删除的回滚脚本（流水是审计证据）。
+
+**两条顺序敏感的约束**（写反了**不报错**，静默失效）：
+
+1. `/api/v1/ai/admin/**` 的 `hasRole("ADMIN")` **必须排在 `/api/v1/ai/**` 之前**——顺序写反只会在某天表现为"任何已登录的学习者都能看别人的用量、给自己发积分"。
+2. 新迁移接着仓库当前最大号（本项是 **V11**）。
+
+**已知缺口**（登记，不在本项解决）：
+
+1. **进程在"预留"之后、"结算"之前被杀** → 留下一笔未结算的预留，余额被多占。本项只保证**不超扣**；多占要人工按流水核对（缺 `REFUND` 即可定位）。不引入定时任务。
+2. **缓存折扣拿不到**：`TokenUsage` 只有 input/output/total，上游把缓存命中单独计价时我们按全价扣，计费偏高。
+3. 回收不足时（预留估少了）那笔差额**不补扣**，只写进流水备注留痕。
+
+**跑集成测试**：需要 DB 隧道 + `PAIDEIA_TEST_DB_PASSWORD`。**没设口令时 `paideia-app` 整模块跳过（118 条全 Skipped）而 BUILD 仍 SUCCESS**——看结果只看 `Skipped` 那一列。隧道本身要服务器的 SSH 口令，`quick-server` 的包装器只支持远程执行、**不支持本地端口转发**，所以非交互环境下拿不到这条隧道。
+

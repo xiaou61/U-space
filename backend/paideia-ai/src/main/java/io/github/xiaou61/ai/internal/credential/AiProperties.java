@@ -3,20 +3,17 @@ package io.github.xiaou61.ai.internal.credential;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * AI 配置。
+ * AI 配置（非计费部分）。
  *
- * <p><b>{@code master-key} 是必填的</b>（base64 的 32 字节）：它保护用户存进来的模型 Key，
- * 没有它就只能明文存，而"静默降级成明文"比启动失败危险得多——启动失败会立刻被发现，
- * 明文落库不会。校验在 {@link CredentialCipher} 的构造期做，缺它整个应用起不来。
+ * <p>这些是"摘要这一路"的默认值：超时、正文上限、生成上限、限流。会话那一份在
+ * {@link io.github.xiaou61.ai.internal.conversation.ConversationProperties}；平台凭据、价目表与
+ * 额度在 {@link io.github.xiaou61.ai.internal.billing.BillingProperties}。
  *
- * <p>环境变量 `PAIDEIA_AI_MASTER_KEY` 对应 `paideia.ai.master-key`（Spring 的宽松绑定）。
- * 值不进仓库：本地放被忽略的配置文件，服务器放 `application.yml`。
+ * <p><b>WORK-009 起没有 master-key 了</b>：那个主密钥是用来加密用户自带的模型 Key 的，而用户自带
+ * Key 这条路已经撤销（上游凭据由平台在部署配置里持有）。没有秘密落库，就不需要一个保护它的密钥。
  */
 @ConfigurationProperties(prefix = "paideia.ai")
 public class AiProperties {
-
-    /** base64 编码的 32 字节主密钥。 */
-    private String masterKey;
 
     /** 单次上游调用的超时（秒）。 */
     private int requestTimeoutSeconds = 30;
@@ -35,14 +32,6 @@ public class AiProperties {
 
     /** 每用户每天可触发的生成次数。 */
     private int perDayLimit = 60;
-
-    public String getMasterKey() {
-        return masterKey;
-    }
-
-    public void setMasterKey(String masterKey) {
-        this.masterKey = masterKey;
-    }
 
     public int getRequestTimeoutSeconds() {
         return requestTimeoutSeconds;

@@ -127,9 +127,13 @@ public class SecurityConfiguration {
                         // 笔记的举报处理。同样**必须排在任何更宽的 /api/v1/notes 规则（以及
                         // anyRequest）之前**：顺序写反这条永不生效，且不会有任何报错。
                         .requestMatchers("/api/v1/notes/admin/**").hasRole("ADMIN")
+                        // AI 积分的管理端接口（WORK-009）。**必须排在任何更宽的 /api/v1/ai 规则
+                        // 之前**：顺序写反这条永不生效、也不会有任何报错，只会在某天表现为
+                        // "任何已登录的学习者都能看别人的用量、给自己发积分"。
+                        .requestMatchers("/api/v1/ai/admin/**").hasRole("ADMIN")
                         // AI 精简（WORK-005）：**只要有身份即可，不要求角色**。显式写一条而不是
                         // 靠下面的 anyRequest() 兜住，是为了让"它没有角色限制"成为一个可读的声明——
-                        // 否则将来看到这个前缀没有规则，会以为漏配了。凭据与额度都是每个用户自己的，
+                        // 否则将来看到这个前缀没有规则，会以为漏配了。余额与明细都是每个用户自己的，
                         // 不是管理操作。
                         .requestMatchers("/api/v1/ai/**").authenticated()
                         // 只读分享：**全项目第二处免鉴权读端点**（用户裁决 12）。与附件读取同一模型——

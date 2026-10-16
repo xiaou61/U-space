@@ -3,6 +3,7 @@ package io.github.xiaou61.ai.internal.conversation;
 import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.ai.internal.support.UserRateLimiter;
@@ -41,6 +42,7 @@ public class ConversationService {
     private final KnowledgeApi knowledge;
     private final MemoryStore memories;
     private final UserRateLimiter limiter;
+    private final CreditService credits;
 
     ConversationService(ConversationMapper conversations,
                         ConversationMessageMapper messages,
@@ -48,7 +50,8 @@ public class ConversationService {
                         CredentialService credentials,
                         KnowledgeApi knowledge,
                         MemoryStore memories,
-                        UserRateLimiter limiter) {
+                        UserRateLimiter limiter,
+                        CreditService credits) {
         this.conversations = conversations;
         this.messages = messages;
         this.properties = properties;
@@ -56,6 +59,7 @@ public class ConversationService {
         this.knowledge = knowledge;
         this.memories = memories;
         this.limiter = limiter;
+        this.credits = credits;
     }
 
     /** 会话列表项。**不含消息内容**：列表只用来选，拉开某一条才取内容。 */
@@ -72,6 +76,7 @@ public class ConversationService {
      * @param entryBody      可选条目上下文
      * @param memorySnippets 召回的记忆（本人私有，每条一行）
      * @param access         凭据；调用方据此给出"尚未配置"的提示
+     * @param reservedCredits 已从余额里预扣的积分（0 表示未计量）；结算时调用方要把它带回来
      */
     public record TurnPreparation(long conversationId,
                                   List<ConversationTurn> history,
@@ -79,7 +84,8 @@ public class ConversationService {
                                   String entryTitle,
                                   String entryBody,
                                   List<String> memorySnippets,
-                                  ModelAccess access) {
+                                  ModelAccess access,
+                                  long reservedCredits) {
     }
 
     public long create(long userId, Long entryId) {
@@ -100,8 +106,9 @@ public class ConversationService {
     /**
      * 校验归属、写入用户消息、装配上下文。
      *
-     * <p>凭据缺失不算"会话不存在"，所以单独抛一条更明确的错误：界面要据此提示
-     * "先配置你自己的模型 Key"，而不是让人以为会话丢了。
+     * <p>凭据缺失不算"会话不存在"，所以单独抛一条更明确的错误：界面要据此提示"平台还没配 AI 服务"，
+     * 而不是让人以为会话丢了。**WORK-009 起凭据由平台持有**，所以措辞从"填你自己的 Key"改成
+     * "联系管理员"——用户已经没有可填的地方了。
      */
     @Transactional
     public TurnPreparation prepare(long userId, long conversationId, String prompt) {
@@ -115,7 +122,7 @@ public class ConversationService {
 
         Optional<ModelAccess> access = credentials.access(userId);
         if (access.isEmpty()) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "尚未配置模型凭据，请先填写你自己的 API Key");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "平台尚未配置 AI 服务，请联系管理员");
         }
         // 限流放在凭据校验**之后**：没配凭据的请求根本不会打到上游，不该占用户的额度
         // （与"命中缓存不计入"同一个口径）
@@ -130,8 +137,11 @@ public class ConversationService {
         conversations.slideExpiry(conversationId, userId, now.plus(properties.getTtl()), now);
 
         EntryContext entry = entryContext(conversation.getEntryId());
+        // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
+        // 放在限流之后：被限流的那一轮本来就不该占用户的额度。
+        long reserved = credits.reserve(userId, credits.estimate());
         return new TurnPreparation(conversationId, history, trimmed,
-                entry.title(), entry.body(), memorySnippets(userId, trimmed), access.get());
+                entry.title(), entry.body(), memorySnippets(userId, trimmed), access.get(), reserved);
     }
 
     /**
@@ -155,18 +165,24 @@ public class ConversationService {
      *
      * <p><b>正文为空但有思考</b>时不写空消息——调用方会传入一段可见提示（"思考 token 吃满了"这类），
      * 那才是用户该看到的内容。
+     *
+     * @return 落库那条助手消息的 id。调用方用它做积分结算的 {@code ref_message_id}——
+     *         "逐条可对账"（AC-006）就是靠这个对上
      */
     @Transactional
-    public void complete(long userId, long conversationId, String assistantContent, TokenUsage usage) {
+    public long complete(long userId, long conversationId, String assistantContent, TokenUsage usage) {
         Instant now = Instant.now();
         conversations.findActiveByIdAndUser(conversationId, userId, now)
                 .orElseThrow(ConversationService::conversationNotFound);
 
-        appendMessage(conversationId, ConversationMessage.ROLE_ASSISTANT, assistantContent, toUsageJson(usage));
+        long messageId = appendMessage(conversationId, ConversationMessage.ROLE_ASSISTANT,
+                assistantContent, toUsageJson(usage));
         conversations.slideExpiry(conversationId, userId, now.plus(properties.getTtl()), now);
+        return messageId;
     }
 
-    private void appendMessage(long conversationId, String role, String content, String usageJson) {
+    /** @return 落库那条消息的 id（{@code useGeneratedKeys} 回写） */
+    private long appendMessage(long conversationId, String role, String content, String usageJson) {
         ConversationMessage message = new ConversationMessage();
         message.setConversationId(conversationId);
         message.setRole(role);
@@ -179,6 +195,7 @@ public class ConversationService {
         if (drop > 0) {
             messages.deleteOldest(conversationId, drop);
         }
+        return message.getId() == null ? 0 : message.getId();
     }
 
     /** 历史按窗口取最近 N 条，再翻成旧 → 新（模型要的顺序）。 */

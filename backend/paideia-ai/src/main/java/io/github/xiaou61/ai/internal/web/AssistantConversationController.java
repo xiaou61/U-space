@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.AssistantConversation;
 import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.conversation.ConversationService;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
@@ -62,14 +63,17 @@ class AssistantConversationController {
     private final ConversationService conversations;
     private final AssistantConversation assistant;
     private final TaskExecutor executor;
+    private final CreditService credits;
     private final ObjectMapper json = new ObjectMapper();
 
     AssistantConversationController(ConversationService conversations,
                                     AssistantConversation assistant,
-                                    @Qualifier("applicationTaskExecutor") TaskExecutor executor) {
+                                    @Qualifier("applicationTaskExecutor") TaskExecutor executor,
+                                    CreditService credits) {
         this.conversations = conversations;
         this.assistant = assistant;
         this.executor = executor;
+        this.credits = credits;
     }
 
     @PostMapping
@@ -106,6 +110,10 @@ class AssistantConversationController {
     private void runTurn(long userId, long conversationId,
                          ConversationService.TurnPreparation turn, SseEmitter emitter) {
         StringBuilder content = new StringBuilder();
+        // 用量单独存一格：onUsage 先于结果回调，这样"失败也要为已烧掉的 token 负责"不必在每条错误路径上再判一次
+        TokenUsage[] usageRef = new TokenUsage[1];
+        // 结算只做一次的闸（理由见 settleOnce）
+        boolean[] settled = {false};
         try {
             assistant.stream(
                     new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
@@ -134,7 +142,15 @@ class AssistantConversationController {
                         }
 
                         @Override
-                        public void onCompleted(TokenUsage usage) {
+                        public void onUsage(TokenUsage usage) {
+                            // 只赋值，不做任何可能抛异常的 I/O：它先于 onCompleted/onFailed 被调用，
+                            // 这里抛出去会让用户既拿不到结果、也拿不到错误。
+                            usageRef[0] = usage;
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                            TokenUsage usage = usageRef[0];
                             boolean noContent = content.toString().isBlank();
                             String text = noContent ? EMPTY_CONTENT_HINT : content.toString();
                             if (noContent) {
@@ -142,7 +158,10 @@ class AssistantConversationController {
                                 // 用户看到的是"助手什么都没说"，而不是"这次没产出正文"
                                 send(emitter, "content", Map.of("delta", EMPTY_CONTENT_HINT));
                             }
-                            conversations.complete(userId, conversationId, text, usage);
+                            // 先落消息（拿到 id）、再按这个 id 结算：流水的 ref_message_id 能对上那条消息，
+                            // "逐条可对账"（AC-006）才有依据
+                            long messageId = conversations.complete(userId, conversationId, text, usage);
+                            settleOnce(settled, userId, turn, usage, messageId);
                             // empty=true 告诉前端"这段是提示，不是模型生成的正文"，免得把它当成回答渲染。
                             // 用 HashMap 而不是 Map.of：用量允许为 null，而 Map.of 见到 null 直接抛。
                             Map<String, Object> payload = new HashMap<>();
@@ -154,6 +173,9 @@ class AssistantConversationController {
 
                         @Override
                         public void onFailed(BizException failure) {
+                            // 失败**也要过账**：用量拿到了就按用量扣，没拿到就全额退回。
+                            // "失败不落库"只管消息，钱那一步必须显式处理。
+                            settleOnce(settled, userId, turn, usageRef[0], null);
                             send(emitter, "error", Map.of("message", failure.getMessage() == null
                                     ? "生成失败，请稍后再试" : failure.getMessage()));
                             emitter.complete();
@@ -161,9 +183,34 @@ class AssistantConversationController {
                     });
         } catch (RuntimeException unexpected) {
             // 端口约定失败走 onFailed；真出了别的运行时异常也不能让线程静默死掉（客户端会一直等）
+            settleOnce(settled, userId, turn, null, null);
             send(emitter, "error", Map.of("message", "生成失败，请稍后再试"));
             emitter.complete();
         }
+    }
+
+    /**
+     * 结算或退还这一轮的预留，**且只做一次**。
+     *
+     * <p>为什么要有"只做一次"的闸：`onCompleted` 里先结算、再往 SSE 写 `done`，而写事件可能抛
+     * （客户端断开）。那会落到外层的 `catch`，于是同一次调用被退两遍——那是白送钱。
+     * 用一个布尔闸比"分析每条路径有没有重叠"可靠。
+     *
+     * <p><b>拿不到用量就全额退</b>：没有用量就没有扣费依据。宁可漏扣（审计页上"有用量但 0 扣减"
+     * 一眼可见），也不要凭猜扣用户的分。
+     */
+    private void settleOnce(boolean[] settled, long userId, ConversationService.TurnPreparation turn,
+                            TokenUsage usage, Long messageId) {
+        if (settled[0]) {
+            return;
+        }
+        settled[0] = true;
+        if (usage == null) {
+            credits.refund(userId, turn.reservedCredits(), messageId, "上游未返回用量");
+            return;
+        }
+        credits.settle(userId, turn.reservedCredits(), turn.access().model(),
+                usage.inputTokens(), usage.outputTokens(), messageId);
     }
 
     private static Map<String, Object> usagePayload(TokenUsage usage) {

@@ -106,7 +106,7 @@ class AiSummaryIntegrationTest {
     }
 
     @Test
-    @DisplayName("未登录一律 401；已登录但无凭据时视图为未配置")
+    @DisplayName("未登录一律 401；已登录时服务状态视图可见，且响应里没有 Key 的任何片段")
     void requiresAuthentication() throws Exception {
         assertThat(mockMvc.perform(get("/api/v1/ai/credentials")).andReturn().getResponse().getStatus())
                 .isEqualTo(401);
@@ -116,44 +116,19 @@ class AiSummaryIntegrationTest {
         MvcResult result = mockMvc.perform(get("/api/v1/ai/credentials").header("Authorization", token(userA)))
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
-        assertThat(JsonPath.<Boolean>read(body(result), "$.data.configured")).isFalse();
+        // WORK-009 起凭据由平台持有，测试配置里是配好的（"没配"那条分支由
+        // AssistantConversationIntegrationTest#missingCredentialIsVisible 临时清空来验）
+        assertThat(JsonPath.<Boolean>read(body(result), "$.data.configured")).isTrue();
+        // **连末四位都不给**：那是平台的 Key，不是用户的
+        assertThat(body(result)).doesNotContain("apiKey");
+        assertThat(body(result)).doesNotContain("test-only-platform-key-never-used");
     }
 
-    @Test
-    @DisplayName("凭据加密落库：接口只回 last4，响应与库里都没有明文")
-    void credentialIsEncryptedAndNeverEchoed() throws Exception {
-        String apiKey = "sk-integration-secret-4321";
-        MvcResult saved = mockMvc.perform(put("/api/v1/ai/credentials")
-                        .header("Authorization", token(userA))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"baseUrl\":\"" + PUBLIC_BASE_URL + "\",\"model\":\"deepseek-flash\","
-                                + "\"apiKey\":\"" + apiKey + "\"}"))
-                .andReturn();
-
-        assertThat(saved.getResponse().getStatus()).isEqualTo(200);
-        assertThat(saved.getResponse().getContentAsString(StandardCharsets.UTF_8)).doesNotContain(apiKey);
-        assertThat(JsonPath.<String>read(body(saved), "$.data.apiKeyLast4")).isEqualTo("4321");
-        assertThat(JsonPath.<Boolean>read(body(saved), "$.data.configured")).isTrue();
-
-        byte[] cipher = jdbcTemplate.queryForObject(
-                "SELECT api_key_cipher FROM ai_model_credentials WHERE user_id = ?", byte[].class,
-                Long.parseLong(userA));
-        assertThat(cipher).isNotNull();
-        assertThat(new String(cipher, StandardCharsets.ISO_8859_1)).doesNotContain(apiKey);
-    }
-
-    @Test
-    @DisplayName("SSRF 在保存凭据时就被拒，且一次调用都不会发生")
-    void rejectsInternalBaseUrlBeforeAnyCall() throws Exception {
-        MvcResult result = mockMvc.perform(put("/api/v1/ai/credentials")
-                        .header("Authorization", token(userA))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"baseUrl\":\"https://10.0.0.1/v1\",\"model\":\"m\",\"apiKey\":\"k-1234\"}"))
-                .andReturn();
-        assertThat(result.getResponse().getStatus()).isEqualTo(400);
-        assertThat(body(result)).contains("baseUrl 不被允许");
-        verify(summarizer, never()).summarize(anyString(), anyString(), any());
-    }
+    // 「凭据加密落库 / 只回 last4」与「保存凭据时就被 SSRF 拒」两条用例已随 WORK-009 删除：
+    // **用户自带的 Key 这条路已撤销**（上游凭据由平台在部署配置里持有），于是加密、last4、
+    // "保存时会打上游"这三件事都不再存在——留着它们只会去断言一个已经下线的接口。
+    // SSRF 规则本身仍有覆盖：`UpstreamGuardTest`（规则单测）+ `CredentialService` 构造期的启动校验
+    // + `GuardedHttpTransport`（每次出站看最终地址）。
 
     @Test
     @DisplayName("生成返回结构化卡片与用量；重复请求命中缓存且不再调模型")
@@ -204,23 +179,17 @@ class AiSummaryIntegrationTest {
     }
 
     @Test
-    @DisplayName("没配凭据的用户能读公开结果，但触发生成时被明确拒绝且不调用上游")
-    void keylessUserCanReadButNotGenerate() throws Exception {
-        saveCredential(userA);
+    @DisplayName("别人生成的公开结果，本人也能读到（source 标 others）")
+    void publicSummaryIsReadableByOthers() throws Exception {
         generate(userA, "public");
 
         MvcResult read = mockMvc.perform(get("/api/v1/ai/summaries/" + entryId)
                         .header("Authorization", token(userB)))
                 .andReturn();
         assertThat(JsonPath.<String>read(body(read), "$.data.card.headline")).isEqualTo("首次生成");
-
-        // 注意：对**已有公开缓存**的内容，没凭据的用户点"生成"会直接命中缓存返回结果——
-        // 这是刻意的（缓存命中不花他的钱）。所以"不能生成"要用一条还没有缓存的内容来验。
-        long uncached = createPublishedEntry("无缓存的条目 " + System.nanoTime());
-        MvcResult generate = generate(userB, uncached, "public");
-        assertThat(generate.getResponse().getStatus()).as("响应：%s", body(generate)).isEqualTo(409);
-        assertThat(body(generate)).contains("尚未配置模型凭据");
-        verify(summarizer, times(1)).summarize(anyString(), anyString(), any());
+        assertThat(JsonPath.<String>read(body(read), "$.data.source")).isEqualTo("others");
+        // 原用例还有一半是"没凭据的用户点生成会被 409 拒绝"——WORK-009 之后**每个用户都能生成**
+        // （凭据是平台的），那一半已不成立，故随本项删除；跨用户可见性这一半保留在这里。
     }
 
     @Test
@@ -270,13 +239,13 @@ class AiSummaryIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(404);
     }
 
-    private void saveCredential(String user) throws Exception {
-        mockMvc.perform(put("/api/v1/ai/credentials")
-                        .header("Authorization", token(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"baseUrl\":\"" + PUBLIC_BASE_URL + "\",\"model\":\"deepseek-flash\","
-                                + "\"apiKey\":\"sk-test-key-0001\"}"))
-                .andReturn();
+    /**
+     * WORK-009 起凭据由平台统一持有（见 {@code application-test.yml} 的 {@code paideia.ai.billing}），
+     * 用户不再配置 Key，所以这里没有事要做。
+     *
+     * <p><b>调用点保留</b>：它们让每个用例仍然显式声明"这一条需要 AI 可用"。
+     */
+    private void saveCredential(String user) {
     }
 
     private MvcResult generate(String user, String visibility) throws Exception {

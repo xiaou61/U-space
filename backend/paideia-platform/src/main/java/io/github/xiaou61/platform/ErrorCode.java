@@ -13,6 +13,13 @@ public enum ErrorCode {
     CONFLICT(40900, "状态冲突"),
     /** 触发限流。与 CONFLICT 分开是因为语义不同：前者是状态冲突，后者是"等一会儿再来"。 */
     TOO_MANY_REQUESTS(42900, "请求过于频繁"),
+    /**
+     * 积分不足（WORK-009）。
+     *
+     * <p>与 INVALID_ARGUMENT / CONFLICT 分开是**需求**：界面要据此给出"去充值 / 联系管理员"这类
+     * 可操作提示，而不是一句泛泛的"参数不合法"。映射到 HTTP 402。
+     */
+    INSUFFICIENT_CREDITS(40200, "积分不足"),
     INTERNAL(50000, "服务器内部错误");
 
     private final int code;

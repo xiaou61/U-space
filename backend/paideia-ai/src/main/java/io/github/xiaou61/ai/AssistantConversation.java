@@ -76,8 +76,22 @@ public interface AssistantConversation {
          */
         void onDraft(NoteDraft draft);
 
-        /** 正常结束。{@code usage} 可能为 {@code null}（上游没给用量）。 */
-        void onCompleted(TokenUsage usage);
+        /**
+         * 这一趟调用的**总**用量，在流终止时（成功或失败都）调用**一次**，且**先于**
+         * {@link #onCompleted()} / {@link #onFailed(BizException)}。
+         *
+         * <p><b>为什么与结果分开</b>：用量和结果是两件事——调用可能失败，但已经烧掉的 token 是真的。
+         * 分开之后，"要不要落库这条消息"与"要不要为这次调用扣费"成为两个独立决定，错误路径不必重复判断。
+         *
+         * <p><b>为什么是"总"量</b>：工具循环里每一轮都是一次真实的上游调用，这里给的是**各轮之和**
+         * （WORK-009 T-01 修的就是"只报最后一轮、中间轮次全丢"那个漏记）。
+         *
+         * <p>可能为 {@code null}：整趟没有任何一轮返回用量时是这样，与"用量为 0"不是一回事。
+         */
+        void onUsage(TokenUsage usage);
+
+        /** 正常结束。用量走 {@link #onUsage(TokenUsage)}，这里不再携带。 */
+        void onCompleted();
 
         /** 失败。调用方据此给用户可见的结果，并**不**把这轮写进历史。 */
         void onFailed(BizException failure);

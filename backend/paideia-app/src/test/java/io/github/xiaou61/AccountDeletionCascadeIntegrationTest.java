@@ -54,6 +54,10 @@ class AccountDeletionCascadeIntegrationTest {
             {"ai_memories_text", "user_id"},
             {"ai_model_credentials", "user_id"},
             {"ai_entry_summaries", "owner_user_id"},
+            // 积分账户与流水（WORK-009）。用户决定 8：注销时**一并删**，守住"注销即级联硬删"。
+            // 新增用户私有表却忘了在这里加一行，注销就会悄悄留下一份账，而没人会知道。
+            {"ai_credit_accounts", "user_id"},
+            {"ai_credit_ledger", "user_id"},
             {"notes", "user_id"},
             {"note_shares", "user_id"},
             {"note_reports", "reporter_user_id"},
@@ -184,6 +188,12 @@ class AccountDeletionCascadeIntegrationTest {
                 VALUES (1, REPEAT('a', 64), 'm', 'v1', ?, 'private', '{}')
                 """, owner);
         jdbcTemplate.update("INSERT INTO notes (user_id, title, body) VALUES (?, '标题', '正文')", owner);
+        // 积分账户 + 一条流水（WORK-009）
+        jdbcTemplate.update("INSERT INTO ai_credit_accounts (user_id, balance) VALUES (?, 123)", owner);
+        jdbcTemplate.update("""
+                INSERT INTO ai_credit_ledger (user_id, delta, kind, model, input_tokens, output_tokens, note)
+                VALUES (?, -3, 'SETTLE', 'm', 10, 20, '用例流水')
+                """, owner);
         long noteId = jdbcTemplate.queryForObject("SELECT MAX(id) FROM notes WHERE user_id = ?", Long.class, owner);
         jdbcTemplate.update("""
                 INSERT INTO note_shares (share_id, note_id, user_id, expires_at)

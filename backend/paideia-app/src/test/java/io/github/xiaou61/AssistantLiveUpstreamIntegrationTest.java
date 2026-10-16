@@ -68,6 +68,10 @@ class AssistantLiveUpstreamIntegrationTest {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    /** 平台凭据（WORK-009 起由平台持有）。真实 Key 只从环境变量来，填进这个 Bean。 */
+    @Autowired
+    io.github.xiaou61.ai.internal.billing.BillingProperties billing;
+
     private final List<Long> createdEntries = new ArrayList<>();
     private String user;
 
@@ -151,14 +155,16 @@ class AssistantLiveUpstreamIntegrationTest {
         assertThat(stream).contains("event:done");
     }
 
-    private void configureCredential() throws Exception {
-        MvcResult saved = mockMvc.perform(put("/api/v1/ai/credentials")
-                        .header("Authorization", token())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"baseUrl\":\"" + BASE_URL + "\",\"model\":\"" + MODEL + "\","
-                                + "\"apiKey\":\"" + System.getenv("PAIDEIA_TEST_DEEPSEEK_KEY") + "\"}"))
-                .andReturn();
-        assertThat(saved.getResponse().getStatus()).as("响应：%s", body(saved)).isEqualTo(200);
+    /**
+     * 把真实 Key 填进**平台**配置（WORK-009 起凭据由平台持有，不再是每个用户一份）。
+     *
+     * <p>Key 只从环境变量来、**不进仓库**。不需要清理：进程结束就没了，而且每个用例都会重填。
+     */
+    private void configureCredential() {
+        var credential = billing.getPlatformCredential();
+        credential.setBaseUrl(BASE_URL);
+        credential.setModel(MODEL);
+        credential.setApiKey(System.getenv("PAIDEIA_TEST_DEEPSEEK_KEY"));
     }
 
     /** 发一轮并把真实 SSE 流读完（会真的等上游，超时由会话配置的 60 秒兜住）。 */

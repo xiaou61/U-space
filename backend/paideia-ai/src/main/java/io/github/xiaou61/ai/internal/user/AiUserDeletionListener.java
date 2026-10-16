@@ -31,6 +31,10 @@ class AiUserDeletionListener {
             {"ai_memories_text", "user_id"},
             {"ai_model_credentials", "user_id"},
             {"ai_entry_summaries", "owner_user_id"},
+            // 积分流水与账户（WORK-009）。**注销一并删**（用户决定 8）：守住"注销即级联硬删"，
+            // 代价是注销用户的账不再完整——这是明确选过的方向，别改成"保留审计"。
+            {"ai_credit_ledger", "user_id"},
+            {"ai_credit_accounts", "user_id"},
             // 会话最后删：消息跟着它（下面单独删）
             {"ai_conversations", "user_id"},
     };

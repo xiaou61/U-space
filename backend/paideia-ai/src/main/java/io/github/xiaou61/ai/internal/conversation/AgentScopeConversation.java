@@ -14,6 +14,7 @@ import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.model.GenerateOptions;
+import io.agentscope.core.model.Model;
 import io.agentscope.core.model.ToolSchema;
 import io.agentscope.core.model.transport.HttpTransportException;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
@@ -77,7 +78,57 @@ class AgentScopeConversation implements AssistantConversation {
                 .temperature(properties.getTemperature())
                 .maxTokens(properties.getMaxTokens())
                 .build();
-        OpenAIChatModel model = OpenAIChatModel.builder()
+        Model model = buildModel(access, options);
+
+        List<Msg> conversation = new ArrayList<>(toMessages(request));
+        List<ToolSchema> schemas = tools.schemas();
+
+        // 逐轮累加：工具循环里**每一轮都是一次真实的上游调用**，都必须计入用量。
+        // 原先只把最后一轮上报出去、中间轮次全丢——BYOK 下是"少报给用户看"，
+        // 换成平台出钱之后就是**平台漏扣**（WORK-009 T-01）。
+        TokenUsage total = null;
+        try {
+            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+                Round roundResult = runRound(model, conversation, schemas, options, listener);
+                if (roundResult == null) {
+                    // 上游一轮都没吐出东西：按不可用处理
+                    listener.onUsage(total);
+                    listener.onFailed(upstreamUnavailable(null));
+                    return;
+                }
+                total = add(total, roundResult.usage());
+                List<ToolUseBlock> requested = roundResult.toolCalls();
+                if (requested.isEmpty()) {
+                    listener.onUsage(total);
+                    listener.onCompleted();
+                    return;
+                }
+
+                // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
+                conversation.add(roundResult.assistantMessage());
+                conversation.add(new ToolResultMessage(execute(request.userId(), requested, listener)));
+            }
+            // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱。
+            // **这一条路径也要上报用量**：那几轮的钱是真花了，只是没产出可用结果（原先这里一笔都不记）。
+            listener.onUsage(total);
+            listener.onFailed(new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止"));
+        } catch (HttpTransportException exception) {
+            listener.onUsage(total);
+            listener.onFailed(toUpstreamFailure(exception));
+        } catch (RuntimeException exception) {
+            listener.onUsage(total);
+            listener.onFailed(upstreamUnavailable(exception));
+        }
+    }
+
+    /**
+     * 建模型客户端。
+     *
+     * <p>抽成方法是为了**可替换**：用量累加这件事没法用"桩掉端口"那一套测——桩里根本没有循环。
+     * 只能在模型这一层注一个假模型，喂两轮响应（第一轮要工具、第二轮出正文），断言总量是两轮之和。
+     */
+    Model buildModel(ModelAccess access, GenerateOptions options) {
+        return OpenAIChatModel.builder()
                 .apiKey(access.apiKey())
                 .baseUrl(access.baseUrl())
                 .modelName(access.model())
@@ -91,35 +142,19 @@ class AgentScopeConversation implements AssistantConversation {
                 .nativeStructuredOutputWithTools(false)
                 .httpTransport(transport)
                 .build();
+    }
 
-        List<Msg> conversation = new ArrayList<>(toMessages(request));
-        List<ToolSchema> schemas = tools.schemas();
-
-        try {
-            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
-                Round roundResult = runRound(model, conversation, schemas, options, listener);
-                if (roundResult == null) {
-                    // 上游一轮都没吐出东西：按不可用处理
-                    listener.onFailed(upstreamUnavailable(null));
-                    return;
-                }
-                List<ToolUseBlock> requested = roundResult.toolCalls();
-                if (requested.isEmpty()) {
-                    listener.onCompleted(roundResult.usage());
-                    return;
-                }
-
-                // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
-                conversation.add(roundResult.assistantMessage());
-                conversation.add(new ToolResultMessage(execute(request.userId(), requested, listener)));
-            }
-            // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱
-            listener.onFailed(new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止"));
-        } catch (HttpTransportException exception) {
-            listener.onFailed(toUpstreamFailure(exception));
-        } catch (RuntimeException exception) {
-            listener.onFailed(upstreamUnavailable(exception));
+    /** 两段用量相加。任一段缺失（上游没给）时按"另一段"计，两段都缺才是 null。 */
+    static TokenUsage add(TokenUsage left, TokenUsage right) {
+        if (left == null) {
+            return right;
         }
+        if (right == null) {
+            return left;
+        }
+        return new TokenUsage(left.inputTokens() + right.inputTokens(),
+                left.outputTokens() + right.outputTokens(),
+                left.totalTokens() + right.totalTokens());
     }
 
     /**
@@ -129,7 +164,7 @@ class AgentScopeConversation implements AssistantConversation {
      * 也是助手说的话，让用户看着它动比空等更接近流式本来的意思；最终轮的正文就是答案。
      * 代价是中间说明会一起落进这条助手消息——那是"它说过的话"，不是错误。
      */
-    private Round runRound(OpenAIChatModel model, List<Msg> conversation, List<ToolSchema> schemas,
+    private Round runRound(Model model, List<Msg> conversation, List<ToolSchema> schemas,
                            GenerateOptions options, Listener listener) {
         TextAccumulator content = new TextAccumulator();
         ThinkingAccumulator thinking = new ThinkingAccumulator();

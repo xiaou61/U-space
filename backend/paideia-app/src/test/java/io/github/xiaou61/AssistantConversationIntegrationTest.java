@@ -71,6 +71,16 @@ class AssistantConversationIntegrationTest {
     @MockitoBean
     AssistantConversation assistant;
 
+    /**
+     * 平台凭据（WORK-009 起由平台持有，不再是每个用户一份）。
+     *
+     * <p>正常用例靠 {@code application-test.yml} 里配好的那一份；只有"平台尚未配置"那条分支需要
+     * 临时把它清空——所以这里直接注入可变的配置 Bean，而不是再起一个测试上下文
+     * （{@code application-test.yml} 里写明了：多一个配置键就多一个上下文，实测 15–25 秒）。
+     */
+    @Autowired
+    io.github.xiaou61.ai.internal.billing.BillingProperties billing;
+
     private final List<Long> createdConversations = new ArrayList<>();
     private String userA;
     private String userB;
@@ -186,19 +196,27 @@ class AssistantConversationIntegrationTest {
     }
 
     @Test
-    @DisplayName("未配置凭据：400 且说清原因，不给 500")
+    @DisplayName("平台未配置 AI 服务：400 且说清原因，不给 500")
     void missingCredentialIsVisible() throws Exception {
         long conversationId = createConversation(userA, null);
+        // 临时清空平台凭据来验"没配"这条分支。用 finally 复原：上下文在测试类之间是缓存的，
+        // 留一个空凭据会让后面所有类都莫名其妙地失败。
+        var credential = billing.getPlatformCredential();
+        String savedKey = credential.getApiKey();
+        credential.setApiKey(null);
+        try {
+            MvcResult result = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
+                            .header("Authorization", token(userA))
+                            .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"message\":\"你好\"}"))
+                    .andReturn();
 
-        MvcResult result = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
-                        .header("Authorization", token(userA))
-                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\"你好\"}"))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isEqualTo(400);
-        assertThat(body(result)).contains("尚未配置模型凭据");
+            assertThat(result.getResponse().getStatus()).isEqualTo(400);
+            assertThat(body(result)).contains("平台尚未配置 AI 服务");
+        } finally {
+            credential.setApiKey(savedKey);
+        }
     }
 
     @Test
@@ -298,7 +316,8 @@ class AssistantConversationIntegrationTest {
             seen.add(invocation.getArgument(0));
             AssistantConversation.Listener listener = invocation.getArgument(2);
             listener.onContent("好的");
-            listener.onCompleted(null);
+            listener.onUsage(null);
+            listener.onCompleted();
             return null;
         }).when(assistant).stream(any(), any(), any());
 
@@ -352,7 +371,8 @@ class AssistantConversationIntegrationTest {
             if (!content.isEmpty()) {
                 listener.onContent(content);
             }
-            listener.onCompleted(usage);
+            listener.onUsage(usage);
+            listener.onCompleted();
             return null;
         }).when(assistant).stream(any(), any(), any());
     }
@@ -370,14 +390,14 @@ class AssistantConversationIntegrationTest {
         return id;
     }
 
-    private void configureCredential(String subject) throws Exception {
-        MvcResult saved = mockMvc.perform(put("/api/v1/ai/credentials")
-                        .header("Authorization", token(subject))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"baseUrl\":\"" + PUBLIC_BASE_URL + "\",\"model\":\"deepseek-chat\","
-                                + "\"apiKey\":\"sk-conversation-test-key\"}"))
-                .andReturn();
-        assertThat(saved.getResponse().getStatus()).as("响应：%s", body(saved)).isEqualTo(200);
+    /**
+     * WORK-009 起凭据由平台统一持有（见 {@code application-test.yml} 的 {@code paideia.ai.billing}），
+     * 用户不再配置 Key，所以这里没有事要做。
+     *
+     * <p><b>调用点保留</b>：它们让每个用例仍然显式声明"这一条需要 AI 可用"，而不是悄悄依赖上下文里
+     * 恰好配好的那一份——将来真有"按用户解析凭据"的例外时，这里就是它该长回来的地方。
+     */
+    private void configureCredential(String subject) {
     }
 
     /** 发一轮消息并把 SSE 流读完。异步派发会一直等到 emitter 结束（端口是桩，不会真的等网络）。 */
