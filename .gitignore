@@ -51,6 +51,10 @@ logs/
 test-results/
 playwright-report/
 blob-report/
+# playwright-cli 的页面快照（skill 的临时产物，不是本项目的内容）。
+# 不加这行它会一直以未跟踪状态留在工作区，把 project-lifecycle 的
+# "工作区是否干净"判定弄脏 —— 于是验证报告会被判 stale（实测过一次）。
+.playwright-cli/
 coverage/
 
 # ---- IDE 与操作系统 ----
