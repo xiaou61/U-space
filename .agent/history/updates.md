@@ -2451,3 +2451,36 @@ schema_version: 1
 - 未做：T-15 部署（**上游 Key 已到手，但部署会改变线上形态，未做**）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 09:55:00 +0800 · WORK-009 T-15 部署上线（含 V11 迁移与线上初始发分）
+
+- 类型：implementation（服务器侧已改 + 一条日志改动随发版上线）
+- 用户授权：「可以的开始吧」。
+
+### 服务器配置（Key 全程不出现在任何命令行）
+- 服务器形态先核实：`ExecStart=/opt/jdk25/bin/java -jar /opt/paideia-app/app.jar --spring.config.additional-location=file:/opt/paideia-app/`，配置在 `/opt/paideia-app/application.yml`，且 **`release.ps1` 明确不碰服务器配置**（设计约束 2：用它自己的数据源口令/端口）。
+- **`paideia.ai.billing` 段怎么进去的**：不把 Key 塞进命令（那会进服务器 shell 历史）。改为①在本地被忽略的 `.secrets/` 里备一份只含 billing 段的 `ai-billing-server.yml` 与一个**自身不含任何秘密**的插入脚本 `insert-billing.py`；②用 quick-server 的 `-Upload` 送上去；③远端 `python3 insert-billing.py` 在 `ai:` 段末插入（**幂等**，已存在就跳过），随后 `rm` 掉两个临时文件；④插入前先 `cp -a application.yml application.yml.bak`，临时文件 `chmod 600`。
+- 核实结果（只打键名）：`ai:` 下 `master-key` 之后正确出现 `billing { enabled / platform-credential{base-url,model,api-key} / pricing{deepseek-flash{input,output}} }`。
+
+### 发版（`release.ps1`，两次）
+- 第一次 80 秒、第二次 75 秒（含前端构建 11.8s、上传 37.7s、重启 1.9s、健康检查 15.9s）；两次**健康检查都通过**。
+- **V11 在生产库应用成功**：`flyway_schema_history` 最新一条 `11 | create credit tables | success=1`；`SHOW TABLES` 确认 `ai_credit_accounts` / `ai_credit_ledger` 都在。
+- **第二次发版是为了补 T-02 要求的那行启动日志**（我第一版漏了）：`CredentialService` 构造期打印
+  `ai.billing.credential model=deepseek-flash baseUrl=https://api.deepseek.com enabled=true`
+  —— **只打 model / baseUrl / enabled，绝不打印 Key（连截断也不打）**。日志里已看到这行，说明平台凭据在生产**确实生效**（而不是"部署成功但配置没读到"）。未配置时打 warn 而不 fail fast，所以配置缺失不会拦住应用起来。
+- 启动前后 `journalctl -u paideia` 的 ERROR 计数为 **0**。
+
+### 线上初始发分（T-15 的第 4 步）
+- 积分闸一开、余额为 0，AI 对线上账号就是 402。所以部署后立刻发放：
+  - `admin`（id 3）与 `e2e-learner`（id 4）各 **100000 分**；
+  - 付费与流水**在同一事务**里写入：`ai_credit_accounts` 各一行 + `ai_credit_ledger` 两条 `ADJUST`（`operator_user_id=3`，note「上线初始发放（部署时直连库执行）」）。
+- **为什么直连库而不是走管理端 API**：走 API 需要把管理员口令放进 curl 命令（会进历史与记录）。SQL 是一次性部署动作，且**效果与 `CreditService.adjust` 一致**（余额 + 一条带操作人与原因的 ADJUST 流水）——这一点如实记在这里，不假装是从界面点的。
+- 核实：`SELECT user_id, balance` → 3/100000、4/100000；`ai_credit_ledger` 两条 ADJUST 都在。
+
+### 遗留
+- 线上 AI 的真实一次调用**还没跑过**（本轮只验到"配置生效 + 余额就位 + 服务健康"）。要看真效果：登录后用助手发一轮，再去 `/admin/#/ai-credits/audit` 看流水是否出现"预扣 + 退还"两行。
+- `notes.spec.ts` 的顺序依赖仍未处理（见上一笔）。
+- 远端 `push` 未执行。
+
+- 本地提交：见下一笔
+- 远端推送：未执行

@@ -4,6 +4,8 @@ import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.internal.billing.BillingProperties;
 import io.github.xiaou61.ai.internal.provider.UpstreamGuard;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class CredentialService {
 
+    private static final Logger log = LoggerFactory.getLogger(CredentialService.class);
+
     private final BillingProperties billing;
 
     CredentialService(BillingProperties billing, UpstreamGuard guard) {
@@ -30,6 +34,14 @@ public class CredentialService {
             // 启动时校验一次：这份 baseUrl 之后会被服务端拿去发请求，配成内网应当立刻可见。
             // 运行期还有 GuardedHttpTransport 兜第二道（它能看见最终拼出来的地址）。
             guard.assertAllowed(credential.getBaseUrl());
+            // 打一行"生效的是哪一套"，让"平台配没配"在部署后一眼可见。
+            // **只打 model 与 baseUrl，绝不打印 Key**（连截断也不打）：它是部署凭据，
+            // 日志会被翻、会被转存，能省一次暴露就省一次。
+            log.info("ai.billing.credential model={} baseUrl={} enabled={}",
+                    credential.getModel(), credential.getBaseUrl(), billing.isEnabled());
+        } else {
+            // 不 fail fast：凭据缺失只让 AI 功能给出"平台尚未配置"的提示，不该拦住整个应用起来
+            log.warn("ai.billing.credential 未配置：AI 功能会提示「平台尚未配置 AI 服务」");
         }
     }
 
