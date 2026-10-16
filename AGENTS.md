@@ -17,7 +17,7 @@
 细节、实测数字与踩过的坑统一记在 `.agent/notes/dev-workflow.md`，本节只留规则。
 
 - **提交**：每完成一轮能独立验证的工作就提交一次，按切片分笔，只提交本次范围的文件。本地提交是检查点，`push` 仍须单独授权。
-- **测试**：内环只跑受影响的用例，外环只跑改动那一端的 e2e（`pnpm test:e2e:all`），发布前才打桌面产物。**不要用 `pnpm -r build`**——它连桌面壳一起打，近 20 分钟。
+- **测试**：内环只跑受影响的用例，外环只跑**改动那一端**的 e2e，按端跑（`pnpm --filter @paideia/app test:e2e`、`--filter @paideia/admin test:e2e`、`--filter @paideia/ui-kit test:e2e`）；`pnpm test:e2e:all` 是三端全量，只用于发布前。发布前才打桌面产物。**不要用 `pnpm -r build`**——它连桌面壳一起打，近 20 分钟。
 - **发版**：一条命令 `powershell -File scripts/release.ps1`。部署形态、端口与服务器约定见 `.agent/rules/always.md` 的「部署」。
 
 ## 保密规则（公开仓库，最重要）
