@@ -2822,3 +2822,12 @@ schema_version: 1
 - 验证：`.gitignore` 提交后 `git status` 为空，同一条 stale 警告消失
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-16 16:07:36 +0800 · WORK-012 · 登记"锚点之后只有非行为改动"这一事实
+
+- 类型：verification
+- 变更：在 `.agent/changes/WORK-012-流式Markdown渲染/testing/report.md` 的「验证环境」里写明锚点之后的改动范围
+- 依据（实测命令）：`git diff --name-only 3793a31..HEAD -- frontend/ backend/` → **输出为空**（前端与后端源码一字未动）；锚点之后只有 `.agent/` 工件、`.gitignore` 一行、以及 `scripts/collect-md-corpus.mjs`（离线采集脚本，不进产品构建、不被测试引用）
+- 决策：**不把 `verified_commit` 改成新提交**（那等于替用户宣布"重新验过了"）。校验器按机械规则（只认 `.agent/` 变化）报 stale，属预期，如实登记
+- 本地提交：随本条一起提交
+- 远端推送：未执行

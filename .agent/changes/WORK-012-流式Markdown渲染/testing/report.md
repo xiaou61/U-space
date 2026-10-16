@@ -21,6 +21,8 @@ verified_at: 2026-10-16
 | 管理端 e2e 前置 | 同上；管理端 vite 5174 |
 | 构建 | `pnpm --filter @paideia/app build`（vite 8.3.4 / rolldown） |
 
+**锚点之后改了什么（校验器会因此判 stale，这里如实说清）**：`git diff --name-only 3793a31..HEAD -- frontend/ backend/` **为空**——前端与后端源码一字未动。锚点之后只有三类变化：`.agent/` 工件、`.gitignore` 加了一行忽略规则、以及 `scripts/collect-md-corpus.mjs`（**离线采集语料的开发脚本**，不参与产品构建、不被任何测试引用）。所以上面所有证据对**当前源码**依然成立；校验器按机械规则（只认 `.agent/`）报 stale，属预期。
+
 ## 验证结果
 
 **通过。** 助手回答现在按 markdown 渲染，且渲染器只剩一套——它从 `@paideia/knowledge` 挪进 `@paideia/ui`，知识库条目、管理端预览、助手回答共用；`react-markdown` / `remark-gfm` 两个依赖随之删除。
