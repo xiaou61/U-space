@@ -240,7 +240,17 @@ test('新建页没写东西就能直接返回；写了东西才拦一下', async
   await page.getByTestId('new-note-cancel').click()
   await page.getByTestId('new-note-discard-confirm').click()
   await expect(page).toHaveURL(/#\/notes$/)
-  await expect(page.getByTestId(`notes-list`)).not.toContainText(before)
+  /**
+   * 断言落在**整页**而不是 `notes-list`。
+   *
+   * 原先断言的是 `getByTestId('notes-list')`，但那个容器**列表为空时根本不存在**——本文件每个
+   * 笔记用例都在收尾时删掉自己建的笔记，dev 种子又不造笔记，所以走到这里列表按设计就是空的，
+   * 于是这条断言报的是"元素找不到"，而不是它要验的东西。**它过去能过，靠的是上一次运行残留的
+   * 笔记**（2026-10-16 一次集成测试跑了 `DELETE FROM notes` 把库清干净，它立刻红了）。
+   *
+   * 要验的是"那条草稿一个字都没落库"——整页都不该出现它，这样空列表与非空列表都对。
+   */
+  await expect(page.locator('body')).not.toContainText(before)
 })
 
 test('跟着助手的回答走：回答上带"存进笔记"入口（本环境没凭据，只验入口的挂载规则）', async ({ page }) => {
