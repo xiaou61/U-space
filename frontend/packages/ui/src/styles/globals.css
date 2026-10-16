@@ -25,6 +25,11 @@
 @source '../../../../packages/auth/src';
 @source '../../../../packages/assistant/src';
 @source '../../../../packages/knowledge/src';
+/**
+ * `streamdown` 的类在它的 `dist` 里，Tailwind 默认扫不到。不给这一行，markdown 呈现会**缺样式**
+ * （标题没间距、代码块没底色），而且**不报错**——只是"看起来怪"。（WORK-012）
+ */
+@source '../../../../node_modules/streamdown/dist/*.js';
 
 /* 主题用类名切换（首屏由 themeInitPlugin 注入的脚本在绘制前落到 <html> 上）。 */
 @custom-variant dark (&:where(.dark, .dark *));

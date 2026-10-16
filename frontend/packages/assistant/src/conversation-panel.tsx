@@ -1,6 +1,7 @@
 import { Alert, AlertDescription, AlertTitle, Button, Spinner } from '@paideia/ui'
 import { History, Plus, Send } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Streamdown } from 'streamdown'
 
 import type { AssistantApi } from './client'
 import { useAssistantContext } from './context'
@@ -328,18 +329,23 @@ export function ConversationPanel({
               )}
               {message.content === '' ? (
                 message.role === 'assistant' && busy ? <Spinner /> : null
-              ) : (
-                <p
-                  className={
-                    message.role === 'user'
-                      ? 'bg-muted inline-block rounded px-2 py-1 text-sm whitespace-pre-wrap'
-                      : message.emptyHint
-                        ? 'text-muted-foreground text-sm whitespace-pre-wrap'
-                        : 'text-sm whitespace-pre-wrap'
-                  }
-                >
+              ) : message.role === 'user' ? (
+                <p className="bg-muted inline-block rounded px-2 py-1 text-sm whitespace-pre-wrap">
                   {message.content}
                 </p>
+              ) : message.emptyHint ? (
+                // 这条是**我们自己**给的提示文案（"思考 token 吃满了"那类），不是模型输出——不走 markdown
+                <p className="text-muted-foreground text-sm whitespace-pre-wrap">{message.content}</p>
+              ) : (
+                /**
+                 * 模型输出：**按 markdown 渲染**（WORK-012）。
+                 *
+                 * <p>`isAnimating` 只影响动效；**"已完成块不重解析"**由 Streamdown 的块级 memo 保证，
+                 * 不依赖这个开关。
+                 */
+                <Streamdown isAnimating={busy} className="text-sm">
+                  {message.content}
+                </Streamdown>
               )}
               {message.usage === null ? null : (
                 <p className="text-muted-foreground text-[11px]" data-testid="conversation-usage">

@@ -2700,3 +2700,33 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 13:20:00 +0800 · WORK-012 选型改定 streamdown（附体积实测），并已接线跑通
+
+- 类型：change
+- 用户 2026-10-16 改向：「用这个（streamdown + remend）是不是更好呢？…后续我们还有可能需要他输出除了 md，比如说输出一些我们平台特有的一些按钮之类的，然后公式什么的也是有可能的，甚至于架构图…」→ 我看完调研后**推翻了自己上一轮的"自研"建议**，理由：他列的**平台特有元素 / 公式 / 架构图**恰好全是 streamdown 的现成插件点（`allowedTags` + `components` + `fallbackComponent` / `@streamdown/math` / `@streamdown/mermaid`），自研等于把这些再发明一遍。用户确认「确认换成 streamdown + remend」。
+
+### 三条支撑这个决定的证据（都核过）
+1. **插件是可选的独立包**（README 原文 "optional dependency to minimize bundle size"）→ 社区报的 **+13MB** 是"装了 mermaid + KaTeX + Shiki 全套"的情况，不是基础包。
+2. **它与我们的技术栈同源**：它是用 **shadcn/ui + Tailwind** 做的，要的就是 `--background/--foreground/--muted/--border/--primary/--radius` —— **正是 WORK-002 已裁定的那套令牌**。接它是同源对接，不是再接一套设计系统。
+3. **自带 `@streamdown/cjk` 插件**（中日韩字符边界）——中文产品自研这块会很痛。
+
+### 已实测：体积
+- 基线（未装）：学习者端 JS 合计 **852,316 字节**，主 chunk 836KB。
+- 装 `streamdown@2.7.0`（钉版本，Apache-2.0，+18 个包）并接线后：JS 合计 **1,203,655 字节** → **+343KB（+40%）**，主 chunk 1.2MB。
+- **结论：比社区那个 13MB 小两个数量级**（没装 mermaid/KaTeX/Shiki）。**但真正的功课是懒加载**（已列为 T-03）：主包不该被它拖累。
+
+### 已接线并跑通（不是"计划"，是已改）
+- `packages/assistant/package.json` 加 `streamdown: 2.7.0`（钉版本、`--save-exact`）。
+- `packages/ui/src/styles/globals.css` 加 `@source '../../../../node_modules/streamdown/dist/*.js'`——**不给这一行会静默缺样式**（标题没间距、代码块没底色），已在注释里写明，并要求 T-01 做一次反向验证。
+- `conversation-panel.tsx`：**助手回答**改走 `<Streamdown isAnimating={busy}>`；**用户消息**与**我们自己的提示文案**（"思考 token 吃满了"那类）仍走纯文本——那条提示不是模型输出，不该被当 markdown 解析。
+- 验证：`pnpm typecheck` 全包通过；前端单测 **92/92**（比之前多 4 条，是 WORK-011 的三态用例）；学习者端 e2e **30/30**。
+
+### 工件
+- `WORK-012/requirements.md` 的"用户决定 1"改为 `streamdown@2.7.0`（原"自研"作废），并新增"用户决定 1b"记入**体积实测数字**。
+- `WORK-012/tasks.md` **重写**：从"自研四层"改为 **接线 + 按需插件 + 语料与三条口径 + 兜底降级**（T-01..T-12），风险一节写明"体积懒加载"与"上游演进的缓冲只能是钉版本 + 语料回归"。
+- `requirements.md` 与 `tasks.md` 仍是 `draft`（本项尚未签署）。
+
+- 未做：T-03 懒加载、T-04 挪包、T-05 语料（**等用户发测试用的 key 与 baseUrl**）、T-06..T-12。
+- 本地提交：见下一笔
+- 远端推送：未执行
