@@ -84,6 +84,15 @@ export {
 export { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants } from './components/tabs'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip'
 
+// markdown 渲染的唯一实现：学习者端条目、管理端预览、助手回答都从这里取（WORK-012）
+export {
+  Markdown,
+  MarkdownLoading,
+  preloadMarkdown,
+  type MarkdownProps,
+  type MarkdownRenderer,
+} from './markdown/markdown'
+
 export { isTheme, THEME_KEY, THEME_STORAGE_KEY, type Theme, type ThemeStorage } from './theme/keys'
 export { ThemeProvider, useTheme } from './theme/theme-context'
 export { ThemeToggle } from './theme/theme-toggle'

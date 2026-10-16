@@ -17,8 +17,7 @@
   "dependencies": {
     "@paideia/core": "workspace:*",
     "@paideia/ui": "workspace:*",
-    "lucide-react": "1.54.0",
-    "streamdown": "2.7.0"
+    "lucide-react": "1.54.0"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.3",

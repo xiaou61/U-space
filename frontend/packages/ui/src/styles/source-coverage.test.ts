@@ -95,4 +95,22 @@ describe('Tailwind 扫描路径覆盖', () => {
       '这些目录含 .tsx 但没被 globals.css 的 @source 登记：它们独有的 Tailwind 类名会静默不生成',
     ).toEqual([])
   })
+
+  it('每个 @source 指向的目录都真实存在（不存在时那一行形同虚设，且没有任何报错）', () => {
+    // 实测踩过：`streamdown` 那一行写成了仓库根的 `node_modules/streamdown/dist/*.js`，
+    // 而它其实是 `@paideia/ui` 的依赖、落在 `packages/ui/node_modules` 下——于是整行**什么都没扫**。
+    // 更糟的是它看起来"像是生效了"：`bg-sidebar` 这条规则确实出现了，因为我自己的注释里写过这几个字。
+    // 真相要靠**只有它 dist 里才有**的类来验：`--sdm-c`、`counter(line)` 当时一条都没有。
+    const css = readFileSync(CSS_PATH, 'utf8')
+    const cssDirectory = path.dirname(CSS_PATH)
+
+    const missing = [...css.matchAll(/@source\s+'([^']+)'/g)]
+      .map((match) => match[1] ?? '')
+      .filter((entry) => !existsSync(coveredRoot(cssDirectory, entry)))
+
+    expect(
+      missing,
+      '这些 @source 指向的目录不存在：Tailwind 不会报错，只是那些类名静默不生成',
+    ).toEqual([])
+  })
 })

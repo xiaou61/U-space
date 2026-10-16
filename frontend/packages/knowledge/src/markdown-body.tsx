@@ -1,17 +1,27 @@
+import { Markdown, preloadMarkdown, type MarkdownProps } from '@paideia/ui'
 import { useEffect, useMemo, useRef } from 'react'
-import ReactMarkdown, { type Components } from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 
 import { extractHeadings } from './heading-slug'
 import { FigureWithLightbox } from './image-lightbox'
 import { resolveMediaUrl } from './media'
 
 /**
- * markdown 正文渲染。
+ * 渲染器（约 500 kB）**在本模块被求值时就开下**，不等数据回来。
  *
- * <p><b>用 `react-markdown` 而不是 `marked` + 消毒库</b>：它把 markdown 转成 React 元素，
- * 不产生 HTML 字符串，因此没有 `dangerouslySetInnerHTML`、注入面在构造上就不存在；
- * 换成"先转 HTML 再消毒"要多保证一件事正确。
+ * <p>它是懒加载的（否则会拖累主包——`@paideia/knowledge` 的 barrel 被首页那些页面静态引入，
+ * 静态引入渲染器等于把它塞进主包）。而本模块只在"要看 markdown 的那几个页面"的 chunk 里，
+ * 所以这里发起下载是安全的：**与条目的接口请求并行**，而不是等正文到手才开始下。
+ * 少了这一句，读长文的人会先看到一小段没排版的原文。
+ */
+preloadMarkdown()
+
+/**
+ * 知识库条目正文渲染。
+ *
+ * <p><b>渲染器不在这里</b>（WORK-012）：markdown 的呈现由 `@paideia/ui` 的 `Markdown` 统一提供，
+ * 助手回答与这里跑的是同一条管线。本组件只做三件"知识库特有"的事：
+ * 回填标题锚点（目录要用）、图片换成可放大的图注（{@link FigureWithLightbox}）、
+ * 把正文里的相对附件地址补成绝对地址（{@link resolveMediaUrl}）。
  *
  * <p><b>标题 id 在 effect 里回填，而不是在组件里用一个计数闭包。</b>两种写法的差别在
  * 重复渲染上：React 在开发模式下会渲染两遍，若 id 由一个"渲染期间自增"的闭包给出，
@@ -51,50 +61,9 @@ export function MarkdownBody({
     })
   }, [headings])
 
-  // components 必须是稳定引用：react-markdown 按元素类型渲染自定义组件，每次渲染新建的对象
-  // 会让 h1–h4 被卸载重建，上面 effect 回填的 id 随旧节点一起丢；而该 effect 依赖 headings
-  // 不会重跑，于是父组件任意一次重渲染（例如点自评导致 isPending 变化）都会让标题锚点失效。
-  const components = useMemo<Components>(
+  // 必须是稳定引用：它变了会让上游的块级记忆化失效（长文每次重渲染都重解析整篇）
+  const components = useMemo<MarkdownProps['components']>(
     () => ({
-      // 长文阅读：标题要跟正文拉开距离（原来的 mt-8 在 15px 正文下显得挤在一起）
-      h1: (props) => <h1 className="mt-12 mb-4 text-2xl font-semibold" {...props} />,
-      h2: (props) => <h2 className="mt-10 mb-3 text-xl font-semibold" {...props} />,
-      h3: (props) => <h3 className="mt-8 mb-2 text-lg font-semibold" {...props} />,
-      h4: (props) => <h4 className="mt-6 mb-2 text-base font-semibold" {...props} />,
-      p: (props) => <p className="my-4 leading-8" {...props} />,
-      ul: (props) => <ul className="my-4 list-disc space-y-1.5 pl-6" {...props} />,
-      ol: (props) => <ol className="my-4 list-decimal space-y-1.5 pl-6" {...props} />,
-      blockquote: (props) => (
-        <blockquote
-          className="border-info/50 bg-info/5 my-6 rounded-r-lg border-l-4 px-4 py-1 [&>p:first-child]:mt-3 [&>p:last-child]:mb-3"
-          {...props}
-        />
-      ),
-      a: (props) => (
-        <a
-          {...props}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="underline underline-offset-2"
-        />
-      ),
-      // 代码块保持原样换行，避免长行把页面撑破
-      pre: (props) => (
-        <pre
-          className="bg-muted border-border my-5 overflow-x-auto rounded-lg border p-3.5 font-mono text-xs leading-6"
-          {...props}
-        />
-      ),
-      code: (props) => (
-        <code className="bg-muted border-border rounded border px-1.5 py-0.5 font-mono text-[0.8125rem]" {...props} />
-      ),
-      table: (props) => (
-        <div className="my-4 overflow-x-auto">
-          <table className="w-full border-collapse text-xs" {...props} />
-        </div>
-      ),
-      th: (props) => <th className="border-border border-b px-2 py-1 text-left font-medium" {...props} />,
-      td: (props) => <td className="border-border border-b px-2 py-1" {...props} />,
       img: (props) => (
         <FigureWithLightbox
           src={resolveMediaUrl(typeof props.src === 'string' ? props.src : '', mediaBaseUrl)}
@@ -111,9 +80,7 @@ export function MarkdownBody({
       data-testid="markdown-body"
       className={className ?? 'text-[0.9375rem] leading-8'}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {markdown}
-      </ReactMarkdown>
+      <Markdown markdown={markdown} components={components} />
     </div>
   )
 }

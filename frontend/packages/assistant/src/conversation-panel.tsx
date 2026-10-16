@@ -1,7 +1,6 @@
-import { Alert, AlertDescription, AlertTitle, Button, Spinner } from '@paideia/ui'
+import { Alert, AlertDescription, AlertTitle, Button, Markdown, Spinner } from '@paideia/ui'
 import { History, Plus, Send } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Streamdown } from 'streamdown'
 
 import type { AssistantApi } from './client'
 import { useAssistantContext } from './context'
@@ -338,14 +337,16 @@ export function ConversationPanel({
                 <p className="text-muted-foreground text-sm whitespace-pre-wrap">{message.content}</p>
               ) : (
                 /**
-                 * 模型输出：**按 markdown 渲染**（WORK-012）。
+                 * 模型输出：**按 markdown 渲染**（WORK-012），走 `@paideia/ui` 的统一渲染器。
                  *
-                 * <p>`isAnimating` 只影响动效；**"已完成块不重解析"**由 Streamdown 的块级 memo 保证，
-                 * 不依赖这个开关。
+                 * <p>`streaming` 只给**正在生成的这一条**：它的含义是"这段文字可能还没长完"，
+                 * 于是会上未闭合补全。历史里的回答已经定稿，给它们开这个开关等于每帧白跑一遍补全。
                  */
-                <Streamdown isAnimating={busy} className="text-sm">
-                  {message.content}
-                </Streamdown>
+                <Markdown
+                  markdown={message.content}
+                  streaming={busy && index === messages.length - 1}
+                  className="text-sm"
+                />
               )}
               {message.usage === null ? null : (
                 <p className="text-muted-foreground text-[11px]" data-testid="conversation-usage">

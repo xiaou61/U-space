@@ -5,5 +5,6 @@ export default defineConfig({
     // 主题初始值取自 <html> 的类、切换要写 document，所以需要 DOM 环境
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['./src/test-setup.ts'],
   },
 })

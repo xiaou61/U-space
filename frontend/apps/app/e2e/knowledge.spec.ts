@@ -105,7 +105,11 @@ test('分类网格 → 分类页 → 条目列表 → 条目正文，一级级�
   await expect(body).toBeVisible()
   // 把源码当纯文本显示时这里一个块级元素都不会有。**不要顺带断言"必有标题"**：
   // 纯散文条目是合法内容（本地种子里就有一条），标题渲染交给下面那条目录用例。
-  expect(await body.locator('p, ul, ol, pre, table, blockquote').count()).toBeGreaterThan(0)
+  //
+  // 用**会自动等待的断言**而不是数一次：WORK-012 起渲染器是懒加载的，正文先以纯文本兜底出现
+  // （`data-testid="markdown-loading"`），chunk 到了才换成排版后的结构。数一次会数到兜底那一帧。
+  await expect(body.locator('p, ul, ol, pre, table, blockquote').first()).toBeVisible()
+  await expect(body.locator('[data-testid="markdown-loading"]')).toHaveCount(0)
 })
 
 test('目录与正文标题一一对应，且点击不改地址栏', async ({ page }) => {

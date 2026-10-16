@@ -35,13 +35,13 @@ status: active
 | 账号与认证 `paideia-account` | `backend/paideia-account/`（账号表与注册登录、图形与邮箱验证码、refresh 轮换；对外契约在包根 `AccountApi`） | `src/test/java/io/github/xiaou61/account/`；集成测试在 `paideia-app`（`AccountAuthIntegrationTest`） | — | WORK-003 |
 | 启动模块 `paideia-app` | `backend/paideia-app/` | `src/test/java/io/github/xiaou61/`（含授权隔离、认证集成与模块边界校验） | — | WORK-001、WORK-003 |
 | 前端工作区 | `frontend/pnpm-workspace.yaml`、`frontend/package.json` | — | — | WORK-001、WORK-002 |
-| 设计系统 `@paideia/ui` | `frontend/packages/ui/`（`styles/globals.css` 是令牌唯一来源，`components/` 是基元，`theme/` 是主题与首屏脚本，`layout/` 是外壳） | `src/tokens.test.ts`（令牌单一来源）、`src/theme/contrast.test.ts`（WCAG 对比度）、`src/theme/theme-context.test.tsx` | — | WORK-001、WORK-002 |
+| 设计系统 `@paideia/ui` | `frontend/packages/ui/`（`styles/globals.css` 是令牌唯一来源，`components/` 是基元，`theme/` 是主题与首屏脚本，`layout/` 是外壳，**`markdown/` 是 markdown 渲染的唯一实现**） | `src/tokens.test.ts`（令牌单一来源）、`src/theme/contrast.test.ts`（WCAG 对比度）、`src/theme/theme-context.test.tsx`、**`src/markdown/markdown.test.tsx`（流式 markdown 四条口径 + 语料 + 30 条恶劣输入）、`src/styles/source-coverage.test.ts`（@source 覆盖与存在性）、`src/styles/streamdown-tokens.test.ts`（它要的令牌）** | — | WORK-001、WORK-002、WORK-012 |
 | 端口与 API 客户端 `@paideia/core` | `frontend/packages/core/`（`session.ts` 是角色判断的唯一入口） | `src/api.test.ts`、`src/workspace-boundaries.test.ts`、`src/session.test.ts` | — | WORK-001、WORK-002 |
 | 共享认证 `@paideia/auth` | `frontend/packages/auth/`（令牌存储、401 刷新重放、登录/注册表单、登录门） | `src/auth.test.ts` | — | WORK-003 |
 | Web 平台适配 `@paideia/platform-web` | `frontend/packages/platform-web/` | — | — | WORK-001 |
 | 桌面平台适配 `@paideia/platform-desktop` | `frontend/packages/platform-desktop/`（`createBridgeCache` 由启动快照初始化同步镜像） | `src/index.test.ts` | — | WORK-001、WORK-002 |
 | 学习者端 `@paideia/app` | `frontend/apps/app/`（Web 与桌面共用产物，端口 5173；含知识库列表、条目详情与「我标记过的内容」三个页面） | `e2e/home.spec.ts`、`e2e/knowledge.spec.ts` | — | WORK-001、WORK-002、WORK-004 |
-| 知识库共享包 `@paideia/knowledge` | `frontend/packages/knowledge/`（类型、学习者侧 `client.ts` 与管理侧 `admin-client.ts` 两个客户端、md 渲染器 `markdown-body.tsx`、正文目录、关系邻域、图片放大、自评按钮） | `src/heading-slug.test.ts`、`src/media.test.ts` | — | WORK-004 |
+| 知识库共享包 `@paideia/knowledge` | `frontend/packages/knowledge/`（类型、学习者侧 `client.ts` 与管理侧 `admin-client.ts` 两个客户端、**`markdown-body.tsx` 已是薄封装**（渲染器在 `@paideia/ui`，这里只管标题锚点回填 / 图片放大 / 附件地址拼接）、正文目录、关系邻域、图片放大、自评按钮） | `src/heading-slug.test.ts`、`src/media.test.ts` | — | WORK-004 |
 | 管理端 `@paideia/admin` | `frontend/apps/admin/`（仅 Web，端口 5174；Hash 路由 + 侧栏外壳 `components/AdminShell.tsx`；知识库分「分类管理」与「条目管理」两页，共用件在 `knowledge-shared.tsx`） | `e2e/admin.spec.ts`、`e2e/knowledge.spec.ts`（可指向已部署实例，见 `.agent/notes/dev-workflow.md`） | — | WORK-002、WORK-004 |
 | 组件展览 `@paideia/ui-kit` | `frontend/apps/ui-kit/`（仅开发与内审，端口 5175，不进任何产品产物） | `e2e/ui-kit.spec.ts` | — | WORK-002 |
 | 桌面壳 `@paideia/desktop` | `frontend/apps/desktop/`（Electron 主进程与 preload 在 `electron/`） | `e2e/desktop.spec.ts`（本机环境未运行） | — | WORK-001、WORK-002 |

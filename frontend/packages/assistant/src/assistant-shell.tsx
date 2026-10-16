@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle, Badge, Button, Spinner } from '@paideia/ui'
+import { Alert, AlertDescription, AlertTitle, Badge, Button, preloadMarkdown, Spinner } from '@paideia/ui'
 import { Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -154,6 +154,9 @@ export function AssistantShell({
   const toggle = useCallback(() => {
     // 一旦打开过就不再提示：首次指引只给一次，动效也随之消失
     markHintSeen()
+    // 同时把 markdown 渲染器（约 350KB）的下载**与用户打字并行**起来：
+    // 否则第一个 token 到达时才开始下载，那一段回答会是纯文本（WORK-012 T-03）
+    preloadMarkdown()
     setPanel((current) => ({ ...current, open: !current.open }))
   }, [])
   useEffect(() => {

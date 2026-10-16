@@ -27,9 +27,17 @@
 @source '../../../../packages/knowledge/src';
 /**
  * `streamdown` 的类在它的 `dist` 里，Tailwind 默认扫不到。不给这一行，markdown 呈现会**缺样式**
- * （标题没间距、代码块没底色），而且**不报错**——只是"看起来怪"。（WORK-012）
+ * （标题没间距、代码块没底色、行号没有内容），而且**不报错**——只是"看起来怪"。（WORK-012）
+ *
+ * **路径必须是它真实的落地位置**（`packages/ui/node_modules/streamdown` 这个软链，因为
+ * `streamdown` 是 `@paideia/ui` 的依赖）。曾经写成仓库根的 `node_modules/streamdown`——
+ * 那儿什么都没有，于是整行形同虚设：实测构建产物里 `--sdm-c`、`counter(line)` 这些
+ * **只可能来自它 dist** 的类一条都没生成，而 `bg-sidebar` 却在（因为我自己在注释里写过这几个字，
+ * 被扫到了）——**看起来"有在生效"的假绿**。
+ *
+ * `source-coverage.test.ts` 现在会检查每个 `@source` 指向的目录是否真实存在。
  */
-@source '../../../../node_modules/streamdown/dist/*.js';
+@source '../../node_modules/streamdown/dist/*.js';
 
 /* 主题用类名切换（首屏由 themeInitPlugin 注入的脚本在绘制前落到 <html> 上）。 */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -166,6 +174,18 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-overlay: var(--overlay);
+
+  /*
+   * `streamdown` 的代码块容器与它那个悬浮操作条用 `bg-sidebar` / `border-sidebar`，而 shadcn 的
+   * sidebar 语义我们不用。**不补这两个令牌，那两个类根本不会被生成**——Tailwind v4 只为已定义的
+   * 主题值生成工具类，而且没有任何报错。实测构建产物里 `bg-sidebar` 规则数为 **0**，症状是
+   * 代码块没有底色、操作条悬在正文上（换渲染器前它用的是 `bg-muted`，所以这是换依赖带进来的回归）。
+   *
+   * 指到既有的 surface 令牌即可：它要的就是"比页面底色高一层"。
+   * 由 `streamdown-tokens.test.ts` 兜住，不靠人记住。
+   */
+  --color-sidebar: var(--muted);
+  --color-sidebar-foreground: var(--foreground);
 
   --shadow-card: var(--card-shadow);
   --shadow-popover: var(--popover-shadow);

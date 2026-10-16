@@ -16,9 +16,7 @@
   },
   "dependencies": {
     "@paideia/core": "workspace:*",
-    "@paideia/ui": "workspace:*",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "@paideia/ui": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.3",
