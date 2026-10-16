@@ -1,28 +1,30 @@
 import { Alert, AlertDescription, AlertTitle, Button, Spinner } from '@paideia/ui'
-import { Send } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { History, Plus, Send } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AssistantApi } from './client'
 import { useAssistantContext } from './context'
-import type { ChatMessage, NoteDraftInput } from './types'
+import { readStoredConversation, storeConversation } from './session-store'
+import type { ChatMessage, ConversationView, NoteDraftInput } from './types'
 
 /**
- * 对话面板：多轮 + 流式 + 思考折叠。
+ * 对话面板：多轮 + 流式 + 思考折叠，**并记住上次那一段**（WORK-011）。
  *
- * <p>三条与后端语义对应的规则：
+ * <p>四条与后端语义对应的规则：
  * <ol>
- *   <li><b>思考默认折叠</b>（用户裁决）。用原生 `<details>` 实现：展开／收起是平台能力，
- *       不需要为它维护一份状态，也不会因此多一次渲染。</li>
- *   <li><b>换条目就开新会话</b>：旧会话绑在另一条内容上，接着用会让上下文对不上——
- *       用户以为在问新条目，助手答的却是旧条目。</li>
- *   <li><b>用户关掉面板即中断上游调用</b>：不断开的话，这次调用会继续计费到用户看不见的地方
- *       （BYOK，花的是他自己的钱）。</li>
+ *   <li><b>思考默认折叠</b>（用户裁决）。用原生 `<details>`：展开／收起是平台能力，
+ *       不需要为它维护一份状态。</li>
+ *   <li><b>打开就回到上次的会话</b>，而不是每次从零开始；**只有点「新开对话」才另起一段**。</li>
+ *   <li><b>换条目不再静默清空</b>：那条条目有绑定的会话就切过去；没有就保持当前会话不动。
+ *       旧实现一换条目就把上下文丢掉，那是用户抱怨最直接的一点。</li>
+ *   <li><b>用户收起面板即中断上游调用</b>：不断开的话，这次调用会继续计费到用户看不见的地方。
+ *       收起 = 本组件卸载（外壳收起时走的是另一条 return 分支），所以卸载时的 abort 就够。</li>
  * </ol>
  *
  * <p>没有条目上下文时照样能聊（用户裁决：助手任意处可开，条目只是**可选**上下文）。
  *
- * <p>`onSaveNote` 由**应用**注入而不是本包直接调笔记接口：本包不认识笔记（它只认识助手），
- * 让应用把"存进笔记"这件事接上，本包就不必知道笔记模块存在。
+ * <p>`onSaveNote` 由**应用**注入而不是本包直接调笔记接口：本包不认识笔记，让应用把"存进笔记"
+ * 这件事接上。
  */
 export function ConversationPanel({
   api,
@@ -34,31 +36,143 @@ export function ConversationPanel({
   const { entryId, entryTitle } = useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessions, setSessions] = useState<ConversationView[]>([])
+  const [listOpen, setListOpen] = useState(false)
+  /** 正在从服务端恢复历史——期间不显示"问点什么吧"的空态，否则会闪一下"没有对话"。 */
+  const [restoring, setRestoring] = useState(true)
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  /** 已存进笔记的消息下标：同一个回答可以再存一次（用户可能删过那条笔记），所以不锁按钮。 */
   const [savedIndexes, setSavedIndexes] = useState<number[]>([])
-  /** 同上的"已记住"。 */
   const [rememberedIndexes, setRememberedIndexes] = useState<number[]>([])
-  /** 助手提出的待确认笔记草稿。用下标当 key 即可——它们只增不改。 */
   const [drafts, setDrafts] = useState<{ title: string; body: string }[]>([])
-  /** 已保存的草稿下标。 */
   const [savedDrafts, setSavedDrafts] = useState<number[]>([])
   const abortRef = useRef<AbortController | null>(null)
+  /**
+   * 用户是否已经自己动过这一段（发消息 / 新开 / 切换）。
+   *
+   * <p>挂载时的"恢复上次会话"是**异步**的（先列会话、再拉消息），而用户可能在这几十毫秒里已经
+   * 点了发送。恢复完成后如果照旧写入，就会把在飞的那一轮 **abort 掉**（实测报
+   * `signal is aborted without reason`）或把消息覆盖回历史。所以一旦用户动过，恢复就作废。
+   */
+  const touchedRef = useRef(false)
 
-  // 换条目：中断当前流并重开一个会话
+  /** 切到某条会话：读回它的消息（旧 → 新）并记住。 */
+  const openConversation = useCallback(
+    async (id: number, options?: { abort?: boolean }) => {
+      // 恢复那一路**不许打断**用户已经发起的调用（见 touchedRef 的注释）
+      if (options?.abort !== false) {
+        abortRef.current?.abort()
+        abortRef.current = null
+      }
+      setConversationId(id)
+      storeConversation(id)
+      setDrafts([])
+      setError(null)
+      try {
+        const history = await api.messages(id)
+        if (touchedRef.current) {
+          return
+        }
+        setMessages(
+          history.map((message) => ({
+            role: message.role,
+            content: message.content,
+            // 思考不落库，历史里没有它
+            thinking: '',
+            usage: message.usage,
+            emptyHint: false,
+            createdAt: message.createdAt,
+          })),
+        )
+      } catch (cause) {
+        // 会话过期（7 天滑动）是常态：清掉本地记忆，退回"新的一段"，而不是留一个打不开的 id
+        storeConversation(null)
+        setConversationId(null)
+        setMessages([])
+        setError(cause instanceof Error ? cause.message : String(cause))
+      }
+    },
+    [api],
+  )
+
+  /** 第一次挂载：按本地记的三态决定看哪一段（见 session-store 的注释）。 */
   useEffect(() => {
-    abortRef.current?.abort()
-    abortRef.current = null
-    setConversationId(null)
-    setMessages([])
-    setDrafts([])
-    setError(null)
+    let alive = true
+    void (async () => {
+      try {
+        const list = await api.conversations()
+        if (!alive || touchedRef.current) {
+          return
+        }
+        setSessions(list)
+        const stored = readStoredConversation()
+        if (stored.kind === 'new') {
+          // 刚点过「新开对话」：保持空白，**不要**再去恢复旧的
+          return
+        }
+        if (stored.kind === 'id') {
+          await openConversation(stored.id, { abort: false })
+          return
+        }
+        // 从没选过：恢复最近一条；有当前条目时优先绑在这个条目上的那条
+        const bound = list.find((item) => item.entryId !== null && item.entryId === entryId)
+        const target = bound ?? list[0]
+        if (target !== undefined) {
+          await openConversation(target.id, { abort: false })
+        }
+      } catch (cause) {
+        if (alive) {
+          setError(cause instanceof Error ? cause.message : String(cause))
+        }
+      } finally {
+        if (alive) {
+          setRestoring(false)
+        }
+      }
+    })()
+    return () => {
+      alive = false
+    }
+    // 只在挂载时跑一次：之后换条目由下面那个 effect 处理（且**不许**清空）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api, openConversation])
+
+  /** 换条目：该条目有绑定的会话就切过去，**没有就保持当前这一段**（不再静默清空）。 */
+  useEffect(() => {
+    const bound = sessions.find((item) => item.entryId !== null && item.entryId === entryId)
+    if (bound !== undefined && bound.id !== conversationId) {
+      void openConversation(bound.id)
+    }
+    // sessions 变化不该触发"切换"，只看 entryId
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entryId])
 
   // 卸载即中断：面板收起来之后还在计费的调用是纯浪费
   useEffect(() => () => abortRef.current?.abort(), [])
+
+  /** 新开一段：清空界面并**把本地记成"空白"**，这样关掉再打开也不会把旧的拉回来。 */
+  const startNew = () => {
+    touchedRef.current = true
+    abortRef.current?.abort()
+    abortRef.current = null
+    setConversationId(null)
+    storeConversation(null)
+    setMessages([])
+    setDrafts([])
+    setSavedIndexes([])
+    setRememberedIndexes([])
+    setError(null)
+    setListOpen(false)
+  }
+
+  const refreshSessions = async () => {
+    try {
+      setSessions(await api.conversations())
+    } catch {
+      // 列表拉不到不影响当前这段对话，静默即可
+    }
+  }
 
   const patchLast = (patch: (message: ChatMessage) => ChatMessage) =>
     setMessages((previous) =>
@@ -70,6 +184,7 @@ export function ConversationPanel({
     if (text === '' || busy) {
       return
     }
+    touchedRef.current = true
     setBusy(true)
     setError(null)
     setInput('')
@@ -86,6 +201,7 @@ export function ConversationPanel({
       if (id === null) {
         id = (await api.createConversation(entryId)).id
         setConversationId(id)
+        storeConversation(id)
       }
       await api.sendMessage(
         id,
@@ -96,7 +212,6 @@ export function ConversationPanel({
           } else if (event.type === 'content') {
             patchLast((message) => ({ ...message, content: message.content + (event.delta ?? '') }))
           } else if (event.type === 'draft') {
-            // 草稿是独立的一条待确认项，不并进消息正文
             if (event.draft !== undefined) {
               setDrafts((previous) => [...previous, event.draft as { title: string; body: string }])
             }
@@ -112,6 +227,7 @@ export function ConversationPanel({
         },
         controller.signal,
       )
+      // 这一轮落库了，列表里的更新时间跟着变——顺手刷新，免得列表显示的时间是旧的
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
       // 这一轮没成：把占位的空气泡去掉，否则看起来像"助手回了空内容"
@@ -125,17 +241,74 @@ export function ConversationPanel({
     } finally {
       setBusy(false)
       abortRef.current = null
+      // **成功与失败都要刷**：这一轮可能已经建好了会话（例如被积分闸拦下时），
+      // 不刷的话「历史」按钮不会出现，用户以为这一段没被记住。
+      void refreshSessions()
     }
   }
 
+  const current = sessions.find((item) => item.id === conversationId)
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <p className="text-muted-foreground truncate text-xs" data-testid="conversation-context">
-        {entryId === null ? '没有条目上下文，可直接提问。' : `上下文：${entryTitle ?? ''}`}
-      </p>
+    <div className="flex min-h-0 flex-1 flex-col gap-2" data-testid="conversation-panel">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs" data-testid="conversation-context">
+          {entryId === null ? '没有条目上下文，可直接提问。' : `上下文：${entryTitle ?? ''}`}
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          data-testid="conversation-new"
+          onClick={startNew}
+        >
+          <Plus className="size-3.5" />
+          新开对话
+        </Button>
+        {sessions.length === 0 ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-expanded={listOpen}
+            data-testid="conversation-history"
+            onClick={() => setListOpen((value) => !value)}
+          >
+            <History className="size-3.5" />
+            历史
+          </Button>
+        )}
+      </div>
+
+      {listOpen ? (
+        <ul className="border-border max-h-48 space-y-1 overflow-y-auto rounded border p-1" data-testid="conversation-sessions">
+          {sessions.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                data-testid={`conversation-session-${item.id}`}
+                data-active={item.id === conversationId ? 'true' : undefined}
+                onClick={() => {
+                  setListOpen(false)
+                  void openConversation(item.id)
+                }}
+                className={`hover:bg-accent/60 flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs ${
+                  item.id === conversationId ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                <span className="truncate">
+                  {item.updatedAt === null ? '较早的一段' : new Date(item.updatedAt).toLocaleString('zh-CN', { hour12: false })}
+                </span>
+                {item.entryId === null ? null : <span className="shrink-0 opacity-70">条目 {item.entryId}</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <div className="min-h-[8rem] flex-1 space-y-3 overflow-y-auto" data-testid="conversation-messages">
-        {messages.length === 0 ? (
+        {restoring ? (
+          <Spinner />
+        ) : messages.length === 0 ? (
           <p className="text-muted-foreground text-sm">问点什么吧，比如让它解释当前内容里的一个概念。</p>
         ) : (
           messages.map((message, index) => (
@@ -177,14 +350,12 @@ export function ConversationPanel({
               {/* 只对"真正的回答"给这两个入口：空正文的提示不该被存成笔记或记忆 */}
               {message.role !== 'assistant' || message.content === '' || message.emptyHint ? null : (
                 <div className="mt-1 flex items-center gap-2">
-                  {/* 存进笔记要宿主注入回调（本包不认识笔记）；没注入就不显示这个按钮 */}
                   {onSaveNote === undefined ? null : (
                     <Button
                       variant="ghost"
                       size="sm"
                       data-testid="conversation-save-to-note"
                       onClick={() => {
-                        // 闭包里 TS 不再知道上面的 undefined 判断成立，所以这里再守一次
                         if (onSaveNote === undefined) {
                           return
                         }
@@ -201,7 +372,6 @@ export function ConversationPanel({
                       存进笔记
                     </Button>
                   )}
-                  {/* 「记住这条」不需要外部注入：记忆就是助手自己的数据 */}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -280,6 +450,12 @@ export function ConversationPanel({
           <AlertTitle>没能完成</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+
+      {current === undefined ? null : (
+        <p className="text-muted-foreground text-[11px]" data-testid="conversation-current">
+          正在这一段对话里（消息会留在服务端 7 天）
+        </p>
       )}
 
       <form

@@ -101,3 +101,70 @@ test('打开条目后壳取到当前内容；不会偷偷发起生成，也不�
   // 关键：整条流程一次生成都没有发出（打开条目不会偷偷花钱）
   expect(generateCalls).toEqual([])
 })
+
+test('WORK-011：面板可拖宽、可收起，且刷新后保持（不自动弹开）', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/knowledge')
+  await page.getByTestId('assistant-launcher').click()
+
+  const shell = page.getByTestId('assistant-shell')
+  await expect(shell).toBeVisible()
+  const before = (await shell.boundingBox())?.width ?? 0
+
+  // 拖左缘的把手往左挪 → 变宽
+  const handle = page.getByTestId('assistant-resize')
+  const handleBox = await handle.boundingBox()
+  expect(handleBox).not.toBeNull()
+  if (handleBox !== null) {
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(handleBox.x - 80, handleBox.y + handleBox.height / 2, { steps: 4 })
+    await page.mouse.up()
+  }
+  const after = (await shell.boundingBox())?.width ?? 0
+  expect(after).toBeGreaterThan(before)
+
+  // 刷新后宽度保持（存在本地）
+  await page.reload()
+  await expect(shell).toBeVisible()
+  expect(Math.abs(((await shell.boundingBox())?.width ?? 0) - after)).toBeLessThan(2)
+
+  // 收起 → 刷新后仍是收起的：**不许每次导航都自动弹开**
+  await page.getByTestId('assistant-collapse').click()
+  await expect(page.getByTestId('assistant-launcher')).toBeVisible()
+  await page.reload()
+  await expect(page.getByTestId('assistant-launcher')).toBeVisible()
+  await expect(page.getByTestId('assistant-shell')).toHaveCount(0)
+})
+
+test('WORK-011：快捷键开关面板', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/knowledge')
+  await expect(page.getByTestId('assistant-launcher')).toBeVisible()
+
+  await page.keyboard.press('Control+j')
+  await expect(page.getByTestId('assistant-shell')).toBeVisible()
+  await page.keyboard.press('Control+j')
+  await expect(page.getByTestId('assistant-shell')).toHaveCount(0)
+})
+
+test('WORK-011：失败的一轮也会被记住——历史里选得到，新开之后仍在', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/knowledge')
+  await page.getByTestId('assistant-launcher').click()
+
+  await page.getByTestId('conversation-input').fill('这一轮会被积分闸拦住')
+  await page.getByTestId('conversation-send').click()
+
+  // 种子账号余额为 0：这一轮被拦下，但**会话本身已经建好了**
+  await expect(page.getByTestId('conversation-error')).toContainText('积分不足')
+  await expect(page.getByTestId('conversation-history')).toBeVisible()
+
+  await page.getByTestId('conversation-history').click()
+  await expect(page.getByTestId('conversation-sessions').locator('li').first()).toBeVisible()
+  // 关掉列表再新开一段：界面清空，但旧会话仍在历史里
+  await page.getByTestId('conversation-history').click()
+  await page.getByTestId('conversation-new').click()
+  await expect(page.getByTestId('conversation-history')).toBeVisible()
+})
+

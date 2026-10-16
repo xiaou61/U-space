@@ -97,6 +97,21 @@ export interface ChatMessage {
   usage: TokenUsage | null
   /** 正文为空、服务端给了可见提示时为 true——界面据此区别"这是提示，不是回答"。 */
   emptyHint: boolean
+  /** 落库时间。**当次流式产生的消息没有它**（那时还没落库）；从服务端读回来的历史消息有。 */
+  createdAt?: string | null
+}
+
+/**
+ * 服务端读回的一条历史消息（`GET /api/v1/ai/conversations/{id}/messages`）。
+ *
+ * <p>与 {@link ChatMessage} 分开是有理由的：那边带 `thinking` 与 `emptyHint` 这类**只在当次响应里
+ * 成立**的界面状态（思考不落库，所以历史里没有它），这边只有真正写进库的东西。
+ */
+export interface HistoryMessage {
+  role: 'user' | 'assistant'
+  content: string
+  usage: TokenUsage | null
+  createdAt: string | null
 }
 
 /**

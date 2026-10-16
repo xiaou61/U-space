@@ -6,6 +6,7 @@ import type {
   ConversationView,
   CreditsView,
   CredentialView,
+  HistoryMessage,
   MemoryView,
   SummaryView,
   SummaryVisibility,
@@ -22,6 +23,10 @@ export interface AssistantApi {
   generate(entryId: number, visibility: SummaryVisibility): Promise<SummaryView>
   /** 建会话。`entryId` 可空——助手在任意页都能开，条目只是可选上下文。 */
   createConversation(entryId: number | null): Promise<ConversationView>
+  /** 本人的会话列表（**不含消息内容**，只用来选一条）。 */
+  conversations(): Promise<ConversationView[]>
+  /** 读回某会话的消息（**旧 → 新**），供界面恢复历史。 */
+  messages(conversationId: number): Promise<HistoryMessage[]>
   /** 本人记忆（严格私有，没有"看别人的"这种调用）。 */
   memories(): Promise<MemoryView[]>
   /** 逐条删除。返回是否真的删掉了一行（不是本人的会返回 false）。 */
@@ -78,6 +83,11 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         headers: JSON_HEADERS,
         body: JSON.stringify({ entryId }),
       }),
+
+    conversations: () => client.requestEnvelope<ConversationView[]>(`${base}/conversations`),
+
+    messages: (conversationId) =>
+      client.requestEnvelope<HistoryMessage[]>(`${base}/conversations/${conversationId}/messages`),
 
     memories: () => client.requestEnvelope<MemoryView[]>(`${base}/memories`),
 
