@@ -2551,3 +2551,55 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 10:33:21 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-011-AI助手面板与会话历史/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-011-AI助手面板与会话历史/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:21 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 10:33:22 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-011-AI助手面板与会话历史/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-011-AI助手面板与会话历史/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:22 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 10:33:23 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-011-AI助手面板与会话历史/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-011-AI助手面板与会话历史/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:23 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 10:33:24 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-011-AI助手面板与会话历史/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-011-AI助手面板与会话历史/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:24 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 11:10:00 +0800 · WORK-011 建项并开工：T-01 完成，顺手抓到一处潜伏的映射缺陷
+
+- 类型：implementation
+- 用户 2026-10-16 指示：「可以的按照你说的直接开始做吧」→ 按我给的默认执行（右侧停靠可调宽可收起、会话列表放顶部下拉、快捷键 `Ctrl/Cmd+J`、**一期不做会话搜索**）。
+- **建项**：`WORK-011 · AI 助手面板重做与会话历史`（编号 011——008 已被 WORK-007 明文作废，009/010 已用）。四件工件起草完并**已签署**（`xiaou61/CTO`）。
+- **T-01 完成**：新增 `GET /api/v1/ai/conversations/{id}/messages`——归属校验走既有 `findActiveByIdAndUser`（不存在 / 不是本人的 / 已过期**同一条 404**），读消息**复用既有** `selectRecentNewestFirst`（上限取库里保留数），返回旧 → 新，含 `role` / `content` / `usage` / `createdAt`。**没有新增表、没有新增查询。**
+- **测试抓到一个潜伏缺陷（真缺陷）**：`ai_messages.token_usage`（列名）与 `ConversationMessage.tokenUsageJson`（字段名）**自动映射对不上**——下划线转驼峰得到 `tokenUsage`，而字段叫 `tokenUsageJson`，于是 MyBatis **静默给 null**。**这一列在此之前只被写过、从没被读过**（`history()` 只取 role/content），所以一直潜伏；WORK-011 第一次读它就暴露了。修法：SELECT 里显式 `token_usage AS tokenUsageJson`，并在 mapper 注释里写明原因与发现过程。
+- **测试**：`AssistantConversationIntegrationTest` **12 运行 / 0 失败**，含新增的两条断言——"旧 → 新"顺序、以及**越权读一律 404**（他人会话 / 不存在的会话 / 未登录分别验）。
+- 未做：T-02..T-12（前端客户端方法 → 会话恢复/新开/切换 → 面板停靠化与让位 → 窄屏降级 → 快捷键 → 美化 → e2e → 文档）。
+- 本地提交：见下一笔
+- 远端推送：未执行

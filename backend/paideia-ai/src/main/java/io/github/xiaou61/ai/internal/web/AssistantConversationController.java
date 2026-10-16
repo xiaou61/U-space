@@ -89,6 +89,17 @@ class AssistantConversationController {
         return ApiResponse.ok(conversations.list(AiRequester.require()));
     }
 
+    /**
+     * 读回某会话的消息（旧 → 新），供界面恢复历史（WORK-011）。
+     *
+     * <p>归属校验在服务层按 SQL 做：不存在 / 不是本人的 / 已过期**都是同一条 404**——
+     * 区分开就等于确认"某个会话存在"。条数受库里保留上限约束，不无限拉。
+     */
+    @GetMapping("/{id}/messages")
+    ApiResponse<List<ConversationService.MessageView>> messages(@PathVariable("id") long conversationId) {
+        return ApiResponse.ok(conversations.readMessages(AiRequester.require(), conversationId));
+    }
+
     @PostMapping(value = "/{id}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     SseEmitter send(@PathVariable("id") long conversationId, @RequestBody MessageRequest request) {
         long userId = AiRequester.require();

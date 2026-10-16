@@ -366,6 +366,34 @@ class AssistantConversationIntegrationTest {
                 Long.class, conversationId)).isZero();
     }
 
+    @Test
+    @DisplayName("WORK-011：读会话消息只给本人；他人/不存在/未登录一律同一条错误")
+    void readMessagesIsOwnershipChecked() throws Exception {
+        configureCredential(userA);
+        long conversationId = createConversation(userA, null);
+        stubStream("", "回答", new TokenUsage(5, 7, 12));
+        sendMessage(userA, conversationId, "第一句");
+
+        // 本人：读回两条（user + assistant），**旧 → 新**，并且带上那次的用量
+        MvcResult mine = mockMvc.perform(get("/api/v1/ai/conversations/" + conversationId + "/messages")
+                        .header("Authorization", token(userA)))
+                .andReturn();
+        assertThat(mine.getResponse().getStatus()).as("响应：%s", body(mine)).isEqualTo(200);
+        String text = body(mine);
+        assertThat(text).contains("第一句").contains("回答").contains("\"totalTokens\":12");
+        assertThat(text.indexOf("第一句")).as("必须旧 → 新").isLessThan(text.indexOf("回答"));
+
+        // 他人：404——与"不存在"是**同一条**错误，区分开就等于确认"某个会话存在"
+        assertThat(mockMvc.perform(get("/api/v1/ai/conversations/" + conversationId + "/messages")
+                        .header("Authorization", token(userB)))
+                .andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(mockMvc.perform(get("/api/v1/ai/conversations/999999999/messages")
+                        .header("Authorization", token(userA)))
+                .andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(mockMvc.perform(get("/api/v1/ai/conversations/" + conversationId + "/messages"))
+                .andReturn().getResponse().getStatus()).isEqualTo(401);
+    }
+
     /** 桩：按顺序回调思考、正文、结束。失败路径由各用例自己 doAnswer。 */    private void stubStream(String thinking, String content, TokenUsage usage) {
         doAnswer(invocation -> {
             AssistantConversation.Listener listener = invocation.getArgument(2);

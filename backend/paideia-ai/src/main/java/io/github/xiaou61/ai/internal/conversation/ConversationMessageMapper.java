@@ -29,9 +29,15 @@ interface ConversationMessageMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(ConversationMessage message);
 
-    /** 最近 {@code limit} 条，**新 → 旧**；调用方负责反过来。 */
+    /**
+     * 最近 {@code limit} 条，**新 → 旧**；调用方负责反过来。
+     *
+     * <p>{@code token_usage} 要**显式起别名**：列的 `token_usage` 与字段的 `tokenUsageJson` 不是
+     * "下划线转驼峰"能对上的关系（`tokenUsage` ≠ `tokenUsageJson`），自动映射会**静默给 null**。
+     * 2026-10-16 由 WORK-011 的读历史用例抓出来——在那之前这列只被写过、没被读过，所以一直潜伏。
+     */
     @Select("""
-            SELECT id, conversation_id, role, content, token_usage, created_at
+            SELECT id, conversation_id, role, content, token_usage AS tokenUsageJson, created_at
             FROM ai_messages
             WHERE conversation_id = #{conversationId}
             ORDER BY id DESC

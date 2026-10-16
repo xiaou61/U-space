@@ -1,5 +1,7 @@
 package io.github.xiaou61.ai.internal.conversation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
@@ -41,6 +43,9 @@ public class ConversationService {
     private final CredentialService credentials;
     private final KnowledgeApi knowledge;
     private final MemoryStore memories;
+    /** 解析落库的用量 JSON 用。自带一份即可，不必依赖容器里的 ObjectMapper。 */
+    private static final ObjectMapper USAGE_JSON = new ObjectMapper();
+
     private final UserRateLimiter limiter;
     private final CreditService credits;
 
@@ -196,6 +201,55 @@ public class ConversationService {
             messages.deleteOldest(conversationId, drop);
         }
         return message.getId() == null ? 0 : message.getId();
+    }
+
+    /**
+     * 一条历史消息（给界面读回用）。`usage` 可能为 null——旧消息或上游没给用量时都是。
+     */
+    public record MessageView(String role, String content, TokenUsage usage, Instant createdAt) {
+    }
+
+    /**
+     * 读回某会话的消息（**旧 → 新**），供界面恢复历史（WORK-011）。
+     *
+     * <p>三条与发送路径一致的纪律：
+     * <ul>
+     *   <li><b>归属一律经 SQL 校验</b>：拿不到就抛与其它会话端点同一条错误，不区分原因；</li>
+     *   <li><b>条数用库里保留的上限</b>（{@code maxStoredMessages}）：复用既有的"取最近 N 条"，
+     *       不新增一条全量查询，也不会无限拉；</li>
+     *   <li><b>不落库、不改状态</b>：这是一个纯读操作，进不了后续上下文，也不触发限流。</li>
+     * </ul>
+     */
+    public List<MessageView> readMessages(long userId, long conversationId) {
+        Instant now = Instant.now();
+        conversations.findActiveByIdAndUser(conversationId, userId, now)
+                .orElseThrow(ConversationService::conversationNotFound);
+        List<ConversationMessage> newestFirst =
+                messages.selectRecentNewestFirst(conversationId, properties.getMaxStoredMessages());
+        List<ConversationMessage> oldestFirst = new ArrayList<>(newestFirst);
+        java.util.Collections.reverse(oldestFirst);
+        return oldestFirst.stream()
+                .map(it -> new MessageView(it.getRole(), it.getContent(),
+                        fromUsageJson(it.getTokenUsageJson()), it.getCreatedAt()))
+                .toList();
+    }
+
+    /**
+     * 历史消息里的用量。落库的是本类写出去的固定形状（见 {@link #toUsageJson}）。
+     *
+     * <p>读不出来时**返回 null 而不抛**：历史里一条坏消息不该让整个会话打不开——用量只是附注。
+     */
+    private static TokenUsage fromUsageJson(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            var root = USAGE_JSON.readTree(json);
+            return new TokenUsage(root.path("input").asInt(0), root.path("output").asInt(0),
+                    root.path("total").asInt(0));
+        } catch (JsonProcessingException failure) {
+            return null;
+        }
     }
 
     /** 历史按窗口取最近 N 条，再翻成旧 → 新（模型要的顺序）。 */
