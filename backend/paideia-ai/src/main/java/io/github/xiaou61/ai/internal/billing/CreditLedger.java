@@ -17,6 +17,13 @@ class CreditLedger {
     static final String KIND_RESERVE = "RESERVE";
     static final String KIND_SETTLE = "SETTLE";
     static final String KIND_REFUND = "REFUND";
+    /**
+     * 自动整理记忆的消耗（WORK-013）。
+     *
+     * <p>与 {@link #KIND_SETTLE} 分开是**需求**：它是"没聊几次却花了这么多"的唯一解释处。
+     * 合成一类会让用户对着账目算不明白，也没法在面板上单独显示"最近一次自动整理花了多少"。
+     */
+    static final String KIND_MEMORY_EXTRACT = "MEMORY_EXTRACT";
 
     private Long id;
     private Long userId;

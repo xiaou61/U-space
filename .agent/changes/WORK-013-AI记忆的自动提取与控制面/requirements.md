@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-013
 work: AI 记忆的自动提取与控制面
-status: draft
+status: approved
 mode: strict
 mode_reason: 写入方从"只有用户点击"变成"还有服务端定时触发"（触及用户私有数据的写入路径）、提取本身要花 token 因此要走积分记账、新增一批用户设置与端点；且它改写了 WORK-006 既定的"自主只建议不动作"边界
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-006]
 related_to: [WORK-005, WORK-009, WORK-010, WORK-011, WORK-012]
 created: 2026-10-16
 updated: 2026-10-16
+approved_by: xiaou61
+approved_at: 2026-10-16 16:26:11 +0800
+approver_role: CTO
 ---
 
 # AI 记忆的自动提取与控制面需求

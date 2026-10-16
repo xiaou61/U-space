@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
+import io.github.xiaou61.ai.internal.settings.AiSettingsStore;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,8 +28,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/ai/memories")
 class AiMemoryController {
 
-    /** 界面形状。`source` 要回给前端，否则删的时候没法说明删的是哪一路。 */
-    record MemoryView(String source, long id, String text, Instant createdAt) {
+    /**
+     * 界面形状。`source` 要回给前端，否则删的时候没法说明删的是哪一路。
+     *
+     * <p>`origin` / `reason` / `conversationId` 是 WORK-013 加的"它为什么在这里"：面板要能显示哪条
+     * 是自动整理的、出自哪段对话、当时为什么这么判。**它是"谁写的"，与 `source`（存在哪一路）
+     * 是两件事**，别合并成一个字段。
+     */
+    record MemoryView(String source, long id, String text, Instant createdAt,
+                      String origin, String reason, Long conversationId) {
     }
 
     /**
@@ -39,17 +48,32 @@ class AiMemoryController {
     record WriteRequest(String type, String text, String kind, Long refId) {
     }
 
-    private final MemoryStore memories;
-
-    AiMemoryController(MemoryStore memories) {
-        this.memories = memories;
+    /** 清空的响应：清掉多少条 + 清空之后（关掉了总闸的）三个开关，界面据此一次把状态改对。 */
+    record ClearResult(int cleared, AiSettingsStore.Settings settings) {
     }
 
+    private final MemoryStore memories;
+    private final AiSettingsStore settings;
+
+    AiMemoryController(MemoryStore memories, AiSettingsStore settings) {
+        this.memories = memories;
+        this.settings = settings;
+    }
+
+    /**
+     * 本人记忆的一页（旧 → 新按时间倒序，两路合并）。
+     *
+     * <p>`limit`/`offset` 是 WORK-013 的分页：面板"加载更多"用。上限由 {@code MemoryStore} 兜住，
+     * 传大也没用——"一次能看多少"不该由请求方决定。
+     */
     @GetMapping
-    ApiResponse<List<MemoryView>> list() {
-        return ApiResponse.ok(memories.list(AiRequester.require()).stream()
+    ApiResponse<List<MemoryView>> list(@RequestParam(value = "limit", required = false) Integer limit,
+                                       @RequestParam(value = "offset", required = false) Integer offset) {
+        return ApiResponse.ok(memories.list(AiRequester.require(),
+                        limit == null ? 0 : limit, offset == null ? 0 : offset).stream()
                 .map(item -> new MemoryView(item.source().name().toLowerCase(java.util.Locale.ROOT),
-                        item.id(), item.text(), item.createdAt()))
+                        item.id(), item.text(), item.createdAt(),
+                        item.origin(), item.reason(), item.conversationId()))
                 .toList());
     }
 
@@ -65,6 +89,12 @@ class AiMemoryController {
     @PostMapping
     ApiResponse<Long> create(@RequestBody WriteRequest request) {
         long userId = AiRequester.require();
+        // 总开关关着时**拒绝并说清原因**（WORK-013 REQ-007）：静默写进去等于"看起来关了其实还在记"，
+        // 那是最坏的一种"关掉了"。界面本来就把按钮禁掉了，这条是接口层的第二道闸。
+        if (!settings.get(userId).memoryEnabled()) {
+            throw new BizException(ErrorCode.MEMORY_DISABLED,
+                    "个性化记忆已关闭，这条不会被记住。可以在「记忆」里打开。");
+        }
         if (request == null || request.type() == null) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "类型只能是 structured 或 text");
         }
@@ -74,6 +104,22 @@ class AiMemoryController {
             case "text" -> ApiResponse.ok(memories.rememberText(userId, request.text()));
             default -> throw new BizException(ErrorCode.INVALID_ARGUMENT, "类型只能是 structured 或 text");
         };
+    }
+
+    /**
+     * **清空全部记忆并关闭**（WORK-013 REQ-009）。
+     *
+     * <p>为什么清空与关闭是**同一个端点**：分成两次调用会出现"清空了但没关上"的半状态——用户以为
+     * 自己已经关掉了，之后聊几句又攒出新记忆。合成一个动作，"我不要再被记"这件事才是一次操作。
+     *
+     * <p>与它相对的是"只关不删"：那走 {@code PUT /settings}，一条记忆都不动。两个动作的文案在界面上
+     * 必须分开写清。
+     */
+    @DeleteMapping
+    ApiResponse<ClearResult> clear() {
+        long userId = AiRequester.require();
+        int cleared = memories.clearAll(userId);
+        return ApiResponse.ok(new ClearResult(cleared, settings.disableMemory(userId)));
     }
 
     @DeleteMapping("/{source}/{id}")

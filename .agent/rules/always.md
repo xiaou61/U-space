@@ -32,7 +32,12 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 - **认证要求可扩展，本期只做简单实现**（2026-10-09 用户决定）：具体机制待裁决（D-10）。**桌面端同期交付后，会话 Cookie 被排除**——桌面壳页面来源非 http(s) 域，`SameSite`/`Secure` 语义失效并撞 CORS。认证必须收在单一模块的端口之后，使更换机制不改业务代码。
 - **消息与异步：引入 RabbitMQ 作为消息中间件**（2026-10-09 用户决定）。实现约束：事件必须先写入 outbox（与业务数据同一事务），再由中继投递到 RabbitMQ；不得在事务提交后直接发布，否则会丢失「数据库已提交但消息未发出」的事件。
 - **中间件与部署自托管在自有服务器**（2026-10-09 用户决定）：RabbitMQ 等中间件与后续部署都放在自有服务器上；部署细节本期不考虑。服务器地址与凭据属敏感信息，一律不进仓库。
-- **数据库端口的实际状态**：用户已确认可以开放 MySQL 端口，但服务器当前 `mysqld` **只监听 `127.0.0.1:3306`**，实际未对公网开放。本地开发默认走 SSH 隧道（不改服务器、端口保持关闭）；若确需直接连公网，再改 `bind-address` 并同步 MySQL 账号的 host 限制。凭据仍必须只存在于被忽略的本地文件中。
+- **数据库端口的实际状态（2026-10-16 更新：已对公网开放）**：用户要求去掉隧道，于是按本条原有的路径做了——改 `bind-address = 0.0.0.0`（重启 mysql）**并同步账号的 host 限制**：
+  - **只新建了一个 `paideia_test@'%'`，且只授权 `paideia_test.*`**。生产/开发库 `paideia` **没有任何可远程登录的账号**（原先只有 `paideia@127.0.0.1` 与 `paideia@localhost`，这次一个都没改）——所以开了端口也没有能连上生产库的凭据路径。
+  - 走公网的只有**测试**：`source backend/config/remote-db.local.env`（匹配 `.gitignore` 的 `*.local.*`，不入库）后再跑 `mvn -B test` 与 e2e；两个 playwright 配置的默认 JDBC 也已改成 `36.212.5.130:3306`。
+  - **仍然要求**：凭据只存在于被忽略的本地文件；口令不进命令行（用 stdin 传 SQL）；MySQL 的 X 协议端口 33060 保持只监听 127.0.0.1。
+  - **关闭 / 回滚**：`bind-address` 改回 `127.0.0.1` + `systemctl restart mysql`；配置备份在服务器 `/etc/mysql/mysql.conf.d/mysqld.cnf.bak-2026-10-16`。若要收窄，把 `paideia_test@'%'` 换成 `@'<固定出口IP>'`。
+  - **已知风险**：3306 现在公网可达，扫描器会持续戳它。当前唯一能连的是那个**只碰得到 `paideia_test`** 的账号（密码 32 位随机），但"测试库被写坏"是可能的——那正是它被写坏的用途。若将来要让**本地跑应用连开发库**（`paideia`），那等于把生产库账号暴露到公网，**先单独确认**。
 - 编码约定（与数据库选型无关，属于通用纪律）：
   - 所有 SQL 只写在 mapper 中，不在 Java 代码里拼接。
   - 时间统一存 UTC，不调用数据库的 `NOW()`/`SYSDATE()` 取业务时间。**建表默认值 `DEFAULT CURRENT_TIMESTAMP(3)` 同样属于"让数据库取时间"**，它按**会话时区**算：服务器 MySQL 的会话时区是 `SYSTEM`（+08:00），因此每个 JDBC 连接串必须同时写 `connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true`——**两个参数缺一不可**，少了后者就是"驱动按 UTC 解释、会话按本地时间写"，所有时间静默快 8 小时（2026-10-10 实测发现并已修，含存量回拨）。服务器没有装载时区表（`SET time_zone='UTC'` 报 1298），驱动会自行折算成 `+00:00` 偏移形式，所以不必装 tz 表。
@@ -59,10 +64,10 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
   - D-13 前端数据层：服务端状态用 **TanStack Query**；客户端临时状态方案暂缓。
   - D-14 消息与异步：**引入 RabbitMQ**（配合 outbox 中继，见上文实现约束）。
 - 仓库结构：**单仓多模块**。后端 Maven 多模块，**每个模块一个 Maven 模块**（`groupId` 为 `io.github.xiaou61`，基础包名同为 `io.github.xiaou61`，artifact 命名 `paideia-<module>`）；非法跨模块依赖必须表现为编译错误。前端 pnpm workspace 同仓。**构建与检查命令（2026-10-09 实测）**：
-  - 后端全量构建与测试：`cd backend && mvn -B verify`。其中集成测试需要 `PAIDEIA_TEST_DB_PASSWORD` 与到服务器 MySQL 的 `127.0.0.1:3307` SSH 隧道；未配置时相关用例跳过并在 stderr 明确提示，构建不因此失败。
+  - 后端全量构建与测试：`cd backend && mvn -B verify`。集成测试需要 `PAIDEIA_TEST_DB_PASSWORD`（2026-10-16 起**不需要隧道**：`source backend/config/remote-db.local.env` 即指向公网测试库）；未配置时相关用例跳过并在 stderr 明确提示，构建不因此失败。
   - 后端本地运行：`cd backend && java -jar paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=local`。**工作目录必须是 `backend/`**，配置从 `./config/application-local.yml` 读取（被忽略，含口令）。
   - 前端类型检查：`cd frontend && pnpm -r typecheck`；单测：`pnpm -r test`。
-  - Web 端到端：`cd frontend && pnpm test:e2e`（需先 `mvn -B -DskipTests package` 产出后端 jar，且隧道可用）。
+  - Web 端到端：`cd frontend && pnpm test:e2e`（需先 `mvn -B -DskipTests package` 产出后端 jar；2026-10-16 起直连公网测试库，**不再需要隧道**，但要先 `source backend/config/remote-db.local.env`）。
   - 公开页构建：`cd frontend && pnpm --filter @paideia/public build`。
   - 桌面端：`cd frontend && pnpm -w build:desktop`。**必须同时设置两个镜像**，否则 electron-builder 会去 GitHub 拉二进制并超时（本网络下实测）：
     `ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/" ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries" pnpm -w build:desktop`
@@ -149,7 +154,7 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 | --- | --- |
 | 系统 | Ubuntu 24.04.4 LTS，4 核 / 16GB 内存 / 79GB 磁盘（约 66GB 可用） |
 | JDK | Temurin **25.0.4**（LTS）位于 `/opt/jdk25`，另有 `/opt/jdk17`。**两者均未注册到 `update-alternatives`，`JAVA_HOME` 未配置，`java` 不在 PATH 上**，使用前需接线 |
-| MySQL | **8.0.46**（Ubuntu 包），运行中，只监听 `127.0.0.1:3306` |
+| MySQL | **8.0.46**（Ubuntu 包），运行中；2026-10-16 起监听 `0.0.0.0:3306`（对公网开放，仅 `paideia_test@'%'` 可连且只授权测试库），X 协议 33060 仍只监听 127.0.0.1 |
 | Redis | 7.0.15，运行中，只监听本机，当前为空 |
 | 缺失 | 没有 Docker / Docker Compose，没有 RabbitMQ，没有 Nginx；80/443 未监听 |
 | 运行方式 | 目前没有 systemd 单元可用；Paideia 的服务应建立自己的 systemd 单元 |

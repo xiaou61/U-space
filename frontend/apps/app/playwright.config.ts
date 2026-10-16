@@ -52,7 +52,12 @@ export default defineConfig({
         // forceConnectionTimeZoneToSession 与 connectionTimeZone 必须成对（服务器 MySQL 会话是 +08:00）：
         // 少了它，建表默认值写进去的是本地钟点，而驱动按 UTC 解释，时间整体快 8 小时。
         SPRING_DATASOURCE_URL:
-          'jdbc:mysql://127.0.0.1:3307/paideia_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=utf8',
+          'jdbc:mysql://36.212.5.130:3306/paideia_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=utf8',
+          // 直连服务器 MySQL（2026-10-16 起）：3306 已对外开放，**不再需要本地 3307 隧道**。
+          // 账号只授权 paideia_test.*（生产库 paideia 没有任何可远程登录的账号）；
+          // 口令只从环境变量来：先 `source backend/config/remote-db.local.env` 再跑 e2e。
+          SPRING_DATASOURCE_USERNAME: 'paideia_test',
+          SPRING_DATASOURCE_PASSWORD: process.env.PAIDEIA_TEST_DB_PASSWORD ?? '',
         SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration,classpath:db/devdata',
         // paideia_test 被三种迁移配置共用（见 backend 的 application-test.yml 注释）：
         // 夹具用的 V900 会出现在这个库里，而本次 locations 不含 db/testdata，

@@ -49,6 +49,42 @@ interface ConversationMessageMapper {
     @Select("SELECT COUNT(*) FROM ai_messages WHERE conversation_id = #{conversationId}")
     long countByConversation(@Param("conversationId") long conversationId);
 
+    /**
+     * 某条消息**之后**的全部消息（旧 → 新）。自动整理的"增量"就是它（WORK-013）。
+     *
+     * <p>按 id 而不是时间：id 单调递增，同毫秒写入也不会乱序（与 {@code selectRecentNewestFirst} 同一约定）。
+     * `afterId` 为 null 时取全部——第一次整理时游标就是 null。
+     */
+    @Select("""
+            <script>
+            SELECT id, conversation_id, role, content, token_usage AS tokenUsageJson, created_at
+            FROM ai_messages
+            WHERE conversation_id = #{conversationId}
+              <if test="afterId != null">AND id &gt; #{afterId}</if>
+            ORDER BY id ASC
+            LIMIT #{limit}
+            </script>
+            """)
+    List<ConversationMessage> selectAfter(@Param("conversationId") long conversationId,
+                                          @Param("afterId") Long afterId,
+                                          @Param("limit") int limit);
+
+    /**
+     * 游标之后有多少条**助手**消息——即"攒了几轮"（WORK-013）。
+     *
+     * <p>数助手消息而不是用户消息：一轮可能只有用户那条（上游失败时助手消息不落库），
+     * 那样的轮次没有可整理的内容，不该把它算进 N。
+     */
+    @Select("""
+            <script>
+            SELECT COUNT(*) FROM ai_messages
+            WHERE conversation_id = #{conversationId} AND role = 'assistant'
+              <if test="afterId != null">AND id &gt; #{afterId}</if>
+            </script>
+            """)
+    long countAssistantAfter(@Param("conversationId") long conversationId,
+                             @Param("afterId") Long afterId);
+
     /** 删掉最旧的 {@code dropCount} 条。{@code dropCount <= 0} 时调用方不该走到这里。 */
     @Delete("""
             DELETE FROM ai_messages

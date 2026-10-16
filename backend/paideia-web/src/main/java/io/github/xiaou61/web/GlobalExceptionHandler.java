@@ -124,6 +124,7 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;
             case INSUFFICIENT_CREDITS -> HttpStatus.PAYMENT_REQUIRED;
+            case MEMORY_DISABLED -> HttpStatus.CONFLICT;
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;

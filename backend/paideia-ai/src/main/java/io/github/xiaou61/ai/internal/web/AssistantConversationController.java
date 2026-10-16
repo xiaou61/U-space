@@ -6,6 +6,7 @@ import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.conversation.ConversationService;
+import io.github.xiaou61.ai.internal.memory.MemoryExtractionService;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -64,16 +65,19 @@ class AssistantConversationController {
     private final AssistantConversation assistant;
     private final TaskExecutor executor;
     private final CreditService credits;
+    private final MemoryExtractionService memoryExtraction;
     private final ObjectMapper json = new ObjectMapper();
 
     AssistantConversationController(ConversationService conversations,
                                     AssistantConversation assistant,
                                     @Qualifier("applicationTaskExecutor") TaskExecutor executor,
-                                    CreditService credits) {
+                                    CreditService credits,
+                                    MemoryExtractionService memoryExtraction) {
         this.conversations = conversations;
         this.assistant = assistant;
         this.executor = executor;
         this.credits = credits;
+        this.memoryExtraction = memoryExtraction;
     }
 
     @PostMapping
@@ -180,6 +184,10 @@ class AssistantConversationController {
                             payload.put("empty", noContent);
                             send(emitter, "done", payload);
                             emitter.complete();
+                            // 自动整理记忆的**触发点**（WORK-013）：刻意放在 emitter.complete()
+                            // **之后**——用户这时已经拿到完整回答，这一步慢或失败都与他的体验无关。
+                            // 它自己只做一次极轻的判断；真干活的部分由它内部丢到另一个线程。
+                            memoryExtraction.scheduleIfDue(userId, conversationId);
                         }
 
                         @Override

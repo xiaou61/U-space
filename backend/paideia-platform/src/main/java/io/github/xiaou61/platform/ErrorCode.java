@@ -20,6 +20,13 @@ public enum ErrorCode {
      * 可操作提示，而不是一句泛泛的"参数不合法"。映射到 HTTP 402。
      */
     INSUFFICIENT_CREDITS(40200, "积分不足"),
+    /**
+     * 个性化记忆已关闭（WORK-013）。
+     *
+     * <p>与 INVALID_ARGUMENT 分开是**需求**：界面要能说清"是你自己关掉的记忆"，而不是一句泛泛的
+     * "参数不合法"。映射到 HTTP 409——请求本身没问题，是当前设置不允许这件事。
+     */
+    MEMORY_DISABLED(40910, "个性化记忆已关闭"),
     INTERNAL(50000, "服务器内部错误");
 
     private final int code;

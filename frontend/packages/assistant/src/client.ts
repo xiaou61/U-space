@@ -4,9 +4,11 @@ import { readEventStream } from './sse'
 import type {
   ChatEvent,
   ConversationView,
-  CreditsView,
   CredentialView,
+  CreditsView,
   HistoryMessage,
+  MemoryClearResult,
+  MemorySettings,
   MemoryView,
   SummaryView,
   SummaryVisibility,
@@ -27,10 +29,25 @@ export interface AssistantApi {
   conversations(): Promise<ConversationView[]>
   /** 读回某会话的消息（**旧 → 新**），供界面恢复历史。 */
   messages(conversationId: number): Promise<HistoryMessage[]>
-  /** 本人记忆（严格私有，没有"看别人的"这种调用）。 */
-  memories(): Promise<MemoryView[]>
+  /** 本人的记忆控制面设置（本人范围：请求体里没有 `userId`，传不了别人的）。 */
+  settings(): Promise<MemorySettings>
+  /** 写设置。**三个布尔一次给全**：后端不接受部分更新，缺字段会被当成"关"。 */
+  saveSettings(settings: MemorySettings): Promise<MemorySettings>
+  /**
+   * 本人的记忆（严格私有，没有"看别人的"这种调用）。
+   *
+   * <p>`limit`/`offset` 由调用方显式给：翻页要靠 offset，而后端的默认值将来可能变，
+   * 前端跟着它走等于把"一页多少条"这个决定放在看不见的地方。
+   */
+  memories(limit?: number, offset?: number): Promise<MemoryView[]>
   /** 逐条删除。返回是否真的删掉了一行（不是本人的会返回 false）。 */
   deleteMemory(source: MemoryView['source'], id: number): Promise<boolean>
+  /**
+   * 清空两路记忆**并把总开关置为 false**，返回更新后的设置。
+   *
+   * <p>清空与关闭是**一个**端点、一次请求：分成两个调用会出现"清空了但没关上"的半状态。
+   */
+  clearMemories(): Promise<MemoryClearResult>
   /**
    * 记住一句话（写一条全文记忆）。**这是记忆唯一的写入口**，只有用户点击才会走到这里——
    * 助手自己无法调用它（端口里没有写工具）。
@@ -89,10 +106,23 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
     messages: (conversationId) =>
       client.requestEnvelope<HistoryMessage[]>(`${base}/conversations/${conversationId}/messages`),
 
-    memories: () => client.requestEnvelope<MemoryView[]>(`${base}/memories`),
+    settings: () => client.requestEnvelope<MemorySettings>(`${base}/settings`),
+
+    saveSettings: (settings) =>
+      client.requestEnvelope<MemorySettings>(`${base}/settings`, {
+        method: 'PUT',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(settings),
+      }),
+
+    memories: (limit = 200, offset = 0) =>
+      client.requestEnvelope<MemoryView[]>(`${base}/memories?limit=${limit}&offset=${offset}`),
 
     deleteMemory: (source, id) =>
       client.requestEnvelope<boolean>(`${base}/memories/${source}/${id}`, { method: 'DELETE' }),
+
+    clearMemories: () =>
+      client.requestEnvelope<MemoryClearResult>(`${base}/memories`, { method: 'DELETE' }),
 
     remember: (text) =>
       client.requestEnvelope<number>(`${base}/memories`, {

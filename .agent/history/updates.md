@@ -2831,3 +2831,43 @@ schema_version: 1
 - 决策：**不把 `verified_commit` 改成新提交**（那等于替用户宣布"重新验过了"）。校验器按机械规则（只认 `.agent/` 变化）报 stale，属预期，如实登记
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-16 16:26:11 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-013-AI记忆的自动提取与控制面/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-013-AI记忆的自动提取与控制面/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:11 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 16:26:13 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-013-AI记忆的自动提取与控制面/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-013-AI记忆的自动提取与控制面/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:13 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 16:26:15 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-013-AI记忆的自动提取与控制面/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-013-AI记忆的自动提取与控制面/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:15 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 16:26:17 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-013-AI记忆的自动提取与控制面/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-013-AI记忆的自动提取与控制面/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:17 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

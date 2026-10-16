@@ -52,6 +52,7 @@ class AccountDeletionCascadeIntegrationTest {
             {"ai_messages", "conversation_id"}, // 单独按会话删，见断言处的说明
             {"ai_memories_structured", "user_id"},
             {"ai_memories_text", "user_id"},
+            {"ai_user_settings", "user_id"},
             {"ai_model_credentials", "user_id"},
             {"ai_entry_summaries", "owner_user_id"},
             // 积分账户与流水（WORK-009）。用户决定 8：注销时**一并删**，守住"注销即级联硬删"。
@@ -178,6 +179,7 @@ class AccountDeletionCascadeIntegrationTest {
                 conversationId);
         jdbcTemplate.update("INSERT INTO ai_memories_structured (user_id, kind, content) VALUES (?, 'k', '事实')", owner);
         jdbcTemplate.update("INSERT INTO ai_memories_text (user_id, content) VALUES (?, '说过的话')", owner);
+        jdbcTemplate.update("INSERT INTO ai_user_settings (user_id, updated_at) VALUES (?, UTC_TIMESTAMP(3))", owner);
         jdbcTemplate.update("""
                 INSERT INTO ai_model_credentials (user_id, base_url, model, api_key_cipher, api_key_last4)
                 VALUES (?, 'https://1.1.1.1/v1', 'm', X'00', 'abcd')

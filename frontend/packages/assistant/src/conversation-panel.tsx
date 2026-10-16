@@ -47,6 +47,11 @@ export function ConversationPanel({
   const [rememberedIndexes, setRememberedIndexes] = useState<number[]>([])
   const [drafts, setDrafts] = useState<{ title: string; body: string }[]>([])
   const [savedDrafts, setSavedDrafts] = useState<number[]>([])
+  /**
+   * 记忆总开关。**默认按开着算**：读不到设置时不能把「记住这条」锁死——一次读取失败不该
+   * 让一个本来能用的功能变成灰的；真有问题是点下去时后端回话（它也会拒绝写入）。
+   */
+  const [memoryEnabled, setMemoryEnabled] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
   /**
    * 用户是否已经自己动过这一段（发消息 / 新开 / 切换）。
@@ -150,6 +155,27 @@ export function ConversationPanel({
 
   // 卸载即中断：面板收起来之后还在计费的调用是纯浪费
   useEffect(() => () => abortRef.current?.abort(), [])
+
+  /**
+   * 记忆总开关关着时要**提前**挡住「记住这条」（REQ-007）：后端也会拒绝，但让用户点了才吃一个
+   * 报错是界面偷懒——他要的是"为什么不能记"，不是"服务端说你不能记"。
+   */
+  useEffect(() => {
+    let alive = true
+    api
+      .settings()
+      .then((value) => {
+        if (alive) {
+          setMemoryEnabled(value.memoryEnabled)
+        }
+      })
+      .catch(() => {
+        // 静默：这里报错会盖住对话本身，而它只影响一个按钮的可用性
+      })
+    return () => {
+      alive = false
+    }
+  }, [api])
 
   /** 新开一段：清空界面并**把本地记成"空白"**，这样关掉再打开也不会把旧的拉回来。 */
   const startNew = () => {
@@ -382,6 +408,8 @@ export function ConversationPanel({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={!memoryEnabled}
+                    title={memoryEnabled ? undefined : '记忆总开关已关闭，先在「记忆」标签页把它打开'}
                     data-testid="conversation-remember"
                     onClick={() => {
                       void api
@@ -397,6 +425,12 @@ export function ConversationPanel({
                   >
                     记住这条
                   </Button>
+                  {/* 禁用而不说原因＝死路一条：灰按钮旁边得写清为什么 */}
+                  {memoryEnabled ? null : (
+                    <span className="text-muted-foreground text-[11px]">
+                      记忆已关闭，可在「记忆」里打开
+                    </span>
+                  )}
                   {savedIndexes.includes(index) ? (
                     <span className="text-muted-foreground text-[11px]" data-testid="conversation-saved">
                       已存进笔记

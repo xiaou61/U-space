@@ -8,6 +8,7 @@ import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
+import io.github.xiaou61.ai.internal.settings.AiSettingsStore;
 import io.github.xiaou61.ai.internal.support.UserRateLimiter;
 import io.github.xiaou61.knowledge.KnowledgeApi;
 import io.github.xiaou61.platform.BizException;
@@ -48,6 +49,8 @@ public class ConversationService {
 
     private final UserRateLimiter limiter;
     private final CreditService credits;
+    /** 两个开关与总闸（WORK-013）：装配上下文时按它短路。 */
+    private final AiSettingsStore settingsStore;
 
     ConversationService(ConversationMapper conversations,
                         ConversationMessageMapper messages,
@@ -56,7 +59,8 @@ public class ConversationService {
                         KnowledgeApi knowledge,
                         MemoryStore memories,
                         UserRateLimiter limiter,
-                        CreditService credits) {
+                        CreditService credits,
+                        AiSettingsStore settingsStore) {
         this.conversations = conversations;
         this.messages = messages;
         this.properties = properties;
@@ -65,10 +69,65 @@ public class ConversationService {
         this.memories = memories;
         this.limiter = limiter;
         this.credits = credits;
+        this.settingsStore = settingsStore;
     }
 
     /** 会话列表项。**不含消息内容**：列表只用来选，拉开某一条才取内容。 */
     public record ConversationView(long id, Long entryId, Instant updatedAt) {
+    }
+
+    /**
+     * 自动整理要用的一段增量（WORK-013）。
+     *
+     * <p>它是**会话内部**（游标、消息表）与记忆那边之间的唯一交接物：记忆模块拿到的只有"哪几轮对话"
+     * 与"整理到哪条为止"，不必也不该碰 {@code ConversationMapper} 这些内部件。
+     *
+     * @param upToMessageId 本次整理覆盖到的最后一条消息 id（也用它当流水的 ref，便于对账）
+     */
+    public record ExtractionSlice(long conversationId, long upToMessageId, List<ConversationTurn> turns) {
+    }
+
+    /**
+     * 一次整理最多吃多少条消息。攒太久（或一口气聊很多轮）时只取最早这一批，剩下的下次接着整理。
+     */
+    private static final int MAX_EXTRACTION_MESSAGES = 60;
+
+    /**
+     * 该不该自动整理？该就**当场抢下来**并返回这一段（WORK-013）。
+     *
+     * <p>三步都在这里，因为"攒了几轮"与"游标"都是会话自己的事：
+     * <ol>
+     *   <li>数游标之后有多少条**助手**消息——等于"攒了几轮"（失败轮次不落助手消息，不该算进去）；</li>
+     *   <li>取这一段增量（带上限）；</li>
+     *   <li>条件 UPDATE 抢锁：只有把游标从我读到的那个值改成新值的那一个线程才算抢到。
+     *       抢到即推进游标——所以它天然单飞，也不需要分布式锁。</li>
+     * </ol>
+     *
+     * <p>**不加事务**：抢锁本身就是一条原子语句，而调用方紧接着要做的事（发模型调用、写记忆）必须在
+     * 事务之外，也不能因为后面失败而把游标回滚（回滚就意味着重跑，见设计的已知缺口）。
+     */
+    public Optional<ExtractionSlice> claimExtractionSlice(long userId, long conversationId, int rounds) {
+        Instant now = Instant.now();
+        Optional<Conversation> found = conversations.findActiveByIdAndUser(conversationId, userId, now);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        Long cursor = found.get().getLastMemoryExtractMessageId();
+        if (messages.countAssistantAfter(conversationId, cursor) < rounds) {
+            return Optional.empty();
+        }
+        List<ConversationMessage> increment =
+                messages.selectAfter(conversationId, cursor, MAX_EXTRACTION_MESSAGES);
+        if (increment.isEmpty()) {
+            return Optional.empty();
+        }
+        long upTo = increment.get(increment.size() - 1).getId();
+        if (conversations.claimExtraction(conversationId, userId, upTo, cursor, now) == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(new ExtractionSlice(conversationId, upTo, increment.stream()
+                .map(it -> new ConversationTurn(ConversationTurn.Role.of(it.getRole()), it.getContent()))
+                .toList()));
     }
 
     /**
@@ -136,7 +195,13 @@ public class ConversationService {
 
         // 先取历史、再写本轮消息：history() 取的是"最近 N 条"，写在前面的话这条用户消息
         // 会同时出现在 history 里和 toMessages() 末尾追加的 userMessage 里，模型会看到两遍。
-        List<ConversationTurn> history = history(conversationId);
+        //
+        // 两个开关在这里生效（WORK-013）：
+        // - 「参考当前对话的历史消息」关掉 → history 为空，助手只回答本轮这一句；
+        // - 「使用已保存的记忆」或总开关关掉 → 召回为空（不读记忆）。
+        // 都只影响"拼给模型什么"，不改任何存储行为——**关掉记忆不会删除记忆**。
+        AiSettingsStore.Settings settings = settingsStore.get(userId);
+        List<ConversationTurn> history = settings.referenceChatHistory() ? history(conversationId) : List.of();
         appendMessage(conversationId, ConversationMessage.ROLE_USER, trimmed, null);
         // 滑动续期：聊到一半过期比"聊完就丢"更让人费解
         conversations.slideExpiry(conversationId, userId, now.plus(properties.getTtl()), now);
@@ -145,8 +210,21 @@ public class ConversationService {
         // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
         // 放在限流之后：被限流的那一轮本来就不该占用户的额度。
         long reserved = credits.reserve(userId, credits.estimate());
-        return new TurnPreparation(conversationId, history, trimmed,
-                entry.title(), entry.body(), memorySnippets(userId, trimmed), access.get(), reserved);
+        return new TurnPreparation(conversationId, history, trimmed, entry.title(), entry.body(),
+                memory(settings, userId, trimmed), access.get(), reserved);
+    }
+
+    /**
+     * 按两个开关决定要不要召回（WORK-013）。
+     *
+     * <p>总开关与「使用已保存的记忆」是**且**的关系：总开关是闸，那一轴是"要不要用它"。
+     * 分开是为了让用户能"留着记忆但这次别用"——把两者合成一个，这种用法就没有表达了。
+     */
+    private List<String> memory(AiSettingsStore.Settings settings, long userId, String keyword) {
+        if (!settings.memoryEnabled() || !settings.referenceSavedMemories()) {
+            return List.of();
+        }
+        return memorySnippets(userId, keyword);
     }
 
     /**

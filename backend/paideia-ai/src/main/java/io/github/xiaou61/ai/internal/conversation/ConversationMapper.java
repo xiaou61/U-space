@@ -32,7 +32,7 @@ interface ConversationMapper {
     int insert(Conversation conversation);
 
     @Select("""
-            SELECT id, user_id, entry_id, expires_at, created_at, updated_at
+            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, created_at, updated_at
             FROM ai_conversations
             WHERE id = #{id} AND user_id = #{userId} AND expires_at > #{now}
             """)
@@ -41,7 +41,7 @@ interface ConversationMapper {
                                                  @Param("now") Instant now);
 
     @Select("""
-            SELECT id, user_id, entry_id, expires_at, created_at, updated_at
+            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, created_at, updated_at
             FROM ai_conversations
             WHERE user_id = #{userId} AND expires_at > #{now}
             ORDER BY updated_at DESC, id DESC
@@ -68,4 +68,28 @@ interface ConversationMapper {
 
     @Delete("DELETE FROM ai_conversations WHERE id = #{id} AND user_id = #{userId}")
     int deleteByIdAndUser(@Param("id") long id, @Param("userId") long userId);
+
+    /**
+     * 抢"这一轮由我来整理"（WORK-013）。
+     *
+     * <p>`WHERE last_memory_extract_message_id <=> #{expectedCursor}` 是**乐观锁**：`<=>` 而不是 `=`
+     * 是因为游标第一次为 NULL，而 `= NULL` 永远不成立（那会让第一次整理永远抢不到）。
+     *
+     * <p>用"条件更新 + 看影响行数"而不是分布式锁：两个标签页同时提问时，只有一个的 UPDATE 会生效，
+     * 另一个拿到 0 行、直接放弃。**抢到即推进游标**——所以整理失败也不会重跑（代价写在设计的已知缺口）。
+     *
+     * @return 影响行数；1 = 抢到，0 = 别人已经抢过（或会话不属于该用户/已过期）
+     */
+    @Update("""
+            UPDATE ai_conversations
+            SET last_memory_extract_message_id = #{upToMessageId}
+            WHERE id = #{id} AND user_id = #{userId}
+              AND expires_at > #{now}
+              AND last_memory_extract_message_id <=> #{expectedCursor}
+            """)
+    int claimExtraction(@Param("id") long id,
+                        @Param("userId") long userId,
+                        @Param("upToMessageId") long upToMessageId,
+                        @Param("expectedCursor") Long expectedCursor,
+                        @Param("now") Instant now);
 }

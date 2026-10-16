@@ -179,15 +179,15 @@ class LearnerMemoryIntegrationTest {
                         .header("Authorization", token(userB)))
                 .andReturn();
         assertThat(body(theirs)).contains("false");
-        assertThat(memories.list(userA)).hasSize(2);
+        assertThat(memories.list(userA, 0, 0)).hasSize(2);
 
         // 本人删：删掉后列表只剩结构化那条
         MvcResult deleted = mockMvc.perform(delete("/api/v1/ai/memories/text/" + mine)
                         .header("Authorization", token(userA)))
                 .andReturn();
         assertThat(body(deleted)).contains("true");
-        assertThat(memories.list(userA)).hasSize(1);
-        assertThat(memories.list(userA).getFirst().source()).isEqualTo(MemoryStore.MemoryItem.Source.STRUCTURED);
+        assertThat(memories.list(userA, 0, 0)).hasSize(1);
+        assertThat(memories.list(userA, 0, 0).getFirst().source()).isEqualTo(MemoryStore.MemoryItem.Source.STRUCTURED);
     }
 
     @Test
@@ -215,9 +215,9 @@ class LearnerMemoryIntegrationTest {
         assertThat(writeStatus(userA, "{\"type\":\"structured\",\"text\":\"第 5 条：还不懂\","
                 + "\"kind\":\"entry_understanding\",\"refId\":5}")).isEqualTo(200);
 
-        assertThat(memories.list(userA)).hasSize(2);
+        assertThat(memories.list(userA, 0, 0)).hasSize(2);
         // 归属取的是令牌，请求体里没有 userId 这个字段——传不了别人的
-        assertThat(memories.list(userB)).isEmpty();
+        assertThat(memories.list(userB, 0, 0)).isEmpty();
     }
 
     private int writeStatus(long userId, String json) throws Exception {

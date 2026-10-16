@@ -2,12 +2,15 @@
 artifact: design
 work_id: WORK-013
 work: AI 记忆的自动提取与控制面
-status: draft
+status: approved
 workflow: full
 depends_on: [proposal]
 related_to: [WORK-005, WORK-009, WORK-010, WORK-011, WORK-012]
 created: 2026-10-16
 updated: 2026-10-16
+approved_by: xiaou61
+approved_at: 2026-10-16 16:26:15 +0800
+approver_role: CTO
 ---
 
 # 设计 · AI 记忆的自动提取与控制面

@@ -15,6 +15,13 @@ class Conversation {
     private Long entryId;
     /** 滑动过期时间，由应用按 UTC 写入。 */
     private Instant expiresAt;
+    /**
+     * 自动整理**已经整理到哪条消息为止**（WORK-013）。
+     *
+     * <p>它是增量的游标，也是并发单飞的判据：`UPDATE ... WHERE 游标还是我读到的那一个` 抢到的线程
+     * 才会去跑整理。两件事共用一个字段是刻意的——分成"锁"和"游标"两个字段，它们迟早会不一致。
+     */
+    private Long lastMemoryExtractMessageId;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -48,6 +55,14 @@ class Conversation {
 
     void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    Long getLastMemoryExtractMessageId() {
+        return lastMemoryExtractMessageId;
+    }
+
+    void setLastMemoryExtractMessageId(Long lastMemoryExtractMessageId) {
+        this.lastMemoryExtractMessageId = lastMemoryExtractMessageId;
     }
 
     Instant getCreatedAt() {

@@ -120,6 +120,24 @@ public class CreditService {
     @Transactional
     public void settle(long userId, long reserved, String model, Integer inputTokens, Integer outputTokens,
                        Long refMessageId) {
+        settleAs(userId, reserved, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens, refMessageId);
+    }
+
+    /**
+     * 自动整理记忆的结算（WORK-013）。
+     *
+     * <p>种类单独记（{@code MEMORY_EXTRACT}），因为它是"我没聊几次怎么花了这么多"的唯一解释处：
+     * 与对话的消耗混成一类，用户对着账目算不明白，面板也没法单独显示"最近一次整理花了多少"。
+     */
+    @Transactional
+    public void settleMemoryExtraction(long userId, long reserved, String model,
+                                       Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        settleAs(userId, reserved, CreditLedger.KIND_MEMORY_EXTRACT, model, inputTokens, outputTokens, refMessageId);
+    }
+
+    /** 结算，并指定流水种类。私有：种类是领域决定，不该由调用方随手给。 */
+    private void settleAs(long userId, long reserved, String kind, String model,
+                          Integer inputTokens, Integer outputTokens, Long refMessageId) {
         if (!billing.isEnabled() || reserved <= 0) {
             return;
         }
@@ -142,8 +160,7 @@ public class CreditService {
             }
         }
         if (deducted > 0) {
-            write(userId, -deducted, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens,
-                    refMessageId, null, note);
+            write(userId, -deducted, kind, model, inputTokens, outputTokens, refMessageId, null, note);
         }
     }
 
