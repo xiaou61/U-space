@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 
 import type { AssistantApi } from './client'
 import { ConversationPanel } from './conversation-panel'
-import { CredentialDialog } from './credential-dialog'
+import { CreditsPanel } from './credits-panel'
 import { MemoryPanel } from './memory-panel'
 import { useAssistantContext } from './context'
 import { SummaryCardView } from './summary-card'
 import type { CredentialView, NoteDraftInput, SummaryView, SummaryVisibility } from './types'
+
+/** 四个标签页。后两个与条目无关，所以换条目时不该把它们挤走。 */
+type Tab = 'chat' | 'summary' | 'memory' | 'credits'
 
 /**
  * 悬浮助手壳：贯穿学习者端的常驻入口。
@@ -18,9 +21,10 @@ import type { CredentialView, NoteDraftInput, SummaryView, SummaryVisibility } f
  *
  * <p>三条与后端语义对应的界面规则：
  * <ol>
- *   <li>打开条目**不自动生成**（用户裁决：只给按钮）——自动生成会无条件花掉用户自己的额度。</li>
+ *   <li>打开条目**不自动生成**（用户裁决：只给按钮）——自动生成会无条件花掉额度。</li>
  *   <li>命中缓存时按"本次未产生调用"表述，而不是显示 0 token。</li>
- *   <li>没配凭据时给的是**配置入口**，不是错误；已有他人公开结果时照常可读。</li>
+ *   <li>**AI 服务由平台统一配置**（WORK-009）：没配好时给的是说明，不是让用户去填 Key；
+ *       余额为 0 时给的是"没有自动充值，请联系管理员"，不是一句泛泛的失败。</li>
  * </ol>
  */
 export function AssistantShell({
@@ -37,7 +41,6 @@ export function AssistantShell({
   const [view, setView] = useState<SummaryView | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [credentialOpen, setCredentialOpen] = useState(false)
   /**
    * 标签页。
    *
@@ -45,12 +48,12 @@ export function AssistantShell({
    * （用户裁决：助手任意处可开，条目只是**可选**上下文）。条目变化时重算——"从没打开任何内容
    * 进到某个条目"这一步，正是最可能需要精简的时刻。
    */
-  const [tab, setTab] = useState<'chat' | 'summary' | 'memory'>(entryId === null ? 'chat' : 'summary')
+  const [tab, setTab] = useState<Tab>(entryId === null ? 'chat' : 'summary')
 
   useEffect(() => {
-    // 换条目只影响"对话/精简"的默认落点；用户手点过「记忆」就留在记忆页——
-    // 正在看"它记住了什么"时被跳走会很讨厌
-    setTab((current) => (current === 'memory' ? current : entryId === null ? 'chat' : 'summary'))
+    // 换条目只影响"对话/精简"的默认落点；用户手点过「记忆」或「积分」就留在那一页——
+    // 正在看"它记住了什么/花了多少"时被跳走会很讨厌
+    setTab((current) => (current === 'memory' || current === 'credits' ? current : entryId === null ? 'chat' : 'summary'))
   }, [entryId])
 
   useEffect(() => {
@@ -63,7 +66,7 @@ export function AssistantShell({
         }
       })
       .catch(() => {
-        // 凭据读不出来不该打断阅读：壳会退化成"配置入口"
+        // 服务状态读不出来不该打断阅读：壳会退化成"未就绪"，按钮保持禁用
         if (alive) {
           setCredential(null)
         }
@@ -142,7 +145,7 @@ export function AssistantShell({
           <Sparkles className="size-4" />
           <span className="text-sm font-medium">AI 助手</span>
           <Badge variant="outline" data-testid="assistant-credential-state">
-            {credential?.configured === true ? `已配置 ····${credential.apiKeyLast4}` : '未配置凭据'}
+            {credential?.configured === true ? 'AI 服务已就绪' : 'AI 服务未配置'}
           </Badge>
         </div>
         <Button
@@ -181,12 +184,22 @@ export function AssistantShell({
         >
           记忆
         </Button>
+        <Button
+          variant={tab === 'credits' ? 'secondary' : 'ghost'}
+          size="sm"
+          data-testid="assistant-tab-credits"
+          onClick={() => setTab('credits')}
+        >
+          积分
+        </Button>
       </nav>
 
       {tab === 'chat' ? (
         <ConversationPanel api={api} onSaveNote={onSaveNote} />
       ) : tab === 'memory' ? (
         <MemoryPanel api={api} />
+      ) : tab === 'credits' ? (
+        <CreditsPanel api={api} />
       ) : entryId === null ? (
         <p className="text-muted-foreground text-sm" data-testid="assistant-no-entry">
           打开一条内容后可用。
@@ -231,7 +244,7 @@ export function AssistantShell({
               </div>
               {credential?.configured !== true ? (
                 <p className="text-muted-foreground text-xs">
-                  精简需要你自己的模型凭据（调用费用由你自己的 Key 承担）。
+                  AI 服务尚未由平台配置，请在管理端配置上游凭据后使用。
                 </p>
               ) : null}
             </div>
@@ -239,7 +252,7 @@ export function AssistantShell({
             <SummaryCardView view={visible} />
           )}
 
-          <footer className="flex items-center justify-between gap-2">
+          <footer className="flex items-center justify-end gap-2">
             <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <input
                 type="checkbox"
@@ -249,26 +262,7 @@ export function AssistantShell({
               />
               只看我的
             </label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCredentialOpen(true)}
-              data-testid="assistant-open-credential"
-            >
-              {credential?.configured === true ? '更换凭据' : '配置凭据'}
-            </Button>
           </footer>
-
-          <CredentialDialog
-            api={api}
-            current={credential}
-            open={credentialOpen}
-            onClose={() => setCredentialOpen(false)}
-            onSaved={() => {
-              void api.credential().then(setCredential)
-            }}
-            onError={setError}
-          />
         </>
       )}
     </aside>

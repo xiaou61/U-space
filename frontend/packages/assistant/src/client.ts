@@ -4,7 +4,7 @@ import { readEventStream } from './sse'
 import type {
   ChatEvent,
   ConversationView,
-  CredentialInput,
+  CreditsView,
   CredentialView,
   MemoryView,
   SummaryView,
@@ -12,9 +12,10 @@ import type {
 } from './types'
 
 export interface AssistantApi {
+  /** AI 服务状态（平台配没配）。**只读**：WORK-009 起用户不再配置 Key。 */
   credential(): Promise<CredentialView>
-  saveCredential(input: CredentialInput): Promise<CredentialView>
-  deleteCredential(): Promise<null>
+  /** 本人的积分余额与消耗明细。**只读**：本项不做充值。 */
+  credits(): Promise<CreditsView>
   /** 只读：有现成结果就返回，没有返回 null（**不触发生成**，也不花钱）。 */
   summary(entryId: number): Promise<SummaryView | null>
   /** 生成或命中。这是唯一会花用户额度的动作。 */
@@ -60,15 +61,7 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
   return {
     credential: () => client.requestEnvelope<CredentialView>(`${base}/credentials`),
 
-    saveCredential: (input) =>
-      client.requestEnvelope<CredentialView>(`${base}/credentials`, {
-        method: 'PUT',
-        headers: JSON_HEADERS,
-        body: JSON.stringify(input),
-      }),
-
-    deleteCredential: () =>
-      client.requestEnvelope<null>(`${base}/credentials`, { method: 'DELETE' }),
+    credits: () => client.requestEnvelope<CreditsView>(`${base}/credits`),
 
     summary: (entryId) => client.requestEnvelope<SummaryView | null>(`${base}/summaries/${entryId}`),
 

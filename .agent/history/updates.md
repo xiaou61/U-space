@@ -2420,3 +2420,34 @@ schema_version: 1
 - 未做：前端三件（T-11/T-12/T-13 的界面）、T-15 部署（阻塞：需要上游 API Key）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 09:55:00 +0800 · WORK-009 前端三件完成（T-11/T-12/T-13）+ 凭据写路径下线
+
+- 类型：implementation
+- 用户指示：「你就继续一直去做，开始吧」，并提供上游 API Key。
+
+### 凭据写路径下线（T-04 的界面一半）
+- `packages/assistant`：`client.ts` 去掉 `saveCredential` / `deleteCredential`（PUT/DELETE 已下线），新增只读的 `credits()`；`types.ts` 去掉 `CredentialInput` 与 `CredentialView.apiKeyLast4`（**平台的 Key，不是用户的**），新增 `CreditsView` / `CreditRow`；**删除 `credential-dialog.tsx`**；`index.ts` 导出同步。
+- `assistant-shell.tsx`：徽标从「已配置 ····xxxx / 未配置凭据」改成「**AI 服务已就绪 / AI 服务未配置**」；**删掉「更换凭据 / 配置凭据」按钮与弹窗**；未配置时的提示从"需要你自己的模型凭据"改成"请在管理端配置上游凭据"。
+
+### T-13 学习者端积分面板
+- 新增 `packages/assistant/src/credits-panel.tsx`（`credits-panel` / `credits-balance` / `credits-row` / `credits-empty`）：余额 + 流水明细（种类→人话、token 数、备注、正负色），**只读**（本项不做充值），并写明"没有自动充值"。挂在助手壳的新「积分」标签页上，与记忆面板同一处。
+
+### T-11/T-12 管理端两页
+- 新增 `apps/admin/src/pages/AiCreditsGrantPage.tsx`（积分调整：用户 id / 数量 / 原因 + **查余额**按钮，提示用户 id 敲错一位会给错人）与 `AiCreditsAuditPage.tsx`（用量审计：时间/用户/类型/模型/token/积分/操作人/备注）。
+- `router.tsx` 加 `/ai-credits` 转向 + `/ai-credits/grant` + `/ai-credits/audit`；`AdminShell.tsx` 加可展开父菜单「AI 积分」与两条面包屑。
+- 审计页**不 join 消息表**：流水自带 model 与 token 数（精简那一路的用量本来就没有落库的地方）。
+
+### e2e 按新世界改写
+- `apps/app/e2e/assistant.spec.ts`：原来断言"没配凭据"（那个状态对用户侧已不可达）。改成断言：徽标为「AI 服务已就绪」、**新增积分面板用例**（余额 0 + 空状态 + 提到没有自动充值）、**发送时走积分闸**（提示"积分不足"且不产生上游调用）、以及"用户侧不再有配置凭据入口"。
+
+### 验证（据实）
+- 后端：`mvn test` BUILD SUCCESS（带隧道与口令），app 模块 **119 运行 / 0 失败 / 4 跳过**。
+- 前端：`pnpm typecheck` **全包通过**；`pnpm test` **88 条全过**。
+- 学习者端 e2e：**26 passed / 1 failed**。失败的是 `notes.spec.ts` → 「新建页没写东西就能直接返回；写了东西才拦一下」，页面快照显示笔记列表为空（"还没有笔记"），而该断言要求 `notes-list` 存在。**单独重跑该 spec 同样复现（6 passed / 1 failed），不是 flake。**
+  - **排查结论（不指向本次改动）**：该文件里每个笔记用例都清掉自己建的笔记（第 209 行注释原文"留着会污染下一轮"），而 **dev 种子（`db/devdata/V950..V952`）根本不造笔记**——所以到那一步列表按设计就是空的，断言的前置条件缺失。**本次没有碰过笔记的任何代码，也没改过 `notes.spec.ts`。**
+  - **但我不下"肯定与我无关"的结论**：证明它需要把我的改动回退再跑一轮（约 2 分钟），而当前有并发会话在同一工作区，`git stash` 会把别人的暂存卷进来，风险大于收益。**建议：在干净检出上跑一次学习者端 e2e 确认。**
+
+- 未做：T-15 部署（**上游 Key 已到手，但部署会改变线上形态，未做**）。
+- 本地提交：见下一笔
+- 远端推送：未执行

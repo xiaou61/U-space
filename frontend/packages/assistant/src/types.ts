@@ -35,18 +35,34 @@ export interface TokenUsage {
   totalTokens: number
 }
 
-/** 凭据的**脱敏**视图：永远没有 Key，只有后四位。 */
+/**
+ * AI 服务的状态。
+ *
+ * <p>WORK-009 起上游凭据由**平台**持有、用户不再配置 Key，所以这里既没有写入口，也**没有
+ * `apiKeyLast4`**——那是平台的 Key，不是用户的，把它的片段放到用户界面上没有意义。
+ */
 export interface CredentialView {
   configured: boolean
   baseUrl: string | null
   model: string | null
-  apiKeyLast4: string | null
 }
 
-export interface CredentialInput {
-  baseUrl: string
-  model: string
-  apiKey: string
+/** 一笔积分流水（WORK-009 REQ-008）。 */
+export interface CreditRow {
+  createdAt: string | null
+  delta: number
+  kind: 'ADJUST' | 'RESERVE' | 'SETTLE' | 'REFUND'
+  model: string | null
+  inputTokens: number | null
+  outputTokens: number | null
+  refMessageId: number | null
+  note: string | null
+}
+
+/** 本人的积分余额与消耗明细。**只读**：本项不做充值，积分只能由管理员发放。 */
+export interface CreditsView {
+  balance: number
+  ledger: CreditRow[]
 }
 
 /** 生成时的可见性，由**生成者**选择（谁付费谁决定要不要分享）。 */

@@ -1,6 +1,8 @@
 import { Navigate, createHashRouter } from 'react-router'
 
 import { AdminHomePage } from './pages/AdminHomePage'
+import { AiCreditsAuditPage } from './pages/AiCreditsAuditPage'
+import { AiCreditsGrantPage } from './pages/AiCreditsGrantPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
 import { NoteReportsPage } from './pages/NoteReportsPage'
@@ -48,6 +50,25 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <KnowledgeEntriesPage />
+      </RequireAdmin>
+    ),
+  },
+  // AI 积分（WORK-009）。`/ai-credits` 留一条转向：父菜单只分组、不指向页面，
+  // 但没有它时手敲这个地址就是一片空白。
+  { path: '/ai-credits', element: <Navigate to="/ai-credits/grant" replace /> },
+  {
+    path: '/ai-credits/grant',
+    element: (
+      <RequireAdmin>
+        <AiCreditsGrantPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/ai-credits/audit',
+    element: (
+      <RequireAdmin>
+        <AiCreditsAuditPage />
       </RequireAdmin>
     ),
   },

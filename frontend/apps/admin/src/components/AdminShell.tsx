@@ -2,6 +2,7 @@ import { ThemeToggle } from '@paideia/ui'
 import {
   ChevronDown,
   ChevronRight,
+  Coins,
   FileText,
   Flag,
   FolderTree,
@@ -9,6 +10,8 @@ import {
   Library,
   PanelLeftClose,
   PanelLeftOpen,
+  Receipt,
+  Wallet,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
@@ -40,6 +43,17 @@ const MENU: MenuItem[] = [
   },
   // 举报处理是学习者端分享出去的内容的**唯一治理入口**（用户裁决 11：由管理员处理）
   { to: '/reports', label: '举报处理', icon: Flag },
+  // AI 积分（WORK-009）：本期不做充值，所以"积分调整"就是积分唯一的入口，
+  // "用量审计"是回答"谁用了多少、花了多少、谁给他发的"的唯一地方。两页共用一份流水。
+  {
+    to: '/ai-credits',
+    label: 'AI 积分',
+    icon: Coins,
+    children: [
+      { to: '/ai-credits/grant', label: '积分调整', icon: Wallet },
+      { to: '/ai-credits/audit', label: '用量审计', icon: Receipt },
+    ],
+  },
 ]
 
 /** 面包屑：按菜单层级写死的路径（首页固定在最前，不再逐级可点）。 */
@@ -48,6 +62,8 @@ const CRUMBS: Record<string, string[]> = {
   '/knowledge/categories': ['知识库', '分类管理'],
   '/knowledge/entries': ['知识库', '条目管理'],
   '/reports': ['举报处理'],
+  '/ai-credits/grant': ['AI 积分', '积分调整'],
+  '/ai-credits/audit': ['AI 积分', '用量审计'],
 }
 
 /**
