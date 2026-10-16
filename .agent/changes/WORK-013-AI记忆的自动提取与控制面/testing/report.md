@@ -4,7 +4,7 @@ work_id: WORK-013
 work: AI 记忆的自动提取与控制面
 status: passed
 evidence: required
-verified_commit: 70e1b7f
+verified_commit: 472df61
 verified_at: 2026-10-16
 ---
 
