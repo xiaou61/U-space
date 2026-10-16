@@ -35,15 +35,7 @@ export function AppShell({
   className?: string
 }) {
   return (
-    <div
-      className={cn('flex min-h-screen flex-col', className)}
-      /**
-       * 学习者的 AI 助手**停靠在右侧**（WORK-011）：它打开时会在根元素上设这个变量，
-       * 于是整个内容（含页头与页脚）**整体左移**，而不是把居中的阅读列压窄。
-       * 没人设它时（管理端、展览页，或面板收起的窄屏）这里就是 `0px`——**完全不受影响**。
-       */
-      style={{ paddingRight: 'var(--assistant-panel-w, 0px)' }}
-    >
+    <div className={cn('flex min-h-screen flex-col', className)}>
       <header className="border-border bg-background/95 sticky top-0 z-30 border-b">
         <div className="mx-auto flex h-14 w-full max-w-[86rem] items-center gap-3 px-6">
           <div className="flex shrink-0 items-center gap-2.5">

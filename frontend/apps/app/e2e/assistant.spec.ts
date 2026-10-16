@@ -102,34 +102,49 @@ test('打开条目后壳取到当前内容；不会偷偷发起生成，也不�
   expect(generateCalls).toEqual([])
 })
 
-test('WORK-011：面板可拖宽、可收起，且刷新后保持（不自动弹开）', async ({ page }) => {
+test('WORK-011：面板可拖动、可缩放、可收起，且刷新后保持（不自动弹开）', async ({ page }) => {
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
 
   const shell = page.getByTestId('assistant-shell')
   await expect(shell).toBeVisible()
-  const before = (await shell.boundingBox())?.width ?? 0
+  const before = (await shell.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 }
 
-  // 拖左缘的把手往左挪 → 变宽
-  const handle = page.getByTestId('assistant-resize')
-  const handleBox = await handle.boundingBox()
-  expect(handleBox).not.toBeNull()
-  if (handleBox !== null) {
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2)
+  // ① 拖标题栏把它挪走——"随心所欲拖到任意位置"这条要能被自动化盯住
+  const bar = page.getByTestId('assistant-drag')
+  const barBox = await bar.boundingBox()
+  expect(barBox).not.toBeNull()
+  if (barBox !== null) {
+    await page.mouse.move(barBox.x + 40, barBox.y + barBox.height / 2)
     await page.mouse.down()
-    await page.mouse.move(handleBox.x - 80, handleBox.y + handleBox.height / 2, { steps: 4 })
+    await page.mouse.move(barBox.x - 220, barBox.y + barBox.height / 2 - 60, { steps: 5 })
     await page.mouse.up()
   }
-  const after = (await shell.boundingBox())?.width ?? 0
-  expect(after).toBeGreaterThan(before)
+  const moved = (await shell.boundingBox()) ?? before
+  expect(moved.x).toBeLessThan(before.x - 100)
 
-  // 刷新后宽度保持（存在本地）
+  // ② 拖右下角握把往右 → 变宽（右下角握把往右/往下都是变大）
+  const grip = page.getByTestId('assistant-resize')
+  const gripBox = await grip.boundingBox()
+  expect(gripBox).not.toBeNull()
+  if (gripBox !== null) {
+    await page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(gripBox.x + 80, gripBox.y + gripBox.height / 2, { steps: 4 })
+    await page.mouse.up()
+  }
+  const resized = (await shell.boundingBox()) ?? moved
+  expect(resized.width).toBeGreaterThan(moved.width)
+
+  // ③ 刷新后位置与尺寸都保持（存在本地）
   await page.reload()
   await expect(shell).toBeVisible()
-  expect(Math.abs(((await shell.boundingBox())?.width ?? 0) - after)).toBeLessThan(2)
+  const reloaded = (await shell.boundingBox()) ?? resized
+  expect(Math.abs(reloaded.width - resized.width)).toBeLessThan(2)
+  expect(Math.abs(reloaded.x - resized.x)).toBeLessThan(2)
 
-  // 收起 → 刷新后仍是收起的：**不许每次导航都自动弹开**
+  // ④ 收起 → 刷新后仍是收起的：**不许每次导航都自动弹开**
   await page.getByTestId('assistant-collapse').click()
   await expect(page.getByTestId('assistant-launcher')).toBeVisible()
   await page.reload()

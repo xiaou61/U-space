@@ -13,32 +13,83 @@ import type { CredentialView, NoteDraftInput, SummaryView, SummaryVisibility } f
 /** 四个标签页。后三个与条目无关，所以换条目时不该把它们挤走。 */
 type Tab = 'chat' | 'summary' | 'memory' | 'credits'
 
-/** 面板状态的本地键。展开与否 + 宽度都是**这台设备上的使用状态**，不进服务端（WORK-011）。 */
+/**
+ * 面板的本地状态（WORK-011，2026-10-16 按用户反馈改成**浮动对话框**）。
+ *
+ * <p>位置与尺寸都存本地：这是**这台设备上的使用状态**，不是学习数据。存下来的位置可能因为窗口
+ * 变小而跑到屏幕外，所以每次读出来都要夹回可视区（见 {@link clampToViewport}）。
+ */
 const PANEL_KEY = 'paideia:assistant-panel'
-const DEFAULT_WIDTH = 384
-const MIN_WIDTH = 360
-const MAX_WIDTH = 520
+const DEFAULT_W = 384
+const DEFAULT_H = 560
+const MIN_W = 320
+const MIN_H = 360
+const MAX_W = 720
+const MAX_H = 900
+/** 与视口边缘至少留这么多，且拖拽时也要留住它——否则面板会被拖到只剩一条边。 */
+const MARGIN = 16
 
 interface PanelState {
   open: boolean
-  width: number
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+/** 把面板夹回可视区：至少留下 MARGIN 的可见部分，且不超出右/下边缘。 */
+function clampToViewport(state: PanelState): PanelState {
+  const vw = typeof window === 'undefined' ? 1280 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  const w = clamp(state.w, MIN_W, Math.max(MIN_W, Math.min(MAX_W, vw - MARGIN * 2)))
+  const h = clamp(state.h, MIN_H, Math.max(MIN_H, Math.min(MAX_H, vh - MARGIN * 2)))
+  return {
+    open: state.open,
+    w,
+    h,
+    x: clamp(state.x, MARGIN, Math.max(MARGIN, vw - w - MARGIN)),
+    y: clamp(state.y, MARGIN, Math.max(MARGIN, vh - h - MARGIN)),
+  }
+}
+
+function defaultState(): PanelState {
+  const vw = typeof window === 'undefined' ? 1280 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  return clampToViewport({
+    open: false,
+    w: DEFAULT_W,
+    h: DEFAULT_H,
+    x: vw - DEFAULT_W - 24,
+    y: vh - DEFAULT_H - 24,
+  })
 }
 
 function readPanelState(): PanelState {
+  const fallback = defaultState()
   try {
     const raw = window.localStorage.getItem(PANEL_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw) as Partial<PanelState>
-      const width = Number(parsed.width)
-      return {
-        open: parsed.open === true,
-        width: Number.isFinite(width) ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) : DEFAULT_WIDTH,
-      }
+    if (raw === null) {
+      return fallback
     }
+    const parsed = JSON.parse(raw) as Partial<PanelState>
+    const numbers = [parsed.x, parsed.y, parsed.w, parsed.h].every((value) => typeof value === 'number')
+    if (!numbers) {
+      return fallback
+    }
+    return clampToViewport({
+      open: parsed.open === true,
+      x: parsed.x as number,
+      y: parsed.y as number,
+      w: parsed.w as number,
+      h: parsed.h as number,
+    })
   } catch {
-    // 隐私模式、坏值：一律当"没设过"
+    return fallback
   }
-  return { open: false, width: DEFAULT_WIDTH }
 }
 
 function storePanelState(state: PanelState): void {
@@ -49,35 +100,18 @@ function storePanelState(state: PanelState): void {
   }
 }
 
-/** 视口是否匹配。用来做窄屏降级——**这是布局判断，不是渲染分支的唯一依据**（面板照常挂载）。 */
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() =>
-    typeof window === 'undefined' ? false : window.matchMedia(query).matches,
-  )
-  useEffect(() => {
-    const list = window.matchMedia(query)
-    const sync = () => setMatches(list.matches)
-    sync()
-    list.addEventListener('change', sync)
-    return () => list.removeEventListener('change', sync)
-  }, [query])
-  return matches
-}
-
 /**
- * 助手外壳：**右侧停靠的工作区**（WORK-011 起，不再是右下角浮窗）。
+ * 助手外壳：**可随处拖动的浮动对话框**（WORK-011，2026-10-16 按用户反馈改向）。
  *
- * <p>三条与后端语义对应的界面规则：
- * <ol>
- *   <li>打开条目**不自动生成**（用户裁决：只给按钮）——自动生成会无条件花掉额度。</li>
- *   <li>命中缓存时按"本次未产生调用"表述，而不是显示 0 token。</li>
- *   <li>**AI 服务由平台统一配置**（WORK-009）：没配好时给的是说明，不是让用户去填 Key；
- *       余额为 0 时给的是"没有自动充值，请联系管理员"，不是一句泛泛的失败。</li>
- * </ol>
+ * <p><b>为什么不是停靠侧栏</b>：调研那份材料把"浮动小挂件"列为反模式，但它讲的是 **B2B 后台**
+ * （用户在那里是"处理一条记录"，面板该贴住对象）。这里是**阅读界面**：用户要的是"随手问一句，
+ * 然后把它拖开继续读"。用户 2026-10-16 明确要"随心所欲拖动、任意区域、小小的对话框、不要固定到
+ * 某个界面"——所以形态以此为准。
  *
- * <p>形态（WORK-011，照调研给的规格）：停靠右侧、宽度可拖（360–520，默认 384）、可收成一条窄条、
- * 展开与宽度**存本地**；展开且屏幕够宽（≥1024）时在根元素上设 `--assistant-panel-w`，
- * 让内容整体左移而不是被压窄；窄屏（<640）降级成底部抽屉。
+ * <p>三条与后端语义对应的界面规则不变：打开条目**不自动生成**；命中缓存按"本次未产生调用"表述；
+ * **AI 服务由平台统一配置**，没配好时给说明而不是让用户填 Key。
+ *
+ * <p>拖动与调尺寸都**落本地**（位置、宽高、展开与否），刷新后保持。
  */
 export function AssistantShell({
   api,
@@ -88,53 +122,35 @@ export function AssistantShell({
   onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
   const { entryId, entryTitle, onlyMine, setOnlyMine } = useAssistantContext()
-  const initial = readPanelState()
-  const [expanded, setExpanded] = useState(initial.open)
-  const [width, setWidth] = useState(initial.width)
+  const [panel, setPanel] = useState<PanelState>(readPanelState)
   const [credential, setCredential] = useState<CredentialView | null>(null)
   const [view, setView] = useState<SummaryView | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>(entryId === null ? 'chat' : 'summary')
-
-  /** 窄到放不下侧栏时：面板改成覆盖/抽屉，**不给内容让位**（避免把正文压成一条）。 */
-  const compact = useMediaQuery('(max-width: 1023px)')
-  const drawer = useMediaQuery('(max-width: 639px)')
+  /** 正在拖拽/缩放时不落本地——松手才写，省得每帧一次 localStorage。 */
+  const dragging = useRef(false)
 
   useEffect(() => {
-    // 换条目只影响"对话/精简"的默认落点；用户手点过另外三页就留在那一页
     setTab((current) =>
       current === 'memory' || current === 'credits' ? current : entryId === null ? 'chat' : 'summary',
     )
   }, [entryId])
 
-  // 展开/宽度变了就落本地：刷新后保持，且**导航不会把它改回去**（本组件是常驻的）
   useEffect(() => {
-    storePanelState({ open: expanded, width })
-  }, [expanded, width])
+    if (!dragging.current) {
+      storePanelState(panel)
+    }
+  }, [panel])
 
-  /**
-   * 让内容让位：**只在展开且屏幕够宽时**设根变量。
-   *
-   * <p>收起或窄屏时把它清掉（而不是设 0）——这样 `AppShell` 的 `var(--assistant-panel-w, 0px)`
-   * 回到缺省，管理端与展览页那种从不设它的场景保持原样。
-   */
+  // 视口变小（窗口缩小、转屏）时把面板夹回来，否则它会留在屏幕外再也点不到
   useEffect(() => {
-    const root = document.documentElement
-    if (expanded && !compact) {
-      root.style.setProperty('--assistant-panel-w', `${String(width)}px`)
-    } else {
-      root.style.removeProperty('--assistant-panel-w')
-    }
-    return () => {
-      // 注意：`removeProperty` **返回被移除的旧值**（string），所以清理函数必须用块体包起来，
-      // 写成 `() => root.style.removeProperty(...)` 会被 React 当成析构函数类型不匹配而报错。
-      root.style.removeProperty('--assistant-panel-w')
-    }
-  }, [expanded, compact, width])
+    const onResize = () => setPanel((current) => clampToViewport(current))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
-  /** 快捷键开关面板（键位属实现选择：不与浏览器/编辑器常用键冲突）。 */
-  const toggle = useCallback(() => setExpanded((value) => !value), [])
+  const toggle = useCallback(() => setPanel((current) => ({ ...current, open: !current.open })), [])
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'j') {
@@ -156,7 +172,6 @@ export function AssistantShell({
         }
       })
       .catch(() => {
-        // 服务状态读不出来不该打断阅读：壳会退化成"未就绪"，按钮保持禁用
         if (alive) {
           setCredential(null)
         }
@@ -166,7 +181,6 @@ export function AssistantShell({
     }
   }, [api])
 
-  // 换条目时清掉上一条的结果：留在界面上会让人以为新条目已经精简过了
   useEffect(() => {
     setView(null)
     setError(null)
@@ -209,72 +223,69 @@ export function AssistantShell({
   const visible =
     view !== null && !(onlyMine && view.source === 'others' && view.visibility === 'public') ? view : null
 
-  // ── 收起态：右侧一条窄条。**不是完全消失**——否则用户找不到入口 ────────────────────────
-  if (!expanded) {
+  /** 拖拽标题栏 / 拖拽握把共用：按位移改位置或尺寸，松手才落本地。 */
+  const beginDrag = (event: React.PointerEvent<HTMLElement>, mode: 'move' | 'resize') => {
+    event.preventDefault()
+    const target = event.currentTarget
+    // 指针起点与面板原值**必须分开存**：`{x: clientX, ...panel}` 会被 spread 覆盖掉，位移就全错了
+    const pointer = { x: event.clientX, y: event.clientY }
+    const origin = { x: panel.x, y: panel.y, w: panel.w, h: panel.h }
+    target.setPointerCapture(event.pointerId)
+    dragging.current = true
+    const onMove = (move: PointerEvent) => {
+      const dx = move.clientX - pointer.x
+      const dy = move.clientY - pointer.y
+      setPanel((current) =>
+        mode === 'move'
+          ? clampToViewport({ ...current, x: origin.x + dx, y: origin.y + dy, open: true })
+          : clampToViewport({ ...current, w: origin.w + dx, h: origin.h + dy, open: true }),
+      )
+    }
+    const onUp = () => {
+      dragging.current = false
+      target.releasePointerCapture(event.pointerId)
+      target.removeEventListener('pointermove', onMove)
+      target.removeEventListener('pointerup', onUp)
+      setPanel((current) => {
+        storePanelState(current)
+        return current
+      })
+    }
+    target.addEventListener('pointermove', onMove)
+    target.addEventListener('pointerup', onUp)
+  }
+
+  // ── 收起态：一个**显眼**的悬浮入口（不是右下角一个小圆点，也不是一条细窄条） ──────────
+  if (!panel.open) {
     return (
       <button
         type="button"
-        onClick={() => setExpanded(true)}
+        onClick={toggle}
         data-testid="assistant-launcher"
         aria-label="打开 AI 助手"
-        className="border-border bg-card hover:bg-muted fixed top-1/2 right-0 z-40 flex -translate-y-1/2 flex-col items-center gap-1 rounded-l-lg border border-r-0 px-1.5 py-3 text-xs shadow-lg"
+        title="打开 AI 助手（Ctrl/Cmd + J）"
+        className="border-border bg-card hover:bg-accent fixed right-6 bottom-6 z-40 flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-medium shadow-xl"
       >
         <Sparkles className="size-4" />
-        <span className="[writing-mode:vertical-rl]">助手</span>
+        AI 助手
       </button>
     )
   }
 
-  // ── 展开态：停靠右侧（窄屏降级成底部抽屉） ──────────────────────────────────────────
-  const position = drawer
-    ? 'inset-x-0 bottom-0 h-[70dvh] rounded-t-2xl border-t'
-    : 'top-0 right-0 h-dvh border-l'
-
+  // ── 展开态：浮动对话框，位置与尺寸都来自本地状态 ──────────────────────────────────
   return (
-    <aside
-      className={`border-border bg-card fixed z-40 flex flex-col shadow-xl ${position}`}
-      style={drawer ? undefined : { width }}
+    <section
+      className="border-border bg-card fixed z-40 flex flex-col overflow-hidden rounded-xl border shadow-2xl"
+      style={{ left: panel.x, top: panel.y, width: panel.w, height: panel.h }}
       data-testid="assistant-shell"
       aria-label="AI 助手"
     >
-      {/* 拖拽把手：只有桌面端（抽屉模式下宽度无意义） */}
-      {drawer ? null : (
-        <div
-          role="separator"
-          aria-label="调整助手宽度"
-          aria-orientation="vertical"
-          tabIndex={-1}
-          data-testid="assistant-resize"
-          onPointerDown={(event) => {
-            const startX = event.clientX
-            const startWidth = width
-            const target = event.currentTarget
-            target.setPointerCapture(event.pointerId)
-            const onMove = (move: PointerEvent) => {
-              const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth - (move.clientX - startX)))
-              setWidth(next)
-            }
-            const onUp = () => {
-              target.releasePointerCapture(event.pointerId)
-              target.removeEventListener('pointermove', onMove)
-              target.removeEventListener('pointerup', onUp)
-            }
-            target.addEventListener('pointermove', onMove)
-            target.addEventListener('pointerup', onUp)
-          }}
-          onKeyDown={(event) => {
-            // 键盘也能调：左右箭头 ±16px（无障碍要求，不是可选装饰）
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-              event.preventDefault()
-              const step = event.key === 'ArrowLeft' ? 16 : -16
-              setWidth((value) => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, value + step)))
-            }
-          }}
-          className="hover:bg-primary/30 absolute top-0 left-0 h-full w-1 cursor-col-resize"
-        />
-      )}
-
-      <header className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
+      {/* 标题栏＝拖动区：整条都能拖，不只是一小块 */}
+      <header
+        onPointerDown={(event) => beginDrag(event, 'move')}
+        className="border-border bg-muted/40 flex shrink-0 cursor-move touch-none items-center justify-between gap-2 border-b px-3 py-2"
+        data-testid="assistant-drag"
+      >
         <div className="flex min-w-0 items-center gap-2">
           <Sparkles className="size-4 shrink-0" />
           <span className="shrink-0 text-sm font-medium">AI 助手</span>
@@ -287,7 +298,8 @@ export function AssistantShell({
           size="icon-sm"
           aria-label="收起助手"
           data-testid="assistant-collapse"
-          onClick={() => setExpanded(false)}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => setPanel((current) => ({ ...current, open: false }))}
         >
           <X className="size-4" />
         </Button>
@@ -401,6 +413,27 @@ export function AssistantShell({
           </>
         )}
       </div>
-    </aside>
+
+      {/* 右下角缩放握把：往上/往左都是变大（与既有 e2e 的拖拽方向一致） */}
+      <div
+        role="separator"
+        aria-label="调整助手大小"
+        tabIndex={-1}
+        data-testid="assistant-resize"
+        onPointerDown={(event) => beginDrag(event, 'resize')}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault()
+            const step = event.key === 'ArrowLeft' ? 24 : -24
+            setPanel((current) => clampToViewport({ ...current, w: current.w + step }))
+          }
+        }}
+        className="text-muted-foreground/60 hover:text-foreground absolute right-0 bottom-0 flex size-5 cursor-nwse-resize touch-none items-end justify-end pr-0.5 pb-0.5"
+      >
+        <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden="true">
+          <path d="M11 1v10H1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </div>
+    </section>
   )
 }
