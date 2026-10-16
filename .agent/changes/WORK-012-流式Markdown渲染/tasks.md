@@ -2,12 +2,15 @@
 artifact: tasks
 work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
-status: draft
+status: approved
 workflow: full
 depends_on: [design]
 related_to: [WORK-005, WORK-006, WORK-011]
 created: 2026-10-16
 updated: 2026-10-16
+approved_by: xiaou61
+approved_at: 2026-10-16 13:37:43 +0800
+approver_role: CTO
 ---
 
 # 任务 · 流式 Markdown 渲染（终止·增量·降级）

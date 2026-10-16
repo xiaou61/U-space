@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增一条贯穿"模型输出 → 界面"的渲染管线（切分 / 补全 / 增量 / 降级四层），影响所有助手回答的呈现；涉及公共行为（流式渲染结果）、安全（sanitize 边界）与可测的性能口径；且用户明确要求"最复杂、最可控、大量测试"并持续迭代
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-011]
 related_to: [WORK-005, WORK-006, WORK-011]
 created: 2026-10-16
 updated: 2026-10-16
+approved_by: xiaou61
+approved_at: 2026-10-16 13:37:40 +0800
+approver_role: CTO
 ---
 
 # 流式 Markdown 渲染（终止·增量·降级）需求
