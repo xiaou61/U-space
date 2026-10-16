@@ -2515,3 +2515,16 @@ schema_version: 1
 - 真正剩下的：管理端新增两页没有 e2e；远端 `push` 未执行（需授权）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 10:35:00 +0800 · 线上核查暴露并修掉一处时间戳偏移（裸 SQL 写库绕过 UTC 会话）
+
+- 类型：maintenance（生产数据订正）
+- 在给用户"部署好了、给你地址去验"之前，自己先当场核了一遍线上，确认新代码确实在跑：
+  - `/actuator/health` → 200 UP；学习者端 `/` 与管理端 `/admin/` → 200；
+  - `GET /api/v1/ai/credits` 无鉴权 → **401**（不是 404，说明新控制器在线）；`GET /api/v1/ai/admin/credits/audit` 同；
+  - 带令牌：`GET /api/v1/ai/credentials` → 200 且 `configured:true`、**无 `apiKeyLast4`**；`PUT /api/v1/ai/credentials` → **405**（写路径确实下线）；`GET /api/v1/ai/credits` → `balance 99998` + 流水。
+- **顺带发现一处我自己造的数据错**：`ai_credit_ledger` 里那两条 ADJUST 的时间是 `09:51:52`，而应用写的 RESERVE/REFUND 是 `02:01:50` —— **两条链对不上**。原因：我发积分用的是**裸 `mysql` CLI**，它的会话时区是服务器默认（+08:00），于是 `DEFAULT CURRENT_TIMESTAMP(3)` 写进去的是**本地墙钟**；而应用的连接带 `connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true`，读的时候把那个墙钟当 UTC，于是**快 8 小时**。（这与 2026-10-15 记过的"时间戳快 8 小时"是同一类，只是那次修的是应用路径，这次栽在 CLI 路径上。）
+- **订正**：`UPDATE ai_credit_ledger SET created_at = DATE_SUB(created_at, INTERVAL 8 HOUR) WHERE kind='ADJUST' AND note LIKE '上线初始发放%'`，以及同源写入的 `ai_credit_accounts.updated_at`。修后 ADJUST 为 `01:51:52`，与 RESERVE/REFUND（`02:01:5x`）以及当时 UTC（`02:06:27Z`）**时间线自洽**。只碰数据库默认值写的列，应用绑定的列未动。
+- **教训（写进 `dev-workflow.md`）**：在这台库上**用裸 `mysql` 写任何带 `DEFAULT CURRENT_TIMESTAMP` 的表之前，先 `SET time_zone='+00:00'`**，否则时间快 8 小时；随后的订正是"只能回拨默认值写的列"，应用写入的行本来就是对的、不要去动。
+- 本地提交：见下一笔
+- 远端推送：未执行
