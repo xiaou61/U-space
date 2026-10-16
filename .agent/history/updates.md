@@ -2730,3 +2730,70 @@ schema_version: 1
 - 未做：T-03 懒加载、T-04 挪包、T-05 语料（**等用户发测试用的 key 与 baseUrl**）、T-06..T-12。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 13:37:40 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-012-流式Markdown渲染/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-012-流式Markdown渲染/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:40 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 13:37:41 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-012-流式Markdown渲染/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-012-流式Markdown渲染/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:41 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 13:37:42 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-012-流式Markdown渲染/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-012-流式Markdown渲染/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:42 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 13:37:43 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-012-流式Markdown渲染/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-012-流式Markdown渲染/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:43 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-16 15:08:07 +0800 · WORK-012 · 实施完成：助手回答按 markdown 渲染，渲染器统一到 @paideia/ui
+
+- 类型：implementation
+- 变更：
+  - 新增 `@paideia/ui` 的 `markdown/markdown.tsx`（一个组件两种 mode：streaming 才做未闭合补全 / static 原样），`packages/assistant` 与 `packages/knowledge` 都改从它取；`MarkdownBody` 退化为薄封装（只留标题锚点回填、图片灯箱、附件地址拼接）
+  - 移除依赖：`react-markdown`、`remark-gfm`（knowledge）；`streamdown` 从 assistant 移到 ui（渲染器宿主）
+  - 懒加载：`Markdown` 内部 `React.lazy` + Suspense（兜底是纯文本，即接线前的真实行为）；`preloadMarkdown()` 在助手面板打开时与知识库正文模块加载时触发
+  - 新增测试：`ui/src/markdown/markdown.test.tsx`（73 条）、`ui/src/styles/streamdown-tokens.test.ts`（2 条）、`source-coverage.test.ts` 增补 1 条、`apps/app/e2e/markdown-render.spec.ts`（3 条真浏览器断言）、`ui/src/test-setup.ts`（jsdom 补 `Element.prototype.scrollTo`）
+  - 语料：`ui/src/markdown/corpus.json`（11 条真实上游增量序列，118 KB）+ 采集脚本 `scripts/collect-md-corpus.mjs`（key 只从环境变量读）
+  - 修 `markdown-body.tsx` 模块级 `preloadMarkdown()`：否则读长文的人会先看到一小段没排版的原文
+  - 改 `knowledge.spec.ts` 一条"只数一次"的断言为会自动等待（懒加载后正文先以纯文本兜底出现，数一次会数到那一帧）
+- 决策：
+  - **修掉两处静默缺样式**：`@source` 指到了不存在的 `node_modules/streamdown/dist`（整行形同虚设，且因注释里写过 `bg-sidebar` 而"看起来生效"），改指 `../../node_modules/streamdown/dist/*.js`；补 `--color-sidebar` / `--color-sidebar-foreground` 令牌
+  - 长文不改成"渲染器随路由 chunk 静态引入"：`@paideia/knowledge` 的 barrel 被首页等页面静态引入（等于在主包里），静态引入等于把 505 kB 塞回主包
+  - AC-005 的降级口径改为**搜索**（30 条恶劣输入逐字符回放）而不是写一个触发不了的分支；上游的降级机制是"合并到安全边界 + 占位符"，本机实测无触发
+- 依据：.agent/changes/WORK-012-流式Markdown渲染/{requirements,proposal,design,tasks}.md、testing/report.md
+- 验证：
+  - `pnpm --filter @paideia/ui test` → 6 files / **93 passed**（markdown.test.tsx 73，含 11 条语料逐前缀等价、30 条恶劣输入逐字符、四条口径、安全 6 条、单一实现证据）
+  - `pnpm --filter @paideia/app test:e2e` → **33 passed / 0 failed**（2.1 分钟；既有 30 未回归 + 新增 3）
+  - `pnpm --filter @paideia/admin test:e2e` → **8 passed / 0 failed**（47.8 秒）
+  - `pnpm typecheck` / `pnpm test`（frontend 根）→ 退出码 0 / 0
+  - 构建实测：主 chunk **1203 kB → 697 kB**（比接线前 836 kB 小 139 kB），streamdown 成 **504.93 kB** 按需 chunk；CSS **78.79 → 88.49 kB**（`@source` 修好后它独有的类才生成）
+  - 反向验证两处：`@source` 指回旧路径 → `--sdm-c`/`counter(line)` 0 命中；删掉 `--color-sidebar` → `bg-sidebar`/`border-sidebar` 规则数 0
+  - 如实登记：**AC-006 的"流式过程中不闪"未覆盖**（既有 e2e 故意不打上游）；**深浅两套主题的观感待用户真人看**
+- 本地提交：2d824bb（四件工件）、3793a31（实施）
+- 远端推送：未执行（待用户明确授权）
