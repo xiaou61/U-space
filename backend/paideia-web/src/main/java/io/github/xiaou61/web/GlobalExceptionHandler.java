@@ -112,9 +112,18 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.<Void>failure(ErrorCode.INTERNAL).withTraceId(traceId));
     }
 
+    /**
+     * 错误码 → HTTP 状态。
+     *
+     * <p><b>新增 {@link ErrorCode} 时必须在这里加一条</b>：这是个穷尽 switch，漏掉会静默落到
+     * {@code default -> 500}——业务码在响应体里是对的，只有 HTTP 状态错。2026-10-16 加
+     * {@code INSUFFICIENT_CREDITS} 时就踩过一次，是集成测试抓出来的（界面按 500 处理会显示
+     * "服务器错误"，而它其实该提示"去充值/联系管理员"）。
+     */
     private HttpStatus httpStatusOf(ErrorCode errorCode) {
         return switch (errorCode) {
             case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;
+            case INSUFFICIENT_CREDITS -> HttpStatus.PAYMENT_REQUIRED;
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;

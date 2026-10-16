@@ -81,6 +81,10 @@ class AssistantConversationIntegrationTest {
     @Autowired
     io.github.xiaou61.ai.internal.billing.BillingProperties billing;
 
+    /** WORK-009 起 AI 调用要过积分闸，所以用例得先把"这一条要花的钱"放进账户。 */
+    @Autowired
+    io.github.xiaou61.ai.internal.billing.CreditService creditService;
+
     private final List<Long> createdConversations = new ArrayList<>();
     private String userA;
     private String userB;
@@ -391,13 +395,15 @@ class AssistantConversationIntegrationTest {
     }
 
     /**
-     * WORK-009 起凭据由平台统一持有（见 {@code application-test.yml} 的 {@code paideia.ai.billing}），
-     * 用户不再配置 Key，所以这里没有事要做。
+     * 把这一条用例要花的钱放进账户。
      *
-     * <p><b>调用点保留</b>：它们让每个用例仍然显式声明"这一条需要 AI 可用"，而不是悄悄依赖上下文里
-     * 恰好配好的那一份——将来真有"按用户解析凭据"的例外时，这里就是它该长回来的地方。
+     * <p>名字保留（原意是"给这个用户配一份凭据"）：WORK-009 起凭据由平台统一持有，用户侧要准备的
+     * 变成了**余额**。调用点因此仍然有意义——它让每条用例显式声明"我需要 AI 可用"。
+     *
+     * <p>**不给就会 402**（预留失败），那正是积分闸生效的样子。
      */
     private void configureCredential(String subject) {
+        creditService.adjust(Long.parseLong(subject), 1_000_000L, 1L, "集成测试发放");
     }
 
     /** 发一轮消息并把 SSE 流读完。异步派发会一直等到 emitter 结束（端口是桩，不会真的等网络）。 */

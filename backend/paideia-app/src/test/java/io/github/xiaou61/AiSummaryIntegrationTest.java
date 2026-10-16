@@ -72,6 +72,10 @@ class AiSummaryIntegrationTest {
     @MockitoBean
     EntrySummarizer summarizer;
 
+    /** WORK-009 起 AI 调用要过积分闸，所以用例得先把"这一条要花的钱"放进账户。 */
+    @Autowired
+    io.github.xiaou61.ai.internal.billing.CreditService creditService;
+
     private long entryId;
 
     /**
@@ -181,6 +185,7 @@ class AiSummaryIntegrationTest {
     @Test
     @DisplayName("别人生成的公开结果，本人也能读到（source 标 others）")
     void publicSummaryIsReadableByOthers() throws Exception {
+        saveCredential(userA);
         generate(userA, "public");
 
         MvcResult read = mockMvc.perform(get("/api/v1/ai/summaries/" + entryId)
@@ -240,12 +245,13 @@ class AiSummaryIntegrationTest {
     }
 
     /**
-     * WORK-009 起凭据由平台统一持有（见 {@code application-test.yml} 的 {@code paideia.ai.billing}），
-     * 用户不再配置 Key，所以这里没有事要做。
+     * 把这一条用例要花的钱放进账户。
      *
-     * <p><b>调用点保留</b>：它们让每个用例仍然显式声明"这一条需要 AI 可用"。
+     * <p>名字保留（原意是"给这个用户存一份凭据"）：WORK-009 起凭据由平台统一持有，用户侧要准备的
+     * 变成了**余额**。**不给就会 402**——那正是积分闸生效的样子。
      */
     private void saveCredential(String user) {
+        creditService.adjust(Long.parseLong(user), 1_000_000L, 1L, "集成测试发放");
     }
 
     private MvcResult generate(String user, String visibility) throws Exception {

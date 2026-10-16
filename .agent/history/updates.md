@@ -2400,3 +2400,23 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-16 10:20:00 +0800 · WORK-009 集成测试真跑起来了：抓到两个真缺陷并修掉（含更正上一笔的结论）
+
+- 类型：verification
+- **更正上一笔的判断**：上一笔说"DB 集成测试在本环境跑不了"。**错了，是我不够细**。`quick-server` 的包装器确实不支持端口转发，但它做的事只是"把口令交给 `SSH_ASKPASS` 再调 `ssh`"——所以我用**同一套机制**（同一个 `credential-askpass.exe` + 同几个环境变量）自己起一条 `ssh -N -L 3307:127.0.0.1:3306 codenest-online` 就通了，**口令不经过任何命令行、也不进日志**。不需要把 MySQL 开到公网（用户提议开公网；同一实例上还有生产的 `paideia` 库，开公网等于把生产库一起暴露——已向他说明，改用隧道）。
+- 服务器侧核实（只读）：`mysqld` 只监听 `127.0.0.1:3306` / `33060`，`mysqld.cnf` 里 `bind-address = 127.0.0.1`，与 `always.md` 记载一致。
+
+### 抓到并修掉的两个真缺陷（都是**跑起来才看得见**的）
+1. **`GlobalExceptionHandler.httpStatusOf` 是穷尽 switch，`default -> 500`**：新增的 `ErrorCode.INSUFFICIENT_CREDITS` 掉进默认分支 → **响应体里业务码 40200 是对的，HTTP 状态却是 500**。界面按 500 处理会显示"服务器错误"，而它该提示"积分不足"。已加 `case INSUFFICIENT_CREDITS -> HttpStatus.PAYMENT_REQUIRED`，并在方法注释里写明"新增 ErrorCode 时必须在这里加一条"。
+2. **测试侧**：我给 AI 加了积分闸之后，10 条既有 AI 用例全变 402（`AssistantConversationIntegrationTest` 6 条"Async not started"、`AiSummaryIntegrationTest` 4 条）——**闸生效的正确表现**，缺的是测试没给余额。修法：把两个已退化为空方法的 `configureCredential` / `saveCredential` 改成**发积分**（它们本来就表达"这一条要为 AI 付钱"）。另外我在改写 `publicSummaryIsReadableByOthers` 时漏了那一行发放，导致它读回 null——也一并补上。
+
+### 最终的测试结果（真跑了）
+`mvn -f backend/pom.xml test`（带 `PAIDEIA_TEST_DB_PASSWORD` + 隧道）→ **BUILD SUCCESS**：
+- platform 11 / web 9 / persistence 4 / security 11 / account 13 / knowledge **25 运行·1 跳过** / paideia-ai **32 运行·0 跳过** / **paideia-app 119 运行·0 失败·4 跳过**。
+- 合计约 **224 条执行、0 失败**；跳过的 5 条是环境开关类的（真实上游 live 测试、S3 契约等）。
+- **上一笔里"只有代码就位、没有执行证据"的 AC-001/003/004/005/006/007/010，现在都有执行过的证据了**；AC-002 另有 paideia-ai 单测（含反向验证）。
+
+- 未做：前端三件（T-11/T-12/T-13 的界面）、T-15 部署（阻塞：需要上游 API Key）。
+- 本地提交：见下一笔
+- 远端推送：未执行
