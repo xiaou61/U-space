@@ -7,6 +7,7 @@ import { ConversationPanel } from './conversation-panel'
 import { CreditsPanel } from './credits-panel'
 import { MemoryPanel } from './memory-panel'
 import { useAssistantContext } from './context'
+import { hasSeenHint, markHintSeen } from './session-store'
 import { SummaryCardView } from './summary-card'
 import type { CredentialView, NoteDraftInput, SummaryView, SummaryVisibility } from './types'
 
@@ -150,7 +151,11 @@ export function AssistantShell({
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  const toggle = useCallback(() => setPanel((current) => ({ ...current, open: !current.open })), [])
+  const toggle = useCallback(() => {
+    // 一旦打开过就不再提示：首次指引只给一次，动效也随之消失
+    markHintSeen()
+    setPanel((current) => ({ ...current, open: !current.open }))
+  }, [])
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'j') {
@@ -255,20 +260,34 @@ export function AssistantShell({
     target.addEventListener('pointerup', onUp)
   }
 
-  // ── 收起态：一个**显眼**的悬浮入口（不是右下角一个小圆点，也不是一条细窄条） ──────────
+  // ── 收起态：一个**显眼**的悬浮入口，首次进入时给一次指引 ──────────────────────────
   if (!panel.open) {
+    const firstTime = !hasSeenHint()
     return (
-      <button
-        type="button"
-        onClick={toggle}
-        data-testid="assistant-launcher"
-        aria-label="打开 AI 助手"
-        title="打开 AI 助手（Ctrl/Cmd + J）"
-        className="border-border bg-card hover:bg-accent fixed right-6 bottom-6 z-40 flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-medium shadow-xl"
-      >
-        <Sparkles className="size-4" />
-        AI 助手
-      </button>
+      <div className="fixed right-6 bottom-6 z-40 flex flex-col items-end gap-2">
+        {firstTime ? (
+          <div
+            className="border-border bg-card text-muted-foreground rounded-lg border px-3 py-1.5 text-xs shadow-lg"
+            data-testid="assistant-hint"
+          >
+            有不懂的可以问我
+          </div>
+        ) : null}
+        <button
+          type="button"
+          onClick={toggle}
+          data-testid="assistant-launcher"
+          aria-label="打开 AI 助手"
+          title="打开 AI 助手（Ctrl/Cmd + J）"
+          className={`border-border bg-card hover:bg-accent flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-medium shadow-xl ${
+            // `motion-safe:` 让"减少动效"的用户拿到的是静止版本（无障碍要求，不是可选装饰）
+            firstTime ? 'motion-safe:animate-pulse' : ''
+          }`}
+        >
+          <Sparkles className="size-4" />
+          AI 助手
+        </button>
+      </div>
     )
   }
 

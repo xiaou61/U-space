@@ -46,3 +46,29 @@ export function storeConversation(id: number | null): void {
     // 写不进去不影响本次使用，只是下次打开会回到"最近会话"
   }
 }
+
+/**
+ * 入口指引是否已经给过（WORK-011）。
+ *
+ * <p><b>指引只给一次</b>：用户打开过助手之后就永久不再提示，动效也随之消失。
+ * 常驻动效是调研里点名的暗黑模式反模式之一——"协助不该变成劫持"。所以这里记的不是
+ * "看过动画"，而是"**打开过助手**"。
+ */
+const HINT_KEY = 'paideia:assistant-hint-seen'
+
+export function hasSeenHint(): boolean {
+  try {
+    return window.localStorage.getItem(HINT_KEY) === '1'
+  } catch {
+    // 读不到就不提示：宁可少一次指引，也不要在记不住的环境里反复弹
+    return true
+  }
+}
+
+export function markHintSeen(): void {
+  try {
+    window.localStorage.setItem(HINT_KEY, '1')
+  } catch {
+    // 记不住就下次再提示一次，无伤
+  }
+}
