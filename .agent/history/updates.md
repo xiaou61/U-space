@@ -2949,3 +2949,13 @@ schema_version: 1
 - 如实登记：MockMvc 那处竞态**未修**（要串行化异步派发或改用真实端口，属测试基建）；WORK-009 那处「被积分闸拦下的轮次丢用户消息」**仍未修**，需用户裁决
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-17 22:29:09 +0800 · WORK-014 · 新建「源码解读专题与交互式代码走读」需求（draft 待签）
+
+- 类型：requirements
+- 变更：新建 `.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md`（13 条 REQ、13 条 AC、9 条实现选择、3 个非阻断待确认问题）；未创建下游工件，按生命周期在需求批准后再写 proposal/design/tasks
+- 决策（Agent 建议，待用户签字）：长在知识库上（分类 + code-tour/quiz 两种围栏块），不建表、不加后端端点；走读块用 JSON 锚定固定 commit，附许可证与 permalink；Shiki 用 @streamdown/code 并限定语言白名单；Mermaid 延到 v1.5 先量体积；AI 只预填提示不自动发送；小测与进度不落库；首页 QUICK_LINKS 加入口
+- 依据：代码核对（Entry 只有 markdown body；Markdown 的 plugins.renderers 是公开扩展点；管理端预览与笔记共用 MarkdownField；AssistantConversationController 已把 entryBody 传给模型；@streamdown/code 未安装）；联网调研 DeepWiki / CodeTour / CodeSee / Python Tutor / GitDiagram；用户 2026-10-17 原话「都是我们内置的、图文并茂、最好有互动、可以和 AI 联动、生动可视化强」
+- 验证：project-lifecycle.ps1 validate 结果「通过」；requirements.md 包含「已确认事实 / 用户决定 / 目标 / 实现选择 / 待确认问题 / 验收标准」六个决策分层章节
+- 本地提交：随本条一起提交
+- 远端推送：未执行
