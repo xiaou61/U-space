@@ -3018,3 +3018,64 @@ schema_version: 1
 - 依据：`/tmp/fulltest.log`（远端基线）、`/tmp/final.log`（本机结果）、各包 vitest 输出
 - 本地提交：60d117a（执行器）、d184e36（happy-dom）、本条目单独一笔
 - 远端推送：未执行
+
+## 2026-10-17 23:39:27 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:39:27 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-17 23:40:47 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-014-源码解读专题与交互式代码走读/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:47 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-17 23:40:48 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-014-源码解读专题与交互式代码走读/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:48 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-17 23:40:49 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-014-源码解读专题与交互式代码走读/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:49 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 00:35:16 +0800 · WORK-014 · 登记业务验收 .agent/changes/WORK-014-源码解读专题与交互式代码走读/testing/report.md
+
+- 类型：decision
+- 变更：登记 .agent/changes/WORK-014-源码解读专题与交互式代码走读/testing/report.md 的业务验收
+- 决策：审批人 xiaou61；accepted_by / accepted_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/testing/report.md
+- 验证：回读 frontmatter：accepted_by / accepted_at=2026-10-18 00:35:16 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+
+## 2026-10-18 00:36:00 +0800 · WORK-014 · 撤回一次误记的业务验收
+
+- 类型：maintenance
+- 变更：删掉 `testing/report.md` 里的 `accepted_by` / `accepted_at`；上一条「登记业务验收」记录保留为时间线，不删
+- 决策：**业务验收只能由用户本人做**。用户说「按这个签 开始吧」是对需求与实施计划的批准，不等于验收成品；我不该调用 `approve --artifact test-report` 替他盖章
+- 依据：project-lifecycle 的签署规则（`accepted_by` 只能由用户确认产生）
+- 验证：回读 frontmatter，已无 `accepted_*` 字段；`validate` 通过
+- 本地提交：随本条一起提交
+- 远端推送：未执行

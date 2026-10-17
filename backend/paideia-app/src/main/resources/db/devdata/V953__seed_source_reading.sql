@@ -25,6 +25,16 @@ CONCAT(
 `setState` 之后到屏幕上真实更新，中间隔着一次**可以被打断的渲染**。这篇只看它的入口：
 谁决定了"从头开始"还是"接着上次做"。
 
+## 先看调用形状
+
+```javascript
+// 一次并发渲染的入口，去掉所有分支判断后只剩四步
+executionContext |= RenderContext;          // 1. 标上下文
+if (rootOrLanesChanged) prepareFreshStack(); // 2. 必要时重置
+workLoopConcurrent();                        // 3. 按片工作
+commitRoot();                                // 4. 提交
+```
+
 ## 一次更新的路径
 
 ```code-map

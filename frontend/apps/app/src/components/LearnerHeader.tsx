@@ -151,7 +151,15 @@ export function LearnerHeader() {
           </span>
           {/* 用户名留在触发器里而不是菜单里：它同时是"我是谁"的显示位，
               也是 e2e 判断登录态的锚点 */}
-          <span className="text-muted-foreground text-xs" data-testid="current-user">
+          {/*
+            窄屏只留头像：360px 下导航 + 头像 + 用户名 + 主题开关会把页头挤破（实测溢出 70px）。
+            用户名不隐藏而是**挪进 `sr-only`**：`getByTestId('current-user')` 的 toHaveText 仍成立，
+            读屏也照常读到"我是谁"，只是视觉上让位给导航。
+          */}
+          <span className="text-muted-foreground hidden text-xs sm:inline" data-testid="current-user">
+            {user.username}
+          </span>
+          <span className="sr-only sm:hidden" data-testid="current-user-compact">
             {user.username}
           </span>
           <ChevronDown className="text-muted-foreground size-3.5" />

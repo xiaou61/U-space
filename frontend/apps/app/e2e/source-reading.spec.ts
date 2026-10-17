@@ -132,3 +132,46 @@ test('首页有「源码解读」入口', async ({ page }) => {
   await page.goto('/#/')
   await expect(page.getByTestId('home-entry-source-reading')).toBeVisible()
 })
+
+test('窄屏 360px：不横向溢出，块按单列堆叠', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 720 })
+  await openEntry(page)
+
+  // 文档本身不能横向滚动；允许代码区自己滚
+  const overflow = await page.evaluate(() => ({
+    doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    body: document.body.scrollWidth - document.body.clientWidth,
+  }))
+  expect(overflow.doc).toBeLessThanOrEqual(1)
+  expect(overflow.body).toBeLessThanOrEqual(1)
+
+  // 走读的代码与解释在窄屏下上下堆叠：两块左边界相同、纵向不重叠
+  const code = page.getByTestId('code-tour').locator('div.overflow-x-auto').first()
+  const explain = page.getByTestId('code-tour-explain')
+  const codeBox = await code.boundingBox()
+  const explainBox = await explain.boundingBox()
+  expect(codeBox).not.toBeNull()
+  expect(explainBox).not.toBeNull()
+  expect(Math.abs((codeBox!.x) - (explainBox!.x))).toBeLessThan(24)
+  expect(explainBox!.y).toBeGreaterThanOrEqual(codeBox!.y + codeBox!.height - 1)
+})
+
+test('语法高亮真的上了色（Shiki 到达后围栏代码有颜色 token）', async ({ page }) => {
+  await openEntry(page)
+
+  // 种子正文里有一段普通 ```javascript 围栏（`## 先看调用形状`）。
+  // Shiki 是懒加载的：到达后每个 token 变成带 `--sdm-c` 自定义属性的 span
+  // （**不是**内联 `color:`——那是 streamdown 的渲染约定）。
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() =>
+          Array.from(document.querySelectorAll('pre span')).filter(
+            (span) =>
+              (span.getAttribute('style') ?? '').includes('--sdm-c') && (span.textContent ?? '').trim() !== '',
+          ).length,
+        ),
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(10)
+})

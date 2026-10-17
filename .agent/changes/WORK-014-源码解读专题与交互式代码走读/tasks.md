@@ -21,7 +21,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 五类块的 schema 与纯解析函数
+### TASK-001 | done | 五类块的 schema 与纯解析函数
 
 - 对应：REQ-002/003/005/006/007/009/010；AC-001、AC-002、AC-003、AC-004、AC-005、AC-006、AC-007
 - 依赖：无
@@ -33,7 +33,7 @@ approver_role: CTO
   4. 判定纯函数：`judgeFill` / `judgeOrder` / `judgeBug` / `scoreQuiz`。
 - 验证：`pnpm --filter @paideia/ui test`（新增 schema 用例全绿）。
 
-### TASK-002 | pending | 页级上下文、块外壳与错误边界
+### TASK-002 | done | 页级上下文、块外壳与错误边界
 
 - 对应：REQ-004、REQ-016；AC-003、AC-012
 - 依赖：`TASK-001`
@@ -45,7 +45,7 @@ approver_role: CTO
   4. `documentRenderers` 注册五种语言别名。
 - 验证：`pnpm --filter @paideia/ui test`；ui-kit 里故意放坏 JSON 只降级该块。
 
-### TASK-003 | pending | 走读块（步骤、预测、状态面板）
+### TASK-003 | done | 走读块（步骤、预测、状态面板）
 
 - 对应：REQ-005/006/007/008、REQ-013；AC-002、AC-004、AC-005、AC-013
 - 依赖：`TASK-002`
@@ -59,7 +59,7 @@ approver_role: CTO
   6. 切步写 `progress.update({tours})`；`done = step === total-1`。
 - 验证：`pnpm --filter @paideia/ui test`；ui-kit 肉眼确认。
 
-### TASK-004 | pending | 架构地图与双向联动
+### TASK-004 | done | 架构地图与双向联动
 
 - 对应：REQ-003/004；AC-003、AC-018
 - 依赖：`TASK-002`、`TASK-003`
@@ -71,7 +71,7 @@ approver_role: CTO
   4. 窄屏容器横向滚动，节点不换行错位。
 - 验证：`pnpm --filter @paideia/ui test`（两个方向各一条断言）。
 
-### TASK-005 | pending | 学习路径块
+### TASK-005 | done | 学习路径块
 
 - 对应：REQ-002、REQ-012；AC-001、AC-009
 - 依赖：`TASK-002`
@@ -82,7 +82,7 @@ approver_role: CTO
   3. 点击走 `onOpenEntry`；没有回调时按钮禁用。
 - 验证：`pnpm --filter @paideia/ui test`。
 
-### TASK-006 | pending | 动手练习块
+### TASK-006 | done | 动手练习块
 
 - 对应：REQ-009；AC-006
 - 依赖：`TASK-001`、`TASK-002`
@@ -94,7 +94,7 @@ approver_role: CTO
   4. 结果写 `progress.update({challenges})`；「重做」重置本题。
 - 验证：`pnpm --filter @paideia/ui test`（三种题型各对/错两条）。
 
-### TASK-007 | pending | 小测块
+### TASK-007 | done | 小测块
 
 - 对应：REQ-010；AC-007
 - 依赖：`TASK-002`
@@ -104,7 +104,7 @@ approver_role: CTO
   2. 块末显示「答对 N / 总数」；成绩写 `progress.update({quizzes})`。
 - 验证：`pnpm --filter @paideia/ui test`。
 
-### TASK-008 | pending | 本地进度与最近学习
+### TASK-008 | done | 本地进度与最近学习
 
 - 对应：REQ-011、REQ-012；AC-008、AC-009
 - 依赖：`TASK-001`
@@ -115,7 +115,7 @@ approver_role: CTO
   3. `recentReading` 按 `updatedAt` 倒序，返回 `{entryId,title,visited}`；title 缺省时用 `条目 #id`。
 - 验证：`pnpm --filter @paideia/knowledge test`（含损坏 JSON 与 localStorage 抛错两条）。
 
-### TASK-009 | pending | 接入 Markdown 与预览一致
+### TASK-009 | done | 接入 Markdown 与预览一致
 
 - 对应：REQ-001/016/017/020；AC-012、AC-015、AC-019
 - 依赖：`TASK-003`、`TASK-004`、`TASK-005`、`TASK-006`、`TASK-007`、`TASK-008`
@@ -127,7 +127,7 @@ approver_role: CTO
   4. 管理端预览不传这些，块可看、不可问、不写进度。
 - 验证：`pnpm --filter @paideia/ui test`、`pnpm --filter @paideia/knowledge test`、两端 typecheck；管理端预览肉眼确认。
 
-### TASK-010 | pending | Shiki 高亮与体积记录
+### TASK-010 | done | Shiki 高亮与体积记录
 
 - 对应：REQ-015；AC-014
 - 依赖：`TASK-009`
@@ -139,7 +139,7 @@ approver_role: CTO
   4. 构建前后记录主 chunk 与 markdown chunk 体积。
 - 验证：`pnpm --filter @paideia/ui test`；`pnpm --filter @paideia/app build` 记录体积。
 
-### TASK-011 | pending | 助手预填桥
+### TASK-011 | done | 助手预填桥
 
 - 对应：REQ-013、REQ-014；AC-010、AC-011
 - 依赖：`TASK-003`
@@ -150,7 +150,7 @@ approver_role: CTO
   3. 条目页把 `ask` 与 `onOpenEntry` 传给 `MarkdownBody`。
 - 验证：`pnpm --filter @paideia/assistant test`；单测断言 `sendMessage` 零调用。
 
-### TASK-012 | pending | 首页入口与继续学习
+### TASK-012 | done | 首页入口与继续学习
 
 - 对应：REQ-012、REQ-018；AC-009、AC-016
 - 依赖：`TASK-008`、`TASK-011`
@@ -160,7 +160,7 @@ approver_role: CTO
   2. 新增「继续学习」区：`recentReading(3)`；有数据才显示；点击进条目。
 - 验证：`pnpm --filter @paideia/app typecheck`；e2e 导航。
 
-### TASK-013 | pending | 样板条目、端到端与文档
+### TASK-013 | done | 样板条目、端到端与文档
 
 - 对应：REQ-019、REQ-020、AC-017、AC-019、AC-020
 - 依赖：`TASK-010`、`TASK-012`
