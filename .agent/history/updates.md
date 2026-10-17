@@ -2923,3 +2923,15 @@ schema_version: 1
 - 如实登记的未验证项：**提炼质量无断言**（只能靠真实使用看）；并发跑时 ui 的 markdown 套件曾 transform 失败（单独复跑 93/93）；面板来源筛选无 e2e；DELETE 不留动作历史（设计里的非目标）
 - 本地提交：70e1b7f（实施）、472df61（报告 + 补两条用例）、本条目单独一笔
 - 远端推送：未执行
+
+## 2026-10-17 09:10:00 +0800 · WORK-011 · 补三条验收缺口：AC-008 与「收起即中断」已覆盖，AC-004 被一处回滚挡住
+
+- 类型：test
+- 变更：`apps/app/e2e/assistant.spec.ts` 新增「窄视口下面板覆盖而不占位」（AC-008：实测正文列宽度不因面板而变 + 面板整个留在可视区内）；新增「关掉面板再打开，上一次那一段还在」（AC-004）但登记为 `test.fixme`（原因见下）；`packages/assistant/src/conversation-panel.test.tsx` 新增单测「卸载即中断在飞的上游调用」（AC-009 后半）；`apps/app/e2e/knowledge.spec.ts` 的 `openAllEntries` 改为在超时后报出实际状态（**诊断改动，不是修缺陷**）
+- 决策：AC-009 后半放进单测而不是 e2e——e2e 得伪造一个永不结束的流，那测的是桩；AC-004 不留一条红，用 `test.fixme` 把原因与"修好后去掉 fixme"写在该用例上方；`entry-state` 兼作"加载中"与"加载失败"，**不能当终态等**（第一版诊断就因此误报成 5 条红，已改）
+- **发现（未修，落在 WORK-009 的扣费路径上，需用户裁决）**：被积分闸拦下的那一轮里**用户消息根本没落库**。`ConversationService.prepare` 是 `@Transactional`，而 `credits.reserve()`（抛 402「积分不足」）在 `appendMessage` **之后**调用 ⇒ 整条事务回滚。实测 `paideia_test` 上 6 个会话行（每次 e2e 三条：用例 4/8/9）而 `ai_messages` **0 行**。这与 `prepare` 自己的注释「失败不会丢掉用户说过的话」以及既有 e2e「他确实说过，失败不该把它抹掉」的意图相反；界面只有乐观本地状态所以看不出来，**刷新即丢**
+- 依据：`.agent/changes/WORK-011-AI助手面板与会话历史/requirements.md` 的 AC-001..AC-009
+- 验证：`pnpm --filter @paideia/app test:e2e` **34 passed / 1 skipped**（跳过的是那条 fixme）；`@paideia/assistant` 单测 **24 passed**；**反向验证**：把 `useEffect(() => () => abortRef.current?.abort(), [])` 摘掉后新单测立刻红（expected false to be true），改回即绿；`typecheck` assistant 与 app 均 0
+- 如实登记的未验证项：**AC-004 仍未覆盖**（被上面那处回滚挡住，本环境造不出"失败但已落库"的会话）；AC-008 只验了 700px 一档；那个 e2e 偶发（整套跑红、单跑绿）**本次未能复现**，只把诊断改到下次能看清状态
+- 本地提交：随本条一起提交
+- 远端推送：未执行

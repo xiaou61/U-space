@@ -50,7 +50,17 @@ function searchTerm(title: string): string {
 /** 打开"全部条目"页。 */
 async function openAllEntries(page: Page): Promise<void> {
   await page.goto('/#/knowledge/entries')
-  await expect(page.getByTestId('entry-list')).toBeVisible()
+  // 终态只有"有列表"和"空结果"两种：entry-state 同时用于"加载中"与"加载失败"，**不能当终态等**。
+  // 超时之后再把 entry-state 的文字带进报错——只报"元素不存在"的话，2026-10-16 那次偶发
+  // （整套跑红、单跑绿）就没有任何线索可查。
+  const list = page.getByTestId('entry-list')
+  try {
+    await expect(list.or(page.getByTestId('entry-empty'))).toBeVisible()
+  } catch (cause) {
+    const state = page.getByTestId('entry-state')
+    const text = (await state.count()) === 0 ? '（没有任何状态被渲染出来）' : (await state.innerText()).trim()
+    throw new Error(`条目页没有列表，实际状态：「${text}」`, { cause })
+  }
 }
 
 test('未登录访问知识库被导向登录页', async ({ page }) => {

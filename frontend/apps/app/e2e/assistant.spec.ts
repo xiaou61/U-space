@@ -183,3 +183,59 @@ test('WORK-011：失败的一轮也会被记住——历史里选得到，新开
   await expect(page.getByTestId('conversation-history')).toBeVisible()
 })
 
+/**
+ * **暂时不可达（test.fixme）**：本环境里没有"恢复时真有消息可读"的会话可用。
+ *
+ * <p>原因不是恢复本身，而是**被积分闸拦下的那一轮里用户消息根本没落库**：`ConversationService.prepare`
+ * 是 `@Transactional`，而 `credits.reserve()`（抛 402「积分不足」）在 `appendMessage` **之后**调用，
+ * 于是整条事务回滚——库上只留下会话行（那个是另一个端点建的），`ai_messages` 一行都不留
+ * （2026-10-16 实测：6 个会话行、0 条消息）。这跟 prepare 自己的注释「失败不会丢掉用户说过的话」
+ * 以及上一条用例里「他确实说过，失败不该把它抹掉」的意图正好相反。
+ *
+ * <p>修掉那处回滚后，把 fixme 去掉这条就成立（种子账号 0 积分正好能造出"失败但有用户消息"的会话）。
+ */
+test.fixme('WORK-011：关掉面板再打开，上一次那一段还在（不是空白）', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/knowledge')
+  await page.getByTestId('assistant-launcher').click()
+
+  await page.getByTestId('conversation-input').fill('关掉再打开也该还在')
+  await page.getByTestId('conversation-send').click()
+  // 种子账号余额为 0：这一轮被积分闸拦下，但**用户那句话已经落库了**——那正是"恢复"要读的东西
+  await expect(page.getByTestId('conversation-message-user')).toContainText('关掉再打开也该还在')
+
+  // 收起 = 面板卸载：界面上什么都不剩，只剩本地记着的那个会话 id
+  await page.getByTestId('assistant-collapse').click()
+  await expect(page.getByTestId('assistant-shell')).toHaveCount(0)
+
+  // 重新打开要回到那一段，而不是一个空白新对话（AC-004）
+  await page.getByTestId('assistant-launcher').click()
+  await expect(page.getByTestId('conversation-message-user')).toContainText('关掉再打开也该还在')
+})
+
+test('WORK-011：窄视口下面板覆盖而不占位——正文列不被压窄，面板留在可视区', async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 800 })
+  await signIn(page)
+  await page.goto('/#/knowledge')
+
+  const main = page.locator('main')
+  const before = await main.boundingBox()
+  expect(before).not.toBeNull()
+
+  await page.getByTestId('assistant-launcher').click()
+  await expect(page.getByTestId('assistant-shell')).toBeVisible()
+
+  // 正文列宽度**不因面板而变**：面板是 fixed 覆盖，不是占去布局的永久侧栏（AC-008）
+  expect((await main.boundingBox())?.width).toBe(before?.width)
+
+  // 面板整个留在可视区内：窄屏下不能被丢到屏幕外（夹回逻辑）
+  const box = await page.getByTestId('assistant-shell').boundingBox()
+  expect(box).not.toBeNull()
+  if (box !== null) {
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(700)
+    expect(box.y + box.height).toBeLessThanOrEqual(800)
+  }
+})
+
