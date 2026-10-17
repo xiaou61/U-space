@@ -2935,3 +2935,17 @@ schema_version: 1
 - 如实登记的未验证项：**AC-004 仍未覆盖**（被上面那处回滚挡住，本环境造不出"失败但已落库"的会话）；AC-008 只验了 700px 一档；那个 e2e 偶发（整套跑红、单跑绿）**本次未能复现**，只把诊断改到下次能看清状态
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-17 22:30:00 +0800 · 六项完成沉淀（001/006/007/009/012/013）重新核对并结算
+
+- 类型：verification
+- 变更：六份 `testing/report.md` 的 `verified_commit` 由各自旧锚点统一改绑到 `1c1a301`（刚验过的提交），补 `verified_at: 2026-10-17`，并各加一节「2026-10-17 重新核对（结算）」写明该工作项自己的证据
+- 决策：**先在同一份新鲜证据上重验、再改锚点**，而不是把旧锚点直接宣布为已结算——上一轮 WORK-012 拒绝改锚点的理由正是不想替用户宣布"重新验过了"；这次确实重新验了
+- 验证（本轮实际跑的）：
+  - 后端 `mvn -B test`：跑到 paideia-app 为止 **132 运行 / 0 失败 / 1 error / 4 跳过**；唯一 error 是 `AssistantConversationIntegrationTest.usageIsReturnedAndRateLimitIsEnforced` 的 `ConcurrentModificationException`（Spring MockMvc 响应头 `LinkedCaseInsensitiveMap`，异步 SSE 线程与容器线程同时写头）。**同一条用例单独跑 12/12 绿**，属测试基建竞态，与两天前那次 `HeaderValueHolder` NPE 同源
+  - 关键类：`PlatformContractTest` 7/0、`ModularityTest` 1/0、`AuthorizationIsolationTest` 9/0、`KnowledgeFileIntegrationTest` 7/0、`KnowledgeReadIntegrationTest` 12/0、`AiCreditIntegrationTest` 5/0、`AiSummaryIntegrationTest` 7/0、`MemoryAutoExtractionIntegrationTest` 12/0、`LearnerMemoryIntegrationTest` 9/0、笔记三套 14/0、`AccountAuthIntegrationTest` 13/0、`AccountDeletionCascadeIntegrationTest` 2/0；`AssistantLiveUpstreamIntegrationTest` 4 跳过（需真上游，按设计）
+  - 前端单测 `pnpm -r test` **176 通过**（ui 93 / assistant 24 / core 22 / knowledge 20 / auth 13 / desktop 4）
+  - 学习者端 e2e **34 passed / 1 skipped**（跳过的是 AC-004 的 `test.fixme`）；管理端 e2e **8 passed**
+- 如实登记：MockMvc 那处竞态**未修**（要串行化异步派发或改用真实端口，属测试基建）；WORK-009 那处「被积分闸拦下的轮次丢用户消息」**仍未修**，需用户裁决
+- 本地提交：随本条一起提交
+- 远端推送：未执行

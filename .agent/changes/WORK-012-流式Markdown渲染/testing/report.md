@@ -4,8 +4,8 @@ work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
 status: passed
 evidence: required
-verified_commit: 3793a31
-verified_at: 2026-10-16
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 ---
 
 # 流式 Markdown 渲染验证报告
@@ -76,3 +76,7 @@ verified_at: 2026-10-16
 - **上游演进**：`streamdown` 696 commits、发版很密。缓冲只有两条：钉版本 + 语料回归。升级命名版本前必须先跑语料与那 30 条恶劣输入。
 - **两处按场景不同的策略**（故意，已在测试里钉住）：外链在流式回答里走"确认后打开"（模型生成的链接先问一次）、在长文里直接给 `<a>`（管理员写的）；表格的复制/下载下拉只给聊天场景。
 - **另外两件不属于本项但会绊人的事**：① 学习者端 e2e 每条用例必须先 `signIn(page)`（只带 `storageState` 深链会从第二条起掉登录页，第 1 条过、2、3 条落登录页）；② `backend/config/.playwright-cli/page-*.yml` 四个文件没被 `.gitignore` 忽略（playwright-cli 的页面快照，谁 `git add -A` 都会带进公开仓库）。**建议加一条忽略规则**，本项未擅自改 `.gitignore`。
+
+## 2026-10-17 重新核对（结算）
+
+`@paideia/ui` 单测 93/0（含 markdown 四口径、语料与 30 条恶劣输入）；`markdown-render` e2e 3/0（表格与代码块是真结构、streamdown 的类生效、深浅两主题）；学习者端整套 e2e 34/1skip。锚点之后渲染器本身未被改动，后续变化是 WORK-013 的后端与记忆面板、以及本轮新增的测试用例。

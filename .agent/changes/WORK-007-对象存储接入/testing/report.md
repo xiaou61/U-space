@@ -4,8 +4,8 @@ work_id: WORK-007
 work: 对象存储接入
 status: passed
 evidence: required
-verified_commit: ebda90c
-verified_at: 2026-10-15
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 ---
 
 # 验收报告 · 对象存储接入
@@ -53,3 +53,7 @@ verified_at: 2026-10-15
 1. **管理端上传按钮的界面自动化**：e2e 没覆盖（本轮那次界面操作断了）。建议后续给 `admin-entry-upload` 补一条：点按钮 → 选文件 → 正文末尾出现引用 → 保存 → 学习者端能看到。
 2. **预签名参数复核**：按真实流量看"302 缓存 1 小时"够不够、签名 7 天是否过长。
 3. **备份**：对象存储数据在 `/var/lib/rustfs/data`，目前没有备份策略（本地目录时代也没有）——属 D-15 范畴。
+
+## 2026-10-17 重新核对（结算）
+
+`KnowledgeFileIntegrationTest` 7/0、`KnowledgeReadIntegrationTest` 12/0、`FileStorageContractTest` 2 运行 / 1 跳过（未配 S3 时按设计跳过）、`LocalFileStorageTest` 6/0；同类 e2e 里附件与知识库条目链路均绿（学习者端 34/1skip、管理端 8/0）。锚点之后对象存储实现未被改动。

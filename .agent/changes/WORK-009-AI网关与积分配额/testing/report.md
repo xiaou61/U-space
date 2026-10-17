@@ -4,8 +4,8 @@ work_id: WORK-009
 work: AI 网关与积分配额
 status: passed
 evidence: required
-verified_commit: 3eccf4f
-verified_at: 2026-10-16
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 ---
 
 # 验收报告 · AI 网关与积分配额
@@ -53,3 +53,9 @@ verified_at: 2026-10-16
 3. **预留未结算的残留**：进程在"预留"后、"结算"前被杀会多占额度，需人工按流水核对（缺 `REFUND` 即可定位）。
 4. **回收不足不补扣**：预留估少时差额只写进流水备注（账面永不为负的代价）。
 5. 线上初始发分是 SQL 直连（见「结论」的偏差说明）。
+
+## 2026-10-17 重新核对（结算）
+
+`AiCreditIntegrationTest` 5/0、`AiSummaryIntegrationTest` 7/0、`AssistantConversationIntegrationTest`（单独跑）12/0；管理端 e2e 8/0。
+
+**注意（与本项相关的一处未修缺陷）**：被积分闸拦下的那一轮里，用户消息会被 `prepare` 的事务回滚丢掉（`credits.reserve()` 在 `appendMessage` 之后抛 402）。它与「余额不够就一个上游请求都不发」不冲突，但直接落在本项新增的 402 分支上；界面因只有乐观本地状态而看不出来，刷新即丢。已登记在 `updates.md` 与 WORK-011 的报告里，**修与不修需用户裁决**。

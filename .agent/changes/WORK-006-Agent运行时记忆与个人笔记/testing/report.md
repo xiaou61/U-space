@@ -4,7 +4,8 @@ work_id: WORK-006
 work: Agent 运行时、记忆与个人笔记
 status: passed
 evidence: required
-verified_commit: d720db4
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 created: 2026-10-12
 updated: 2026-10-12
 ---
@@ -81,3 +82,9 @@ updated: 2026-10-12
 5. **记忆召回的全文那一路是关键词驱动**（第 2 条裁决的取舍）：过去说过的话只有在**字面对得上**时才被召回。换说法就召不回来，这是"不用语义检索"的直接代价。
 6. **`UserRateLimiter` 的窗口是进程内且按用户**：恶意用户换账号即可绕过；本项没有按来源限流（登录有，AI 调用没有）。
 7. **证据文件在本机**：`testing/logs/` 被 `.gitignore` 忽略（与 WORK-001..005 一致），换台机器看不到这些日志。
+
+## 2026-10-17 重新核对（结算）
+
+`LearnerMemoryIntegrationTest` 9/0、`NoteIntegrationTest` 4/0、`NoteShareIntegrationTest` 6/0、`NoteReportIntegrationTest` 4/0、授权隔离 9/0；前端 `@paideia/assistant` 24/0、学习者端 e2e 34 passed / 1 skipped。
+
+**如实登记一处偶发（未修）**：`AssistantConversationIntegrationTest` 在全量跑里出现过一次 `ConcurrentModificationException`，位置是 Spring MockMvc 的响应头 `LinkedCaseInsensitiveMap`——异步 SSE 线程与容器线程同时写头，属 **MockMvc 的线程安全问题**，不是业务代码；同一条用例单独跑 12/12 绿。此前同一类异常还表现为 `HeaderValueHolder.getStringValues` 的 NPE。要根治得让该测试类的异步派发串行化（或改用真实端口），属测试基建，本轮未改。

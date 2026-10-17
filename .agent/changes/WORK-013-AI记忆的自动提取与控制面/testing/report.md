@@ -4,8 +4,8 @@ work_id: WORK-013
 work: AI 记忆的自动提取与控制面
 status: passed
 evidence: required
-verified_commit: 472df61
-verified_at: 2026-10-16
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 ---
 
 # AI 记忆的自动提取与控制面验证报告
@@ -78,3 +78,7 @@ verified_at: 2026-10-16
 - **判重只看最近 40 条**：更早的记忆不参与判重，可能出现跨时间重复。`ponytail:` 天花板已标在代码里。
 - **提示词成本**：默认 N=6（摊到每轮 +约 13%）。若用户嫌"整理太频繁花钱"，把 `paideia.ai.memory.rounds-per-extraction` 调大即可；调成 0/负数 = 关掉自动整理（留的后门，不需要改代码）。
 - **与 WORK-010 的边界**：本项只做"对话里的自动提取"；"自评 → 结构化记忆"那座桥仍属 WORK-010，谁后实施谁负责对齐覆盖式更新的语义。
+
+## 2026-10-17 重新核对（结算）
+
+`MemoryAutoExtractionIntegrationTest` 12/0、`MemoryCandidateParserTest` 11/0、`ConversationWindowTest` 5/0、`ConversationUsageAccumulationTest` 4/0；`@paideia/assistant` 24/0（含记忆面板 7 条）。锚点之后只有测试文件变化（`assistant.spec.ts`、`knowledge.spec.ts`、新增 `conversation-panel.test.tsx`），记忆提取与控制面的实现未被改动。

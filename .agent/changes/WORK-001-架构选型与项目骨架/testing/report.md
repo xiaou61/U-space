@@ -4,7 +4,8 @@ work_id: WORK-001
 work: 架构选型与项目骨架
 status: passed
 evidence: required
-verified_commit: 412ffe9
+verified_commit: 1c1a301
+verified_at: 2026-10-17
 created: 2026-10-09
 updated: 2026-10-12
 accepted_by: xiaou61
@@ -77,3 +78,7 @@ accepted_at: 2026-10-09 13:43:08 +0800
 4. **`POST /api/v1/auth/token` 不校验凭据**，仅靠 profile（dev/local）把守（WORK-003 已引入真实登录；该端点仍只应在开发/本地 profile 暴露）。
 5. **多数据库适配已由用户决定不做**，数据访问层只面向 MySQL（已接受的取舍）。
 6. **依赖服务器的 SSH 隧道做集成测试**，隧道不可用时相关用例静默跳过（有 stderr 提示），存在"本地看着绿、实际没验 SQL"的可能。复验时以 `Skipped: 0` 与 `EXIT=0` 双重确认集成用例真的跑了。
+
+## 2026-10-17 重新核对（结算）
+
+骨架契约未变：`PlatformContractTest` 7/0、`ModularityTest` 1/0、授权隔离 9/0 全绿。锚点之后新增的业务模块（知识库、AI、账号等）不改变本项确立的模块边界与对外契约。同一轮全量后端里唯一的红是 `AssistantConversationIntegrationTest` 的 MockMvc 响应头竞态（见 WORK-006 报告），与本项无关。
