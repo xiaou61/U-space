@@ -28,6 +28,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -70,6 +71,31 @@ class AssistantConversationIntegrationTest {
 
     @MockitoBean
     AssistantConversation assistant;
+
+    /**
+     * 让 SSE 的产出在**请求线程里同步跑完**，而不是丢到线程池。
+     *
+     * <p>为什么必须这么做（2026-10-17，改用本地库之后从偶发变成必然）：`MockHttpServletResponse`
+     * 的头是 `LinkedCaseInsensitiveMap`，**不是线程安全的**。控制器在 `send()` 里先
+     * `executor.execute(runTurn)` 再返回，于是池线程写 SSE 头的同时，请求线程还在
+     * 过滤器链的 `doHeadersAfter` 里写安全头——两边抢同一个 map，抛
+     * `ConcurrentModificationException`（早先还表现为 `getStringValues` 的 NPE）。
+     * 库越慢窗口越小，库一快就次次复现。
+     *
+     * <p>本类的 12 条用例验的是业务行为（归属、上限、限流、空正文、用量），**没有一条**在验
+     * 并发流；真正的并发由 `MemoryAutoExtractionIntegrationTest` 的抢游标用例覆盖。
+     * 所以这里用同步执行换确定性，是测试基建的取舍，不是放松断言。
+     */
+    @MockitoBean(name = "applicationTaskExecutor")
+    TaskExecutor executor;
+
+    @BeforeEach
+    void runTurnInline() {
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(executor).execute(any());
+    }
 
     /**
      * 平台凭据（WORK-009 起由平台持有，不再是每个用户一份）。
