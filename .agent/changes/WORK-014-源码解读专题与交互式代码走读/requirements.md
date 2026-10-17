@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-014
 work: 源码解读专题与交互式代码走读
-status: draft
+status: approved
 mode: strict
 mode_reason: 跨四个前端包（ui / knowledge / assistant / app）与一条共享 markdown 渲染管线；新增第三方渲染依赖（Shiki）；渲染器要解析外部来源内容并生成外链（安全面）；内容涉及第三方开源许可证
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-004, WORK-006]
 related_to: [WORK-009, WORK-010, WORK-011, WORK-012]
 created: 2026-10-17
 updated: 2026-10-17
+approved_by: xiaou61
+approved_at: 2026-10-17 22:30:36 +0800
+approver_role: CTO
 ---
 
 # 源码解读专题与交互式代码走读需求
@@ -17,7 +20,7 @@ updated: 2026-10-17
 ## 本项状态与本轮变化
 
 - **2026-10-17 起草**。用户原话：「我要做一个源码解读的专题……用来解读一些常用到的 GitHub 之类的开源代码 都是我们内置的 图文并茂 你可以联网搜索 然后最好有互动 然后也可以和我们的那个 ai 联动 主要是生动 可视化强一点」。
-- 本轮只做**调研与起草**。调研结论在「已确认事实」，方案取舍在 `proposal.md`；**签字之前不动代码**。
+- **2026-10-17 22:30 需求已由 xiaou61（CTO）签署**。proposal / design / tasks 已按批准的需求起草，均待确认；**确认任务计划之前不动代码**。
 
 ## 已确认事实
 

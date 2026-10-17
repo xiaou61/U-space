@@ -2959,3 +2959,23 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；requirements.md 包含「已确认事实 / 用户决定 / 目标 / 实现选择 / 待确认问题 / 验收标准」六个决策分层章节
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-17 22:30:36 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 22:30:36 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-17 22:31:00 +0800 · WORK-014 · 需求签署并起草方案（proposal draft 待签）
+
+- 类型：decision
+- 变更：requirements.md 由 xiaou61（CTO）签署为 approved（22:30:36）；新建 proposal.md（推荐方案、3 个真实备选、仓库影响、6 个交付切片、风险与验收映射）；按阶段门槛未保留 design.md / tasks.md
+- 决策（待用户确认）：长在知识库上，用 code-tour / quiz 两种围栏块；不建表、不加后端端点；代码片段锚定固定 commit 并附许可证与 permalink；Shiki 用 @streamdown/code 并限语言白名单；Mermaid 延到 v1.5 先量体积；AI 只预填不自动发送；入口放首页 QUICK_LINKS
+- 依据：.agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md；代码核对（Entry 只有 markdown body、Markdown 的 plugins.renderers、MarkdownField 预览同源、助手已带 entryBody、@streamdown/code 未安装）；联网调研 DeepWiki / CodeTour / CodeSee / Python Tutor / GitDiagram
+- 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 为「方案选择 / 待确认」
+- 本地提交：随本条一起提交
+- 远端推送：未执行
