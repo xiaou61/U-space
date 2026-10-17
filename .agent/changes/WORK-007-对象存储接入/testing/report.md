@@ -4,7 +4,7 @@ work_id: WORK-007
 work: 对象存储接入
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 ---
 
@@ -57,3 +57,11 @@ verified_at: 2026-10-17
 ## 2026-10-17 重新核对（结算）
 
 `KnowledgeFileIntegrationTest` 7/0、`KnowledgeReadIntegrationTest` 12/0、`FileStorageContractTest` 2 运行 / 1 跳过（未配 S3 时按设计跳过）、`LocalFileStorageTest` 6/0；同类 e2e 里附件与知识库条目链路均绿（学习者端 34/1skip、管理端 8/0）。锚点之后对象存储实现未被改动。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 `ConversationService.prepare`：去掉 `@Transactional`，让用户消息先提交、再做积分预留，并把所有可能抛异常的读操作移到 `reserve` 之前（保证「预留之后不再有会抛的动作」）。另外 `AiCreditIntegrationTest` 原本断言「被拒的那一轮不留任何消息」，已改为「留用户消息、不留助手消息」——AC-003 只管上游没有收到请求，不要求丢用户输入。
+
+本项相关证据随后重跑：`KnowledgeFileIntegrationTest` 7/0、`KnowledgeReadIntegrationTest` 12/0（本项源码未被本次修复触及）。
+
+锚点改绑到 `e941bcb`。

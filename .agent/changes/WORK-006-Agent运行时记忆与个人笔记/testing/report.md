@@ -4,7 +4,7 @@ work_id: WORK-006
 work: Agent 运行时、记忆与个人笔记
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 created: 2026-10-12
 updated: 2026-10-12
@@ -88,3 +88,11 @@ updated: 2026-10-12
 `LearnerMemoryIntegrationTest` 9/0、`NoteIntegrationTest` 4/0、`NoteShareIntegrationTest` 6/0、`NoteReportIntegrationTest` 4/0、授权隔离 9/0；前端 `@paideia/assistant` 24/0、学习者端 e2e 34 passed / 1 skipped。
 
 **如实登记一处偶发（未修）**：`AssistantConversationIntegrationTest` 在全量跑里出现过一次 `ConcurrentModificationException`，位置是 Spring MockMvc 的响应头 `LinkedCaseInsensitiveMap`——异步 SSE 线程与容器线程同时写头，属 **MockMvc 的线程安全问题**，不是业务代码；同一条用例单独跑 12/12 绿。此前同一类异常还表现为 `HeaderValueHolder.getStringValues` 的 NPE。要根治得让该测试类的异步派发串行化（或改用真实端口），属测试基建，本轮未改。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 `ConversationService.prepare`：去掉 `@Transactional`，让用户消息先提交、再做积分预留，并把所有可能抛异常的读操作移到 `reserve` 之前（保证「预留之后不再有会抛的动作」）。另外 `AiCreditIntegrationTest` 原本断言「被拒的那一轮不留任何消息」，已改为「留用户消息、不留助手消息」——AC-003 只管上游没有收到请求，不要求丢用户输入。
+
+本项相关证据随后重跑：`LearnerMemoryIntegrationTest` 9/0、`MemoryAutoExtractionIntegrationTest` 12/0、`AssistantConversationIntegrationTest` 单独跑 12/12（整套跑时它仍偶发 MockMvc 响应头竞态，见上节）。
+
+锚点改绑到 `e941bcb`。

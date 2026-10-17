@@ -4,7 +4,7 @@ work_id: WORK-009
 work: AI 网关与积分配额
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 ---
 
@@ -58,4 +58,12 @@ verified_at: 2026-10-17
 
 `AiCreditIntegrationTest` 5/0、`AiSummaryIntegrationTest` 7/0、`AssistantConversationIntegrationTest`（单独跑）12/0；管理端 e2e 8/0。
 
-**注意（与本项相关的一处未修缺陷）**：被积分闸拦下的那一轮里，用户消息会被 `prepare` 的事务回滚丢掉（`credits.reserve()` 在 `appendMessage` 之后抛 402）。它与「余额不够就一个上游请求都不发」不冲突，但直接落在本项新增的 402 分支上；界面因只有乐观本地状态而看不出来，刷新即丢。已登记在 `updates.md` 与 WORK-011 的报告里，**修与不修需用户裁决**。
+**注意（与本项相关的一处未修缺陷）**：被积分闸拦下的那一轮里，用户消息会被 `prepare` 的事务回滚丢掉（`credits.reserve()` 在 `appendMessage` 之后抛 402）。它与「余额不够就一个上游请求都不发」不冲突，但直接落在本项新增的 402 分支上；界面因只有乐观本地状态而看不出来，刷新即丢。已登记在 `updates.md` 与 WORK-011 的报告里，**已于 2026-10-17 修复（`e941bcb`）：`prepare` 不再包事务，用户消息先提交再做预留**。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 `ConversationService.prepare`：去掉 `@Transactional`，让用户消息先提交、再做积分预留，并把所有可能抛异常的读操作移到 `reserve` 之前（保证「预留之后不再有会抛的动作」）。另外 `AiCreditIntegrationTest` 原本断言「被拒的那一轮不留任何消息」，已改为「留用户消息、不留助手消息」——AC-003 只管上游没有收到请求，不要求丢用户输入。
+
+本项相关证据随后重跑：`AiCreditIntegrationTest` 5/0（含改过的「留用户消息、不留助手消息」断言）、`AiSummaryIntegrationTest` 7/0；学习者端 e2e 35/0（两轮）。
+
+锚点改绑到 `e941bcb`。

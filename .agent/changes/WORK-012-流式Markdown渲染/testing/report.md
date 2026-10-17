@@ -4,7 +4,7 @@ work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 ---
 
@@ -80,3 +80,11 @@ verified_at: 2026-10-17
 ## 2026-10-17 重新核对（结算）
 
 `@paideia/ui` 单测 93/0（含 markdown 四口径、语料与 30 条恶劣输入）；`markdown-render` e2e 3/0（表格与代码块是真结构、streamdown 的类生效、深浅两主题）；学习者端整套 e2e 34/1skip。锚点之后渲染器本身未被改动，后续变化是 WORK-013 的后端与记忆面板、以及本轮新增的测试用例。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 `ConversationService.prepare`：去掉 `@Transactional`，让用户消息先提交、再做积分预留，并把所有可能抛异常的读操作移到 `reserve` 之前（保证「预留之后不再有会抛的动作」）。另外 `AiCreditIntegrationTest` 原本断言「被拒的那一轮不留任何消息」，已改为「留用户消息、不留助手消息」——AC-003 只管上游没有收到请求，不要求丢用户输入。
+
+本项相关证据随后重跑：`@paideia/ui` 93/0；`markdown-render` e2e 3/0（单跑两轮）；学习者端整套 e2e 35/0（两轮）。
+
+锚点改绑到 `e941bcb`。

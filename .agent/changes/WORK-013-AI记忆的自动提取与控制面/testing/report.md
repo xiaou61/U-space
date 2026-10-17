@@ -4,7 +4,7 @@ work_id: WORK-013
 work: AI 记忆的自动提取与控制面
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 ---
 
@@ -82,3 +82,11 @@ verified_at: 2026-10-17
 ## 2026-10-17 重新核对（结算）
 
 `MemoryAutoExtractionIntegrationTest` 12/0、`MemoryCandidateParserTest` 11/0、`ConversationWindowTest` 5/0、`ConversationUsageAccumulationTest` 4/0；`@paideia/assistant` 24/0（含记忆面板 7 条）。锚点之后只有测试文件变化（`assistant.spec.ts`、`knowledge.spec.ts`、新增 `conversation-panel.test.tsx`），记忆提取与控制面的实现未被改动。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 `ConversationService.prepare`：去掉 `@Transactional`，让用户消息先提交、再做积分预留，并把所有可能抛异常的读操作移到 `reserve` 之前（保证「预留之后不再有会抛的动作」）。另外 `AiCreditIntegrationTest` 原本断言「被拒的那一轮不留任何消息」，已改为「留用户消息、不留助手消息」——AC-003 只管上游没有收到请求，不要求丢用户输入。
+
+本项相关证据随后重跑：`MemoryAutoExtractionIntegrationTest` 12/0、`MemoryCandidateParserTest` 11/0、`@paideia/assistant` 24/0。
+
+锚点改绑到 `e941bcb`。

@@ -2990,3 +2990,15 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 回到需求讨论 / 草稿
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-17 23:10:00 +0800 · 修复：积分不足时用户消息被事务回滚丢掉
+
+- 类型：implementation
+- 变更（后端）：`ConversationService.prepare` 去掉 `@Transactional`——它原本只用于让"写消息 + 滑动续期"原子，代价是 `credits.reserve()`（抛 402）把用户那句话一起回滚；界面早已乐观画出它，刷新即丢，与本方法注释「失败不会丢掉用户说过的话」相反。改为：用户消息与续期先各自提交，再做预留；并把 `entryContext()` 与 `memory()` 这两处可能抛异常的读操作移到 `reserve` 之前——**不变量：`reserve` 之后不再有会抛的动作**，否则预留会漏在账上。
+- 变更（测试）：`AiCreditIntegrationTest` 原本断言"被拒的那一轮不留任何消息"，改为"留用户消息、不留助手消息"（AC-003 只要求上游没收到请求，不要求丢用户输入）；`assistant.spec.ts` 的 AC-004 解除 `test.fixme`（现在真有消息可恢复），并先等服务端返回「积分不足」再收起面板（否则乐观气泡一出现就收起，会把 POST 掐在写库之前）。
+- 变更（e2e 基建）：`session.ts` 登录成功后补等 `LoginPage` 的 `navigate('/')` 落地——否则调用方紧接着的深链 `goto` 会被覆盖回首页。这就是此前"整套跑红、单跑绿"的那类偶发，**根因找到并修掉**；此前把它归因于"远端库慢"是错的（失败快照显示页面上根本没有目标元素，停在首页）。
+- 决策：选"保留用户消息"而不是把 `reserve` 提到写库之前——后者等于承认"被拦下的那轮连用户输入都该丢"，与该方法的注释和既有用例的意图相反。
+- 验证：`AiCreditIntegrationTest` 5/0（改断言后先红后绿，反向验证成立）；`MemoryAutoExtractionIntegrationTest` 12/0；`LearnerMemoryIntegrationTest` 9/0；`KnowledgeFileIntegrationTest` 7/0、`KnowledgeReadIntegrationTest` 12/0；`@paideia/ui` 93/0；学习者端 e2e **35/0 连续两轮**（含新解封的 AC-004）
+- 如实登记：`AssistantConversationIntegrationTest` 的 MockMvc 异步响应头竞态**仍未修**（第 3 次出现，需串行化异步派发或改用真实端口，属测试基建）；本轮改动使 006/007/009/012/013 的报告锚点重新绑定到 `e941bcb`
+- 本地提交：e941bcb（代码与测试）、本条目随工件改动单独一笔
+- 远端推送：未执行
