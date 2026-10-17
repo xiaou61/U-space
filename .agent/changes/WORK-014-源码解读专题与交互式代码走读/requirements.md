@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-014
 work: 源码解读专题与交互式代码走读
-status: draft
+status: approved
 mode: strict
 mode_reason: 跨四个前端包（ui / knowledge / assistant / app）与一条共享 markdown 渲染管线；新增第三方渲染依赖（Shiki）；渲染器要解析外部来源内容并生成外链（安全面）；内容是带交互状态的学习材料，涉及进度持久化与可访问性；内容涉及第三方开源许可证
 workflow: full
@@ -11,7 +11,7 @@ related_to: [WORK-009, WORK-010, WORK-011, WORK-012]
 created: 2026-10-17
 updated: 2026-10-17
 approved_by: xiaou61
-approved_at: 2026-10-17 22:30:36 +0800
+approved_at: 2026-10-17 23:39:27 +0800
 approver_role: CTO
 ---
 

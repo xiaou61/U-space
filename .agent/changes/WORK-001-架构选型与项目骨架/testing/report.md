@@ -4,7 +4,7 @@ work_id: WORK-001
 work: 架构选型与项目骨架
 status: passed
 evidence: required
-verified_commit: e941bcb
+verified_commit: d184e36
 verified_at: 2026-10-17
 created: 2026-10-09
 updated: 2026-10-12
@@ -88,3 +88,11 @@ accepted_at: 2026-10-09 13:43:08 +0800
 本轮改动落在 `ConversationService.prepare`（AI 模块内部），随后重跑本项证据：`PlatformContractTest` 7/0、`ModularityTest` 1/0、`paideia-platform` 模块 11/0（含 `SearchQueryTest` 4 条）。模块边界与对外契约未变。
 
 锚点改绑到 `e941bcb`。
+
+## 2026-10-17 测试基建改动后的复核
+
+本轮改动是测试基建：测试库改本机、四个前端包换 happy-dom、会话集成测试改用同步执行器。
+业务代码未变。重跑结果：后端全量 **257 条 / 0 失败 / 0 error / 4 跳过**（墙钟 1 分 31 秒），
+前端单测 **176 条全过**，`typecheck` 干净。
+
+锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。

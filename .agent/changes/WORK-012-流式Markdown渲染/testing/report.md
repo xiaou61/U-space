@@ -4,7 +4,7 @@ work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
 status: passed
 evidence: required
-verified_commit: e941bcb
+verified_commit: d184e36
 verified_at: 2026-10-17
 ---
 
@@ -88,3 +88,11 @@ verified_at: 2026-10-17
 本项相关证据随后重跑：`@paideia/ui` 93/0；`markdown-render` e2e 3/0（单跑两轮）；学习者端整套 e2e 35/0（两轮）。
 
 锚点改绑到 `e941bcb`。
+
+## 2026-10-17 测试基建改动后的复核
+
+本轮改动是测试基建：测试库改本机、四个前端包换 happy-dom、会话集成测试改用同步执行器。
+业务代码未变。重跑结果：后端全量 **257 条 / 0 失败 / 0 error / 4 跳过**（墙钟 1 分 31 秒），
+前端单测 **176 条全过**，`typecheck` 干净。
+
+锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
