@@ -85,6 +85,6 @@ accepted_at: 2026-10-09 13:43:08 +0800
 
 ## 2026-10-17 积分闸回滚修复后的复核
 
-本轮改动落在 （AI 模块内部），随后重跑本项证据： 7/0、 1/0、 模块 11/0（含  4 条）。模块边界与对外契约未变。
+本轮改动落在 `ConversationService.prepare`（AI 模块内部），随后重跑本项证据：`PlatformContractTest` 7/0、`ModularityTest` 1/0、`paideia-platform` 模块 11/0（含 `SearchQueryTest` 4 条）。模块边界与对外契约未变。
 
-锚点改绑到 。
+锚点改绑到 `e941bcb`。
