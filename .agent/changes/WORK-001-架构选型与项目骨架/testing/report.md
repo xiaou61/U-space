@@ -4,7 +4,7 @@ work_id: WORK-001
 work: 架构选型与项目骨架
 status: passed
 evidence: required
-verified_commit: 1c1a301
+verified_commit: e941bcb
 verified_at: 2026-10-17
 created: 2026-10-09
 updated: 2026-10-12
@@ -82,3 +82,9 @@ accepted_at: 2026-10-09 13:43:08 +0800
 ## 2026-10-17 重新核对（结算）
 
 骨架契约未变：`PlatformContractTest` 7/0、`ModularityTest` 1/0、授权隔离 9/0 全绿。锚点之后新增的业务模块（知识库、AI、账号等）不改变本项确立的模块边界与对外契约。同一轮全量后端里唯一的红是 `AssistantConversationIntegrationTest` 的 MockMvc 响应头竞态（见 WORK-006 报告），与本项无关。
+
+## 2026-10-17 积分闸回滚修复后的复核
+
+本轮改动落在 （AI 模块内部），随后重跑本项证据： 7/0、 1/0、 模块 11/0（含  4 条）。模块边界与对外契约未变。
+
+锚点改绑到 。
