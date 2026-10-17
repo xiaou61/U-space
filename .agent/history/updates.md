@@ -3079,3 +3079,19 @@ schema_version: 1
 - 验证：回读 frontmatter，已无 `accepted_*` 字段；`validate` 通过
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-18 00:38:00 +0800 · WORK-014 · 实施完成：五种交互块、地图联动、本地进度、AI 预填
+
+- 类型：implementation
+- 变更（前端 @paideia/ui）：新增 `markdown/renderers/`（schema + context + blocks + 五个块），`Markdown` 在文档模式合并注册表并注入页级 context，Shiki 改为动态 import + `useSyncExternalStore`；`globals.css` 增 `@source @streamdown/code`；`package.json` 增 `@streamdown/code`
+- 变更（@paideia/knowledge）：新增 `source-reading-progress.ts`（localStorage 进度 + 最近学习）；`MarkdownBody` 增 `entryId/entryTitle/onAskAssistant/onOpenEntry`
+- 变更（@paideia/assistant）：context 增 `pendingPrompt/ask/clearPendingPrompt`；shell 打开面板切对话页；panel 填输入框**不发送**
+- 变更（app）：条目页注入 ask 与跳转；首页加「源码解读」入口与「继续学习」；`LearnerHeader` 窄屏隐藏用户名（修 360px 页头溢出 70px 的既有缺陷）
+- 变更（内容与文档）：`db/devdata/V953__seed_source_reading.sql` 样板条目（React@d75b0697，MIT，行号人工核过）；`.agent/notes/source-reading-authoring.md` 作者指南；`scripts/check_seed_fences.py` 校验种子里的 JSON 围栏
+- 变更（工件）：WORK-014 proposal/design/tasks 已签署并实施完成；新建 **WORK-015 代码执行沙箱** requirements（draft，用户要求单开一项）
+- 决策：五种块用 JSON 围栏、只在文档模式启用；地图手写 SVG + 作者给 layer/order（不引图库）；状态快照由作者写（不做执行器）；练习客户端判定；进度只存本地；Shiki 只加一个依赖且懒加载；AI 只预填
+- 依据：`requirements.md` 20 REQ / 20 AC；`design.md`；响应式与体积累式实测
+- 验证：前端单测 **227 passed**；学习者端 e2e **44 passed**（含窄屏与高亮）；管理端 e2e **9 passed**；主包 736.36→736.41 kB、Shiki 独立 196 kB chunk；六个包 typecheck 全 0；`validate` 通过
+- 如实登记的未覆盖项：线上部署未做、读屏实测、深色主题高亮对比度、地图密集时的视觉重叠
+- 本地提交：c3f4872（实现）、30f96fe（窄屏与高亮验收）
+- 远端推送：未执行

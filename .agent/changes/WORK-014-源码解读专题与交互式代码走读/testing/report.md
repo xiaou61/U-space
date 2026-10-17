@@ -4,7 +4,7 @@ work_id: WORK-014
 work: 源码解读专题与交互式代码走读
 status: passed
 evidence: required
-verified_commit: HEAD-WORKING-TREE
+verified_commit: 30f96fe
 verified_at: 2026-10-18
 ---
 
