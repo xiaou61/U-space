@@ -3002,3 +3002,19 @@ schema_version: 1
 - 如实登记：`AssistantConversationIntegrationTest` 的 MockMvc 异步响应头竞态**仍未修**（第 3 次出现，需串行化异步派发或改用真实端口，属测试基建）；本轮改动使 006/007/009/012/013 的报告锚点重新绑定到 `e941bcb`
 - 本地提交：e941bcb（代码与测试）、本条目随工件改动单独一笔
 - 远端推送：未执行
+
+## 2026-10-17 23:20:00 +0800 · 测试提速：测试库改本机 + 前端换 happy-dom（后端省 69%）
+
+- 类型：maintenance
+- 变更（配置，不入库）：`backend/config/remote-db.local.env` 默认改指本机 `127.0.0.1:3306`（MySQL 8.0.26 / utf8mb4），远端那三行保留为注释以便按需切回；本机建了 `paideia_test` 库。该文件匹配 `.gitignore` 的 `*.local.*`，不会入库。
+- 变更（代码）：四个前端包（ui / knowledge / assistant / auth）的 `vitest.config.ts` 由 jsdom 换 happy-dom，各自 `remove jsdom`（依赖数不增）；`ui/src/test-setup.ts` 的 `scrollTo` 空实现守卫保留。
+- 变更（测试）：`AssistantConversationIntegrationTest` 用 `@MockitoBean("applicationTaskExecutor")` 把 `runTurn` 改成同步执行，消掉 MockMvc 响应头的线程竞态（见 `60d117a`）。
+- 决策（实测，不是估算）：本机单次查询 0.27ms vs 远端 36.09ms（133×）。实测 `--no-isolate` 在 ui 包上无收益（6.97→6.92s），**故不做**；集成测试多 schema 并行**不做**（收益低于复杂度，且"全表 DELETE"用例有串库风险）；合并 Spring 上下文**不做**（收益 10–15s，风险大）。
+- 实测结果：
+  - 后端全量 **4 分 51 秒 → 1 分 31 秒（省 69%）**，257 条 / 0 失败 / 0 error / 4 跳过（跳过的是需真上游的 `AssistantLiveUpstreamIntegrationTest`）
+  - 分层：纯单测 22 类 131 条 **14.4s**；集成 17 类 126 条 **47.0s**；`MemoryAutoExtractionIntegrationTest` 50.4s → 2.2s（23×）；最慢类 54.2s → 10.5s
+  - 前端整套单测 **14.3s → 11.5–14s**（176 条全过）；各包 environment 阶段：knowledge −33%、auth −24%、assistant −15%、ui −12%
+  - 内环参考：`mvn -pl paideia-ai test` **8.5s**；单跑一个集成类 **17.6s**
+- 依据：`/tmp/fulltest.log`（远端基线）、`/tmp/final.log`（本机结果）、各包 vitest 输出
+- 本地提交：60d117a（执行器）、d184e36（happy-dom）、本条目单独一笔
+- 远端推送：未执行
