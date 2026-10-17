@@ -184,24 +184,23 @@ test('WORK-011：失败的一轮也会被记住——历史里选得到，新开
 })
 
 /**
- * **暂时不可达（test.fixme）**：本环境里没有"恢复时真有消息可读"的会话可用。
+ * 关掉面板再打开，会话要恢复（AC-004）。
  *
- * <p>原因不是恢复本身，而是**被积分闸拦下的那一轮里用户消息根本没落库**：`ConversationService.prepare`
- * 是 `@Transactional`，而 `credits.reserve()`（抛 402「积分不足」）在 `appendMessage` **之后**调用，
- * 于是整条事务回滚——库上只留下会话行（那个是另一个端点建的），`ai_messages` 一行都不留
- * （2026-10-16 实测：6 个会话行、0 条消息）。这跟 prepare 自己的注释「失败不会丢掉用户说过的话」
- * 以及上一条用例里「他确实说过，失败不该把它抹掉」的意图正好相反。
- *
- * <p>修掉那处回滚后，把 fixme 去掉这条就成立（种子账号 0 积分正好能造出"失败但有用户消息"的会话）。
+ * <p>2026-10-17：这条曾被登记为 `test.fixme`，因为当时被积分闸拦下的那一轮里用户消息会被
+ * `prepare` 的事务回滚掉（库上只剩会话行、`ai_messages` 一行都没有），本环境造不出"有消息可恢复"
+ * 的会话。回滚已修（`prepare` 不再包事务：先提交用户消息，再做积分预留），这条现在可以真跑。
  */
-test.fixme('WORK-011：关掉面板再打开，上一次那一段还在（不是空白）', async ({ page }) => {
+test('WORK-011：关掉面板再打开，上一次那一段还在（不是空白）', async ({ page }) => {
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
 
   await page.getByTestId('conversation-input').fill('关掉再打开也该还在')
   await page.getByTestId('conversation-send').click()
-  // 种子账号余额为 0：这一轮被积分闸拦下，但**用户那句话已经落库了**——那正是"恢复"要读的东西
+  // **先等服务端把这一轮收尾**（余额 0 → 积分不足）。气泡是乐观画的：一看到它就收起面板，
+  // 会把 POST 掐在 prepare 之前，用户消息根本来不及落库（实测会话建出来了、消息 0 条）。
+  await expect(page.getByTestId('conversation-error')).toContainText('积分不足')
+  // 用户那句话要留在界面上——它确实说过，而且已经落库了
   await expect(page.getByTestId('conversation-message-user')).toContainText('关掉再打开也该还在')
 
   // 收起 = 面板卸载：界面上什么都不剩，只剩本地记着的那个会话 id

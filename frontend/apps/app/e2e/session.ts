@@ -24,4 +24,7 @@ export async function signIn(page: Page): Promise<void> {
   await page.getByTestId('login-password').fill(LEARNER.password)
   await page.getByTestId('login-submit').click()
   await expect(page.getByTestId('login-submit')).toHaveCount(0)
+  // 登录成功后 `LoginPage` 还会 `navigate('/')` 一次。等它落地再返回，否则调用方紧接着的
+  // 深链 `goto` 会被这次跳转覆盖回首页——2026-10-17 整套跑里偶发落到首页、单跑不复现。
+  await expect(page).toHaveURL(/#\/$/)
 }

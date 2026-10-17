@@ -108,9 +108,14 @@ class AiCreditIntegrationTest {
         assertThat(body(result)).contains("积分不足");
         // **这是本项最要紧的一条断言**：钱不够就不该产生任何上游调用
         verify(assistant, never()).stream(any(), any(), any());
-        // 被拒的那一轮不该留下用户消息（它没有产生任何调用）
+        // 被拒的那一轮**留下用户消息、不留助手消息**：这句话用户确实说过，界面也已经画出来了，
+        // 抹掉它就是"刷新即丢"。AC-003 只管"上游没有收到任何请求"，不要求丢用户输入。
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM ai_messages WHERE conversation_id = ?", Long.class, conversationId)).isZero();
+                "SELECT COUNT(*) FROM ai_messages WHERE conversation_id = ? AND role = 'user'",
+                Long.class, conversationId)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_messages WHERE conversation_id = ? AND role = 'assistant'",
+                Long.class, conversationId)).isZero();
     }
 
     @Test

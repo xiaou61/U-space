@@ -173,8 +173,15 @@ public class ConversationService {
      * <p>凭据缺失不算"会话不存在"，所以单独抛一条更明确的错误：界面要据此提示"平台还没配 AI 服务"，
      * 而不是让人以为会话丢了。**WORK-009 起凭据由平台持有**，所以措辞从"填你自己的 Key"改成
      * "联系管理员"——用户已经没有可填的地方了。
+     *
+     * <p><b>本方法刻意不加 `@Transactional`</b>（2026-10-17 修）：加了的话，`credits.reserve()` 在
+     * "已写入用户消息"之后抛 402，会把那句话一起回滚——而界面早已乐观地画出了它，于是**刷新即丢**。
+     * 用户确实说过那句话，扣费失败不该抹掉输入。代价是"写消息 + 滑动续期"不再原子：续期失败只会
+     * 让会话按原过期时间到期，不会丢数据。
+     *
+     * <p>由此得到一条不变量：**`credits.reserve()` 必须是最后一个可能抛异常的动作**，否则预留会漏在
+     * 账上。所以下面所有读操作（历史、条目、记忆召回）都排在它前面。
      */
-    @Transactional
     public TurnPreparation prepare(long userId, long conversationId, String prompt) {
         String trimmed = prompt == null ? "" : prompt.trim();
         if (trimmed.isEmpty()) {
@@ -202,16 +209,19 @@ public class ConversationService {
         // 都只影响"拼给模型什么"，不改任何存储行为——**关掉记忆不会删除记忆**。
         AiSettingsStore.Settings settings = settingsStore.get(userId);
         List<ConversationTurn> history = settings.referenceChatHistory() ? history(conversationId) : List.of();
+        // 同样排在写库之前：它只读，且能抛（DB 异常），不能留到预留之后
+        EntryContext entry = entryContext(conversation.getEntryId());
+        List<String> snippets = memory(settings, userId, trimmed);
+
         appendMessage(conversationId, ConversationMessage.ROLE_USER, trimmed, null);
         // 滑动续期：聊到一半过期比"聊完就丢"更让人费解
         conversations.slideExpiry(conversationId, userId, now.plus(properties.getTtl()), now);
 
-        EntryContext entry = entryContext(conversation.getEntryId());
         // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
-        // 放在限流之后：被限流的那一轮本来就不该占用户的额度。
+        // 放在限流之后：被限流的那一轮本来就不该占用户的额度。**它的后面不能再有会抛的动作。**
         long reserved = credits.reserve(userId, credits.estimate());
         return new TurnPreparation(conversationId, history, trimmed, entry.title(), entry.body(),
-                memory(settings, userId, trimmed), access.get(), reserved);
+                snippets, access.get(), reserved);
     }
 
     /**
