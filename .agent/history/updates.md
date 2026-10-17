@@ -2979,3 +2979,14 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 为「方案选择 / 待确认」
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-17 22:39:00 +0800 · WORK-014 · 用户反馈"功能太简单"，补充八个同类产品调研并扩容需求（退回 draft）
+
+- 类型：requirements
+- 变更：requirements.md 由 13 条 REQ / 13 条 AC 扩为 **20 条 REQ / 20 条 AC**；内容模型从「两种块」扩为**五种交互块 + 进度 + 双向联动**（learning-path / code-map / code-tour（含 predict 与 state 快照）/ code-challenge（填空·排序·找 bug）/ quiz），新增本地进度、首页继续学习、地图与走读双向联动、状态面板、预测式步骤；status 由 approved 退回 draft，原签署记录保留为时间线；因阶段门槛移除 proposal.md
+- 决策（Agent 建议，待用户重新签署）：仍不建表、不加后端端点；进度用 localStorage；地图手写 SVG + 作者给 layer/order（不引 react-flow/d3）；状态快照由作者编写（不做执行器）；练习客户端判定（不跑代码）；不装 Mermaid；AI 只预填不自动发送；v1 只新增 @streamdown/code
+- 依据（联网调研，2026-10-17）：walk-the-code（MIT，行级注释按内容哈希、Mermaid 按行高亮、guided tour、练习、小测、localStorage 进度、可选执行）；VisuAlgo（题目生成器 + 自动判分 + 自定义输入）；Python Tutor / TraceCode / CodeFlow / CodersNote（变量·堆·调用栈·输出同步可视化）；CodeBoarding / CodeSee / Sourcetrail（可交互架构地图 + tour，CodeSee 已下线）；CodeCrafters（从零实现 + 测试框架验收）；DeepWiki（概念到代码实体对照 + Q&A）；Hello 算法 / 小林coding（动画图解密度）；Distill / Explorable Explanations（先预测再揭晓）
+- 判断：同类产品没有一个是"只看逐步高亮"的；差距在**地图联动、状态可视化、预测式阅读、动手练习、进度**这五件事，首版缺了后四件
+- 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 回到需求讨论 / 草稿
+- 本地提交：随本条一起提交
+- 远端推送：未执行
