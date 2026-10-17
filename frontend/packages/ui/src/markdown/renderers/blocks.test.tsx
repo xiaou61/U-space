@@ -1,0 +1,314 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { SourceReadingProvider, type DocumentContextValue } from './context'
+import { CodeTour } from './code-tour'
+import { CodeMap } from './code-map'
+import { LearningPath } from './learning-path'
+import { CodeChallenge } from './code-challenge'
+import { Quiz } from './quiz'
+
+/**
+ * 五种块的交互行为（WORK-014）。
+ *
+ * <p>直接渲染块组件、包一层 `SourceReadingProvider`，**不经过 markdown 渲染器**：
+ * 这里要测的是"点了会怎样"，不是"围栏能不能被解析"——后者由 `markdown.test.tsx` 与
+ * e2e 覆盖。这样每个用例都不依赖 streamdown 的懒加载，跑得快且不抖。
+ */
+
+// 这个包没有全局 cleanup：每个用例自己收尾，否则 `screen` 会同时看到上一轮的 DOM
+afterEach(() => cleanup())
+
+function renderBlock(node: React.ReactNode, context: DocumentContextValue = {}) {
+  return render(<SourceReadingProvider value={context}>{node}</SourceReadingProvider>)
+}
+
+const TOUR = {
+  id: 'demo',
+  title: '演示走读',
+  repo: 'facebook/react',
+  commit: 'd75b0697',
+  license: 'MIT',
+  file: 'packages/react-reconciler/src/ReactFiberWorkLoop.js',
+  steps: [
+    {
+      title: '第一步',
+      line: 10,
+      code: 'a();\nb();',
+      focus: [1],
+      explain: '先 a 再 b。',
+    },
+    {
+      title: '第二步',
+      line: 20,
+      code: 'c();',
+      explain: '然后 c。',
+      predict: { question: '为什么先 a？', options: ['为了初始化', '为了 GC'], answer: 0, reveal: '因为要先初始化。' },
+      state: { vars: [{ name: 'n', value: '1' }], stack: ['main'], output: ['hi'] },
+    },
+  ],
+}
+
+describe('CodeTour', () => {
+  it('渲染真实行号与 focus 高亮，并在切步后同时更新解释', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    expect(screen.getByText('10')).toBeTruthy()
+    expect(screen.getByText('11')).toBeTruthy()
+    expect(screen.getByTestId('code-tour-focus-line')).toBeTruthy()
+    expect(screen.getByText('先 a 再 b。')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+    expect(screen.getByText('20')).toBeTruthy()
+    expect(screen.queryByText('先 a 再 b。')).toBeNull()
+  })
+
+  it('预测未作答时不给解释，作答后才揭晓', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+
+    // 第二步带 predict：解释被挡住
+    expect(screen.queryByTestId('code-tour-explain')).toBeNull()
+    fireEvent.click(screen.getByTestId('code-tour-predict-0'))
+    expect(screen.getByTestId('code-tour-explain')).toBeTruthy()
+    expect(screen.getByText(/✓ 猜对了/)).toBeTruthy()
+  })
+
+  it('答错也显示正确答案与解释（不只靠颜色）', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+    fireEvent.click(screen.getByTestId('code-tour-predict-1'))
+    expect(screen.getByText(/✗ 不对/)).toBeTruthy()
+    expect(screen.getByText(/正确：为了初始化/)).toBeTruthy()
+  })
+
+  it('「直接看解释」解卡', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+    fireEvent.click(screen.getByText('直接看解释'))
+    expect(screen.getByTestId('code-tour-explain')).toBeTruthy()
+  })
+
+  it('状态快照随步骤出现，且只在该步有 state 时渲染', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    expect(screen.queryByTestId('code-tour-state')).toBeNull()
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+    expect(screen.getByTestId('code-tour-state')).toBeTruthy()
+    expect(screen.getByText('n')).toBeTruthy()
+    expect(screen.getByText(/main/)).toBeTruthy()
+    expect(screen.getByText('hi')).toBeTruthy()
+  })
+
+  it('页脚给出固定 commit 的 permalink 与许可证', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    expect(screen.getByText('facebook/react@d75b0697')).toBeTruthy()
+    expect(screen.getByText('MIT')).toBeTruthy()
+    const link = screen.getByText('查看 GitHub 原文 ↗').closest('a')
+    expect(link?.getAttribute('href')).toBe(
+      'https://github.com/facebook/react/blob/d75b0697/packages/react-reconciler/src/ReactFiberWorkLoop.js#L10-L11',
+    )
+  })
+
+  it('切步时写进度', () => {
+    const update = vi.fn()
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />, {
+      entryId: 1,
+      progress: { read: () => null, update, reset: () => {} },
+    })
+    fireEvent.click(screen.getByTestId('code-tour-next'))
+    expect(update).toHaveBeenCalledWith({ tours: { demo: { step: 1, total: 2, done: true } } })
+  })
+
+  it('挂载时从本地进度恢复上次那一步（刷新不回到第一页）', () => {
+    const read = vi.fn(() => ({
+      updatedAt: '2026-10-17T00:00:00Z',
+      tours: { demo: { step: 1, total: 2, done: true } },
+      challenges: {},
+      quizzes: {},
+    }))
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />, {
+      entryId: 1,
+      progress: { read, update: () => {}, reset: () => {} },
+    })
+    expect(screen.getByTestId('code-tour').textContent).toContain('第 2 步')
+  })
+
+  it('没有 ask 能力时不渲染「问 AI」', () => {
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />)
+    expect(screen.queryByTestId('block-ask')).toBeNull()
+  })
+
+  it('有 ask 时把条目标题、步骤与位置带进提示词（不发送）', () => {
+    const ask = vi.fn()
+    renderBlock(<CodeTour code={JSON.stringify(TOUR)} isIncomplete={false} language="code-tour" />, {
+      entryTitle: '读懂更新流程',
+      onAskAssistant: ask,
+    })
+    fireEvent.click(screen.getByTestId('block-ask'))
+    expect(ask).toHaveBeenCalledTimes(1)
+    const prompt = ask.mock.calls[0]?.[0] as string
+    expect(prompt).toContain('读懂更新流程')
+    expect(prompt).toContain('第 1 步')
+    expect(prompt).toContain('ReactFiberWorkLoop.js:10')
+  })
+
+  it('坏数据只降级自身并保留原文', () => {
+    renderBlock(<CodeTour code="{oops" isIncomplete={false} language="code-tour" />)
+    expect(screen.getByTestId('block-fallback')).toBeTruthy()
+    expect(screen.getByText(/数据格式有误/)).toBeTruthy()
+    expect(screen.getByText('{oops')).toBeTruthy()
+  })
+})
+
+describe('CodeMap', () => {
+  const MAP = {
+    title: '一次更新',
+    nodes: [
+      { id: 'schedule', label: 'schedule', layer: 0, order: 0, tour: 'demo', step: 0 },
+      { id: 'render', label: 'render', layer: 1, order: 0, tour: 'demo', step: 1 },
+    ],
+    edges: [{ from: 'schedule', to: 'render' }],
+  }
+
+  it('点击节点写入 activeStep（驱动同页走读）', () => {
+    const onOpenEntry = vi.fn()
+    renderBlock(<CodeMap code={JSON.stringify(MAP)} isIncomplete={false} language="code-map" />, { onOpenEntry })
+    fireEvent.click(screen.getByTestId('code-map-node-render'))
+    // 有 tour/step 时走上下文，不触发条目跳转
+    expect(onOpenEntry).not.toHaveBeenCalled()
+  })
+
+  it('节点带 entryId 时走条目跳转', () => {
+    const map = { nodes: [{ id: 'a', label: 'A', layer: 0, order: 0, entryId: 42 }], edges: [] }
+    const onOpenEntry = vi.fn()
+    renderBlock(<CodeMap code={JSON.stringify(map)} isIncomplete={false} language="code-map" />, { onOpenEntry })
+    fireEvent.click(screen.getByTestId('code-map-node-a'))
+    expect(onOpenEntry).toHaveBeenCalledWith(42)
+  })
+
+  it('坏数据降级', () => {
+    renderBlock(<CodeMap code="{}" isIncomplete={false} language="code-map" />)
+    expect(screen.getByTestId('block-fallback')).toBeTruthy()
+  })
+})
+
+describe('LearningPath', () => {
+  const PATH = {
+    title: '路径',
+    steps: [
+      { entryId: 1, title: '第一站', minutes: 10 },
+      { title: '未发布的站' },
+    ],
+  }
+
+  it('无进度时全部未开始；没有 onOpenEntry 时不可点', () => {
+    renderBlock(<LearningPath code={JSON.stringify(PATH)} isIncomplete={false} language="learning-path" />)
+    expect(screen.getByText('0 / 2 已完成')).toBeTruthy()
+    expect((screen.getByTestId('learning-path-step-0') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('读取其他条目的进度并标出已完成', () => {
+    const read = vi.fn((id?: number) =>
+      id === 1
+        ? {
+            updatedAt: '2026-10-17T00:00:00Z',
+            tours: { demo: { step: 2, total: 3, done: true } },
+            challenges: {},
+            quizzes: {},
+          }
+        : null,
+    )
+    const onOpenEntry = vi.fn()
+    renderBlock(<LearningPath code={JSON.stringify(PATH)} isIncomplete={false} language="learning-path" />, {
+      entryId: 9,
+      progress: { read, update: () => {}, reset: () => {} },
+      onOpenEntry,
+    })
+    expect(screen.getByText('1 / 2 已完成')).toBeTruthy()
+    expect(screen.getByText('已完成')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('learning-path-step-0'))
+    expect(onOpenEntry).toHaveBeenCalledWith(1)
+  })
+})
+
+describe('CodeChallenge', () => {
+  it('填空题：选项正确才全对，并给出解析', () => {
+    const challenge = {
+      id: 'fill-1',
+      kind: 'fill',
+      title: '补上调用',
+      template: '{{0}}(root);',
+      options: [['prepare', 'flush']],
+      answers: [0],
+      explain: '先 prepare。',
+    }
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />)
+    fireEvent.change(screen.getByTestId('challenge-blank-0'), { target: { value: '1' } })
+    fireEvent.click(screen.getByTestId('challenge-check'))
+    expect(screen.getByText(/还对不上/)).toBeTruthy()
+    expect(screen.getByTestId('challenge-explain')).toBeTruthy()
+  })
+
+  it('排序题：上下移动到位后判定全对', () => {
+    const challenge = { id: 'order-1', kind: 'order', title: '排顺序', lines: ['b', 'a'], answer: [1, 0] }
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />)
+    fireEvent.click(screen.getAllByLabelText('上移')[1]!)
+    fireEvent.click(screen.getByTestId('challenge-check'))
+    expect(screen.getByText('✓ 全对')).toBeTruthy()
+  })
+
+  it('找 bug：选对行才算通过', () => {
+    const challenge = { id: 'bug-1', kind: 'bug', title: '找 bug', code: 'int a = 1;\nint b = a / 0;', bugLine: 2, explain: '除零。' }
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />)
+    fireEvent.click(screen.getByTestId('challenge-bug-line-2'))
+    fireEvent.click(screen.getByTestId('challenge-check'))
+    expect(screen.getByText('✓ 全对')).toBeTruthy()
+  })
+
+  it('成绩写进进度', () => {
+    const update = vi.fn()
+    const challenge = { id: 'bug-2', kind: 'bug', title: '找 bug', code: 'a\nb', bugLine: 1 }
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      progress: { read: () => null, update, reset: () => {} },
+    })
+    fireEvent.click(screen.getByTestId('challenge-bug-line-1'))
+    fireEvent.click(screen.getByTestId('challenge-check'))
+    expect(update).toHaveBeenCalledWith({ challenges: { 'bug-2': { score: 1, total: 1 } } })
+  })
+})
+
+describe('Quiz', () => {
+  const QUIZ = {
+    id: 'q1',
+    questions: [
+      { question: '第一题', options: ['对', '错'], answer: 0, explain: '就是对的' },
+      { question: '第二题', options: ['A', 'B'], answer: 1 },
+    ],
+  }
+
+  it('逐题即时反馈，答完显示得分', () => {
+    renderBlock(<Quiz code={JSON.stringify(QUIZ)} isIncomplete={false} language="quiz" />)
+    fireEvent.click(screen.getByTestId('quiz-option-0-0'))
+    expect(screen.getByTestId('quiz-explain-0')).toBeTruthy()
+    expect(screen.getByText('答对了。')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('quiz-option-1-0'))
+    expect(screen.getByTestId('quiz-score').textContent).toContain('答对 1 / 2')
+  })
+
+  it('已答的题不能再改（先答先得，避免改到对为止）', () => {
+    renderBlock(<Quiz code={JSON.stringify(QUIZ)} isIncomplete={false} language="quiz" />)
+    fireEvent.click(screen.getByTestId('quiz-option-0-1'))
+    expect((screen.getByTestId('quiz-option-0-0') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('完赛时写成绩', () => {
+    const update = vi.fn()
+    renderBlock(<Quiz code={JSON.stringify(QUIZ)} isIncomplete={false} language="quiz" />, {
+      entryId: 1,
+      progress: { read: () => null, update, reset: () => {} },
+    })
+    fireEvent.click(screen.getByTestId('quiz-option-0-0'))
+    fireEvent.click(screen.getByTestId('quiz-option-1-1'))
+    expect(update).toHaveBeenCalledWith({ quizzes: { q1: { score: 2, total: 2 } } })
+  })
+})

@@ -1,0 +1,105 @@
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+
+/**
+ * 源码解读的**页级共享状态**（WORK-014）。
+ *
+ * <p>为什么必须是页级而不是块内：架构地图与走读要互相驱动——点地图节点，走读跳到那一步；
+ * 走读切步，地图高亮对应节点。两个块各自持有一份状态就做不到，而把状态放进全局 store
+ * 又会让它跨页面残留。上下文随 `Markdown` 挂载、随页面卸载消失，正好是这个生命期。
+ *
+ * <p>进度不是 state：它由调用方注入一个端口（`localStorage` 或空实现），因为
+ * `@paideia/ui` 不认识条目 id，也不该知道存储键。管理端预览不注入端口，块照常可用但不留痕。
+ */
+
+export interface TourProgress {
+  step: number
+  total: number
+  done: boolean
+}
+
+export interface BlockScore {
+  score: number
+  total: number
+}
+
+export interface EntryProgress {
+  updatedAt: string
+  title?: string
+  tours: Record<string, TourProgress>
+  challenges: Record<string, BlockScore>
+  quizzes: Record<string, BlockScore>
+}
+
+export interface ProgressPatch {
+  tours?: Record<string, TourProgress>
+  challenges?: Record<string, BlockScore>
+  quizzes?: Record<string, BlockScore>
+}
+
+export interface ProgressPort {
+  /** 不传 id 时读当前条目；传 id 用于学习路径读其他站点的状态。 */
+  read(entryId?: number): EntryProgress | null
+  update(patch: ProgressPatch): void
+  reset(): void
+}
+
+/** 由页面注入的能力。缺哪一项，对应的交互就不渲染（而不是渲染一个坏掉的按钮）。 */
+export interface DocumentContextValue {
+  entryId?: number
+  entryTitle?: string
+  onAskAssistant?: (prompt: string) => void
+  onOpenEntry?: (entryId: number) => void
+  progress?: ProgressPort
+}
+
+interface SourceReadingValue extends DocumentContextValue {
+  activeStep: Record<string, number>
+  setActiveStep: (tourId: string, step: number) => void
+  ask?: (prompt: string) => void
+  /** 解释文本复用同一个 markdown 渲染器（由 `Markdown` 注入，避免包之间循环依赖）。 */
+  renderText?: (markdown: string) => ReactNode
+}
+
+const EMPTY: SourceReadingValue = {
+  activeStep: {},
+  setActiveStep: () => {},
+}
+
+const SourceReadingContext = createContext<SourceReadingValue | null>(null)
+
+export function SourceReadingProvider({
+  value,
+  renderText,
+  children,
+}: {
+  value?: DocumentContextValue
+  renderText?: (markdown: string) => ReactNode
+  children: ReactNode
+}) {
+  const [activeStep, setActiveStepMap] = useState<Record<string, number>>({})
+
+  const setActiveStep = useCallback((tourId: string, step: number) => {
+    setActiveStepMap((previous) => (previous[tourId] === step ? previous : { ...previous, [tourId]: step }))
+  }, [])
+
+  const merged = useMemo<SourceReadingValue>(
+    () => ({
+      ...value,
+      activeStep,
+      setActiveStep,
+      ask: value?.onAskAssistant,
+      renderText,
+    }),
+    [value, activeStep, setActiveStep, renderText],
+  )
+
+  return <SourceReadingContext.Provider value={merged}>{children}</SourceReadingContext.Provider>
+}
+
+/**
+ * 读取页级上下文。没有 Provider 时返回一个空对象而不是抛错：块在 ui-kit 展览页、
+ * 单测里可能被单独渲染，为"没包 Provider"而白屏不值得。
+ */
+export function useSourceReading(): SourceReadingValue {
+  return useContext(SourceReadingContext) ?? EMPTY
+}

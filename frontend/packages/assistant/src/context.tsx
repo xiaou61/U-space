@@ -8,9 +8,24 @@ export interface AssistantContextValue {
   onlyMine: boolean
 }
 
+/**
+ * 一次"预填"请求（WORK-014）：源码解读的「问 AI」把一句话送进输入框。
+ *
+ * <p>**它不是一条待发送的消息**——`ask()` 只写这里，真正的发送仍然要用户点。
+ * 带 `id` 是因为同一句话可能被连点两次：消费方按 id 清一次，避免把后面的新请求也清掉。
+ */
+export interface PendingPrompt {
+  id: number
+  text: string
+}
+
 interface AssistantContextApi extends AssistantContextValue {
   setEntry: (entry: { id: number; title: string } | null) => void
   setOnlyMine: (onlyMine: boolean) => void
+  pendingPrompt: PendingPrompt | null
+  /** 打开助手并把这句话填进输入框；**不发送**。 */
+  ask: (text: string) => void
+  clearPendingPrompt: (id: number) => void
 }
 
 const AssistantContext = createContext<AssistantContextApi | null>(null)
@@ -29,6 +44,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   const [entryId, setEntryId] = useState<number | null>(null)
   const [entryTitle, setEntryTitle] = useState<string | null>(null)
   const [onlyMine, setOnlyMine] = useState(false)
+  const [pendingPrompt, setPendingPrompt] = useState<PendingPrompt | null>(null)
 
   // setEntry 必须**稳定**：调用方（条目页）把它放进 useEffect 的依赖里，
   // 每次渲染都换一个新函数会让那个 effect 反复跑。
@@ -37,9 +53,30 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     setEntryTitle(entry === null ? null : entry.title)
   }, [])
 
+  const ask = useCallback((text: string) => {
+    const trimmed = text.trim()
+    if (trimmed === '') {
+      return
+    }
+    setPendingPrompt({ id: Date.now(), text: trimmed })
+  }, [])
+
+  const clearPendingPrompt = useCallback((id: number) => {
+    setPendingPrompt((current) => (current?.id === id ? null : current))
+  }, [])
+
   const value = useMemo<AssistantContextApi>(
-    () => ({ entryId, entryTitle, onlyMine, setEntry, setOnlyMine }),
-    [entryId, entryTitle, onlyMine, setEntry],
+    () => ({
+      entryId,
+      entryTitle,
+      onlyMine,
+      setEntry,
+      setOnlyMine,
+      pendingPrompt,
+      ask,
+      clearPendingPrompt,
+    }),
+    [entryId, entryTitle, onlyMine, setEntry, pendingPrompt, ask, clearPendingPrompt],
   )
 
   return <AssistantContext.Provider value={value}>{children}</AssistantContext.Provider>

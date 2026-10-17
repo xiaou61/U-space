@@ -17,8 +17,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAssistantContext } from '@paideia/assistant'
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react'
-import { useEffect } from 'react'
-import { Link, useParams } from 'react-router'
+import { useCallback, useEffect } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -40,7 +40,15 @@ export function KnowledgeEntryPage() {
   const entryId = Number(params['id'])
   const valid = Number.isFinite(entryId)
   const queryClient = useQueryClient()
-  const { setEntry } = useAssistantContext()
+  const navigate = useNavigate()
+  const { setEntry, ask } = useAssistantContext()
+
+  /**
+   * 源码解读的双向入口（WORK-014）：内容里的「问 AI」把一句话交给助手输入框，
+   * 学习路径点击某站直接跳过去。两个都保持**稳定引用**——它们会进 `MarkdownBody`
+   * 的 memo 依赖，每次渲染换新函数会让整篇正文重解析。
+   */
+  const openEntry = useCallback((id: number) => navigate(`/knowledge/entries/${id}`), [navigate])
 
   const entry = useQuery({
     queryKey: ['knowledge-entry', entryId],
@@ -107,7 +115,14 @@ export function KnowledgeEntryPage() {
               title={entry.data.title}
             />
 
-            <MarkdownBody markdown={entry.data.body} mediaBaseUrl={API_BASE_URL} />
+            <MarkdownBody
+              markdown={entry.data.body}
+              mediaBaseUrl={API_BASE_URL}
+              entryId={entry.data.id}
+              entryTitle={entry.data.title}
+              onAskAssistant={ask}
+              onOpenEntry={openEntry}
+            />
 
             <div className="mt-10">
               <SelfAssessmentButtons

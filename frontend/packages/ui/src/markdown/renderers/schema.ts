@@ -1,0 +1,471 @@
+/**
+ * 源码解读五种围栏块的数据契约与校验（WORK-014）。
+ *
+ * <p>**为什么解析集中在一个文件**：五种块都会被同一个 markdown 渲染器加载，作者写错时的
+ * 报错口径必须一致；校验又是纯函数，能独立单测，不需要挂载 React。校验失败一律返回
+ * `{ ok: false, error }`，由视图降级成"提示 + 原始文本"，**绝不抛到渲染树**。
+ *
+ * <p>上限都是**内容侧的天花板**，不是性能调优：块是作者手写的，超过上限通常意味着
+ * "这段应该拆成两篇"。数值集中在这里，作者指南与报错共用同一份。
+ */
+
+export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string }
+
+const LIMITS = {
+  id: 64,
+  title: 120,
+  repo: 120,
+  file: 300,
+  license: 40,
+  explain: 2000,
+  codeLines: 200,
+  codeChars: 20_000,
+  steps: 20,
+  focus: 20,
+  mapNodes: 24,
+  mapEdges: 48,
+  mapLayer: 12,
+  pathSteps: 20,
+  quizQuestions: 10,
+  quizOptions: 6,
+  challengeLines: 60,
+  outputLines: 30,
+} as const
+
+class BadInput extends Error {}
+
+function need(condition: unknown, message: string): asserts condition {
+  if (!condition) {
+    throw new BadInput(message)
+  }
+}
+
+function asObject(value: unknown, where: string): Record<string, unknown> {
+  need(value !== null && typeof value === 'object' && !Array.isArray(value), `${where} 必须是一个对象`)
+  return value as Record<string, unknown>
+}
+
+function asText(value: unknown, where: string, max: number): string {
+  need(typeof value === 'string', `${where} 必须是字符串`)
+  const text = (value as string).trim()
+  need(text !== '', `${where} 不能为空`)
+  need(text.length <= max, `${where} 超过 ${max} 字符`)
+  return text
+}
+
+function optionalText(value: unknown, where: string, max: number): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+  return asText(value, where, max)
+}
+
+function asInteger(value: unknown, where: string, min: number, max: number): number {
+  need(typeof value === 'number' && Number.isInteger(value), `${where} 必须是整数`)
+  const number = value as number
+  need(number >= min && number <= max, `${where} 必须在 ${min}–${max} 之间`)
+  return number
+}
+
+function asArray(value: unknown, where: string, min: number, max: number): unknown[] {
+  need(Array.isArray(value), `${where} 必须是数组`)
+  const items = value as unknown[]
+  need(items.length >= min && items.length <= max, `${where} 必须有 ${min}–${max} 项`)
+  return items
+}
+
+function asStringArray(value: unknown, where: string, min: number, max: number, itemMax: number): string[] {
+  return asArray(value, where, min, max).map((item, index) => asText(item, `${where}[${index}]`, itemMax))
+}
+
+function parseJson(code: string): unknown {
+  try {
+    return JSON.parse(code) as unknown
+  } catch (cause) {
+    throw new BadInput(`不是合法 JSON：${cause instanceof Error ? cause.message : String(cause)}`)
+  }
+}
+
+function parseWith<T>(code: string, build: (raw: unknown) => T): ParseResult<T> {
+  try {
+    return { ok: true, value: build(parseJson(code)) }
+  } catch (cause) {
+    return { ok: false, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+/* ------------------------------------------------------------------ 学习路径 */
+
+export interface PathStep {
+  entryId?: number
+  title: string
+  summary?: string
+  minutes?: number
+}
+
+export interface LearningPath {
+  title?: string
+  steps: PathStep[]
+}
+
+export function parseLearningPath(code: string): ParseResult<LearningPath> {
+  return parseWith(code, (input) => {
+    const raw = asObject(input, '学习路径')
+    const steps = asArray(raw['steps'], 'steps', 1, LIMITS.pathSteps).map((item, index) => {
+      const step = asObject(item, `steps[${index}]`)
+      const entryId = step['entryId'] === undefined ? undefined : asInteger(step['entryId'], `steps[${index}].entryId`, 1, Number.MAX_SAFE_INTEGER)
+      return {
+        entryId,
+        title: asText(step['title'], `steps[${index}].title`, LIMITS.title),
+        summary: optionalText(step['summary'], `steps[${index}].summary`, 200),
+        minutes: step['minutes'] === undefined ? undefined : asInteger(step['minutes'], `steps[${index}].minutes`, 1, 600),
+      }
+    })
+    return { title: optionalText(raw['title'], 'title', LIMITS.title), steps }
+  })
+}
+
+/* ------------------------------------------------------------------ 架构地图 */
+
+export interface MapNode {
+  id: string
+  label: string
+  layer: number
+  order: number
+  file?: string
+  line?: number
+  tour?: string
+  step?: number
+  entryId?: number
+}
+
+export interface MapEdge {
+  from: string
+  to: string
+  label?: string
+}
+
+export interface CodeMap {
+  id?: string
+  title?: string
+  nodes: MapNode[]
+  edges: MapEdge[]
+}
+
+export function parseCodeMap(code: string): ParseResult<CodeMap> {
+  return parseWith(code, (input) => {
+    const raw = asObject(input, '架构地图')
+    const ids = new Set<string>()
+    const nodes = asArray(raw['nodes'], 'nodes', 1, LIMITS.mapNodes).map((item, index) => {
+      const node = asObject(item, `nodes[${index}]`)
+      const id = asText(node['id'], `nodes[${index}].id`, LIMITS.id)
+      need(!ids.has(id), `nodes[${index}].id 与前面的节点重复：${id}`)
+      ids.add(id)
+      return {
+        id,
+        label: asText(node['label'], `nodes[${index}].label`, LIMITS.title),
+        layer: asInteger(node['layer'], `nodes[${index}].layer`, 0, LIMITS.mapLayer),
+        order: asInteger(node['order'], `nodes[${index}].order`, 0, LIMITS.mapLayer),
+        file: optionalText(node['file'], `nodes[${index}].file`, LIMITS.file),
+        line: node['line'] === undefined ? undefined : asInteger(node['line'], `nodes[${index}].line`, 1, 100_000_000),
+        tour: optionalText(node['tour'], `nodes[${index}].tour`, LIMITS.id),
+        step: node['step'] === undefined ? undefined : asInteger(node['step'], `nodes[${index}].step`, 0, LIMITS.steps),
+        entryId: node['entryId'] === undefined ? undefined : asInteger(node['entryId'], `nodes[${index}].entryId`, 1, Number.MAX_SAFE_INTEGER),
+      }
+    })
+    const edges = asArray(raw['edges'] ?? [], 'edges', 0, LIMITS.mapEdges).map((item, index) => {
+      const edge = asObject(item, `edges[${index}]`)
+      const from = asText(edge['from'], `edges[${index}].from`, LIMITS.id)
+      const to = asText(edge['to'], `edges[${index}].to`, LIMITS.id)
+      need(ids.has(from), `edges[${index}].from 指向不存在的节点：${from}`)
+      need(ids.has(to), `edges[${index}].to 指向不存在的节点：${to}`)
+      return { from, to, label: optionalText(edge['label'], `edges[${index}].label`, 40) }
+    })
+    return { id: optionalText(raw['id'], 'id', LIMITS.id), title: optionalText(raw['title'], 'title', LIMITS.title), nodes, edges }
+  })
+}
+
+/* ------------------------------------------------------------------ 代码走读 */
+
+export interface Predict {
+  question: string
+  options: string[]
+  answer: number
+  reveal: string
+}
+
+export interface StateVar {
+  name: string
+  value: string
+}
+
+export interface HeapObject {
+  id: string
+  label: string
+  fields?: Record<string, string>
+}
+
+export interface StepState {
+  vars?: StateVar[]
+  stack?: string[]
+  heap?: HeapObject[]
+  output?: string[]
+}
+
+export interface TourStep {
+  title: string
+  line: number
+  code: string
+  language?: string
+  focus?: number[]
+  explain: string
+  predict?: Predict
+  state?: StepState
+}
+
+export interface CodeTour {
+  id: string
+  title?: string
+  repo: string
+  commit: string
+  license: string
+  file: string
+  steps: TourStep[]
+}
+
+export function lineCount(code: string): number {
+  return code.split('\n').length
+}
+
+export function permalinkOf(tour: CodeTour, step: TourStep): string {
+  const end = step.line + lineCount(step.code) - 1
+  return `https://github.com/${tour.repo}/blob/${tour.commit}/${tour.file}#L${step.line}-L${end}`
+}
+
+function parsePredict(value: unknown, where: string): Predict {
+  const raw = asObject(value, where)
+  const options = asStringArray(raw['options'], `${where}.options`, 2, 4, 200)
+  return {
+    question: asText(raw['question'], `${where}.question`, 300),
+    options,
+    answer: asInteger(raw['answer'], `${where}.answer`, 0, options.length - 1),
+    reveal: asText(raw['reveal'], `${where}.reveal`, 1000),
+  }
+}
+
+function parseState(value: unknown, where: string): StepState {
+  const raw = asObject(value, where)
+  const vars = raw['vars'] === undefined
+    ? undefined
+    : asArray(raw['vars'], `${where}.vars`, 0, 30).map((item, index) => {
+        const variable = asObject(item, `${where}.vars[${index}]`)
+        return {
+          name: asText(variable['name'], `${where}.vars[${index}].name`, 60),
+          value: asText(variable['value'], `${where}.vars[${index}].value`, 200),
+        }
+      })
+  const stack = raw['stack'] === undefined ? undefined : asStringArray(raw['stack'], `${where}.stack`, 0, 30, 200)
+  const heap = raw['heap'] === undefined
+    ? undefined
+    : asArray(raw['heap'], `${where}.heap`, 0, 20).map((item, index) => {
+        const object = asObject(item, `${where}.heap[${index}]`)
+        const fields = object['fields'] === undefined ? undefined : asObject(object['fields'], `${where}.heap[${index}].fields`)
+        const normalized: Record<string, string> = {}
+        if (fields !== undefined) {
+          for (const [key, field] of Object.entries(fields)) {
+            normalized[key] = asText(field, `${where}.heap[${index}].fields.${key}`, 200)
+          }
+        }
+        return {
+          id: asText(object['id'], `${where}.heap[${index}].id`, 60),
+          label: asText(object['label'], `${where}.heap[${index}].label`, 120),
+          fields: fields === undefined ? undefined : normalized,
+        }
+      })
+  const output = raw['output'] === undefined ? undefined : asStringArray(raw['output'], `${where}.output`, 0, LIMITS.outputLines, 300)
+  return { vars, stack, heap, output }
+}
+
+export function parseCodeTour(code: string): ParseResult<CodeTour> {
+  return parseWith(code, (input) => {
+    const raw = asObject(input, '代码走读')
+    const repo = asText(raw['repo'], 'repo', LIMITS.repo)
+    need(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo), 'repo 必须是 owner/name 形式')
+    const commit = asText(raw['commit'], 'commit', 40)
+    need(/^[0-9a-f]{7,40}$/.test(commit), 'commit 必须是 7–40 位小写十六进制（固定 commit，不跟分支）')
+    const file = asText(raw['file'], 'file', LIMITS.file)
+    need(!file.startsWith('/') && !file.includes('..'), 'file 必须是仓库内相对路径，且不能包含 ..')
+    need(/^[A-Za-z0-9._/-]+$/.test(file), 'file 只能包含字母、数字、点、下划线、斜杠与连字符')
+
+    const steps = asArray(raw['steps'], 'steps', 1, LIMITS.steps).map((item, index) => {
+      const step = asObject(item, `steps[${index}]`)
+      const stepCode = asText(step['code'], `steps[${index}].code`, LIMITS.codeChars)
+      const lines = lineCount(stepCode)
+      need(lines <= LIMITS.codeLines, `steps[${index}].code 超过 ${LIMITS.codeLines} 行，请拆成两步`)
+      const focus = step['focus'] === undefined
+        ? undefined
+        : asArray(step['focus'], `steps[${index}].focus`, 0, LIMITS.focus).map((value, position) =>
+            asInteger(value, `steps[${index}].focus[${position}]`, 1, lines),
+          )
+      return {
+        title: asText(step['title'], `steps[${index}].title`, LIMITS.title),
+        line: asInteger(step['line'], `steps[${index}].line`, 1, 100_000_000),
+        code: stepCode,
+        language: optionalText(step['language'], `steps[${index}].language`, 40),
+        focus,
+        explain: asText(step['explain'], `steps[${index}].explain`, LIMITS.explain),
+        predict: step['predict'] === undefined ? undefined : parsePredict(step['predict'], `steps[${index}].predict`),
+        state: step['state'] === undefined ? undefined : parseState(step['state'], `steps[${index}].state`),
+      }
+    })
+
+    return {
+      id: asText(raw['id'], 'id', LIMITS.id),
+      title: optionalText(raw['title'], 'title', LIMITS.title),
+      repo,
+      commit,
+      license: asText(raw['license'], 'license', LIMITS.license),
+      file,
+      steps,
+    }
+  })
+}
+
+/* ------------------------------------------------------------------ 动手练习 */
+
+export interface FillChallenge {
+  id: string
+  kind: 'fill'
+  title: string
+  language?: string
+  template: string
+  options: string[][]
+  answers: number[]
+  explain?: string
+}
+
+export interface OrderChallenge {
+  id: string
+  kind: 'order'
+  title: string
+  lines: string[]
+  answer: number[]
+  explain?: string
+}
+
+export interface BugChallenge {
+  id: string
+  kind: 'bug'
+  title: string
+  language?: string
+  code: string
+  bugLine: number
+  explain?: string
+}
+
+export type CodeChallenge = FillChallenge | OrderChallenge | BugChallenge
+
+export function blankCount(template: string): number {
+  return [...template.matchAll(/\{\{(\d+)\}\}/g)].length
+}
+
+export function parseCodeChallenge(code: string): ParseResult<CodeChallenge> {
+  return parseWith(code, (input) => {
+    const raw = asObject(input, '动手练习')
+    const id = asText(raw['id'], 'id', LIMITS.id)
+    const title = asText(raw['title'], 'title', LIMITS.title)
+    const explain = optionalText(raw['explain'], 'explain', LIMITS.explain)
+    const kind = asText(raw['kind'], 'kind', 20)
+
+    if (kind === 'fill') {
+      const template = asText(raw['template'], 'template', LIMITS.codeChars)
+      const options = asArray(raw['options'], 'options', 1, LIMITS.focus).map((item, index) =>
+        asStringArray(item, `options[${index}]`, 2, 8, 120),
+      )
+      const answers = asArray(raw['answers'], 'answers', 1, LIMITS.focus).map((item, index) =>
+        asInteger(item, `answers[${index}]`, 0, options[index] === undefined ? 0 : options[index].length - 1),
+      )
+      need(options.length === answers.length, 'options 与 answers 的项数必须一致')
+      need(blankCount(template) === options.length, `template 里的空格数（${blankCount(template)}）必须与 options 的项数（${options.length}）一致`)
+      return { id, kind, title, language: optionalText(raw['language'], 'language', 40), template, options, answers, explain }
+    }
+
+    if (kind === 'order') {
+      const lines = asStringArray(raw['lines'], 'lines', 2, LIMITS.challengeLines, 300)
+      const answer = asArray(raw['answer'], 'answer', lines.length, lines.length).map((item, index) =>
+        asInteger(item, `answer[${index}]`, 0, lines.length - 1),
+      )
+      const sorted = [...answer].sort((a, b) => a - b)
+      need(sorted.every((value, index) => value === index), 'answer 必须是 0…n-1 的一个排列')
+      return { id, kind, title, lines, answer, explain }
+    }
+
+    if (kind === 'bug') {
+      const codeText = asText(raw['code'], 'code', LIMITS.codeChars)
+      const lines = lineCount(codeText)
+      need(lines <= LIMITS.challengeLines, `code 超过 ${LIMITS.challengeLines} 行`)
+      return {
+        id,
+        kind,
+        title,
+        language: optionalText(raw['language'], 'language', 40),
+        code: codeText,
+        bugLine: asInteger(raw['bugLine'], 'bugLine', 1, lines),
+        explain,
+      }
+    }
+
+    throw new BadInput('kind 只能是 fill / order / bug')
+  })
+}
+
+export function judgeFill(challenge: FillChallenge, selected: number[]): boolean {
+  return selected.length === challenge.answers.length && selected.every((value, index) => value === challenge.answers[index])
+}
+
+export function judgeOrder(challenge: OrderChallenge, order: number[]): boolean {
+  return order.length === challenge.answer.length && order.every((value, index) => value === challenge.answer[index])
+}
+
+export function judgeBug(challenge: BugChallenge, line: number): boolean {
+  return line === challenge.bugLine
+}
+
+/* ------------------------------------------------------------------ 小测 */
+
+export interface QuizQuestion {
+  question: string
+  options: string[]
+  answer: number
+  explain?: string
+}
+
+export interface Quiz {
+  id?: string
+  title?: string
+  questions: QuizQuestion[]
+}
+
+export function parseQuiz(code: string): ParseResult<Quiz> {
+  return parseWith(code, (input) => {
+    const raw = asObject(input, '小测')
+    const questions = asArray(raw['questions'], 'questions', 1, LIMITS.quizQuestions).map((item, index) => {
+      const question = asObject(item, `questions[${index}]`)
+      const options = asStringArray(question['options'], `questions[${index}].options`, 2, LIMITS.quizOptions, 200)
+      return {
+        question: asText(question['question'], `questions[${index}].question`, 300),
+        options,
+        answer: asInteger(question['answer'], `questions[${index}].answer`, 0, options.length - 1),
+        explain: optionalText(question['explain'], `questions[${index}].explain`, 1000),
+      }
+    })
+    return { id: optionalText(raw['id'], 'id', LIMITS.id), title: optionalText(raw['title'], 'title', LIMITS.title), questions }
+  })
+}
+
+export function scoreQuiz(quiz: Quiz, answers: (number | null)[]): { correct: number; total: number } {
+  return {
+    correct: quiz.questions.filter((question, index) => answers[index] === question.answer).length,
+    total: quiz.questions.length,
+  }
+}

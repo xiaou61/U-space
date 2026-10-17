@@ -444,14 +444,16 @@ describe('可扩展：平台特有的围栏零新依赖（T-11）', () => {
     expect(container.querySelector('[data-streamdown="code-block"]')).not.toBeNull()
   })
 
-  it('未装任何重插件：公式 / mermaid / 代码高亮都不在包里（这是体积能这么小的原因）', () => {
-    // 这三样在上游是**独立包**（`@streamdown/math` / `@streamdown/mermaid` / `@streamdown/code`），
-    // 我们一个都没装。要用时必须连"懒加载"一起做，否则基础包这点体积优势立刻消失
+  it('只装了代码高亮这一个重插件：公式 / mermaid / CJK 仍在包外（WORK-014 有意引入 Shiki）', () => {
+    // 上游把这些都做成**独立包**（`@streamdown/math` / `@streamdown/mermaid` / `@streamdown/code`）。
+    // WORK-014 只引入 `@streamdown/code`（源码解读要有语法着色），其余三样仍然不装：
+    // 每多装一个就多一份体积与样式面，Mermaid 要等体积量过再议。
     const ui = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
       dependencies: Record<string, string>
     }
     const installed = Object.keys(ui.dependencies)
-    expect(installed.filter((name) => /katex|mermaid|shiki|math|cjk|code/.test(name))).toEqual([])
+    expect(installed.filter((name) => /katex|mermaid|math|cjk/.test(name))).toEqual([])
+    expect(installed).toContain('@streamdown/code')
   })
 })
 

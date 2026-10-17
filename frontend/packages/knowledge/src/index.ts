@@ -24,6 +24,7 @@ export { MAX_HEADING_LEVEL, createSlugger, extractHeadings, slugify } from './he
 export type { Heading } from './heading-slug'
 export { FigureWithLightbox } from './image-lightbox'
 export { resolveMediaUrl } from './media'
+export { createEntryProgressPort, recentReading, type RecentReading } from './source-reading-progress'
 export { plainText } from './plain-text'
 export { SelfAssessmentButtons } from './self-assessment'
 export { MarkdownBody } from './markdown-body'

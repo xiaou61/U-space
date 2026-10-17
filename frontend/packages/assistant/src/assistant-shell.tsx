@@ -122,7 +122,7 @@ export function AssistantShell({
   /** 由应用注入：本包不认识笔记，只负责把"这一段话"交出去。 */
   onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
-  const { entryId, entryTitle, onlyMine, setOnlyMine } = useAssistantContext()
+  const { entryId, entryTitle, onlyMine, setOnlyMine, pendingPrompt } = useAssistantContext()
   const [panel, setPanel] = useState<PanelState>(readPanelState)
   const [credential, setCredential] = useState<CredentialView | null>(null)
   const [view, setView] = useState<SummaryView | null>(null)
@@ -150,6 +150,22 @@ export function AssistantShell({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  /**
+   * 源码解读点「问 AI」时：**把面板打开并切到对话页**（WORK-014）。
+   *
+   * <p>只做这两件事：填输入框是 `ConversationPanel` 的职责（它才持有 `input`）。
+   * 这里刻意**不发送**——`ask()` 的语义是"帮我起个头"，发出去就等于替用户花钱。
+   */
+  useEffect(() => {
+    if (pendingPrompt === null) {
+      return
+    }
+    markHintSeen()
+    preloadMarkdown()
+    setPanel((current) => (current.open ? current : { ...current, open: true }))
+    setTab('chat')
+  }, [pendingPrompt])
 
   const toggle = useCallback(() => {
     // 一旦打开过就不再提示：首次指引只给一次，动效也随之消失

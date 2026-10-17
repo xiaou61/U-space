@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it } from 'vitest'
 
 import type { AssistantApi } from './client'
-import { AssistantProvider } from './context'
+import { AssistantProvider, useAssistantContext } from './context'
 import { ConversationPanel } from './conversation-panel'
 
 /**
@@ -60,5 +60,50 @@ describe('收起面板', () => {
     unmount()
 
     expect(signal?.aborted).toBe(true)
+  })
+})
+
+/**
+ * 预填（WORK-014 AC-010）：点「问 AI」后**输入框有内容、但没有发出任何请求**。
+ *
+ * <p>它会在什么时候红：有人把 `ask()` 实现成"直接发送"，或者面板消费 pending 时顺手调了
+ * `send()`。这两条都会让用户在没确认的情况下花积分，所以必须有一条测试钉住。
+ */
+describe('预填不发送', () => {
+  it('把内容放进输入框，且 sendMessage 一次都没被调用', async () => {
+    let sent = 0
+    const api = {
+      ...stubApi(() => {}),
+      sendMessage: () => {
+        sent += 1
+        return new Promise<void>(() => {})
+      },
+    } as unknown as AssistantApi
+
+    function Harness() {
+      const { ask } = useAssistantContext()
+      return (
+        <>
+          <button type="button" data-testid="ask-trigger" onClick={() => ask('结合《标题》第 2 步（a.js:10），解释这里。')}>
+            问
+          </button>
+          <ConversationPanel api={api} />
+        </>
+      )
+    }
+
+    render(
+      <AssistantProvider>
+        <Harness />
+      </AssistantProvider>,
+    )
+
+    fireEvent.click(screen.getByTestId('ask-trigger'))
+
+    await waitFor(() => {
+      const input = screen.getByTestId('conversation-input') as HTMLTextAreaElement
+      expect(input.value).toContain('第 2 步')
+    })
+    expect(sent).toBe(0)
   })
 })

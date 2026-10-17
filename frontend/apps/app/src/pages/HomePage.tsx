@@ -1,9 +1,9 @@
-import { createKnowledgeApi, plainText } from '@paideia/knowledge'
+import { createKnowledgeApi, plainText, recentReading } from '@paideia/knowledge'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpen, Layers, NotebookPen, Search, Target } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { ArrowRight, BookOpen, Layers, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { api } from '../api'
@@ -18,6 +18,14 @@ const QUICK_LINKS = [
     icon: BookOpen,
     title: '知识库',
     description: '按分类浏览、按关键词检索，打开条目阅读。',
+  },
+  {
+    // 源码解读是知识库里的一个分类；总览条目由作者发布后挂在这里
+    to: '/knowledge/entries?q=源码解读',
+    testId: 'home-entry-source-reading',
+    icon: Sparkles,
+    title: '源码解读',
+    description: '跟着架构地图一步步读真实开源代码，边猜边练。',
   },
   {
     to: '/notes',
@@ -50,6 +58,11 @@ export function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
+  /**
+   * 「继续学习」（WORK-014）：读本地进度，不发请求。
+   * 用 `useMemo` 而不是 state：这个值每次进入首页重新算一次就够，也不需要监听其他标签页。
+   */
+  const recent = useMemo(() => recentReading(3), [])
 
   // 一次请求同时供"条目总数"与"最近更新"两块用：首页不该为两个数字打两次接口
   const entries = useQuery({
@@ -186,6 +199,38 @@ export function HomePage() {
           to="/my-assessments"
         />
       </div>
+
+      {/* 「继续学习」（WORK-014）：只有真读过才出现——空着一条"还没开始"只是噪音 */}
+      {recent.length === 0 ? null : (
+        <Section
+          title="继续学习"
+          description="接着上次那一条读下去。"
+          actions={
+            <span className="text-muted-foreground text-xs">进度只保存在这台设备上</span>
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-3" data-testid="home-recent-reading">
+            {recent.map((item) => (
+              <Link
+                key={item.entryId}
+                to={`/knowledge/entries/${item.entryId}`}
+                data-testid={`home-recent-${item.entryId}`}
+                className="border-border bg-card hover:border-primary/40 hover:shadow-card group flex items-start gap-3 rounded-xl border p-4 transition-all hover:-translate-y-0.5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="group-hover:text-primary block truncate text-sm font-medium transition-colors">
+                    {item.title}
+                  </span>
+                  <span className="text-muted-foreground mt-1 block text-xs">
+                    上次阅读 {new Date(item.visited).toLocaleString('zh-CN', { dateStyle: 'short', timeStyle: 'short' })}
+                  </span>
+                </span>
+                <ArrowRight className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section
         title="按分类浏览"

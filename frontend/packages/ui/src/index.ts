@@ -93,6 +93,23 @@ export {
   type MarkdownRenderer,
 } from './markdown/markdown'
 
+// 源码解读的五种块与页级上下文（WORK-014）：知识库正文与管理端预览共用
+export {
+  documentRenderers,
+  SourceReadingProvider,
+  useSourceReading,
+  parseCodeTour,
+  parseCodeMap,
+  parseLearningPath,
+  parseCodeChallenge,
+  parseQuiz,
+  permalinkOf,
+  type DocumentContextValue,
+  type EntryProgress,
+  type ProgressPatch,
+  type ProgressPort,
+} from './markdown/renderers'
+
 export { isTheme, THEME_KEY, THEME_STORAGE_KEY, type Theme, type ThemeStorage } from './theme/keys'
 export { ThemeProvider, useTheme } from './theme/theme-context'
 export { ThemeToggle } from './theme/theme-toggle'

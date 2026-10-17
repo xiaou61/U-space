@@ -1,6 +1,8 @@
 import { cn } from 'cn'
-import { lazy, Suspense, useMemo } from 'react'
-import type { Components, CustomRenderer } from 'streamdown'
+import { lazy, Suspense, useCallback, useMemo, useSyncExternalStore } from 'react'
+import type { Components, CustomRenderer, PluginConfig } from 'streamdown'
+
+import { documentRenderers, SourceReadingProvider, type DocumentContextValue } from './renderers'
 
 /**
  * markdown 渲染的**唯一实现**（WORK-012）。
@@ -34,6 +36,66 @@ export function preloadMarkdown(): void {
 }
 
 /**
+ * 语法高亮插件是**懒加载**的（WORK-014）。
+ *
+ * <p><b>为什么不能直接 `import { code } from '@streamdown/code'`</b>：这个模块是
+ * `@paideia/ui` barrel 的静态导出，静态引入会把 Shiki 拉进**应用主包**——实测主 chunk
+ * 从 736 kB 涨到 951 kB（+215 kB，gzip +69 kB）。所以这里用动态 import + 一个极小的
+ * 订阅器：插件到达之前，代码块按纯文本渲染（与接入前一致），到达后整篇重渲染一次。
+ *
+ * <p>这是**有意为之的降级**，不是缺陷：先有内容、后有着色，比为了着色把主包拖慢好。
+ */
+type CodeHighlighter = Awaited<typeof import('@streamdown/code')>['code']
+
+let codePlugin: CodeHighlighter | undefined
+let codeLoading: Promise<void> | null = null
+const codeSubscribers = new Set<() => void>()
+const NOOP_UNSUBSCRIBE = () => {}
+
+function loadCodeHighlighting(): Promise<void> {
+  if (codePlugin !== undefined) {
+    return Promise.resolve()
+  }
+  codeLoading ??= import('@streamdown/code')
+    .then((module) => {
+      codePlugin = module.code
+      codeSubscribers.forEach((notify) => notify())
+    })
+    .catch(() => {
+      // 加载失败就保持"无高亮"。重试留给下一次页面打开，不为它引入重试状态机
+      codeLoading = null
+    })
+  return codeLoading
+}
+
+/**
+ * 只在**这段 markdown 真的有围栏代码块**时才开始下载高亮插件。
+ *
+ * <p>否则每个纯文字回答都要多下 196 kB（gzip 61 kB）——那是白花。判断用一次正则，
+ * 代价可以忽略；`markdown` 变化时才重算。
+ */
+function useCodeHighlighting(enabled: boolean): CodeHighlighter | undefined {
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!enabled) {
+        return NOOP_UNSUBSCRIBE
+      }
+      codeSubscribers.add(notify)
+      void loadCodeHighlighting()
+      return () => {
+        codeSubscribers.delete(notify)
+      }
+    },
+    [enabled],
+  )
+  return useSyncExternalStore(subscribe, readCodePlugin, readCodePlugin)
+}
+
+function readCodePlugin(): CodeHighlighter | undefined {
+  return codePlugin
+}
+
+/**
  * 静态（长文）模式的呈现开关。**这两个是模块常量，不是每次渲染新建的字面量**——
  * 上游那个组件的记忆化比较里含 props 的引用相等，随手新建的对象会白让它重算一遍顶层。
  */
@@ -61,6 +123,16 @@ export type MarkdownProps = {
   components?: Components
   /** 平台特有的围栏渲染器。同样是稳定引用。 */
   renderers?: MarkdownRenderer[]
+  /**
+   * 源码解读块需要的页级能力（WORK-014）：当前条目、问 AI、跳转条目、进度端口。
+   * **只在文档模式生效**；流式回答不启用这些块，也不需要它。
+   */
+  documentContext?: DocumentContextValue
+  /**
+   * 是否启用源码解读的五种块。默认启用；解释文本的嵌套渲染传 `false`，
+   * 否则 ```` ```code-tour ```` 出现在解释里会被当成组件递归渲染。
+   */
+  documentBlocks?: boolean
 }
 
 /**
@@ -98,31 +170,75 @@ const documentComponents: Components = {
  * // 定稿的长文（知识库条目）
  * <Markdown markdown={entry.body} />
  */
-export function Markdown({ markdown, streaming = false, className, components, renderers }: MarkdownProps) {
+export function Markdown({
+  markdown,
+  streaming = false,
+  className,
+  components,
+  renderers,
+  documentContext,
+  documentBlocks = true,
+}: MarkdownProps) {
+  const hasFence = useMemo(() => /(^|\n)\s*```/.test(markdown), [markdown])
+  const codePlugin = useCodeHighlighting(hasFence)
   // 合并后的对象身份必须稳定：它进上游的块级记忆化比较，每次渲染换一个新对象会让记忆化全失效
   const mergedComponents = useMemo(
     () => (streaming ? components : { ...documentComponents, ...components }),
     [streaming, components],
   )
-  const plugins = useMemo(() => (renderers === undefined ? undefined : { renderers }), [renderers])
+  /**
+   * `plugins` 的引用同样会被上游记忆化比较。`codePlugin` 到达之前为 undefined（无高亮），
+   * 到达后换一次引用、整篇重渲染——这正是"先内容后着色"的落点。
+   * **流式模式不带任何平台块**：模型输出的 `code-tour` 只是文本，不该被当组件执行。
+   */
+  const plugins = useMemo<PluginConfig | undefined>(() => {
+    const highlight = codePlugin === undefined ? {} : { code: codePlugin }
+    if (streaming) {
+      return renderers === undefined ? (codePlugin === undefined ? undefined : highlight) : { ...highlight, renderers }
+    }
+    const merged = documentBlocks ? [...documentRenderers, ...(renderers ?? [])] : (renderers ?? [])
+    return { ...highlight, renderers: merged }
+  }, [streaming, renderers, documentBlocks, codePlugin])
 
-  return (
-    <Suspense fallback={<MarkdownLoading className={className} markdown={markdown} />}>
-      <Streamdown
-        mode={streaming ? 'streaming' : 'static'}
-        isAnimating={streaming}
-        className={className}
-        components={mergedComponents}
-        plugins={plugins}
-        // 长文里的外链是管理员写进去的，直接打开；流式回答里的链接是模型生成的，走上游的确认弹窗
-        linkSafety={streaming ? undefined : DOCUMENT_LINK_SAFETY}
-        // 长文里不需要表格的复制/下载下拉——那是聊天场景里"把我给你的表拿走"才需要的
-        controls={streaming ? undefined : DOCUMENT_CONTROLS}
-      >
-        {markdown}
-      </Streamdown>
-    </Suspense>
+  /**
+   * 解释文本的嵌套渲染入口：把"用同一套渲染器"这件事实现在**这一处**，块组件不必依赖
+   * `markdown.tsx`（那会形成循环引用）。嵌套渲染关闭平台块，防止递归。
+   */
+  const renderText = useCallback(
+    (text: string) =>
+      text.includes('```') || text.includes('`') ? (
+        <Markdown markdown={text} documentBlocks={false} />
+      ) : (
+        <p className="whitespace-pre-wrap">{text}</p>
+      ),
+    [],
   )
+
+  const content = (
+    <Streamdown
+      mode={streaming ? 'streaming' : 'static'}
+      isAnimating={streaming}
+      className={className}
+      components={mergedComponents}
+      plugins={plugins}
+      // 长文里的外链是管理员写进去的，直接打开；流式回答里的链接是模型生成的，走上游的确认弹窗
+      linkSafety={streaming ? undefined : DOCUMENT_LINK_SAFETY}
+      // 长文里不需要表格的复制/下载下拉——那是聊天场景里"把我给你的表拿走"才需要的
+      controls={streaming ? undefined : DOCUMENT_CONTROLS}
+    >
+      {markdown}
+    </Streamdown>
+  )
+
+  // 只有文档模式且有平台块时才需要页级上下文；流式回答与嵌套渲染都不包，少一层无关状态
+  const wrapped =
+    streaming || !documentBlocks ? content : (
+      <SourceReadingProvider value={documentContext} renderText={renderText}>
+        {content}
+      </SourceReadingProvider>
+    )
+
+  return <Suspense fallback={<MarkdownLoading className={className} markdown={markdown} />}>{wrapped}</Suspense>
 }
 
 /**

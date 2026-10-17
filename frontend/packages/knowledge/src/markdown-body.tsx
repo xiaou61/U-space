@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { extractHeadings } from './heading-slug'
 import { FigureWithLightbox } from './image-lightbox'
 import { resolveMediaUrl } from './media'
+import { createEntryProgressPort } from './source-reading-progress'
 
 /**
  * 渲染器（约 500 kB）**在本模块被求值时就开下**，不等数据回来。
@@ -30,11 +31,19 @@ preloadMarkdown()
  *
  * <p>与本包 {@link import('./entry-toc').EntryToc} 共用 `extractHeadings`，
  * 因此目录与正文按**同一顺序**编号，重复标题也不会串。
+ *
+ * <p><b>源码解读的接入点（WORK-014）</b>：传了 `entryId` 才有进度、传了 `onAskAssistant`
+ * 才有「问 AI」、传了 `onOpenEntry` 才有站点跳转。三样都是可选，所以管理端预览与笔记预览
+ * 什么都不用改：块照常渲染，只是不可点、不留痕。
  */
 export function MarkdownBody({
   markdown,
   className,
   mediaBaseUrl,
+  entryId,
+  entryTitle,
+  onAskAssistant,
+  onOpenEntry,
 }: {
   markdown: string
   className?: string
@@ -43,6 +52,13 @@ export function MarkdownBody({
    * 由调用方从自己的 `API_BASE_URL` 传进来——本包不认识部署形态，也不该认识。
    */
   mediaBaseUrl?: string
+  /** 当前条目 id；**只有它是数字时**才记录阅读进度。 */
+  entryId?: number
+  entryTitle?: string
+  /** 由应用注入：把一句话交给助手输入框（不自动发送）。 */
+  onAskAssistant?: (prompt: string) => void
+  /** 由应用注入：学习路径里点击某站时跳转。 */
+  onOpenEntry?: (entryId: number) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   // 只依赖 markdown：同一份正文的标题序列是确定的
@@ -74,13 +90,20 @@ export function MarkdownBody({
     [mediaBaseUrl],
   )
 
+  const progress = useMemo(() => createEntryProgressPort(entryId, entryTitle), [entryId, entryTitle])
+
+  const documentContext = useMemo(
+    () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress }),
+    [entryId, entryTitle, onAskAssistant, onOpenEntry, progress],
+  )
+
   return (
     <div
       ref={container}
       data-testid="markdown-body"
       className={className ?? 'text-[0.9375rem] leading-8'}
     >
-      <Markdown markdown={markdown} components={components} />
+      <Markdown markdown={markdown} components={components} documentContext={documentContext} />
     </div>
   )
 }

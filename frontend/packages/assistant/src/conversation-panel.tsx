@@ -33,7 +33,7 @@ export function ConversationPanel({
   api: AssistantApi
   onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
-  const { entryId, entryTitle } = useAssistantContext()
+  const { entryId, entryTitle, pendingPrompt, clearPendingPrompt } = useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessions, setSessions] = useState<ConversationView[]>([])
@@ -155,6 +155,22 @@ export function ConversationPanel({
 
   // 卸载即中断：面板收起来之后还在计费的调用是纯浪费
   useEffect(() => () => abortRef.current?.abort(), [])
+
+  /**
+   * 预填（WORK-014）：把「问 AI」那句话放进输入框，然后清掉请求。
+   *
+   * <p><b>绝不调用 `send`</b>：用户点的是"帮我起个头"，发出去等于替他花积分。
+   * 清空 pending 之后 `input` 保留——那是用户接下来要改的草稿。
+   * 同时把 `touchedRef` 置位：恢复历史的那条异步路径不该再用旧消息覆盖这行草稿。
+   */
+  useEffect(() => {
+    if (pendingPrompt === null) {
+      return
+    }
+    touchedRef.current = true
+    setInput(pendingPrompt.text)
+    clearPendingPrompt(pendingPrompt.id)
+  }, [pendingPrompt, clearPendingPrompt])
 
   /**
    * 记忆总开关关着时要**提前**挡住「记住这条」（REQ-007）：后端也会拒绝，但让用户点了才吃一个

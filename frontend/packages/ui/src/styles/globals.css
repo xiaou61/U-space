@@ -38,6 +38,7 @@
  * `source-coverage.test.ts` 现在会检查每个 `@source` 指向的目录是否真实存在。
  */
 @source '../../node_modules/streamdown/dist/*.js';
+@source '../../node_modules/@streamdown/code/dist/*.js';
 
 /* 主题用类名切换（首屏由 themeInitPlugin 注入的脚本在绘制前落到 <html> 上）。 */
 @custom-variant dark (&:where(.dark, .dark *));

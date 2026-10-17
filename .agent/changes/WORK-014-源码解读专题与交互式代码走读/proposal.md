@@ -2,12 +2,15 @@
 artifact: proposal
 work_id: WORK-014
 work: 源码解读专题与交互式代码走读
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-009, WORK-010, WORK-011]
 created: 2026-10-17
 updated: 2026-10-17
+approved_by: xiaou61
+approved_at: 2026-10-17 23:40:47 +0800
+approver_role: CTO
 ---
 
 # 提案 · 源码解读专题与交互式代码走读

@@ -104,3 +104,59 @@ test('管理员从首页进知识库管理区，完成录入到发布的链路',
   await page.getByTestId('admin-delete-confirm').click()
   await expect(page.getByTestId('admin-category-list')).not.toContainText(categoryName)
 })
+
+
+/**
+ * 源码解读块在管理端预览里也要能看见（WORK-014 AC-015）。
+ *
+ * <p>预览与学习者页共用同一个 `MarkdownField` / `Markdown`，所以这条用例真正钉住的是
+ * **"块只在文档模式启用、预览也走文档模式"**：一旦有人把注册表接到流式分支上、或者预览
+ * 换了另一条渲染路径，这里会红。
+ *
+ * <p>不依赖种子：临时造一条草稿，验完删掉。
+ */
+test('管理端预览能渲染源码解读的块', async ({ page }) => {
+  const stamp = Date.now()
+  const entryTitle = `e2e 源码解读 ${stamp}`
+
+  await signIn(page, ADMIN)
+  await openMenu(page, '条目管理')
+  await expect(page.getByTestId('admin-entry-list')).toBeVisible()
+
+  await page.getByTestId('admin-entry-new').click()
+  await page.getByTestId('admin-entry-title').fill(entryTitle)
+  const tour = {
+    id: 'preview-demo',
+    repo: 'facebook/react',
+    commit: 'd75b0697',
+    license: 'MIT',
+    file: 'packages/react-reconciler/src/ReactFiberWorkLoop.js',
+    steps: [{ title: '第一步', line: 2794, code: 'a();', explain: '解释。' }],
+  }
+  const body = [
+    '介绍',
+    '',
+    '```code-tour',
+    JSON.stringify(tour, null, 2),
+    '```',
+    '',
+    '```quiz',
+    JSON.stringify({ questions: [{ question: '问?', options: ['A', 'B'], answer: 0 }] }),
+    '```',
+  ].join('\n')
+  await page.getByTestId('admin-entry-body').fill(body)
+  await page.getByTestId('admin-entry-save').click()
+
+  await rowIn(page, 'admin-entry-list', entryTitle).getByRole('button', { name: '编辑' }).click()
+  await page.getByTestId('admin-entry-tab-preview').click()
+  await expect(page.getByTestId('code-tour')).toBeVisible()
+  await expect(page.getByTestId('quiz')).toBeVisible()
+  // 预览里没有问 AI 的能力：按钮不该出现
+  await expect(page.getByTestId('block-ask')).toHaveCount(0)
+
+  // 关闭编辑弹窗回到列表，才能删掉本次造的数据
+  await page.getByRole('button', { name: '取消' }).click()
+  await rowIn(page, 'admin-entry-list', entryTitle).getByRole('button', { name: '删除' }).click()
+  await page.getByTestId('admin-delete-confirm').click()
+  await expect(page.getByTestId('admin-entry-list')).not.toContainText(entryTitle)
+})
