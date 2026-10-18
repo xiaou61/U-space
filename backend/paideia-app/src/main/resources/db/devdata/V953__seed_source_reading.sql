@@ -151,6 +151,24 @@ commitRoot();                                // 4. 提交
 }
 ```
 
+## 动手：让代码真的跑起来
+
+```code-challenge
+{
+  "id": "react-run-demo",
+  "kind": "run",
+  "title": "看看「按片工作」到底打印了什么",
+  "language": "python",
+  "starter": "def perform_unit(step):\\n    print(f\\"unit {step}\\"\\n\\nfor i in range(3):\\n    perform_unit(i)\\n",
+  "cases": [
+    { "name": "三步都执行", "expected": "unit 0\\nunit 1\\nunit 2" }
+  ],
+  "explain": "真实实现里 `performUnitOfWork` 每次处理一个 Fiber；这里用三行循环模拟「逐个单元推进」。"
+}
+```
+
+这一题需要部署时开启代码执行（`paideia.sandbox.enabled=true` 且本机有 Docker）；没开时它只显示代码，不会给出一个点了必然失败的按钮。
+
 ## 小测
 
 ```quiz

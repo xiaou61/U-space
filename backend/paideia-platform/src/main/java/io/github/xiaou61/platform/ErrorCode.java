@@ -27,6 +27,13 @@ public enum ErrorCode {
      * "参数不合法"。映射到 HTTP 409——请求本身没问题，是当前设置不允许这件事。
      */
     MEMORY_DISABLED(40910, "个性化记忆已关闭"),
+    /**
+     * 代码执行不可用（WORK-015）。
+     *
+     * <p>与 INTERNAL 分开是**需求**：界面要能说清"是部署没开这个能力 / Docker 不在"，
+     * 而不是一句"服务器内部错误"。映射到 HTTP 503——服务存在，但这个能力当下不可用。
+     */
+    SANDBOX_DISABLED(50300, "代码执行不可用"),
     INTERNAL(50000, "服务器内部错误");
 
     private final int code;

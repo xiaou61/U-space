@@ -300,3 +300,35 @@ source backend/config/remote-db.local.env     # 之后再 mvn -B test 或跑 e2e
 **"记住这条"只写了全文那一路**（WORK-006 的老状况），本项把结构化那路的**自动**入口补上了；"自评 → 结构化记忆"那座桥仍属 WORK-010。
 
 **顺带**：`AiConfiguration` 里注册了 `MemoryProperties`（`@EnableConfigurationProperties` 是显式的，不注册就不绑定）；注销级联清单加了 `ai_user_settings`（不加，那条按表断言的用例就会红）。
+
+## 代码执行沙箱（WORK-015，2026-10-18）
+
+**默认关闭**。打开要三件事同时成立：`paideia.sandbox.enabled=true`、宿主机有 Docker、两个镜像已拉取。启动时 `SandboxCapability` 探一次，三者缺一就置 `ready=false`，接口返回 503、前端不显示「运行」。**探测失败不会让应用起不来**——只想读文章部署不该被这个能力绑架。
+
+```bash
+# 服务器上准备镜像（2026-10-18 实测 Docker Hub 偶尔 EOF，重试即可）
+docker pull eclipse-temurin:21-jdk-alpine
+docker pull python:3.12-alpine
+# 想把镜像钉死到 digest：
+docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigests 0}}'
+```
+
+**配置项**（`paideia.sandbox.*`，服务器上写在 `/opt/paideia-app/application.yml` 的 `paideia:` 段下）：
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `enabled` | `false` | 总开关；关掉后前端隐藏运行按钮、接口 503 |
+| `runtime` | `""` | 留空 = Docker 默认（runc）；设 `runsc` 即切 gVisor（需先装 runsc 并重启 dockerd） |
+| `java-image` / `python-image` | temurin 21 / python 3.12 | 按 digest 钉更稳 |
+| `timeout-ms` | `10000` | 墙钟上限，超时即 `destroyForcibly` |
+| `max-concurrency` | `2` | 全局并发；超出直接 429，不排队 |
+| `daily-limit` | `50` | 每人每天次数，**被拒绝的不计入** |
+| `memory` / `cpus` / `pids-limit` | `256m` / `0.5` / `64` | 容器资源硬上限 |
+
+**容器加固参数**（`DockerCommand`，逐条有单测）：`--network=none --read-only --tmpfs /tmp:rw,size=64m,exec --user 65534:65534 --cap-drop=ALL --security-opt=no-new-privileges --memory-swap --pids-limit --ulimit nofile/nproc --stop-timeout=0`，**没有任何 `-v` 挂载**，代码只走 stdin。
+
+**2026-10-18 真机实测**（codenest-online，4C/16G）：Python `print(sum(range(5)))` → `10`，992ms；Java 打印 42 → 4139ms；死循环 → `timedOut` 且正好 10005ms；`urllib` 访问外网 → `BLOCKED URLError`；编译错误 → exit 1 + javac stderr。审计表只存 `code_hash` 与长度。
+
+**已知天花板**：容器共享宿主内核，内核漏洞可导致逃逸。要更强隔离就切 gVisor（`runtime: runsc`），或另起独立 runner 服务（应用自身容器化时**必须**换，因为容器里没有 docker socket）。
+
+**测试口径**：本机没有 Docker，`SandboxIntegrationTest` 用桩 `CodeRunner`，覆盖权限/校验/配额/审计/状态映射；真容器只在服务器验。

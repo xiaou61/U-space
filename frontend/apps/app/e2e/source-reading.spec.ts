@@ -175,3 +175,20 @@ test('语法高亮真的上了色（Shiki 到达后围栏代码有颜色 token�
     )
     .toBeGreaterThan(10)
 })
+
+/**
+ * 沙箱未开启时（本地默认就是关闭的）：运行题只说"没启用"，**不渲染一个点了必然失败的按钮**。
+ *
+ * <p>这条同时钉住 AC-009 的前半：关闭开关后其他题型照常可用。
+ */
+test('沙箱未开启：运行题不显示按钮，并说明原因', async ({ page }) => {
+  await openEntry(page)
+
+  const runBlock = page.getByTestId('challenge').filter({ hasText: '看看「按片工作」到底打印了什么' })
+  await expect(runBlock).toBeVisible()
+  await expect(runBlock.getByTestId('challenge-run')).toHaveCount(0)
+  await expect(runBlock).toContainText('没有启用「运行」')
+
+  // 其它题型不受影响
+  await expect(page.getByTestId('quiz')).toBeVisible()
+})

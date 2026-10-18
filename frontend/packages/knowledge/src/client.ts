@@ -28,6 +28,45 @@ export interface KnowledgeApi {
   clearSelfAssessment(entryId: number): Promise<null>
   /** 我标记过的条目。**只可能是自己的**。 */
   myAssessments(level?: SelfAssessmentLevel): Promise<AssessedItem[]>
+  /** 代码执行能力与今日用量（WORK-015）。不可用时 `ready=false`，界面据此不显示「运行」。 */
+  sandboxStatus(): Promise<SandboxStatus>
+  /** 执行一次练习代码。**服务端只回实际输出，判定在客户端**。 */
+  runCode(input: RunCodeInput): Promise<RunCodeResult>
+}
+
+/** 沙箱能力。`reason` 在不可用时说明原因（未开启 / Docker 不在 / 镜像缺失）。 */
+export interface SandboxStatus {
+  enabled: boolean
+  ready: boolean
+  runtime: string | null
+  languages: string[]
+  dailyLimit: number
+  usedToday: number
+  reason: string | null
+}
+
+export interface RunCodeInput {
+  language: string
+  code: string
+  stdin?: string
+  entryId?: number
+  caseId?: string
+}
+
+/**
+ * 一次运行的结果。
+ *
+ * <p>`timedOut` / `outOfMemory` 是**结果**不是错误：程序崩了也是有价值的反馈。
+ * `truncated` 表示输出被截断（服务端上限 64KB）。
+ */
+export interface RunCodeResult {
+  stdout: string
+  stderr: string
+  exitCode: number
+  durationMs: number
+  timedOut: boolean
+  outOfMemory: boolean
+  truncated: boolean
 }
 
 /**
@@ -79,5 +118,14 @@ export function createKnowledgeApi(client: ApiClient): KnowledgeApi {
       client.requestEnvelope<AssessedItem[]>(
         `/api/v1/knowledge/self-assessments${level === undefined ? '' : `?level=${level}`}`,
       ),
+
+    sandboxStatus: () => client.requestEnvelope<SandboxStatus>('/api/v1/sandbox/status'),
+
+    runCode: (input) =>
+      client.requestEnvelope<RunCodeResult>('/api/v1/sandbox/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
   }
 }

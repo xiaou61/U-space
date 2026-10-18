@@ -17,7 +17,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAssistantContext } from '@paideia/assistant'
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { api } from '../api'
@@ -49,6 +49,21 @@ export function KnowledgeEntryPage() {
    * 的 memo 依赖，每次渲染换新函数会让整篇正文重解析。
    */
   const openEntry = useCallback((id: number) => navigate(`/knowledge/entries/${id}`), [navigate])
+
+  /**
+   * 代码执行（WORK-015）：把能力探测与运行封成端口交给正文块。
+   *
+   * <p>**只在条目页注入**——管理端预览、笔记预览都没有它，所以那些地方的「运行」按钮不会出现。
+   * `ready` 每次都问一次（很轻），因为用户可能在别的标签页跑完了当天的额度。
+   */
+  const sandbox = useMemo(
+    () => ({
+      ready: () => knowledge.sandboxStatus().then((status) => status.ready),
+      run: (input: { language: string; code: string; stdin?: string; caseId?: string }) =>
+        knowledge.runCode({ ...input, entryId }),
+    }),
+    [entryId],
+  )
 
   const entry = useQuery({
     queryKey: ['knowledge-entry', entryId],
@@ -122,6 +137,7 @@ export function KnowledgeEntryPage() {
               entryTitle={entry.data.title}
               onAskAssistant={ask}
               onOpenEntry={openEntry}
+              sandbox={sandbox}
             />
 
             <div className="mt-10">

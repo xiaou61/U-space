@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { SourceReadingProvider, type DocumentContextValue } from './context'
@@ -310,5 +310,81 @@ describe('Quiz', () => {
     fireEvent.click(screen.getByTestId('quiz-option-0-0'))
     fireEvent.click(screen.getByTestId('quiz-option-1-1'))
     expect(update).toHaveBeenCalledWith({ quizzes: { q1: { score: 2, total: 2 } } })
+  })
+})
+
+/**
+ * 运行题型（WORK-015）。
+ *
+ * <p>这里**不测真容器**：本机没有 Docker。测的是"沙箱端口给了什么、界面就呈现什么"——
+ * 有端口才出现运行按钮、判定按用例逐条比对、超时与 OOM 算失败。
+ */
+describe('CodeChallenge · run', () => {
+  const RUN = {
+    id: 'run-1',
+    kind: 'run',
+    title: '打印一行',
+    language: 'python',
+    starter: 'print("hi")',
+    cases: [{ name: '样例一', expected: 'hi' }],
+    explain: '就这么简单。',
+  }
+
+  function fakeSandbox(outputs: Record<string, Partial<{ stdout: string; stderr: string; exitCode: number; durationMs: number; timedOut: boolean; outOfMemory: boolean; truncated: boolean }>>) {
+    return {
+      ready: async () => true,
+      run: async (input: { caseId?: string }) => {
+        const key = (input.caseId ?? '').split(':').pop() ?? ''
+        const partial = outputs[key] ?? {}
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          durationMs: 10,
+          timedOut: false,
+          outOfMemory: false,
+          truncated: false,
+          ...partial,
+        }
+      },
+    }
+  }
+
+  it('没有沙箱端口时只显示说明，不渲染运行按钮', () => {
+    renderBlock(<CodeChallenge code={JSON.stringify(RUN)} isIncomplete={false} language="code-challenge" />)
+    expect(screen.queryByTestId('challenge-run')).toBeNull()
+    expect(screen.getByText(/没有启用「运行」/)).toBeTruthy()
+  })
+
+  it('有端口时出现运行按钮；通过时报全过', async () => {
+    renderBlock(<CodeChallenge code={JSON.stringify(RUN)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      sandbox: fakeSandbox({ 样例一: { stdout: 'hi\n' } }),
+    })
+    const button = await screen.findByTestId('challenge-run')
+    fireEvent.click(button)
+    await waitFor(() => expect(screen.getByTestId('challenge-run-results')).toBeTruthy())
+    expect(screen.getByText(/通过 1 \/ 1/)).toBeTruthy()
+  })
+
+  it('输出不符时判失败，并显示期望与实际', async () => {
+    renderBlock(<CodeChallenge code={JSON.stringify(RUN)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      sandbox: fakeSandbox({ 样例一: { stdout: 'bye\n' } }),
+    })
+    fireEvent.click(await screen.findByTestId('challenge-run'))
+    await waitFor(() => expect(screen.getByTestId('challenge-run-results')).toBeTruthy())
+    expect(screen.getByText(/通过 0 \/ 1/)).toBeTruthy()
+    expect(screen.getByTestId('challenge-stdout-0').textContent).toContain('bye')
+  })
+
+  it('超时算失败（不当成"输出碰巧一致"）', async () => {
+    renderBlock(<CodeChallenge code={JSON.stringify(RUN)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      sandbox: fakeSandbox({ 样例一: { stdout: 'hi', timedOut: true, exitCode: -1 } }),
+    })
+    fireEvent.click(await screen.findByTestId('challenge-run'))
+    await waitFor(() => expect(screen.getByText(/通过 0 \/ 1/)).toBeTruthy())
+    expect(screen.getByText(/超时/)).toBeTruthy()
   })
 })

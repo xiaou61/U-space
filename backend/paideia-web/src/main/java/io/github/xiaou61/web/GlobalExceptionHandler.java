@@ -125,6 +125,7 @@ public class GlobalExceptionHandler {
             case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;
             case INSUFFICIENT_CREDITS -> HttpStatus.PAYMENT_REQUIRED;
             case MEMORY_DISABLED -> HttpStatus.CONFLICT;
+            case SANDBOX_DISABLED -> HttpStatus.SERVICE_UNAVAILABLE;
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;

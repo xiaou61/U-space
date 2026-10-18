@@ -27,6 +27,7 @@
     <module>paideia-knowledge</module>
     <module>paideia-note</module>
     <module>paideia-ai</module>
+    <module>paideia-sandbox</module>
     <module>paideia-app</module>
   </modules>
 
@@ -66,6 +67,11 @@
       <dependency>
         <groupId>io.github.xiaou61</groupId>
         <artifactId>paideia-platform</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.xiaou61</groupId>
+        <artifactId>paideia-sandbox</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

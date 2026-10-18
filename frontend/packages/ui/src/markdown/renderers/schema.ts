@@ -363,7 +363,32 @@ export interface BugChallenge {
   explain?: string
 }
 
-export type CodeChallenge = FillChallenge | OrderChallenge | BugChallenge
+/**
+ * 运行题型（WORK-015）：读者改代码、点运行，结果与用例逐条比对。
+ *
+ * <p>**用例在正文里**，因此"隐藏用例"并不存在——读者本来就看得到期望值。这不是缺陷：
+ * 本项的目标是"能验证自己懂了"，不是考试防作弊；真正需要防泄漏的判定应该放到服务端，
+ * 而那会引入题库表，与"练习长在正文里"的模型冲突。
+ */
+export interface RunCase {
+  name: string
+  stdin?: string
+  expected: string
+  /** 比较前是否 trim（默认 true）。输出带尾随空行时用它放宽。 */
+  trim?: boolean
+}
+
+export interface RunChallenge {
+  id: string
+  kind: 'run'
+  title: string
+  language: 'java' | 'python'
+  starter: string
+  cases: RunCase[]
+  explain?: string
+}
+
+export type CodeChallenge = FillChallenge | OrderChallenge | BugChallenge | RunChallenge
 
 export function blankCount(template: string): number {
   return [...template.matchAll(/\{\{(\d+)\}\}/g)].length
@@ -400,6 +425,22 @@ export function parseCodeChallenge(code: string): ParseResult<CodeChallenge> {
       return { id, kind, title, lines, answer, explain }
     }
 
+    if (kind === 'run') {
+      const language = asText(raw['language'], 'language', 16).toLowerCase()
+      need(language === 'java' || language === 'python', 'language 目前只能是 java 或 python')
+      const starter = asText(raw['starter'], 'starter', LIMITS.codeChars)
+      const cases = asArray(raw['cases'], 'cases', 1, 10).map((item, index) => {
+        const entry = asObject(item, `cases[${index}]`)
+        return {
+          name: asText(entry['name'], `cases[${index}].name`, 80),
+          stdin: optionalText(entry['stdin'], `cases[${index}].stdin`, 4000),
+          expected: typeof entry['expected'] === 'string' ? entry['expected'] : '',
+          trim: entry['trim'] === undefined ? true : Boolean(entry['trim']),
+        }
+      })
+      return { id, kind, title, language: language as 'java' | 'python', starter, cases, explain }
+    }
+
     if (kind === 'bug') {
       const codeText = asText(raw['code'], 'code', LIMITS.codeChars)
       const lines = lineCount(codeText)
@@ -415,7 +456,7 @@ export function parseCodeChallenge(code: string): ParseResult<CodeChallenge> {
       }
     }
 
-    throw new BadInput('kind 只能是 fill / order / bug')
+    throw new BadInput('kind 只能是 fill / order / bug / run')
   })
 }
 
@@ -429,6 +470,26 @@ export function judgeOrder(challenge: OrderChallenge, order: number[]): boolean 
 
 export function judgeBug(challenge: BugChallenge, line: number): boolean {
   return line === challenge.bugLine
+}
+
+/**
+ * 运行题的单用例判定。
+ *
+ * <p>退出码非 0 一律算失败——编译错误与运行时崩溃都不该被"输出碰巧一致"蒙过去。
+ * 超时与 OOM 同理：它们是结果里的失败态，不是可比较的输出。
+ */
+export function judgeRun(testCase: RunCase, output: {
+  stdout: string
+  exitCode: number
+  timedOut: boolean
+  outOfMemory: boolean
+}): boolean {
+  if (output.exitCode !== 0 || output.timedOut || output.outOfMemory) {
+    return false
+  }
+  const actual = testCase.trim === false ? output.stdout : output.stdout.trim()
+  const expected = testCase.trim === false ? testCase.expected : testCase.expected.trim()
+  return actual === expected
 }
 
 /* ------------------------------------------------------------------ 小测 */

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.xiaou61</groupId>
+    <artifactId>paideia</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>paideia-sandbox</artifactId>
+  <name>paideia-sandbox</name>
+  <description>代码执行沙箱：在加固容器里跑练习代码，只回输出、不判题、不存源码</description>
+
+  <!--
+    依赖方向：sandbox -> {platform, persistence, security}。
+
+    **刻意不依赖 knowledge**：本模块不知道"条目"是什么，调用方把 entryId 当不透明数字传进来。
+    反过来说，将来别的功能（比如 AI 出的题）也能直接用它，而不必挂到知识库上。
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-platform</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -43,6 +43,23 @@ export interface ProgressPort {
   reset(): void
 }
 
+/** 一次运行的输出（WORK-015）。形状与服务端一致；判定在客户端做。 */
+export interface RunOutput {
+  stdout: string
+  stderr: string
+  exitCode: number
+  durationMs: number
+  timedOut: boolean
+  outOfMemory: boolean
+  truncated: boolean
+}
+
+/** 代码执行能力。缺这一项时「运行」按钮不渲染（管理端预览、未登录等）。 */
+export interface SandboxPort {
+  ready(): Promise<boolean>
+  run(input: { language: string; code: string; stdin?: string; caseId?: string }): Promise<RunOutput>
+}
+
 /** 由页面注入的能力。缺哪一项，对应的交互就不渲染（而不是渲染一个坏掉的按钮）。 */
 export interface DocumentContextValue {
   entryId?: number
@@ -50,6 +67,8 @@ export interface DocumentContextValue {
   onAskAssistant?: (prompt: string) => void
   onOpenEntry?: (entryId: number) => void
   progress?: ProgressPort
+  /** 代码执行（WORK-015）。没有它时 `run` 题型只显示代码、不显示运行按钮。 */
+  sandbox?: SandboxPort
 }
 
 interface SourceReadingValue extends DocumentContextValue {

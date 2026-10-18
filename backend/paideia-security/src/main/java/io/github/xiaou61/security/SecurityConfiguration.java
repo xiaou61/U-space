@@ -136,6 +136,8 @@ public class SecurityConfiguration {
                         // 否则将来看到这个前缀没有规则，会以为漏配了。余额与明细都是每个用户自己的，
                         // 不是管理操作。
                         .requestMatchers("/api/v1/ai/**").authenticated()
+                        // 代码执行（WORK-015）：只需登录——执行的是自己的练习代码，但必须可追溯
+                        .requestMatchers("/api/v1/sandbox/**").authenticated()
                         // 只读分享：**全项目第二处免鉴权读端点**（用户裁决 12）。与附件读取同一模型——
                         // id 是 UUID、不可枚举即凭据。**限定 GET**：分享只有读，把 POST 一起放行
                         // 就等于给了匿名写入口。产物只含笔记标题与正文，不含作者、记忆与学习痕迹。

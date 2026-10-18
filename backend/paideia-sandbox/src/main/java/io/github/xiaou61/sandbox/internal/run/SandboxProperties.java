@@ -1,0 +1,187 @@
+package io.github.xiaou61.sandbox.internal.run;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * 沙箱配置（WORK-015）。
+ *
+ * <p><b>默认关闭</b>：执行用户代码是唯一一类"跑别人的程序"的能力，默认开等于把风险塞给每一个部署。
+ * 打开只需要把 {@code paideia.sandbox.enabled} 设为 true，并且本机有 Docker。
+ *
+ * <p><b>镜像按 digest</b>：`repo:tag` 会漂移，而漂移意味着"今天验过的隔离参数明天可能配一个不同的
+ * 基础镜像"。实施时把 digest 填进来（`name@sha256:...`），文档里给出拉取命令。
+ *
+ * <p>所有上限都是**硬上限**：它们是安全边界，不是性能调优项。改大之前先想清楚最坏情况。
+ */
+@ConfigurationProperties(prefix = "paideia.sandbox")
+public class SandboxProperties {
+
+    /** 总开关。关掉之后接口返回 503，前端不显示「运行」。 */
+    private boolean enabled = false;
+
+    /**
+     * 容器运行时。留空 = Docker 默认（runc）。
+     *
+     * <p>设为 `runsc` 即切到 gVisor——这是**升级档**：加固容器挡不住内核漏洞导致的逃逸，
+     * gVisor 把系统调用转发到用户态内核，能挡掉大部分提权路径。切换只改这一行，不必改代码。
+     */
+    private String runtime = "";
+
+    /** 每个镜像的引用，按语言。**按 digest 钉住**。 */
+    private String javaImage = "eclipse-temurin:21-jdk-alpine";
+    private String pythonImage = "python:3.12-alpine";
+
+    /** 墙钟上限（毫秒）。超时即 `destroyForcibly`。 */
+    private long timeoutMs = 10_000;
+
+    /** 代码与 stdin 的长度上限（字符）。 */
+    private int maxCodeChars = 20_000;
+    private int maxStdinChars = 4_000;
+
+    /** stdout / stderr 各自截断到这个字节数。 */
+    private int maxOutputBytes = 65_536;
+
+    /** 全局并发：同时最多几个容器。超出的直接拒绝，不排队。 */
+    private int maxConcurrency = 2;
+
+    /** 每人每天的运行次数。**被拒绝的不计入**，否则重试会把用户锁死。 */
+    private int dailyLimit = 50;
+
+    /** 容器资源上限。 */
+    private String memory = "256m";
+    private String cpus = "0.5";
+    private int pidsLimit = 64;
+
+    /** 支持的围栏语言标识。 */
+    public Set<String> languages() {
+        return Set.of("java", "python");
+    }
+
+    /** 语言 → 镜像。未知语言返回 null（调用方负责拒绝）。 */
+    public String imageFor(String language) {
+        if (language == null) {
+            return null;
+        }
+        return switch (language.trim().toLowerCase(Locale.ROOT)) {
+            case "java" -> javaImage;
+            case "python" -> pythonImage;
+            default -> null;
+        };
+    }
+
+    public boolean isSupported(String language) {
+        return language != null && languages().contains(language.trim().toLowerCase(Locale.ROOT));
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public String getRuntime() {
+        return runtime;
+    }
+
+    public void setRuntime(String runtime) {
+        this.runtime = runtime;
+    }
+
+    public String getJavaImage() {
+        return javaImage;
+    }
+
+    public void setJavaImage(String javaImage) {
+        this.javaImage = javaImage;
+    }
+
+    public String getPythonImage() {
+        return pythonImage;
+    }
+
+    public void setPythonImage(String pythonImage) {
+        this.pythonImage = pythonImage;
+    }
+
+    public long getTimeoutMs() {
+        return timeoutMs;
+    }
+
+    public void setTimeoutMs(long timeoutMs) {
+        this.timeoutMs = timeoutMs;
+    }
+
+    public int getMaxCodeChars() {
+        return maxCodeChars;
+    }
+
+    public void setMaxCodeChars(int maxCodeChars) {
+        this.maxCodeChars = maxCodeChars;
+    }
+
+    public int getMaxStdinChars() {
+        return maxStdinChars;
+    }
+
+    public void setMaxStdinChars(int maxStdinChars) {
+        this.maxStdinChars = maxStdinChars;
+    }
+
+    public int getMaxOutputBytes() {
+        return maxOutputBytes;
+    }
+
+    public void setMaxOutputBytes(int maxOutputBytes) {
+        this.maxOutputBytes = maxOutputBytes;
+    }
+
+    public int getMaxConcurrency() {
+        return maxConcurrency;
+    }
+
+    public void setMaxConcurrency(int maxConcurrency) {
+        this.maxConcurrency = maxConcurrency;
+    }
+
+    public int getDailyLimit() {
+        return dailyLimit;
+    }
+
+    public void setDailyLimit(int dailyLimit) {
+        this.dailyLimit = dailyLimit;
+    }
+
+    public String getMemory() {
+        return memory;
+    }
+
+    public void setMemory(String memory) {
+        this.memory = memory;
+    }
+
+    public String getCpus() {
+        return cpus;
+    }
+
+    public void setCpus(String cpus) {
+        this.cpus = cpus;
+    }
+
+    public int getPidsLimit() {
+        return pidsLimit;
+    }
+
+    public void setPidsLimit(int pidsLimit) {
+        this.pidsLimit = pidsLimit;
+    }
+
+    /** 供状态端点展示：每种语言的镜像。 */
+    public List<String> images() {
+        return List.of(javaImage, pythonImage);
+    }
+}

@@ -1,4 +1,4 @@
-import { Markdown, preloadMarkdown, type MarkdownProps } from '@paideia/ui'
+import { Markdown, preloadMarkdown, type MarkdownProps, type SandboxPort } from '@paideia/ui'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { extractHeadings } from './heading-slug'
@@ -44,6 +44,7 @@ export function MarkdownBody({
   entryTitle,
   onAskAssistant,
   onOpenEntry,
+  sandbox,
 }: {
   markdown: string
   className?: string
@@ -59,6 +60,8 @@ export function MarkdownBody({
   onAskAssistant?: (prompt: string) => void
   /** 由应用注入：学习路径里点击某站时跳转。 */
   onOpenEntry?: (entryId: number) => void
+  /** 由应用注入：代码执行（WORK-015）。不传时「运行」按钮不渲染。 */
+  sandbox?: SandboxPort
 }) {
   const container = useRef<HTMLDivElement>(null)
   // 只依赖 markdown：同一份正文的标题序列是确定的
@@ -93,8 +96,8 @@ export function MarkdownBody({
   const progress = useMemo(() => createEntryProgressPort(entryId, entryTitle), [entryId, entryTitle])
 
   const documentContext = useMemo(
-    () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress }),
-    [entryId, entryTitle, onAskAssistant, onOpenEntry, progress],
+    () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox }),
+    [entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox],
   )
 
   return (

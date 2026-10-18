@@ -18,7 +18,13 @@ export type {
   KnowledgeAdminApi,
 } from './admin-client'
 export { createKnowledgeApi } from './client'
-export type { KnowledgeApi, ListEntriesOptions } from './client'
+export type {
+  KnowledgeApi,
+  ListEntriesOptions,
+  RunCodeInput,
+  RunCodeResult,
+  SandboxStatus,
+} from './client'
 export { EntryToc } from './entry-toc'
 export { MAX_HEADING_LEVEL, createSlugger, extractHeadings, slugify } from './heading-slug'
 export type { Heading } from './heading-slug'

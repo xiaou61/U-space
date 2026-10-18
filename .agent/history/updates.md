@@ -3095,3 +3095,70 @@ schema_version: 1
 - 如实登记的未覆盖项：线上部署未做、读屏实测、深色主题高亮对比度、地图密集时的视觉重叠
 - 本地提交：c3f4872（实现）、30f96fe（窄屏与高亮验收）
 - 远端推送：未执行
+
+## 2026-10-18 08:14:50 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-015-代码执行沙箱与可运行练习/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-015-代码执行沙箱与可运行练习/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:14:50 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:15:11 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-015-代码执行沙箱与可运行练习/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-015-代码执行沙箱与可运行练习/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:10 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:15:39 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-015-代码执行沙箱与可运行练习/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-015-代码执行沙箱与可运行练习/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:39 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:15:40 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-015-代码执行沙箱与可运行练习/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-015-代码执行沙箱与可运行练习/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:40 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:24:23 +0800 · WORK-016 · 建项起草：移动端最佳适配需求（draft）
+
+- 类型：implementation
+- 变更：新增 .agent/changes/WORK-016-移动端最佳适配/requirements.md：22 条 REQ / 12 条 AC，覆盖视口安全区、动态视口、学习者端导航与五类页、助手底部抽屉、管理端抽屉与表格转卡片、触控 44px、Electron 最小窗口；mode=strict
+- 决策：把「最佳适配」定义为四条可测标准（无横向溢出 / 44px 命中区 / 安全区与动态视口 / 形态随宽度换而非等比缩小）；管理端纳入但只做到窄屏可用；PWA 不做；移动导航选顶部抽屉
+- 依据：2026-10-18 全仓检索：4 个 index.html 无 viewport-fit、0 处 dvh/safe-area/touch-action、admin 仅 5 处断点且侧栏固定 w-56、assistant MIN_W=320+MARGIN=16 在 360px 只剩 8px、Playwright 三端均只有 Desktop Chrome、全仓仅 2 条窄视口 e2e
+- 验证：project-lifecycle validate 通过：0 error，仅 1 条 WORK-016 自身超过 20KB 的软警告；未实现任何代码
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:45:00 +0800 · WORK-015 · 实施完成：加固容器执行，练习能真跑代码
+
+- 类型：implementation
+- 变更（新增模块 `paideia-sandbox`）：`CodeRunner` 端口、`DockerCommand`（纯函数，加固参数逐条单测）、`DockerCodeRunner`（stdin 喂代码、双流边跑边读、超时强杀、OOM 分类）、`SandboxCapability`（启动探测 docker + 镜像，失败不阻止启动）、`RunSlot`（信号量 2，拿不到 429）、`SandboxQuotaService`（按 UTC 日切、被拒不计数）、`CodeRunMapper`、`SandboxController`（status/run）
+- 变更（迁移）：`V13__create_code_runs.sql` —— 审计表，**只存 code_hash 与长度，不存源码**
+- 变更（平台）：`BizException` 加带 cause 的构造；`ErrorCode.SANDBOX_DISABLED(50300)` 映射 503（穷尽 switch 已同步）
+- 变更（安全）：`/api/v1/sandbox/**` 只需登录（不放 permitAll、不要求 admin）
+- 变更（注销）：`SandboxUserDeletionListener` —— 注销时删该用户审计行，沿用"注销即级联硬删"
+- 变更（前端）：`code-challenge` 新增 `kind=run`（`starter` + `cases`）、`RunBody`（编辑器/运行/逐用例结果）、sandbox 端口经 `DocumentContext` 注入，管理端预览不注入故无按钮；`knowledge` 客户端加 `sandboxStatus`/`runCode`
+- 变更（内容与文档）：样板条目加一道 Python 运行题；`.agent/notes/dev-workflow.md` 增「代码执行沙箱」一节（配置、加固参数、真机实测、天花板）
+- 决策：执行器用 `docker run` 子进程而非独立服务（服务器现成 Docker，少一个部署单元；应用一旦容器化就必须改）；判定留在客户端（服务端不存题库、不存用例）；加固档为 v1，`runtime=runsc` 预留 gVisor；**默认关闭**
+- 依据：`requirements.md` 11 REQ / 10 AC；`proposal.md` 三档隔离对比；`design.md`
+- 验证：沙箱模块单测 **6 passed**；`SandboxIntegrationTest` **8 passed**（401/503/400/429/审计无源码/超时是结果）；前端单测 **236 passed**；学习者端本地 e2e **45 passed**；**服务器真机**：Python 992ms→10、Java 4139ms→42、死循环 10005ms 超时、外网 `BLOCKED URLError`、编译错误 exit 1；线上服务 active、13 个迁移校验通过
+- 如实登记：本机无 Docker（真容器只在服务器验）、gVisor 未装、真 OOM 未端到端构造、线上 7 条 e2e 因依赖本地种子而失败（既有问题与本项无关）、生产库留下 5 行真机验证审计
+- 本地提交：随本条一起提交
+- 远端推送：未执行

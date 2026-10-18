@@ -31,5 +31,12 @@ export const documentRenderers: CustomRenderer[] = [
 ]
 
 export { SourceReadingProvider, useSourceReading } from './context'
-export type { DocumentContextValue, EntryProgress, ProgressPatch, ProgressPort } from './context'
+export type {
+  DocumentContextValue,
+  EntryProgress,
+  ProgressPatch,
+  ProgressPort,
+  RunOutput,
+  SandboxPort,
+} from './context'
 export * from './schema'

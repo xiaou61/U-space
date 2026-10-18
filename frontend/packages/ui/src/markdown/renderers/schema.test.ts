@@ -5,6 +5,7 @@ import {
   judgeBug,
   judgeFill,
   judgeOrder,
+  judgeRun,
   lineCount,
   parseCodeChallenge,
   parseCodeMap,
@@ -249,5 +250,47 @@ describe('工具函数', () => {
     expect(lineCount('a\nb')).toBe(2)
     expect(blankCount('{{0}} + {{1}}')).toBe(2)
     expect(blankCount('no blanks')).toBe(0)
+  })
+})
+
+describe('parseCodeChallenge · run（WORK-015）', () => {
+  const RUN = {
+    id: 'r1',
+    kind: 'run',
+    title: '打印',
+    language: 'python',
+    starter: 'print(1)',
+    cases: [{ name: '样例', expected: '1' }],
+  }
+
+  it('接受合法运行题', () => {
+    const result = parseCodeChallenge(JSON.stringify(RUN))
+    expect(result.ok).toBe(true)
+    if (!result.ok || result.value.kind !== 'run') {
+      return
+    }
+    expect(result.value.cases[0]?.trim).toBe(true)
+  })
+
+  it('只允许 java / python', () => {
+    expect(parseCodeChallenge(JSON.stringify({ ...RUN, language: 'ruby' })).ok).toBe(false)
+  })
+
+  it('至少要有一个用例', () => {
+    expect(parseCodeChallenge(JSON.stringify({ ...RUN, cases: [] })).ok).toBe(false)
+  })
+
+  it('判定：输出相符且退出码 0 才算通过', () => {
+    const testCase = { name: 't', expected: '42' }
+    expect(judgeRun(testCase, { stdout: '42\n', exitCode: 0, timedOut: false, outOfMemory: false })).toBe(true)
+    expect(judgeRun(testCase, { stdout: '42\n', exitCode: 1, timedOut: false, outOfMemory: false })).toBe(false)
+    expect(judgeRun(testCase, { stdout: '42\n', exitCode: 0, timedOut: true, outOfMemory: false })).toBe(false)
+    expect(judgeRun(testCase, { stdout: '43', exitCode: 0, timedOut: false, outOfMemory: false })).toBe(false)
+  })
+
+  it('trim:false 时逐字符比较', () => {
+    const strict = { name: 't', expected: '42', trim: false }
+    expect(judgeRun(strict, { stdout: '42\n', exitCode: 0, timedOut: false, outOfMemory: false })).toBe(false)
+    expect(judgeRun(strict, { stdout: '42', exitCode: 0, timedOut: false, outOfMemory: false })).toBe(true)
   })
 })

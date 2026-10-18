@@ -17,6 +17,12 @@ public class BizException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    /** 带原因的构造（WORK-015）：底层异常留着，日志里能看到，响应体里不会外泄。 */
+    public BizException(ErrorCode errorCode, String message, Throwable cause) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
     public ErrorCode errorCode() {
         return errorCode;
     }
