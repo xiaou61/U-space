@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.credential.CredentialService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>响应里**没有任何 Key 片段**（连末四位也不给）：那是平台的 Key，不是用户的。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/credentials")
 class AiCredentialController {

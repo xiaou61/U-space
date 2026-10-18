@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.settings.AiSettingsStore;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>归属取调用者：请求体里没有 userId，传不了别人的设置（与记忆那套一致）。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/settings")
 class AiSettingsController {

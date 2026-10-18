@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.billing.CreditService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import java.time.Instant;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>只给 {@code 201 + 200} 这类读者：不提供充值（本项不做充值），也不提供任何写操作。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/credits")
 class AiCreditController {

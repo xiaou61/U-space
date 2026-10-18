@@ -1,6 +1,7 @@
 package io.github.xiaou61.note.internal.web;
 
 import io.github.xiaou61.note.internal.share.ShareService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>刻意不写成"先查分享记录、判断有效性、再查笔记"：那中间会出现"分享有效但笔记已删"的
  * 空档，而这个端点没有身份可用于兜底。join 一次取回，读不到就是读不到。
  */
+@ApiAccess(ApiAccess.Access.PUBLIC_READ)
 @RestController
 @RequestMapping("/api/v1/public/shares")
 class PublicShareController {

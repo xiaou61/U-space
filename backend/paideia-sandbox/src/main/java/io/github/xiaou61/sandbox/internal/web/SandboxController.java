@@ -1,5 +1,6 @@
 package io.github.xiaou61.sandbox.internal.web;
 
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p><b>它不判题</b>：只回实际输出。期望值留在客户端，所以服务端没有题库、也没有"隐藏用例"，
  * 也就不会出现"服务端知道答案但用户可以猜到"这类问题。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/sandbox")
 class SandboxController {

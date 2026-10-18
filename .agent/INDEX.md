@@ -17,6 +17,7 @@ status: active
 | 决策说明与共享资料 | `.agent/notes/`、`.agent/references/` |
 | 长期记忆 | `.agent/memory.md` |
 | 代码审查报告 | `.agent/reviews/` |
+| 接口测试标准与长期台账 | `.agent/testing/`（每次运行一个文件）、`.agent/notes/api-testing-standard.md`（标准草案） |
 | 项目理解型 HTML | `.agent/html/` |
 | 更新历史与 Git 历史视图 | `.agent/history/updates.md`、`.agent/history/core-components.md` |
 

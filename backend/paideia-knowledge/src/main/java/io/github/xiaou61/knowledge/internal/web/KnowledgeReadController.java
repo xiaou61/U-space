@@ -3,6 +3,7 @@ package io.github.xiaou61.knowledge.internal.web;
 import io.github.xiaou61.knowledge.internal.category.CategoryService;
 import io.github.xiaou61.knowledge.internal.category.CategoryTree;
 import io.github.xiaou61.knowledge.internal.entry.EntryService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>与写端点分文件而不是分方法：这样"哪些是写接口"在文件层面一眼可见，
  * 与安全规则的路径前缀一一对应，不会出现"某个写接口混在只读控制器里忘了保护"。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/knowledge")
 class KnowledgeReadController {

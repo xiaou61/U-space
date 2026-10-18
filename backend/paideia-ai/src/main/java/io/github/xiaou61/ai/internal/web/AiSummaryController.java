@@ -2,6 +2,7 @@ package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.SummaryVisibility;
 import io.github.xiaou61.ai.internal.summary.SummaryService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * （{@code POST}）才可能产生上游调用。需求定的是"只给按钮触发"，所以生成永远不会
  * 由读路径捎带发生——打开条目不该悄悄花掉用户的额度。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/summaries")
 class AiSummaryController {

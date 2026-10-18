@@ -1,6 +1,7 @@
 package io.github.xiaou61.knowledge.internal.web;
 
 import io.github.xiaou61.knowledge.internal.file.FileService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import java.net.URI;
 import java.time.Duration;
@@ -39,6 +40,8 @@ class KnowledgeFileController {
         this.fileService = fileService;
     }
 
+    // 上传要管理员；读取公开。同一个控制器两种级别，所以在方法上声明（类级无默认值）。
+    @ApiAccess(ApiAccess.Access.ADMIN)
     @PostMapping(path = "/admin/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ApiResponse<FileService.UploadedFile> upload(@RequestParam("file") MultipartFile file) {
         // 上传者只从令牌取；写路径要求主体确实是有效的账号标识
@@ -53,6 +56,7 @@ class KnowledgeFileController {
      *
      * <p>内容按 id 不可变，因此允许长缓存——这也是选择"端点公开"而非"前端转 blob"换来的好处之一。
      */
+    @ApiAccess(ApiAccess.Access.PUBLIC_READ)
     @GetMapping("/files/{id}")
     ResponseEntity<byte[]> read(@PathVariable("id") String id) {
         // 对象存储后端能给出有签名的直读 URL：**跳过去**，字节不再经过后端。

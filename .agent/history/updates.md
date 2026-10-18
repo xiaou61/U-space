@@ -3393,3 +3393,228 @@ schema_version: 1
 - 验证：`mvn -B test` 覆盖 ai（50 条）、sandbox（6 条）、account、knowledge 四模块 **BUILD SUCCESS 0 失败**；前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` 240 条全过。`review_baseline.sh`：正向输出"已审到 6b30d4f，距 HEAD 还有 0 个提交"；把基线改成不存在时正确报错。**未跑 e2e**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
+
+## 2026-10-18 14:50:00 +0800 · WORK-017 · 四层闸实施完成；部署闸与 CI 待授权
+
+- 类型：implementation
+- 变更：
+  - **L1 路由清单闸**：新增 `backend/paideia-app/src/test/java/io/github/xiaou61/ApiSurface.java`（62 条 `/api/v1` 路由的 `method/pattern/access`）与 `ApiSurfaceTest.java`（从 `RequestMappingHandlerMapping` 枚举运行时路由做集合相等）
+  - **L2a 拒绝矩阵**：新增 `ApiContractTest.java`（匿名 401、越权 403、畸形体 400/415、`X-Trace-Id`、未知路径 404、错误方法 405、包络正面样本），只跑拒绝路径，不发合法业务数据
+  - **L3 线上只读冒烟**：新增 `frontend/apps/app/e2e/api-smoke.spec.ts` 与 `playwright.smoke.config.ts`；`@paideia/app` 增 `test:api:online` 脚本；写路径需 `ALLOW_ONLINE_MUTATION=1`
+  - **L4 闸门**：新增 `.github/workflows/verify.yml`（MySQL service container + `mvn -B verify` + 解析 surefire XML 断言契约套件 `skipped==0`；前端 typecheck + 单测）；`scripts/release.ps1` 测试改为默认执行、新增 `-SkipTests`、部署后追加服务端只读探针
+  - **台账**：`.agent/testing/README.md` + 首轮两个运行记录；`dev-workflow.md` 增「接口契约测试与长期台账」一节（含四个已踩的坑）；四件工件补齐 `testing/plan.md` 与 `testing/report.md`
+- 决策：
+  - 清单只登记 method/pattern/access，其余（`@RequestBody`、`consumes`）从 handler 反射推导，避免第二个真相源
+  - 路径变量替换改为"两个有语义的特判 + 其余正则兜底填 1"，避免新增变量名就抛 `Not enough variable values`
+  - **不改** `rules/always.md` 的"无口令时跳过不失败"，改用 CI 断言 `skipped==0` 补偿
+  - 冒烟不复用 UI 的 `storageState`（refresh 轮换会让同轮 UI 用例失效）
+  - 台账由人执行时记录，测试里不自动写文件（CI 下会产生噪音与并发问题）
+- 依据：`.agent/changes/WORK-017-*/{requirements,proposal,design,tasks}.md`（四件已于 14:16 由 `approve` 签署）；`.agent/notes/api-testing-standard.md`
+- 验证：
+  - **L1 反向验证通过**：临时加 `GET /api/v1/__temp_undocumented` → `ApiSurfaceTest` 红并点名该路由；删除后恢复绿
+  - 新测试在本机独立库 `paideia_verify_work017` 上 **11 条全绿**（`ApiSurfaceTest` 3 + `ApiContractTest` 8）
+  - **相容性对照**：把三个新文件复制到 HEAD 的独立 worktree 跑全量，唯一失败是"清单里有两条 HEAD 尚未注册的面试路由"（即 L1 在正确工作），既有套件全绿；据此确认工作区那轮 `mvn verify` 的 10 条失败来自并发会话的在飞改动（知识库种子/画像），与本项无关
+  - 前端 `pnpm --filter @paideia/app typecheck` 通过；`pnpm -r test` **240 条全过**
+  - 冒烟在本机临时实例上 **10 passed / 1 skipped**；首轮抓到一处真实行为差异：匿名打未知路径是 401 不是 404（安全链在路由解析之前），断言已按正确行为修正并补一条固化用例
+  - **L1 首次运行即抓到真实缺口**：并发会话新增的两条 `/api/v1/ai/interviews/**` 路由未登记，已补入清单
+  - `release.ps1` PowerShell 语法解析 `PARSE OK`；**未执行真实部署**
+- 未完成（需用户授权）：AC-007 部署闸（`release.ps1` 从工作区构建，当前工作区有并发在飞改动，部署会把他人未提交代码带上线）；AC-008 CI 首跑（workflow 需推送后才执行）。因此 `testing/report.md` 为 `partial`，WORK-017 尚未完成结算
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 15:12:00 +0800 · WORK-017 · 取消人工清单，改为 @ApiAccess 注解驱动
+
+- 类型：implementation
+- 变更：
+  - 新增 `backend/paideia-platform/src/main/java/io/github/xiaou61/platform/ApiAccess.java`（`TYPE`/`METHOD` 两级，方法级覆盖类级）
+  - 给 21 个控制器加类级 `@ApiAccess`；`KnowledgeFileController` 的两个方法分别声明（上传 ADMIN、读取 PUBLIC_READ）
+  - **删除** `ApiSurface.java`（人工清单）；`ApiSurfaceTest` 重写为从运行时路由 + 注解派生，检查四类漏扫
+  - `ApiContractTest` 新增「声明与行为对照」：声明 ADMIN 必须真 403，声明非 ADMIN 不能是 403
+  - 同步 `api-testing-standard.md`、`dev-workflow.md`、WORK-017 的 requirements/design/tasks
+- 决策：用户问"这个扫描难道不会漏掉吗，能不能自定义注解自动一点" —— **实测确认第一版确实会漏两种**：
+  ①`@RequestMapping("/x")` 不带 `method` 时 `getMethodsCondition()` 为空，第一版直接 `continue` 跳过；
+  ②只按 `/api/v1/` 前缀过滤，误写成 `/api/notes` 的接口被静默排除。改为注解驱动后两者都被拦住。
+  另一点：清单写错访问级别时矩阵会跟着错，新增的对照断言把这个缺口也关掉了
+- 依据：用户 2026-10-18 的质疑；实测（见下）
+- 验证：
+  - 15 条全绿（`ApiSurfaceTest` 6 + `ApiContractTest` 9）
+  - **反向验证五组全部按预期红**：不限方法 → `ANY /api/v1/__temp_any_method`；越前缀 → `/api/__temp_unversioned`；
+    未标注解 → `GET /api/v1/__temp_undeclared`；把 `AiCreditAdminController` 的 ADMIN 误改成 AUTHENTICATED →
+    3 条路由同时报「对学习者返回 403，但没有声明 ADMIN」；恢复后全绿
+  - 台账：`.agent/testing/runs/2026-10-18T1510-contract-local.md`
+- 已知缺口：无请求体的写端点（`POST`/`PUT`/`DELETE`，如 `POST /notes/{id}/share`、`POST /me/deletion`）
+  无法无副作用探测鉴权，只由"匿名 401"覆盖；测试里用 `skipped` 断言其形态，不会悄悄扩大
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 15:20:00 +0800 · WORK-017 · 修正冒烟被默认 e2e 自动收录；补触发条件表
+
+- 类型：implementation
+- 变更：
+  - `frontend/apps/app/playwright.config.ts` 的 chromium project `testIgnore` 增加 `**/api-smoke.spec.ts`
+  - `.agent/notes/api-testing-standard.md` 增「触发条件」表，并订正两处已过时的描述（跳过规则、L4 部署闸现状）
+- 决策：用户问"这个是我指定才会触发的吧" —— 核对后发现**冒烟原本会被默认 e2e 自动收录**：实测默认一轮从 62 条变 73 条，
+  11 条全部因缺 `E2E_BASE_URL` 而跳过；更严重的是 `E2E_BASE_URL` 指向线上时它会跟着界面用例一起跑，
+  而 `ALLOW_ONLINE_MUTATION=1` 一旦被设置就会真写生产库。这是实现疏漏，已修
+- 依据：用户 2026-10-18 的确认性问题；`npx playwright test --list` 前后对比
+- 验证：
+  - 修后默认配置 `--list`：**62 tests / 8 files，0 条 api-smoke**（修前 73 / 9）
+  - 冒烟专用配置 `--list`（带 `E2E_BASE_URL`）：**11 tests / 1 file**；不带时直接报错
+    `缺少 E2E_BASE_URL：本配置只用于已部署实例的冒烟，不回退 localhost`
+  - **另一处实测**：不带 `PAIDEIA_TEST_DB_PASSWORD` 跑契约套件 → 15 条全部 **Skipped**，`BUILD SUCCESS`。
+    这是已签署的既有规则，已写进触发条件表并指明补偿在 CI 的 `skipped == 0`
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 15:45:00 +0800 · WORK-018 · 建项起草：简历识别与优化
+
+- 类型：requirements（draft，未实施）
+- 变更：
+  - 新建 `.agent/changes/WORK-018-简历识别与优化/requirements.md`（15 REQ / 13 AC，`mode: strict`）
+  - 本轮只做调研与需求起草；proposal / design / tasks 待需求批准后起草
+- 调研（2026-10-18 当日 HEAD 逐文件核对）：
+  - **career-ops**（MIT，75,390★，`090f787`）：JD → 岗位原型 → A–H 八块评估 → 1–5 分 → 报告 → 定制简历 → 事实闸门 → ATS PDF → 跟踪器。核心是 `modes/*.md` 提示词 + 零 token 的确定性脚本（`jd-skill-gap.mjs` 三桶、`verify-cv-facts.mjs` 事实闸门、`cv-title-check.mjs` 标题一致性）
+  - **Resume-Matcher**（Apache-2.0，28,743★，`ff5b370`）：PDF/DOCX → LLM 解析结构化 JSON → JD 关键词 → 定制 → 多轮 refine → 要点打分选页 → 模板 → PDF；ATS 分是纯代码（关键词 40/技能覆盖 20/标题 15/分节完整 15/日期一致 10）
+  - **Reactive Resume**（MIT，`14fb49b`）：纯前端编辑器 + 模板库，围绕 JSON Resume schema
+  - **国内产品**：解析导入、ATS 校准、JD 关键词比对、一键优化、模板、导出、一岗一版
+  - 共同骨架：解析成结构 → JD 关键词逐条比对 → 只改写已有事实 → 出稿前确定性校验
+- 决策（实现选择，记录理由）：
+  - **原文件不落盘**：只在内存抽文本后丢弃，避免把最高敏 PII 存两份，也不必碰 `FileService` 那个**免鉴权**的附件读端点
+  - **关键词三桶由代码算**（归一化子串 + 少量等价缩写），不交给模型自评——后者是幻觉温床且不可复现
+  - **不做服务端 PDF**：浏览器打印（A4 单栏打印视图 + `@media print`）；服务端出 PDF 要嵌中文字体与断行处理
+  - **落 `paideia-ai` 的 `internal/resume`，不新开 Maven 模块**：与 `internal/interview` / `internal/memory` 同构，无第二个消费者
+  - 两张表 `resume_documents` / `resume_versions`；PDF 用 PDFBox 3.0.7（Apache-2.0），`.docx` 用 JDK zip+XML
+- 依据：用户 2026-10-18 原话（"简历识别然后优化，主要参考 career-ops 的流程，我们自己弄一套，仔细调研"）；上述三个仓库的源码与文档
+- 验证：
+  - `project-lifecycle.ps1 validate` 对 WORK-018 **无 error、无 warning**
+  - 仓库事实逐条核对：`backend/*/src/main` 搜 `resume`/`简历` 命中 0；迁移最大号 `V14`；`MediaTypeSniffer` 允许 pdf 但 `KnowledgeFileController` 读端点声明 `PUBLIC_READ`
+- 待用户裁决（阻断需求批准，共 2 条）：
+  1. "优化"是否允许改写要点原文（推荐 A：允许改写但须带原文出处并过事实闸门）
+  2. 是否接受简历正文随两次模型调用发给上游（DeepSeek）
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 15:50:00 +0800 · WORK-017 · 方向订正：撤掉 CI/部署闸，改为「全接口手动自查标准」
+
+- 类型：implementation
+- 变更：
+  - **撤掉**：删除 `.github/workflows/verify.yml` 整个目录；`scripts/release.ps1` 用 `git checkout` 还原（测试默认执行、部署探针全部撤回）
+  - **撤掉**：删除前端 `api-smoke.spec.ts`、`playwright.smoke.config.ts`，`package.json`/`tsconfig.json`/`playwright.config.ts` 一并还原
+  - **新增核心件**：`ApiWalkthroughTest`（`paideia-app/src/test`）——一条命令、自己注册账号、把**每条接口真走一遍**、注销收尾
+  - 覆盖断言：运行时路由全集减去本轮实际打到过的路由，非空即失败
+  - 报告自动写 `.agent/testing/runs/YYYY-MM-DDTHHmm-walkthrough-local.md`
+  - 重写 `.agent/notes/api-testing-standard.md` 为「手动自查标准」；`dev-workflow.md` 同步
+- 决策：用户两条明确指示——「就是弄一个标准，以后我测的时候方便，不用什么 cicd 这种」、「应该要做到可以访问全接口的」。
+  前一轮把重心放在上线闸门（CI + 部署探针）是方向偏差，本轮回退并按"手动、可访问全部接口"重做
+- 依据：用户 2026-10-18 原话；实测跑通
+- 验证：
+  - **69 步 / 69 通过 / 0 失败，覆盖 62 个端点全集**，连续三轮合跑稳定
+  - 覆盖断言在开发期抓出 5 条未走到的端点（3 条是记录缺失、2 条真漏），全部补齐后才绿
+  - 修复两处顺序敏感性：来源地址随机化（避开发信的同来源限流，曾导致合跑偶发 429）；
+    路径归一化改为"变量少的 pattern 优先"（`/credits/audit` 曾被 `/credits/{userId}` 抢走，单跑不复现）
+  - 过程中确认三处接口行为，均已写进文档：附件按**字节**嗅探类型（png/jpeg/gif/webp/pdf）、
+    自评 level 只认 `understood`/`unsure`、注销后 access JWT 在有效期内**仍然可用**（只切断 refresh）
+  - `ApiSurfaceTest` 6 条 + `ApiContractTest` 9 条全绿；平台模块 11 条、模块边界校验均通过
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 15:57:47 +0800 · maintenance · 优化 project-lifecycle Skill：修三类失准、加 brief/archive/批量签署
+
+- 类型：maintenance
+- 变更：改的是已安装 Skill（~/.agents/skills/project-lifecycle），不在本仓库：①任务解析支持四种真实写法并加「解析为零」守卫；②验证锚点区分 committed drift 与 unfiled 工作区改动，不再让并发改动把全部历史项打成 stale；③warnings 与 hygiene 分层；④新增 brief 精简入口、archive 归档入口、approve --artifact all 批量签署；⑤testing.md 加完成前硬门，tasks.md 加计划质量门；⑥SKILL.md 改为可照做的六步入口
+- 决策：本项只改 Skill，本项目 .agent 工件不动；状态口径改为「报告覆盖到它绑定的提交」，之后仓库继续动记为 drift 而非失效
+- 依据：C:/Users/Lenovo/.agents/skills/project-lifecycle/{SKILL.md,references,tasks.md,testing.md,workflow.md,scripts}
+- 验证：python -m unittest discover -s <Skill>/scripts -p test_*.py → 12 tests OK；本项目实测 brief 2.3KB（原 19KB/225KB）、resume 13.7KB（原 247KB）、validate 0 error；任务解析 16/16 工作项均能读出真实任务数（改前 8 个报 0）
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:04:50 +0800 · maintenance · 补齐 superpowers 第三条移植：计划接口块/评审焦点/结论-证据表
+
+- 类型：maintenance
+- 变更：Skill 文档与脚本：tasks.md 增加接口块、步骤粒度判据、## 评审焦点 表格与四条质量门；testing.md 增加「结论→必须跑的命令→判据」对照表；SKILL.md 增加写任务的三个抓手；project_status 为 strict 未收口工作项增加缺评审焦点的非阻断提示（+4 条自检）
+- 决策：只搬可执行的三条，不搬 superpowers 的「每个任务派子代理 + 独立评审」执行模型——单人单 agent 的工作方式用不上，且会与 compact 模式冲突；执行方式选择留给用户
+- 依据：C:/Users/Lenovo/.agents/skills/project-lifecycle/{SKILL.md,references/tasks.md,references/testing.md,references/workflow.md,scripts/project_status.py}
+- 验证：python -m unittest discover -s <Skill>/scripts -p test_*.py → 16 tests OK；本项目 brief 2.2KB、validate 通过；评审焦点提示在 17 个工作项中只对 WORK-010（已批准未验证）触发
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:05:00 +0800 · WORK-018 · 按用户三项补充改需求：在线编辑 / 可视化逐项采纳 / 统一积分
+
+- 类型：requirements（仍为 draft，未实施）
+- 用户原话（三项补充）：①「肯定还要加一些 比如说在线编辑简历 之类的」②「优化要可视化允许是否修改原文」③「也走那个积分或者说就是自己放baseurl这种的 我们模型都是统一走的积分那一套体系啊 你忘了吗」
+- 变更：
+  - `requirements.md` 由 17 REQ / 13 AC 改为 **23 REQ / 12 AC**，新增「在线编辑」一整节
+  - 新增 `research.md`：三个参考仓库（career-ops `090f787` MIT、Resume-Matcher `ff5b370` Apache-2.0、Reactive Resume `14fb49b` MIT）的流程、许可与取舍逐条记录；正文只留摘要并链接过去，因此 requirements 从 22 KB 降到 19.9 KB（低于 20000 字节软阈值）
+  - 模型调用由 **2 次改为 3 次**：解析 / 分析 / 逐条改写提案。第三次单独拆出，是因为"逐项采纳"要求模型给每处改动分别给出原文片段与改写片段，而不是交一整稿让用户自己找差异
+  - 表由 2 张改为 **4 张**：`resume_documents` / `resume_edit_history` / `resume_versions` / `resume_proposals`（含采纳状态）
+- 决策：
+  - **计费口径**：用户指出「我们模型都是统一走的积分那一套体系」。回查代码确认：`CredentialService.access(userId)` 只读 `paideia.ai.billing.platform-credential`，`AiCredentialController` **只剩 GET**，用户自带 Key 的写路径在 WORK-009 已下线。**上一轮把"是否接受上游发送"列为待确认是错的**，已删掉该问题，改为「用户决定 6：统一走积分，baseUrl/Key 由部署配置持有」
+  - **改原文的口径**：允许改写，但必须"原文 vs 改后"并排可见 + 逐条由用户选择是否采用；默认全部**不采纳**（防止一键全采纳变成一键全信模型）；定稿另存版本，主简历永不被改
+  - **撤销上一轮的两条待确认问题**（改写是否允许、上游隐私），改为零阻断项；只剩两条实现细节（提案草稿是否实时落库、编辑快照合并窗口与保留条数），拟在 proposal 定论
+- 依据：用户 2026-10-18 第二轮原话；`CredentialService.java`、`AiCredentialController.java` 的实际代码
+- 验证：
+  - `project-lifecycle.ps1 validate`：WORK-018 **无 error、无 warning**
+  - REQ 编号 1–23 连续、AC 编号 1–12 连续（上一版合并段落时把 AC 编号弄成 001/003/005… 的跳号，已重排）
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:06:29 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-018-简历识别与优化/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-018-简历识别与优化/requirements.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:08:04 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-018-简历识别与优化/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-018-简历识别与优化/proposal.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:05:00 +0800 · WORK-017 · 补第四层：响应结构快照（字段变了也能抓）
+
+- 类型：implementation
+- 变更：`ApiWalkthroughTest` 增加响应结构快照
+  - 新增 `backend/paideia-app/src/test/resources/api-shape.json`（56 个端点的"字段路径: 类型"，不含值）
+  - 每轮自查末尾做结构比对：字段改名/增删/改类型逐条列出差异
+  - `-Dapi.shape.update=true` 更新快照；缺失时首次自动生成
+- 决策：用户问「后续有别的接口或者原有接口被修改，你这个还可以准确吗」—— **实测证明原有三层抓不到**：
+  把 `NoteView.title` 改名成 `heading` 后，69 步全过（状态码没变），而前端会静默拿不到标题。
+  补这一层专门管"契约形状"，与前三层分工明确：
+  前三层管"接口在不在、权限对不对、调得通不通"，这一层管"返回的东西还是不是原来那个形状"
+- 依据：用户 2026-10-18 的追问；两次注入实测
+- 验证：
+  - **字段改名被抓**：注入 `@JsonProperty("heading")` 后，精确列出 3 个受影响端点
+    （`GET/POST/PUT /api/v1/notes…` 各一条 `+ data.heading` / `- data.title`）；恢复后全绿
+  - **新增接口被抓**：临时加 `GET /api/v1/__temp_new` → 覆盖断言点名该路由；删除后全绿
+  - 最终状态：69 步 / 69 通过 / 0 失败，覆盖 62 个端点，16 条测试全绿，`BUILD SUCCESS`
+  - 冒烟注意：首次生成快照前必须先重建依赖模块（`paideia-note` 等），否则快照会记下旧 jar 里的过期字段
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:09:48 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-018-简历识别与优化/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-018-简历识别与优化/design.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 16:12:14 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-018-简历识别与优化/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-018-简历识别与优化/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

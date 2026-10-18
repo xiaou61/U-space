@@ -1,6 +1,7 @@
 package io.github.xiaou61.note.internal.web;
 
 import io.github.xiaou61.note.internal.note.NoteService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>`entryId` 可选：笔记可以挂靠某个知识条目，也可以不挂（随手记的东西）。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/notes")
 class NoteController {

@@ -1,6 +1,7 @@
 package io.github.xiaou61.knowledge.internal.web;
 
 import io.github.xiaou61.knowledge.internal.assessment.SelfAssessmentService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 由 {@code anyRequest().authenticated()} 兜住。**权限靠数据过滤而不是靠路径**：
  * 路径与请求体里都没有用户标识，归属一律取自令牌，并且每条查询都带 {@code user_id} 条件。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/knowledge")
 class SelfAssessmentController {

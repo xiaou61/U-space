@@ -2,6 +2,7 @@ package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.ai.internal.settings.AiSettingsStore;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>删除路径里带 `source`：两路的 id 各自独立，只说 id 会删错表。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/memories")
 class AiMemoryController {

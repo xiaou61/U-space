@@ -1,6 +1,7 @@
 package io.github.xiaou61.note.internal.web;
 
 import io.github.xiaou61.note.internal.share.ShareService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>这里**不做自动判定**：下架是人做的决定，有举报列表让人判断就够了。
  */
+@ApiAccess(ApiAccess.Access.ADMIN)
 @RestController
 @RequestMapping("/api/v1/notes/admin/reports")
 class NoteReportAdminController {

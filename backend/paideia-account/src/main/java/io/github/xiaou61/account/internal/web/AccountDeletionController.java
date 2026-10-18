@@ -1,6 +1,7 @@
 package io.github.xiaou61.account.internal.web;
 
 import io.github.xiaou61.account.internal.user.AccountDeletionService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>用 POST 而不是 DELETE：请求体里要带密码确认，而 DELETE 带体在不同客户端上表现不一。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/me")
 class AccountDeletionController {

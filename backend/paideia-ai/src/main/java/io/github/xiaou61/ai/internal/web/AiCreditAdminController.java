@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.web;
 
 import io.github.xiaou61.ai.internal.billing.CreditService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>**本期没有充值**（用户决定 3）：积分唯一的入口就是这里的调整。所以"给谁发多少分"是
  * 一个必须留下操作人与原因的写操作——它就是本项的"充值"。
  */
+@ApiAccess(ApiAccess.Access.ADMIN)
 @RestController
 @RequestMapping("/api/v1/ai/admin/credits")
 class AiCreditAdminController {

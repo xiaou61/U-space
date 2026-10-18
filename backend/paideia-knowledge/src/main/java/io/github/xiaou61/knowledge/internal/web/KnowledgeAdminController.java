@@ -5,6 +5,7 @@ import io.github.xiaou61.knowledge.internal.admin.EntryAdminService;
 import io.github.xiaou61.knowledge.internal.admin.RelationAdminService;
 import io.github.xiaou61.knowledge.internal.category.CategoryService;
 import io.github.xiaou61.knowledge.internal.category.CategoryTree;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p><b>绝不接受客户端传入的用户标识</b>：本控制器的所有操作都不需要用户 id，
  * 唯一用到身份的地方是日志里的操作者（取自 {@code CurrentUser}）。
  */
+@ApiAccess(ApiAccess.Access.ADMIN)
 @RestController
 @RequestMapping("/api/v1/knowledge/admin")
 class KnowledgeAdminController {

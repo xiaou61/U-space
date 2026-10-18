@@ -1,6 +1,7 @@
 package io.github.xiaou61.note.internal.web;
 
 import io.github.xiaou61.note.internal.share.ShareService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 路由**撞同一个路径**（一个要返回 JSON、一个要返回页面）。作为一处局部事实订正，改到
  * 项目既有的 `/api` 前缀下，免鉴权这件事由安全规则显式声明。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1")
 class NoteShareController {

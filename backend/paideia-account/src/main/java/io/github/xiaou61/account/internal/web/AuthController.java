@@ -6,6 +6,7 @@ import io.github.xiaou61.account.internal.login.LoginService;
 import io.github.xiaou61.account.internal.registration.RegistrationService;
 import io.github.xiaou61.account.internal.token.AuthTokens;
 import io.github.xiaou61.account.internal.token.TokenService;
+import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>所有响应走既有的 {@code ApiResponse} 包装（由 {@code ApiResponseBodyAdvice} 统一处理），
  * 因此没有 204：动作类端点的成功响应是 `code: 0` 且 `data` 为空。
  */
+@ApiAccess(ApiAccess.Access.PUBLIC_WRITE)
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController {
