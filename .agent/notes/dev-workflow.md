@@ -395,3 +395,29 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 **影响**：只影响"全量一次跑完"的绿/红判断，不影响任何单类验证与运行时行为。CI 若按类分片跑不受影响。
 
 **下一步该做的**（给接手的人）：在 `KnowledgeFileIntegrationTest`（位于 Admin 与 Read 之间）前后各插一次 `SELECT id FROM knowledge_entries` 断言，二分到具体语句；或者干脆把 `ApiSurfaceTest` 里"所有路径变量填 1"这条规则改掉（`concretePath` 用 `999999` 之类的不可存在值），它是唯一一处会拿 `1` 去撞真实数据的机制。
+
+## 身份化与模拟面试（WORK-010，2026-10-18 起）
+
+**一条对话 = 公共行为 × 私有数据**：`harness` 是前者（提示词 + 工具集），记忆/历史/凭据是后者（按用户取）。所以**不是"每个场景一个 Agent"**，而是同一个助手在不同页面按这套行为说话。术语上"人"与"行为"要分开——harness 是行为，不是人。
+
+**三套 harness**：`assistant`（既有，提示词一字未改）、`interview`（面试官）、`review`（点评）。注册表是穷尽 switch 且**没有 default**：新增一套时编译器会强制你决定它的提示词与工具集，而不是静默继承——那会让"面试"悄悄变成闲聊且没有报错。
+
+**点评那一次工具集为空**：这不只是设计洁癖——DeepSeek 上"工具调用与结构化输出不能在同一次调用里并用"，而点评要的正是**可解析的结构化评分**。所以它走独立的 `InterviewReviewer` 端口（非流式、无工具），不走工具循环。
+
+**行为跟着会话走**：`ai_conversations.harness` 存下来，恢复时按它选行为。建会话时页面给 `interview`，之后**从通用入口继续这段对话仍然是面试官在说话**——"那是同一个人说过的话"，不该中途换人格。
+
+**身份不是角色**（AC-001）：`role` 决定能做什么，身份只影响推荐顺序与助手形态。两条纪律：
+- `Identity` 枚举一期只有 `job_seeker` 是实心的，其余三个 `selectable()` 为 false、**接口写不进去**（否则会出现"库里是考研、界面上没这个身份"的幽灵状态）。
+- 身份**不参与任何权限判定**，`/api/v1/account/**` 只要求已登录。
+
+**自评 → 记忆的桥用事件，不是直接调用**：自评在 `paideia-knowledge`，记忆在 `paideia-ai`，而 AI 已经依赖 knowledge（要检索条目）。反向调用会成环、构建期被 Modulith 拦下。所以发 `EntryAssessmentChangedEvent`，AI 侧用 `@TransactionalEventListener(BEFORE_COMMIT)` 消费——与自评在同一个事务里，自评回滚了不会留下假记忆。
+
+**覆盖语义靠唯一键**：`ai_memories_structured` 加 `(user_id, kind, ref_id)` + `ON DUPLICATE KEY UPDATE`。**加键前必须核一遍有没有冲突行**（有就删不掉键）：实测两个库里有 `ref_id` 的结构化记忆都是 0 行。注意 MySQL 唯一键里 NULL 不参与去重，所以"没有 ref_id 的记忆"不受这条约束影响。
+
+**"笔记默认不参与"是保守默认**：笔记是严格私有数据，送进上游＝那些内容离开本机（上游是第三方）。要送必须由用户在面试开始时**显式勾选**。
+
+**前端**：
+- 新包 `@paideia/identity`（DTO + 客户端 + 推荐配置包）。配置只表达"谁排前面"，**不表达"谁被藏起来"**——推荐不是限制，没提到的入口追加在后面。
+- `/profile` 页明写"不影响你能做什么"：这是最容易被误读成第二套权限的地方。
+- `/interview` 页的会话在建的时候就钉死 `harness=interview`，不是每轮重复指定。
+- 页头与首页读身份用 `staleTime: 5min` + `retry: false`：读不到就退回默认配置，**不阻塞页面**——推荐用的接口慢不该让整页转圈。

@@ -21,7 +21,8 @@ const knowledge = createKnowledgeApi(api)
 type QuickLinkKey = 'knowledge' | 'notes' | 'my-assessments' | 'interview'
 
 const QUICK_LINKS: {
-  key: QuickLinkKey
+  /** 参与身份排序的入口才有 key；`null` 表示永远追加在末尾。 */
+  key: QuickLinkKey | null
   to: string
   testId: string
   icon: typeof BookOpen
@@ -46,9 +47,9 @@ const QUICK_LINKS: {
   },
   {
     // 源码解读是知识库里的一个分类；总览条目由作者发布后挂在这里。
-    // 它不参与身份排序（不属于任何身份的 preferredNav），所以 key 用 knowledge：
-    // 排序只看前四张卡，这张永远是"追加在后面"的那一类。
-    key: 'knowledge' as const,
+    // **它不参与身份排序**（key 为 null）：与"知识库"共用同一个 key 会让排序时只取到
+    // 知识库那张卡、把这张整个丢掉（实测：首页入口消失，e2e 直接红）。
+    key: null,
     to: '/knowledge/entries?q=源码解读',
     testId: 'home-entry-source-reading',
     icon: Sparkles,
@@ -98,8 +99,9 @@ export function HomePage() {
     const ordered = config.preferredNav
       .map((key) => QUICK_LINKS.find((item) => item.key === key))
       .filter((item): item is (typeof QUICK_LINKS)[number] => item !== undefined)
-    // 配置只表达"谁排前面"，没提到的追加在后面（与页头同一口径）
-    return [...ordered, ...QUICK_LINKS.filter((item) => !config.preferredNav.includes(item.key))]
+    // 配置只表达"谁排前面"，没提到的（含 key=null 的固定卡）追加在后面。
+    // **用 includes 判断而不是按 key 去重**：null 不是合法 nav key，去重会把固定卡一起丢掉。
+    return [...ordered, ...QUICK_LINKS.filter((item) => !ordered.includes(item))]
   }, [profile?.identity])
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
