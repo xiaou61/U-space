@@ -4,7 +4,7 @@ work_id: WORK-007
 work: 对象存储接入
 status: passed
 evidence: required
-verified_commit: d184e36
+verified_commit: 9c99033
 verified_at: 2026-10-17
 ---
 
@@ -73,3 +73,18 @@ verified_at: 2026-10-17
 前端单测 **176 条全过**，`typecheck` 干净。
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
+
+## 复验记录（2026-10-18，锚点 9c99033）
+
+**为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
+（源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
+**受影响面**相关的那几组检查，逐条结果如下。**没有改任何功能代码**。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 知识库全量（含附件与对象存储配置） | `mvn -B test`（`KnowledgeFileIntegrationTest` / `KnowledgeReadIntegrationTest` / `KnowledgeAdminIntegrationTest`） | 0 | passed | 后端全量 143 运行 / 0 失败 / 4 跳过 |
+| 学习者端图片渲染 | `pnpm --filter @paideia/app test:e2e` | 0 | passed | 60 passed / 2 skipped / 0 failed |
+
+**这段区间里本项的受影响面**：**零改动**：`git diff --name-only d184e36..HEAD -- backend/paideia-knowledge/` 输出为空——对象存储的代码、配置、迁移都没被碰过。
+
+**结论**：本项所在模块在锚点之后**一行未改**，重跑只为把"报告绑到当前 HEAD"。生产侧（RustFS、预签名直读）本轮未动、未重新验证，沿用原报告的人工核验记录。

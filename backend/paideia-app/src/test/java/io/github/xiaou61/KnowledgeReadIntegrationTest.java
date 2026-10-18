@@ -114,8 +114,13 @@ class KnowledgeReadIntegrationTest {
 
     @Test
     void likeWildcardsInQueryAreTreatedLiterally() throws Exception {
-        // "%" 若被当成通配符会匹配全部条目；转义之后应当一条也匹配不到
-        mockMvc.perform(get("/api/v1/knowledge/entries?q=%25").header("Authorization", learner()))
+        // "%" 若被当成通配符会匹配全部条目；转义之后应当一条也匹配不到。
+        //
+        // **必须用 `param("q", "%")` 而不是把 `%25` 写进 URL**（2026-10-18 修）：MockMvc 不经过
+        // 容器的 URI 解码，`?q=%25` 到了服务端是**字面的三个字符** `%25`——它长度 ≥ 2，于是走的是
+        // **全文检索**而不是 LIKE 分支，这条用例此前一直在测一个它没打算测的路径（种子一多就红）。
+        mockMvc.perform(get("/api/v1/knowledge/entries").param("q", "%")
+                        .header("Authorization", learner()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(0));
     }

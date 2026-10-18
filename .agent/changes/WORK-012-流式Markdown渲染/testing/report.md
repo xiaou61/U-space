@@ -4,7 +4,7 @@ work_id: WORK-012
 work: 流式 Markdown 渲染（终止·增量·降级）
 status: passed
 evidence: required
-verified_commit: d184e36
+verified_commit: 9c99033
 verified_at: 2026-10-17
 ---
 
@@ -96,3 +96,19 @@ verified_at: 2026-10-17
 前端单测 **176 条全过**，`typecheck` 干净。
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
+
+## 复验记录（2026-10-18，锚点 9c99033）
+
+**为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
+（源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
+**受影响面**相关的那几组检查，逐条结果如下。**没有改任何功能代码**。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 逐前缀等价与安全 | `pnpm --filter @paideia/ui test` | 0 | passed | **148 passed**（含 markdown 73 条语料/恶劣输入用例，`renderers` 下 blocks/schema 另有 686 条断言） |
+| 真浏览器样式 | `pnpm --filter @paideia/app test:e2e` | 0 | passed | 60 passed / 2 skipped / 0 failed |
+| 单一实现与体积 | `pnpm typecheck` | 0 | passed | typecheck 0；渲染器仍是 `@paideia/ui` 唯一实现 |
+
+**这段区间里本项的受影响面**：**渲染器被大幅扩展**：`@paideia/ui` 的 `markdown.tsx` 增加 `renderers` 注册表与七个平台特有块（quiz／code-tour／code-map／run-challenge／code-challenge／learning-path／blocks），新增 `schema.ts`（532 行）。这是 WORK-014/015 的接入，**本项定的三条口径与"单一实现"结构未变**。
+
+**结论**：本项建立的"一个组件两种 mode + 逐前缀等价 + 单一实现"结构在扩展七个渲染器之后仍然成立：语料回归 73 条全绿、安全断言未动。**体积数字需要重测**（新增七个渲染器 + streamdown 依赖让包变大），那属 WORK-014/015 的账，本项不重复认领。

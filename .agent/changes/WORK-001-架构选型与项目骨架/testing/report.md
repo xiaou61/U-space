@@ -4,7 +4,7 @@ work_id: WORK-001
 work: 架构选型与项目骨架
 status: passed
 evidence: required
-verified_commit: d184e36
+verified_commit: 9c99033
 verified_at: 2026-10-17
 created: 2026-10-09
 updated: 2026-10-12
@@ -96,3 +96,19 @@ accepted_at: 2026-10-09 13:43:08 +0800
 前端单测 **176 条全过**，`typecheck` 干净。
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
+
+## 复验记录（2026-10-18，锚点 9c99033）
+
+**为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
+（源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
+**受影响面**相关的那几组检查，逐条结果如下。**没有改任何功能代码**。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 模块边界构建期强制 | `mvn -B test`（`ModularityTest`，ArchUnit） | 0 | passed | 143 运行 / 0 失败 / 4 跳过（后端全量，独立验证库） |
+| 平台契约 | `mvn -B test`（`PlatformContractTest`） | 0 | passed | 同上；`paideia-platform` 模块全绿 |
+| 授权隔离与越权拒绝 | `mvn -B test`（`AuthorizationIsolationTest`） | 0 | passed | 同上 |
+
+**这段区间里本项的受影响面**：`ErrorCode` 新增 `SANDBOX_DISABLED`、`GlobalExceptionHandler` 加一条映射、`SecurityConfiguration` 加沙箱与 PWA 入口两类规则、根 `pom.xml` 加一个模块——**都发生在既有契约之上**（追加枚举值/新增 matcher），模块边界与对外契约的形态未变。
+
+**结论**：骨架契约未变：`ModularityTest`、`PlatformContractTest`、`AuthorizationIsolationTest` 全绿。锚点之后新增的 `paideia-sandbox` 模块与两条安全规则都**追加在既有结构之上**，没有推翻本项确立的模块边界。

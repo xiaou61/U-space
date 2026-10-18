@@ -4,7 +4,7 @@ work_id: WORK-006
 work: Agent 运行时、记忆与个人笔记
 status: passed
 evidence: required
-verified_commit: d184e36
+verified_commit: 9c99033
 verified_at: 2026-10-17
 created: 2026-10-12
 updated: 2026-10-12
@@ -104,3 +104,20 @@ updated: 2026-10-12
 前端单测 **176 条全过**，`typecheck` 干净。
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
+
+## 复验记录（2026-10-18，锚点 9c99033）
+
+**为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
+（源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
+**受影响面**相关的那几组检查，逐条结果如下。**没有改任何功能代码**。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 会话与工具全量 | `mvn -B test`（`AssistantConversationIntegrationTest` / `AssistantToolsIntegrationTest` / `LearnerMemoryIntegrationTest` / `Note*`） | 0 | passed | 后端全量 143 运行 / 0 失败 / 4 跳过 |
+| 前端助手与笔记 | `pnpm --filter @paideia/assistant test` | 0 | passed | 25 passed（5 文件） |
+| 学习者端 e2e | `pnpm --filter @paideia/app test:e2e` | 0 | passed | 60 passed / 2 skipped / 0 failed |
+| 类型与前端单测 | `pnpm typecheck` / `pnpm test` | 0 | passed | typecheck 0；单测共 **240** 条全过 |
+
+**这段区间里本项的受影响面**：`ConversationService.prepare` 去掉 `@Transactional`（WORK-011 的 AC-004 修复）、`ConversationService` 接入两个记忆开关（WORK-013）、记忆两路扩列与自动整理（WORK-013）——**都是本项建立的那条链路上的追加**。
+
+**结论**：本项建立的会话、工具、记忆、笔记四条链路在当前 HEAD 上全绿。**其中两处行为变化是后两个工作项带来的**（`prepare` 不再包事务、记忆多了一路自动写入），它们各有自己的报告，本项只确认"没有被弄坏"。

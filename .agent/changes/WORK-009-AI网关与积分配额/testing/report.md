@@ -4,7 +4,7 @@ work_id: WORK-009
 work: AI 网关与积分配额
 status: passed
 evidence: required
-verified_commit: d184e36
+verified_commit: 9c99033
 verified_at: 2026-10-17
 ---
 
@@ -75,3 +75,18 @@ verified_at: 2026-10-17
 前端单测 **176 条全过**，`typecheck` 干净。
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
+
+## 复验记录（2026-10-18，锚点 9c99033）
+
+**为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
+（源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
+**受影响面**相关的那几组检查，逐条结果如下。**没有改任何功能代码**。
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 积分全量 | `mvn -B test`（`AiCreditIntegrationTest` / `MemoryAutoExtractionIntegrationTest`） | 0 | passed | 后端全量 143 运行 / 0 失败 / 4 跳过；后者 12 条含"自动整理的消耗单独记一行流水" |
+| 前端积分面板 | `pnpm --filter @paideia/assistant test` | 0 | passed | 25 passed |
+
+**这段区间里本项的受影响面**：**计费代码零改动**：`git diff --name-only d184e36..HEAD -- backend/paideia-ai/.../billing/` 输出为空；但 WORK-013 新增了 `settleMemoryExtraction`（同一套预扣/结算的第二个调用方）与一个流水种类 `MEMORY_EXTRACT`。
+
+**结论**：计费核心（预留/结算/流水/上限）一行未改，新增的记忆整理走的是同一个 `settleAs`，并有"账对得上"的集成用例。

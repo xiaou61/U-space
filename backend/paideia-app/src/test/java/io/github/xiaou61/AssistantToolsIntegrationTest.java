@@ -94,8 +94,12 @@ class AssistantToolsIntegrationTest {
     @Test
     @DisplayName("检索不到时给明确说法，而不是空串")
     void searchSaysSoWhenNothingFound() {
+        // **取词必须是不与任何语料共享 bigram 的**（2026-10-18 修）：ngram 全文检索在自然语言
+        // 模式下是「任一 bigram 命中即算命中」，所以"绝不可能存在的词"这种长短语会命中任何含
+        // "可能/存在"的正文（实测命中了 React 那篇）——它测的就不再是"检索不到"了。
+        // 生僻字重复串不参与任何已有 bigram，且长度 ≥2 会走全文检索分支。
         AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "search_entries",
-                Map.of("keyword", "绝不可能存在的词" + System.nanoTime()));
+                Map.of("keyword", "瞐瞐瞐瞐瞐"));
 
         assertThat(outcome.error()).isFalse();
         assertThat(outcome.text()).contains("没有检索到");
