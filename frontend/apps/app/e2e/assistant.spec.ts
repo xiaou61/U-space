@@ -64,6 +64,16 @@ test('积分不足时发送给出明确提示，而不是静默失败（也不�
 
   await expect(page.getByTestId('conversation-context')).toHaveText('没有条目上下文，可直接提问。')
 
+  /*
+   * 新开一段再发。
+   *
+   * <p>面板默认会**恢复服务端最近一段**会话（设计如此）。测试库里的这段无条目会话会跨轮次
+   * 累积消息，于是 `conversation-message-user` 会匹配到历史里的多条，撞 Playwright 严格模式。
+   * 这不是被测行为变了，而是本用例隐含假设"库里只有一条消息"。2026-10-18 连跑复现。
+   */
+  await page.getByTestId('conversation-new').click()
+  await expect(page.getByTestId('conversation-message-user')).toHaveCount(0)
+
   await page.getByTestId('conversation-input').fill('解释一下导数')
   await page.getByTestId('conversation-send').click()
 
@@ -194,6 +204,17 @@ test('WORK-011：关掉面板再打开，上一次那一段还在（不是空白
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
+
+  /**
+   * 先显式新开一段。
+   *
+   * <p>没有本地会话 id 时，面板会**恢复服务端最近一段**（设计如此）；而测试库里的这段无条目
+   * 会话会跨轮次累积消息，于是下面 `conversation-message-user` 会同时匹配到历史里的多条，
+   * 撞上 Playwright 的严格模式。这不是被测行为变了，而是这条用例默认依赖"库里只有一条消息"。
+   * 2026-10-18 实测：连跑两轮后这条必红（历史里已有 4 条用户消息）。
+   */
+  await page.getByTestId('conversation-new').click()
+  await expect(page.getByTestId('conversation-message-user')).toHaveCount(0)
 
   await page.getByTestId('conversation-input').fill('关掉再打开也该还在')
   await page.getByTestId('conversation-send').click()

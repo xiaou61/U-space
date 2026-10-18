@@ -28,7 +28,19 @@ export default defineConfig({
     baseURL: REMOTE_BASE_URL ?? 'http://127.0.0.1:5174',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  /** 同学习者端：桌面跑全部既有用例，移动 project 只跑 `*.mobile.spec.ts`（WORK-016）。 */
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/*.mobile.spec.ts',
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
+      testMatch: '**/*.mobile.spec.ts',
+    },
+  ],
   webServer: REMOTE_BASE_URL
     ? undefined
     : [
@@ -39,13 +51,19 @@ export default defineConfig({
           env: {
             // forceConnectionTimeZoneToSession 与 connectionTimeZone 必须成对（服务器 MySQL 会话是 +08:00）：
             // 少了它，建表默认值写进去的是本地钟点，而驱动按 UTC 解释，时间整体快 8 小时。
+            /**
+                 * 数据库优先取环境变量（`source backend/config/remote-db.local.env` 后就有）：
+                 * 本机 MySQL 与服务器测试库都写在这一个文件里，切换时不必改代码。
+                 * 没设时才退回到下面写死的默认值。
+              */
             SPRING_DATASOURCE_URL:
+              process.env.PAIDEIA_TEST_DB_URL ??
               'jdbc:mysql://36.212.5.130:3306/paideia_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=utf8',
-              // 直连服务器 MySQL（2026-10-16 起）：3306 已对外开放，**不再需要本地 3307 隧道**。
-              // 账号只授权 paideia_test.*（生产库 paideia 没有任何可远程登录的账号）；
-              // 口令只从环境变量来：先 `source backend/config/remote-db.local.env` 再跑 e2e。
-              SPRING_DATASOURCE_USERNAME: 'paideia_test',
-              SPRING_DATASOURCE_PASSWORD: process.env.PAIDEIA_TEST_DB_PASSWORD ?? '',
+            // 直连服务器 MySQL（2026-10-16 起）：3306 已对外开放，**不再需要本地 3307 隧道**。
+            // 账号只授权 paideia_test.*（生产库 paideia 没有任何可远程登录的账号）；
+            // 口令只从环境变量来：先 `source backend/config/remote-db.local.env` 再跑 e2e。
+            SPRING_DATASOURCE_USERNAME: process.env.PAIDEIA_TEST_DB_USER ?? 'paideia_test',
+            SPRING_DATASOURCE_PASSWORD: process.env.PAIDEIA_TEST_DB_PASSWORD ?? '',
             SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration,classpath:db/devdata',
             // 与管理端说明一致：paideia_test 被三种迁移配置共用，夹具的 V900 需要被忽略
             SPRING_FLYWAY_IGNORE_MIGRATION_PATTERNS: '*:future,*:missing',

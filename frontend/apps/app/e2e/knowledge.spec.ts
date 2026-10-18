@@ -135,10 +135,26 @@ test('目录与正文标题一一对应，且点击不改地址栏', async ({ pa
   for (const testId of testIds) {
     await page.goto(`/#/knowledge/entries/${testId.replace('entry-link-', '')}`)
     await expect(page.getByTestId('markdown-body')).toBeVisible()
+    /*
+     * 等增量渲染收尾再数标题。
+     *
+     * <p>正文是逐块上屏的（WORK-012）：`markdown-body` 一可见就数，会数到只渲染了第一个
+     * 标题的那一帧；而目录是**一次性**从 markdown 文本算出来的，那一刻它已经有两条了。
+     * 于是 `count < 2` 成立、`entry-toc` 却存在，断言自相矛盾。2026-10-18 实测复现。
+     */
+    await expect(page.getByTestId('markdown-body').locator('[data-testid="markdown-loading"]')).toHaveCount(0)
 
     // 目录与正文由**同一份 markdown** 算出，所以两侧数量必须相等。这条同时验了
     // "标题被渲染成元素"与"目录取到了同一批标题"，且不依赖任何一篇的具体标题。
-    const count = await page.getByTestId('markdown-body').locator('h1, h2, h3, h4').count()
+    //
+    // **只数正文自己的标题**：交互块内部的 markdown（code-tour 的解释等）也会产出 h1..h4，
+    // 但它们不是正文结构，目录里本来就不该有。2026-10-18 实测：源码解读那篇有 7 个这样的标题，
+    // 不排除时这条会撞 17 vs 10。
+    const count = await page.getByTestId('markdown-body').evaluate((root) =>
+      Array.from(root.querySelectorAll('h1, h2, h3, h4')).filter(
+        (node) => node.closest('[data-testid]') === root,
+      ).length,
+    )
     const toc = page.getByTestId('entry-toc')
 
     if (count < 2) {

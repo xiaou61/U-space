@@ -12,7 +12,12 @@ import { LEARNER } from './env'
 export async function signIn(page: Page): Promise<void> {
   await page.goto('/')
   const identifier = page.getByTestId('login-identifier')
-  const signedIn = page.getByTestId('learner-nav-knowledge')
+  /**
+   * 登录态的锚点用**账号菜单**而不是主导航：WORK-016 之后 `<md` 主导航收进了抽屉，
+   * `learner-nav-knowledge` 在手机上不可见——还拿它当锚点的话，移动 project 里每条用例
+   * 都会以为"没登录"而去填表单。账号菜单在两种宽度下都在页头。
+   */
+  const signedIn = page.getByTestId('account-menu-trigger')
 
   // **等一个确定状态**，不能只问"有没有登录表单"：带会话进来时 App 启动有一段"加载中"，
   // 那一刻既没有表单也还没进站，问得太早会直接返回、后续断言全部落空（实测 16 条红）。

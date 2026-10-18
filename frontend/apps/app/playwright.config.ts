@@ -10,28 +10,58 @@ const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
 const REMOTE_BASE_URL = process.env.E2E_BASE_URL
 
 export default defineConfig({
-  // 登录一次、全体用例复用（线上有登录限流，逐条登录必撞 429）
-  globalSetup: './e2e/global-setup.ts',
+  /**
+   * 登录一次、全体用例复用（线上有登录限流，逐条登录必撞 429）。
+   *
+   * <p>`PWA_BASE_URL` 下不跑：那是一个**只有静态产物**的预览（没有后端代理），
+   * 登录必然失败；而 PWA 用例本身不需要身份。
+   */
+  globalSetup: process.env.PWA_BASE_URL === undefined ? './e2e/global-setup.ts' : undefined,
   testDir: './e2e',
   // 后端是有状态资源，并行执行会让多个 worker 抢同一端口与同一份数据
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: REMOTE_BASE_URL ?? 'http://127.0.0.1:5173',
+    baseURL: REMOTE_BASE_URL ?? process.env.PWA_BASE_URL ?? 'http://127.0.0.1:5173',
     storageState: AUTH_FILE,
     // 首次重试才留 trace：稳定运行时零开销，失败时会话可完整回放
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  /**
+   * 两个 project（WORK-016）：
+   * - `chromium`：桌面，跑除 `*.mobile.spec.ts` 之外的全部既有用例（44 条不得回归）
+   * - `mobile`：像素 7 的设备描述符，只跑移动专用用例
+   *
+   * 不给每条桌面用例在手机下重跑一遍：那会把一轮 e2e 从 44 条撑到 88 条，
+   * 而后端是有状态单进程（`workers: 1`），时间翻倍换不到新的信息——
+   * 移动端要验的是"形态换了、没溢出、点得到"，那是专门的用例。
+   */
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/*.mobile.spec.ts',
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
+      testMatch: '**/*.mobile.spec.ts',
+    },
+  ],
 
   /**
    * 同时拉起后端与前端。只起前端会拿到代理错误而不是后端真实返回，
    * 那验证不了「页面展示的是接口真实数据」这条验收标准。
    */
-  webServer: REMOTE_BASE_URL
-    ? undefined
-    : [
+  /**
+   * `PWA_BASE_URL` 指向一个**已经起好的生产预览**（`vite preview`）：PWA 只在生产构建里生成
+   * SW 与 manifest，开发服务器刻意不注册。这时不能另起 webServer，否则会抢端口/起错产物。
+   */
+  webServer:
+    REMOTE_BASE_URL !== undefined || process.env.PWA_BASE_URL !== undefined
+      ? undefined
+      : [
     {
       /**
        * 用 local profile 启动后端：应用现在必须有数据源才能起来，
@@ -51,12 +81,18 @@ export default defineConfig({
       env: {
         // forceConnectionTimeZoneToSession 与 connectionTimeZone 必须成对（服务器 MySQL 会话是 +08:00）：
         // 少了它，建表默认值写进去的是本地钟点，而驱动按 UTC 解释，时间整体快 8 小时。
+        /**
+         * 数据库优先取环境变量（`source backend/config/remote-db.local.env` 后就有）：
+         * 本机 MySQL 与服务器测试库都写在这一个文件里，切换时不必改代码。
+         * 没设时才退回到下面写死的默认值。
+         */
         SPRING_DATASOURCE_URL:
+          process.env.PAIDEIA_TEST_DB_URL ??
           'jdbc:mysql://36.212.5.130:3306/paideia_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=utf8',
           // 直连服务器 MySQL（2026-10-16 起）：3306 已对外开放，**不再需要本地 3307 隧道**。
           // 账号只授权 paideia_test.*（生产库 paideia 没有任何可远程登录的账号）；
           // 口令只从环境变量来：先 `source backend/config/remote-db.local.env` 再跑 e2e。
-          SPRING_DATASOURCE_USERNAME: 'paideia_test',
+          SPRING_DATASOURCE_USERNAME: process.env.PAIDEIA_TEST_DB_USER ?? 'paideia_test',
           SPRING_DATASOURCE_PASSWORD: process.env.PAIDEIA_TEST_DB_PASSWORD ?? '',
         SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration,classpath:db/devdata',
         // paideia_test 被三种迁移配置共用（见 backend 的 application-test.yml 注释）：
