@@ -284,7 +284,11 @@
    * 见文件末尾 .glass 的说明。
    */
   body {
-    min-height: 100vh;
+    /*
+     * `100dvh` 而不是 `100vh`：移动浏览器地址栏收放时 `vh` 恒定按"最大视口"算，
+     * 页面底部会被地址栏吃掉一块；`dvh` 跟随实际可视高度。桌面端两者等价。
+     */
+    min-height: 100dvh;
     margin: 0;
     background-color: var(--background);
     color: var(--foreground);
@@ -346,6 +350,23 @@
     border-radius: var(--radius-lg);
   }
 
+  /*
+   * 窄屏对话框的页脚常驻（WORK-016）。
+   *
+   * 手机上对话框是贴底面板、自己滚动，页脚跟着内容滚到最底下意味着"每次保存都要先滚一屏"。
+   * 固定成 sticky 后它始终留在视口底部；`env(safe-area-inset-bottom)` 让开 iPhone 的手势条。
+   *
+   * 这条规则只作用于 `<sm`，桌面端对话框（居中、不滚动）行为完全不变。
+   */
+  @media (width < 40rem) {
+    [data-slot='dialog-footer'] {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+  }
+
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass {
       background-color: var(--glass);
@@ -364,5 +385,41 @@
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
+  }
+}
+
+/*
+ * 安全区工具类（WORK-016）。
+ *
+ * iPhone 刘海、底部手势条、Android 的导航条都会压在页面边缘上。`viewport-fit=cover` 让页面
+ * 铺满整屏（否则四周留黑边），代价是**必须自己让开这些区域**——不让开就是页头文字被刘海
+ * 切掉、底部按钮按不到。
+ *
+ * `max()` 而不是直接 `env()`：没有安全区的设备上 `env()` 求值为 0，只写 `env()` 会让内边距
+ * 归零、内容贴边；`max(基准值, env())` 保证普通设备上至少保留原来的间距。
+ *
+ * 只做四个方向就够：这四处是唯一会被系统 UI 压到的位置（顶栏、底部操作条、左右横屏）。
+ */
+@layer utilities {
+  .safe-t {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+
+  .safe-b {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .safe-x {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  .safe-px {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-pb {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }

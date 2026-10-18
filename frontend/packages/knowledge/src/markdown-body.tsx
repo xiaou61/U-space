@@ -68,10 +68,24 @@ export function MarkdownBody({
   const headings = useMemo(() => extractHeadings(markdown), [markdown])
 
   useEffect(() => {
-    const nodes = container.current?.querySelectorAll('h1, h2, h3, h4')
-    if (nodes === undefined || nodes === null) {
+    const root = container.current
+    if (root === undefined || root === null) {
       return
     }
+    /*
+     * 只给**正文自己的**标题回填 id。
+     *
+     * <p>交互块（`code-tour` 的解释、`quiz` 的题干等）内部也会渲染 markdown，其中的
+     * `###` 同样是 `h1..h4` 节点，会被 `querySelectorAll` 一起抓到。按 DOM 顺序按下标
+     * 分配 id 时，它们会**挤占**正文标题的 id：目录第 5 项指向的是某个代码块解释里的小标题，
+     * 点下去滚到错误位置，且真正的第 5 段没有 id。
+     *
+     * <p>判据是"最近的带 testid 的祖先是不是容器自己"——块容器都带 `data-testid`
+     * （见 `markdown/renderers/blocks.tsx`），正文标题的最近带 testid 祖先就是 `markdown-body`。
+     */
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('h1, h2, h3, h4')).filter(
+      (node) => node.closest('[data-testid]') === root,
+    )
     nodes.forEach((node, index) => {
       const heading = headings[index]
       if (heading !== undefined) {

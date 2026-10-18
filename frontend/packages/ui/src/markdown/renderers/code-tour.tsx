@@ -98,7 +98,7 @@ export function CodeTour({ code }: CustomRendererProps) {
         role="group"
         aria-label={`代码走读：${tour.title ?? tour.repo}`}
       >
-        <div className="border-border min-w-0 overflow-x-auto border-b lg:border-r lg:border-b-0">
+        <div className="border-border max-h-[60dvh] min-w-0 overflow-x-auto overflow-y-auto border-b lg:max-h-none lg:border-r lg:border-b-0">
           <div className="min-w-max py-3 font-mono text-[12.5px] leading-6">
             {lines.map((line, index) => {
               const number = step.line + index

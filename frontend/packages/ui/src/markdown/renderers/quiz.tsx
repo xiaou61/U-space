@@ -71,7 +71,7 @@ export function Quiz({ code }: CustomRendererProps) {
                       data-testid={`quiz-option-${questionIndex}-${optionIndex}`}
                       disabled={locked}
                       onClick={() => choose(questionIndex, optionIndex)}
-                      className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                      className={`min-h-11 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
                         locked && isAnswer
                           ? 'border-success bg-success/10 text-success'
                           : locked && chosen
@@ -105,7 +105,7 @@ export function Quiz({ code }: CustomRendererProps) {
           <span data-testid="quiz-score">
             答对 {result.correct} / {result.total}
           </span>
-          <button type="button" onClick={reset} className="text-muted-foreground ml-auto text-xs underline underline-offset-2">
+          <button type="button" onClick={reset} className="text-muted-foreground ml-auto inline-flex min-h-11 items-center text-xs underline underline-offset-2">
             重做
           </button>
         </div>

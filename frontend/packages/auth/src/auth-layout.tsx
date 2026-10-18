@@ -27,12 +27,12 @@ export function AuthLayout({
   children: ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex justify-end px-6 py-4">
+    <div className="flex min-h-dvh flex-col">
+      <div className="flex justify-end px-4 py-3 sm:px-6 sm:py-4">
         <ThemeToggle />
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-6 pb-20">
+      <div className="flex flex-1 items-center justify-center px-4 pt-4 pb-10 sm:px-6 sm:pb-20">
         <div className={wide ? 'w-full max-w-md' : 'w-full max-w-sm'}>
           <div className="mb-8 text-center">
             <h1 className="text-2xl">Paideia</h1>

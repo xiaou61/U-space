@@ -162,13 +162,14 @@ function OrderBody({ challenge, onGraded }: { challenge: OrderChallenge; onGrade
                 {line}
               </span>
               <span className="flex shrink-0 gap-1">
-                <Button type="button" variant="outline" size="xs" aria-label="上移" disabled={checked || position === 0} onClick={() => swap(position, -1)}>
+                <Button type="button" variant="outline" size="xs" className="max-sm:size-11" aria-label="上移" disabled={checked || position === 0} onClick={() => swap(position, -1)}>
                   ↑
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="xs"
+                  className="max-sm:size-11"
                   aria-label="下移"
                   disabled={checked || position === order.length - 1}
                   onClick={() => swap(position, 1)}

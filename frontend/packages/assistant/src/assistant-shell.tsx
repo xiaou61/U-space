@@ -45,7 +45,11 @@ function clamp(value: number, min: number, max: number): number {
 /** 把面板夹回可视区：至少留下 MARGIN 的可见部分，且不超出右/下边缘。 */
 function clampToViewport(state: PanelState): PanelState {
   const vw = typeof window === 'undefined' ? 1280 : window.innerWidth
-  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  // 软键盘弹出时 `innerHeight` 不变、`visualViewport.height` 才变；用后者才能把面板夹进真正的可视区
+  const vh =
+    typeof window === 'undefined'
+      ? 800
+      : (window.visualViewport?.height ?? window.innerHeight)
   const w = clamp(state.w, MIN_W, Math.max(MIN_W, Math.min(MAX_W, vw - MARGIN * 2)))
   const h = clamp(state.h, MIN_H, Math.max(MIN_H, Math.min(MAX_H, vh - MARGIN * 2)))
   return {
@@ -93,6 +97,28 @@ function readPanelState(): PanelState {
   }
 }
 
+/**
+ * 窄屏判定（WORK-016）。
+ *
+ * <p><b>为什么这里可以用 JS 断点，而别处不许</b>：这里切换的不是样式，而是**渲染结构**
+ * （是否挂拖拽把手、是否带 `style` 的像素定位）与**是否读本地保存的 x/y/w/h**。
+ * CSS 无法让一个 `style={{left, top, width, height}}` 在窄屏下失效，也无法阻止
+ * `storePanelState` 把桌面尺寸写回本地。这条是 REQ-023 明确列出的唯一例外。
+ */
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    const onChange = () => setNarrow(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return narrow
+}
+
 function storePanelState(state: PanelState): void {
   try {
     window.localStorage.setItem(PANEL_KEY, JSON.stringify(state))
@@ -131,6 +157,8 @@ export function AssistantShell({
   const [tab, setTab] = useState<Tab>(entryId === null ? 'chat' : 'summary')
   /** 正在拖拽/缩放时不落本地——松手才写，省得每帧一次 localStorage。 */
   const dragging = useRef(false)
+  /** 手机竖屏：助手换成底部抽屉（WORK-016 / REQ-013）。 */
+  const narrow = useNarrowViewport()
 
   useEffect(() => {
     setTab((current) =>
@@ -139,17 +167,21 @@ export function AssistantShell({
   }, [entryId])
 
   useEffect(() => {
-    if (!dragging.current) {
+    // 窄屏下 panel 里的 x/y/w/h 是桌面用的；写回本地会把"手机上的默认值"带进桌面
+    if (!dragging.current && !narrow) {
       storePanelState(panel)
     }
-  }, [panel])
+  }, [panel, narrow])
 
   // 视口变小（窗口缩小、转屏）时把面板夹回来，否则它会留在屏幕外再也点不到
   useEffect(() => {
+    if (narrow) {
+      return
+    }
     const onResize = () => setPanel((current) => clampToViewport(current))
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [])
+  }, [narrow])
 
   /**
    * 源码解读点「问 AI」时：**把面板打开并切到对话页**（WORK-014）。
@@ -167,6 +199,18 @@ export function AssistantShell({
     setTab('chat')
   }, [pendingPrompt])
 
+  /**
+   * 关闭面板。三种入口（按钮 / Esc / 窄屏遮罩）共用，**关闭后焦点回到启动按钮**：
+   * 否则焦点留在被卸载的节点上，键盘用户的下一跳从 document 开头重新开始（REQ-021）。
+   */
+  const closePanel = useCallback(() => {
+    setPanel((current) => ({ ...current, open: false }))
+    // 启动按钮在关闭后才挂载，等一帧再找
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('[data-testid="assistant-launcher"]')?.focus()
+    })
+  }, [])
+
   const toggle = useCallback(() => {
     // 一旦打开过就不再提示：首次指引只给一次，动效也随之消失
     markHintSeen()
@@ -181,10 +225,14 @@ export function AssistantShell({
         event.preventDefault()
         toggle()
       }
+      // Esc 关闭：与 Dialog 的约定一致。只在展开时拦，收起态没有可关的东西
+      if (event.key === 'Escape' && panel.open) {
+        closePanel()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggle])
+  }, [toggle, panel.open, closePanel])
 
   useEffect(() => {
     let alive = true
@@ -310,18 +358,44 @@ export function AssistantShell({
     )
   }
 
-  // ── 展开态：浮动对话框，位置与尺寸都来自本地状态 ──────────────────────────────────
+  // ── 展开态：宽屏是可拖动浮窗；窄屏是贴底抽屉（同一份内容，换容器） ────────────────
   return (
+    <>
+      {/*
+        窄屏遮罩：抽屉盖住了大半屏，点外面关掉是手机上的肌肉记忆。
+        宽屏不要遮罩——浮窗的意义就是"能拖开放着继续读"，遮住正文等于把它变成模态对话框。
+      */}
+      {narrow ? (
+        <button
+          type="button"
+          aria-label="关闭助手"
+          data-testid="assistant-backdrop"
+          onClick={closePanel}
+          className="bg-overlay fixed inset-0 z-40 cursor-default"
+        />
+      ) : null}
     <section
-      className="border-border bg-card fixed z-40 flex flex-col overflow-hidden rounded-xl border shadow-2xl"
-      style={{ left: panel.x, top: panel.y, width: panel.w, height: panel.h }}
+      className={
+        narrow
+          ? 'border-border bg-card fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border-t shadow-2xl'
+          : 'border-border bg-card fixed z-40 flex flex-col overflow-hidden rounded-xl border shadow-2xl'
+      }
+      style={narrow ? undefined : { left: panel.x, top: panel.y, width: panel.w, height: panel.h }}
       data-testid="assistant-shell"
+      data-narrow={narrow ? 'true' : undefined}
       aria-label="AI 助手"
     >
-      {/* 标题栏＝拖动区：整条都能拖，不只是一小块 */}
+      {/* 抽屉形态的抓手：只做视觉提示，不可拖拽（窄屏本来就是固定的贴底位置） */}
+      {narrow ? (
+        <span aria-hidden className="bg-border mx-auto mt-2 block h-1 w-10 shrink-0 rounded-full" />
+      ) : null}
+
+      {/* 标题栏＝拖动区：宽屏整条都能拖；窄屏没有拖动这回事 */}
       <header
-        onPointerDown={(event) => beginDrag(event, 'move')}
-        className="border-border bg-muted/40 flex shrink-0 cursor-move touch-none items-center justify-between gap-2 border-b px-3 py-2"
+        onPointerDown={narrow ? undefined : (event) => beginDrag(event, 'move')}
+        className={`border-border bg-muted/40 flex shrink-0 touch-none items-center justify-between gap-2 border-b px-3 py-2 ${
+          narrow ? '' : 'cursor-move'
+        }`}
         data-testid="assistant-drag"
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -337,7 +411,7 @@ export function AssistantShell({
           aria-label="收起助手"
           data-testid="assistant-collapse"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={() => setPanel((current) => ({ ...current, open: false }))}
+          onClick={closePanel}
         >
           <X className="size-4" />
         </Button>
@@ -378,7 +452,7 @@ export function AssistantShell({
         </Button>
       </nav>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div className="safe-b flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         {tab === 'chat' ? (
           <ConversationPanel api={api} onSaveNote={onSaveNote} />
         ) : tab === 'memory' ? (
@@ -452,8 +526,8 @@ export function AssistantShell({
         )}
       </div>
 
-      {/* 右下角缩放握把：往上/往左都是变大（与既有 e2e 的拖拽方向一致） */}
-      <div
+      {/* 右下角缩放握把：往上/往左都是变大（与既有 e2e 的拖拽方向一致）。窄屏没有尺寸可调 */}
+      {narrow ? null : <div
         role="separator"
         aria-label="调整助手大小"
         tabIndex={-1}
@@ -471,7 +545,8 @@ export function AssistantShell({
         <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden="true">
           <path d="M11 1v10H1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-      </div>
+      </div>}
     </section>
+    </>
   )
 }

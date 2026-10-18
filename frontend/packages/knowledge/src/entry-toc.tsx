@@ -18,7 +18,17 @@ import { extractHeadings } from './heading-slug'
  * **在 effect 里**回填，而本组件的 effect 可能先跑——那时按 id 一个都找不到。改成取正文容器
  * 里的标题元素（同一批、同一顺序，这正是 `extractHeadings` 的既有约定），与回填时机无关。
  */
-export function EntryToc({ markdown }: { markdown: string }) {
+export function EntryToc({
+  markdown,
+  testId = 'entry-toc',
+}: {
+  markdown: string
+  /**
+   * 同一页可能同时挂两份目录（窄屏的折叠面板与宽屏的右栏，靠 CSS 二选一）。
+   * 两份都用同一个 testid 会让"目录有几条"这类断言数到 2，所以窄屏那份传不同的值。
+   */
+  testId?: string
+}) {
   const headings = useMemo(() => extractHeadings(markdown), [markdown])
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -59,7 +69,7 @@ export function EntryToc({ markdown }: { markdown: string }) {
   }
 
   return (
-    <nav aria-label="正文目录" data-testid="entry-toc">
+    <nav aria-label="正文目录" data-testid={testId}>
       <div className="text-muted-foreground mb-3 text-xs font-medium">本页目录</div>
       <ul className="border-border border-l">
         {headings.map((heading) => {

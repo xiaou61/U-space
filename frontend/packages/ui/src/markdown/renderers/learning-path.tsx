@@ -55,7 +55,7 @@ export function LearningPath({ code }: CustomRendererProps) {
                     onOpenEntry?.(step.entryId)
                   }
                 }}
-                className="hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left disabled:cursor-default disabled:hover:bg-transparent"
+                className="hover:bg-muted flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span
                   className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-[11px] ${

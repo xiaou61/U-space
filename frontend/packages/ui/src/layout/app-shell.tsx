@@ -35,9 +35,9 @@ export function AppShell({
   className?: string
 }) {
   return (
-    <div className={cn('flex min-h-screen flex-col', className)}>
+    <div className={cn('flex min-h-dvh flex-col', className)}>
       <header className="border-border bg-background/95 sticky top-0 z-30 border-b">
-        <div className="mx-auto flex h-14 w-full max-w-[86rem] items-center gap-3 px-6">
+        <div className="safe-px mx-auto flex h-14 w-full max-w-[86rem] items-center gap-2 sm:gap-3 sm:px-6">
           <div className="flex shrink-0 items-center gap-2.5">
             <span
               aria-hidden
@@ -60,7 +60,7 @@ export function AppShell({
         </div>
       </header>
 
-      <main className={cn('mx-auto w-full flex-1 px-6 py-10', wide ? 'max-w-[86rem]' : 'max-w-3xl')}>
+      <main className={cn('mx-auto w-full flex-1 px-4 py-8 sm:px-6 sm:py-10', wide ? 'max-w-[86rem]' : 'max-w-3xl')}>
         {children}
       </main>
 
