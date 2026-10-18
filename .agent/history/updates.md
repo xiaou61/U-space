@@ -3259,3 +3259,13 @@ schema_version: 1
 - 验证：线上：PWA 入口 6 项全 200、/api/v1/me 仍 401、学习者端移动 15 passed、管理端移动 10 passed；本地管理端全量 19 passed；PwaEntryPointsTest 3 passed 且反向验证过去掉白名单则 2 条红；validate 0 error
 - 本地提交：848d661 / 1b6aaff
 - 远端推送：未执行（待授权）
+
+## 2026-10-18 11:14:07 +0800 · WORK-016 · 推送部署修复三笔到 GitHub
+
+- 类型：maintenance
+- 变更：origin/master 5694fc0 → 8bde7ab（848d661 安全白名单、1b6aaff 管理端 e2e 路径、8bde7ab 复验记录）
+- 决策：继续走 SSH 直推，不改 origin URL
+- 依据：git ls-remote 回读 refs/heads/master = 8bde7abfb09ddec780264e9878afbea96a696b9c 与本地 HEAD 一致
+- 验证：线上健康检查 status=UP；PWA 入口 200、/api/v1/me 401；工作区干净
+- 本地提交：8bde7ab
+- 远端推送：已推送 8bde7ab 到 origin master（SSH）
