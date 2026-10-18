@@ -14,6 +14,12 @@ import io.github.xiaou61.ai.AssistantConversation;
 import io.github.xiaou61.ai.EntrySummarizer;
 import io.github.xiaou61.ai.InterviewEvaluation;
 import io.github.xiaou61.ai.InterviewReviewer;
+import io.github.xiaou61.ai.ResumeAnalysis;
+import io.github.xiaou61.ai.ResumeAnalyzer;
+import io.github.xiaou61.ai.ResumeData;
+import io.github.xiaou61.ai.ResumeParser;
+import io.github.xiaou61.ai.ResumeProposal;
+import io.github.xiaou61.ai.ResumeProposer;
 import io.github.xiaou61.ai.SummaryCard;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
@@ -102,6 +108,16 @@ class ApiWalkthroughTest {
     @MockitoBean
     InterviewReviewer reviewer;
 
+    // 简历那三次调用（WORK-018）：全桩住，自查只验端点可达与契约形状，不连上游、不花积分
+    @MockitoBean
+    ResumeParser parser;
+
+    @MockitoBean
+    ResumeAnalyzer analyzer;
+
+    @MockitoBean
+    ResumeProposer proposer;
+
     /** 让 SSE 的产出在请求线程里同步跑完（理由见 {@code AssistantConversationIntegrationTest}）。 */
     @MockitoBean(name = "applicationTaskExecutor")
     TaskExecutor executor;
@@ -180,6 +196,12 @@ class ApiWalkthroughTest {
                 json(Map.of("title", "自查条目 " + suffix, "body", "## 小标题\n\n自查正文。",
                         "categoryId", categoryId, "status", "published")));
         long entryId = idAt(entry);
+        // **自检：走查建的条目绝不能是种子 id**（2026-10-18 加）。
+        // 全量一起跑时出现过"本测试删掉了种子条目 1"（单跑时 entryId=11、删的也是 11）。
+        // 这条断言把"它自己拿到了种子 id"变成当场可见的红，而不是让别的测试事后报"读不到条目"。
+        org.assertj.core.api.Assertions.assertThat(entryId)
+                .as("走查新建的条目拿到了种子 id（%s）——那意味着它随后会删掉一条种子数据", entryId)
+                .isGreaterThan(10);
 
         MvcResult entry2 = call("再建一条（供关系用）", "POST", "/api/v1/knowledge/admin/entries", adminToken(),
                 json(Map.of("title", "自查条目二 " + suffix, "body", "第二条正文。",
@@ -297,6 +319,98 @@ class ApiWalkthroughTest {
                 new TokenUsage(10, 20, 30)));
         call("生成面试点评（桩）", "POST", "/api/v1/ai/interviews/" + conversationId + "/review", bearer, null);
         call("我历次点评", "GET", "/api/v1/ai/interviews/evaluations", bearer, null);
+
+        // ---- 简历（WORK-018）：三个模型端口都桩住，这条路径不连上游、不花积分 ----
+        when(parser.parse(anyString(), any())).thenReturn(new ResumeParser.Parsed(
+                new ResumeData(new ResumeData.Basics("张三", "", "", "", List.of()),
+                        new ResumeData.Intent("", "", ""), List.of(),
+                        List.of(new ResumeData.Work("某公司", "后端", "2023.07", "至今", "",
+                                List.of("把接口响应从 800ms 降到 200ms"))),
+                        List.of(), List.of(new ResumeData.SkillGroup("语言", List.of("Java"))),
+                        List.of(), ""),
+                0, 0, new TokenUsage(10, 20, 30)));
+        when(analyzer.analyze(any(), anyString(), any())).thenReturn(new ResumeAnalyzer.Analyzed(
+                new ResumeAnalysis(List.of(
+                        new ResumeAnalysis.Requirement("Java", "熟悉 Java"),
+                        new ResumeAnalysis.Requirement("Kubernetes", "熟悉 Kubernetes")),
+                        "看重后端基础"),
+                new TokenUsage(10, 20, 30)));
+        when(proposer.propose(any(), anyString(), any(), any(), any())).thenReturn(new ResumeProposer.Proposed(
+                List.of(new ResumeProposal("work[0].bullets[0]", "bullet",
+                        "把接口响应从 800ms 降到 200ms",
+                        "高并发场景下把接口响应从 800ms 降到 200ms",
+                        "rewrite", "JD 提到高并发", List.of("Java"))),
+                0, new TokenUsage(10, 20, 30)));
+
+        // 上传解析走 multipart（它不是 JSON 端点，不能用 call()）
+        MvcResult parsed = mvc.perform(MockMvcRequestBuilders.multipart("/api/v1/ai/resumes/parse")
+                .file(new org.springframework.mock.web.MockMultipartFile(
+                        "file", "cv.docx",
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        selfCheckDocx()))
+                .header("Authorization", bearer)).andReturn();
+        record("上传并解析简历（桩）", "POST", "/api/v1/ai/resumes/parse",
+                parsed.getResponse().getStatus(), 200, null);
+        noteTouched("POST", "/api/v1/ai/resumes/parse");
+
+        MvcResult resumeDetail = call("新建主简历", "POST", "/api/v1/ai/resumes", bearer,
+                json(Map.of("title", "自查简历",
+                        "data", Map.of("basics", Map.of("name", "张三", "phone", "", "email", "",
+                                        "city", "", "links", List.of()),
+                                "intent", Map.of("role", "", "city", "", "availability", ""),
+                                "education", List.of(),
+                                "work", List.of(Map.of("company", "某公司", "title", "后端",
+                                        "start", "2023.07", "end", "至今", "summary", "",
+                                        "bullets", List.of("把接口响应从 800ms 降到 200ms"))),
+                                "projects", List.of(),
+                                "skills", List.of(), "awards", List.of(), "selfEvaluation", ""),
+                        "plainText", "张三 某公司 后端 2023.07 - 至今 把接口响应从 800ms 降到 200ms")));
+        long resumeId = idAt(resumeDetail);
+        call("简历列表", "GET", "/api/v1/ai/resumes", bearer, null);
+        call("读简历", "GET", "/api/v1/ai/resumes/" + resumeId, bearer, null);
+        call("改简历标题", "PUT", "/api/v1/ai/resumes/" + resumeId + "/title", bearer,
+                json(Map.of("title", "自查简历-改")));
+        call("设为默认", "PUT", "/api/v1/ai/resumes/" + resumeId + "/default", bearer, null);
+        call("体检", "GET", "/api/v1/ai/resumes/" + resumeId + "/checkup", bearer, null);
+        MvcResult resumeSaved = call("保存简历", "PUT", "/api/v1/ai/resumes/" + resumeId, bearer,
+                json(Map.of("title", "自查简历-改", "revision", 1,
+                        "data", Map.of("basics", Map.of("name", "张三", "phone", "", "email", "",
+                                        "city", "", "links", List.of()),
+                                "intent", Map.of("role", "", "city", "", "availability", ""),
+                                "education", List.of(),
+                                "work", List.of(Map.of("company", "某公司", "title", "后端",
+                                        "start", "2023.07", "end", "至今", "summary", "",
+                                        "bullets", List.of("把接口响应从 800ms 降到 200ms"))),
+                                "projects", List.of(),
+                                "skills", List.of(), "awards", List.of(), "selfEvaluation", ""))));
+        call("编辑历史", "GET", "/api/v1/ai/resumes/" + resumeId + "/history", bearer, null);
+        MvcResult resumeHistory = call("编辑历史（取列表）", "GET",
+                "/api/v1/ai/resumes/" + resumeId + "/history", bearer, null, 200);
+        long historyId = firstIdAt(resumeHistory);
+        call("读某一版", "GET", "/api/v1/ai/resumes/" + resumeId + "/history/" + historyId, bearer, null);
+        MvcResult restored = call("回滚到某一版", "POST",
+                "/api/v1/ai/resumes/" + resumeId + "/history/" + historyId + "/restore?revision=2",
+                bearer, null, 200);
+        long revisionAfterRestore = longAt(restored, "$.data.revision");
+
+        MvcResult versionCreated = call("建岗位版本", "POST",
+                "/api/v1/ai/resumes/" + resumeId + "/versions", bearer,
+                json(Map.of("company", "某公司", "role", "后端", "jdText",
+                        "岗位描述：熟悉 Java 与高并发，熟悉 Kubernetes 优先，三年以上经验。")));
+        long versionId = idAt(versionCreated);
+        call("版本列表", "GET", "/api/v1/ai/resumes/" + resumeId + "/versions", bearer, null);
+        call("分析岗位（桩）", "POST", "/api/v1/ai/versions/" + versionId + "/analysis", bearer, null);
+        MvcResult proposed = call("生成提案（桩）", "POST",
+                "/api/v1/ai/versions/" + versionId + "/proposals", bearer, null);
+        long proposalId = firstIdAt(proposed);
+        call("提案列表", "GET", "/api/v1/ai/versions/" + versionId + "/proposals", bearer, null);
+        call("采纳一条提案", "PATCH", "/api/v1/ai/proposals/" + proposalId, bearer,
+                json(Map.of("accepted", true)));
+        call("定稿", "POST", "/api/v1/ai/versions/" + versionId + "/finalize", bearer, null);
+        call("读版本", "GET", "/api/v1/ai/versions/" + versionId, bearer, null);
+        call("删版本", "DELETE", "/api/v1/ai/versions/" + versionId, bearer, null);
+        call("删简历", "DELETE", "/api/v1/ai/resumes/" + resumeId, bearer, null);
+        stepOk("回滚后的 revision=" + revisionAfterRestore + "（保存与回滚都各推进一次）");
 
         call("管理端用量流水", "GET", "/api/v1/ai/admin/credits/audit", adminToken(), null);
         call("管理端查某人积分", "GET", "/api/v1/ai/admin/credits/" + userId, adminToken(), null);
@@ -628,6 +742,44 @@ class ApiWalkthroughTest {
         } catch (RuntimeException exception) {
             throw new AssertionError("响应里没有 " + path + "：" + body(result), exception);
         }
+    }
+
+    /**
+     * 自查用的一份最小 docx。
+     *
+     * <p>它只用来让抽取器产出"有文字层"的结果：解析器已被桩住，内容本身不参与断言。
+     * 用 DOCX 而不是 PDF 是因为 app 的测试类路径上没有 PDFBox。
+     */
+    private static byte[] selfCheckDocx() {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                  <w:body>
+                    <w:p><w:r><w:t>Zhang San  Java backend  zhangsan@example.com</w:t></w:r></w:p>
+                    <w:p><w:r><w:t>University  Company  order system  800ms to 200ms</w:t></w:r></w:p>
+                  </w:body>
+                </w:document>
+                """;
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        try (java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(out)) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("word/document.xml"));
+            zip.write(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zip.closeEntry();
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException(exception);
+        }
+        return out.toByteArray();
+    }
+
+    /** 列表响应的第一项 id（`$.data[0].id`）。与 {@link #idAt} 分开：那个读的是单个对象。 */
+    private long firstIdAt(MvcResult result) throws Exception {
+        Object nested = JsonPath.read(body(result), "$.data[0].id");
+        return ((Number) nested).longValue();
+    }
+
+    private long longAt(MvcResult result, String path) throws Exception {
+        Object value = JsonPath.read(body(result), path);
+        return ((Number) value).longValue();
     }
 
     private long idAt(MvcResult result) throws Exception {

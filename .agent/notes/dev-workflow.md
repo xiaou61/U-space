@@ -441,3 +441,21 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 - `/profile` 页明写"不影响你能做什么"：这是最容易被误读成第二套权限的地方。
 - `/interview` 页的会话在建的时候就钉死 `harness=interview`，不是每轮重复指定。
 - 页头与首页读身份用 `staleTime: 5min` + `retry: false`：读不到就退回默认配置，**不阻塞页面**——推荐用的接口慢不该让整页转圈。
+
+
+### 2026-10-18 第二轮追查：又排除了一条，并新增一道守卫
+
+- **新增守卫**：`ApiWalkthroughTest` 里加了 `assertThat(entryId).isGreaterThan(10)`（"走查建的条目绝不能是种子 id"）。全量跑**没红** —— 证明它拿到的 id 是合法的，**先前从 `general_log` 对齐到它身上的判断是错的**（`general_log` 是**整个 MySQL 实例**级别的，同一台机器上还有别的会话在跑它们自己的全量，连接上下文会串）。
+- **失败数从 8 降到 6**：`KnowledgeAdminIntegrationTest` 那两条不再红（它只依赖自己建的条目），红的只剩 `KnowledgeRead`（3）与 `KnowledgeSelfAssessment`（3）—— 都是**硬编码种子 id=1** 的断言。
+- **库状态**：种子迁移 950–954 各应用一次；`knowledge_entries` 最终是 `[2,3,4,5,10]`（缺 1）。
+
+**结论（这就是我给的最终判断）**：这是**同机多会话共用一台 MySQL、又都跑全量测试**造成的测试数据竞争，**不是产品代码缺陷**。证据链：
+1. 每个类单独跑都全绿（多次验证）；
+2. 没有任何 TRUNCATE / `flyway.clean` / 重建库；
+3. 守卫证明走查自己拿的是合法 id；
+4. 失败面精确落在"硬编码种子 id"的那几条断言上，而不是任何业务行为。
+
+**建议（按成本排序）**：
+1. **让这些断言不依赖固定 id**：用"列表里第一条"或"按标题查"取代 `id==1`。这是治本且成本最低的一条。
+2. 每个会话用**自己的库名**跑全量（本轮的 `paideia_guard2` 做法），CI 里天然成立。
+3. 若一定要共用库，把全量测试串行化到一把跨进程锁上。
