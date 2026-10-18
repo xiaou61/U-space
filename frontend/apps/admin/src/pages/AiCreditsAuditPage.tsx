@@ -107,6 +107,45 @@ export function AiCreditsAuditPage() {
               </EmptyHeader>
             </Empty>
           ) : (
+            <>
+            {/* 窄屏卡片（WORK-016）：八列在 375px 上无法阅读，卡片按"谁 / 何时 / 变了多少"排 */}
+            <ul className="divide-border divide-y md:hidden" data-testid="credits-audit-cards">
+              {(rows.data ?? []).map((row) => (
+                <li key={row.id} className="space-y-1.5 px-3 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium tabular-nums">用户 #{row.userId}</span>
+                    <span
+                      className={`text-sm font-medium tabular-nums ${row.delta < 0 ? 'text-destructive' : ''}`}
+                    >
+                      {row.delta > 0 ? `+${row.delta}` : row.delta}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    <Badge
+                      variant={row.kind === 'ADJUST' ? 'warning' : 'secondary'}
+                      data-testid={`credits-audit-kind-card-${row.id}`}
+                    >
+                      {KIND_LABEL[row.kind] ?? row.kind}
+                    </Badge>
+                    <span className="tabular-nums">{when(row.createdAt)}</span>
+                    {row.model === null ? null : <span>{row.model}</span>}
+                    {row.inputTokens === null ? null : (
+                      <span className="tabular-nums">
+                        token {row.inputTokens} / {row.outputTokens ?? 0}
+                      </span>
+                    )}
+                    {row.operatorUserId === null ? null : (
+                      <span className="tabular-nums">操作人 #{row.operatorUserId}</span>
+                    )}
+                  </div>
+                  {row.note === null ? null : (
+                    <p className="text-muted-foreground text-xs">{row.note}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -150,6 +189,8 @@ export function AiCreditsAuditPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

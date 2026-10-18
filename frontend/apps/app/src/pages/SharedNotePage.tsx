@@ -132,7 +132,7 @@ export function SharedNotePage() {
                     aria-label="举报理由"
                     data-testid="share-report-reason"
                     onChange={(event) => setReason(event.target.value)}
-                    className="border-border bg-background w-full rounded border px-2 py-1 text-sm"
+                    className="border-border bg-background w-full rounded border px-2 py-1 text-base sm:text-sm"
                   />
                   <div className="flex gap-2">
                     <Button

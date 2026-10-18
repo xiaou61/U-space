@@ -106,6 +106,40 @@ export function NoteReportsPage() {
               </EmptyHeader>
             </Empty>
           ) : (
+            <>
+            {/* 窄屏卡片（WORK-016）：理由可能较长，卡片里换行显示，不与"下架"按钮抢同一行 */}
+            <ul className="divide-border divide-y md:hidden" data-testid="reports-cards">
+              {(reports.data ?? []).map((report) => (
+                <li key={report.id} className="space-y-2 px-3 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0 flex-1 text-sm font-medium">
+                      {report.noteTitle ?? '（笔记已删除）'}
+                    </span>
+                    <Badge
+                      variant={report.status === 'pending' ? 'warning' : 'secondary'}
+                      data-testid={`report-status-card-${report.id}`}
+                    >
+                      {report.status === 'pending' ? '待处理' : '已下架'}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-xs whitespace-pre-wrap">{report.reason}</p>
+                  {report.status === 'pending' ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={remove.isPending}
+                      data-testid={`report-takedown-card-${report.id}`}
+                      onClick={() => setPending({ id: report.id, title: report.noteTitle ?? '（笔记已删除）' })}
+                    >
+                      下架
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -145,6 +179,8 @@ export function NoteReportsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

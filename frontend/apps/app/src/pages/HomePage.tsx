@@ -90,17 +90,17 @@ export function HomePage() {
     <AppShell title="Paideia" actions={<LearnerHeader />} wide>
       {/* hero：左边是"你要做什么"，右边是"最近有什么"——右侧放真实内容而不是插画，
           一屏之内既有行动也有去处，不会只剩一大片留白 */}
-      <section className="border-border from-accent via-background to-background mb-8 grid gap-8 rounded-2xl border bg-gradient-to-br p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">
+      <section className="border-border from-accent via-background to-background mb-8 grid gap-6 rounded-2xl border bg-gradient-to-br p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">
         <div className="min-w-0">
           <div className="text-primary mb-3 text-xs font-medium tracking-wide">
             千人千面 · 个性化学习
           </div>
-          <h1 className="text-3xl">你好，{user?.username ?? ''}</h1>
+          <h1 className="text-2xl sm:text-3xl">你好，{user?.username ?? ''}</h1>
           <p className="text-muted-foreground mt-3 max-w-xl text-base leading-7">
             右下角的「助手」会读当前内容、记得你说过的话，也能把答案存成笔记。
           </p>
 
-          <form onSubmit={submitSearch} className="mt-7 flex max-w-lg items-center gap-2">
+          <form onSubmit={submitSearch} className="mt-7 flex max-w-lg flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
@@ -112,7 +112,7 @@ export function HomePage() {
                 className="h-11 rounded-full pl-9"
               />
             </div>
-            <Button type="submit" size="lg" data-testid="home-search-submit">
+            <Button type="submit" size="lg" className="w-full sm:w-auto" data-testid="home-search-submit">
               搜索
             </Button>
           </form>

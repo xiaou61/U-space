@@ -144,6 +144,9 @@ function createWindow(cacheSnapshot) {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    // 最小尺寸取手机竖屏（360×480）：窄于此布局已无可压缩空间，再拖只会得到一条竖条
+    minWidth: 360,
+    minHeight: 480,
     title: 'Paideia',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

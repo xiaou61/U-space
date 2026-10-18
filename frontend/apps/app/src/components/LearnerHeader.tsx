@@ -6,9 +6,11 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -18,7 +20,7 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@paideia/ui'
-import { ChevronDown, LogOut, Search, UserX } from 'lucide-react'
+import { ChevronDown, LogOut, Menu, Search, UserX } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
@@ -56,6 +58,7 @@ export function LearnerHeader() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
+  const [navOpen, setNavOpen] = useState(false)
 
   if (user === null) {
     return null
@@ -98,7 +101,71 @@ export function LearnerHeader() {
 
   return (
     <>
-      <nav aria-label="主导航" className="flex items-center gap-0.5">
+      {/*
+        窄屏导航（WORK-016）：<md 时三项导航与搜索收进抽屉，页头只留品牌 + 菜单 + 账号。
+        三个入口在 360px 上并排会挤掉用户名（WORK-014 实测溢出 70px），抽屉是唯一
+        既保住全部入口又不压缩页头的形态。≥md 完全沿用原来的横排导航。
+      */}
+      <Dialog open={navOpen} onOpenChange={setNavOpen}>
+        <DialogTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label="打开导航"
+              data-testid="learner-nav-toggle"
+            />
+          }
+        >
+          <Menu className="size-5" />
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-sm" data-testid="learner-nav-drawer">
+          <DialogHeader>
+            <DialogTitle>导航</DialogTitle>
+            <DialogDescription>跳到知识库、笔记或自评。</DialogDescription>
+          </DialogHeader>
+
+          <nav aria-label="移动导航" className="flex flex-col gap-1">
+            {NAV.map((item) => {
+              const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? 'page' : undefined}
+                  data-testid={`${item.testId}-drawer`}
+                  onClick={() => setNavOpen(false)}
+                  className={`flex min-h-11 items-center rounded-lg border px-3 text-sm transition-colors ${
+                    active
+                      ? 'bg-accent text-accent-foreground border-border font-medium'
+                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground border-transparent'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* 搜索在窄屏原来是 `hidden md:block`，等于手机上根本没有入口——放进抽屉补回来 */}
+          <form onSubmit={(event) => { submitSearch(event); setNavOpen(false) }}>
+            <div className="relative">
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+              <Input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="搜索知识库…"
+                aria-label="搜索知识库"
+                data-testid="header-search-drawer"
+                className="h-11 rounded-full pl-9"
+              />
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <nav aria-label="主导航" className="hidden items-center gap-0.5 md:flex">
         {NAV.map((item) => {
           // 条目页的地址是 /knowledge/entries/:id，所以前缀匹配也算在知识库里
           const active = pathname === item.to || pathname.startsWith(`${item.to}/`)

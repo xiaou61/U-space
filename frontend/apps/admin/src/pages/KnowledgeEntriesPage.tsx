@@ -216,6 +216,54 @@ export function KnowledgeEntriesPage() {
             </div>
           ) : null}
 
+          {/*
+            窄屏卡片（WORK-016 / AC-007）。六列表格在手机上必须横向拖才能看到"编辑/删除"，
+            而那是后台最常用的动作。卡片把「标题 + 分类 + 状态 + 时间 + 操作」压进一屏。
+          */}
+          <ul className="divide-border divide-y md:hidden" data-testid="admin-entry-cards">
+            {rows.length === 0 && !entries.isPending ? (
+              <li className="text-muted-foreground py-8 text-center text-sm">
+                {all.length === 0 ? '还没有条目' : '没有符合条件的条目'}
+              </li>
+            ) : null}
+            {rows.map((entry) => (
+              <li key={entry.id} className="space-y-2 px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1 text-sm font-medium">{entry.title}</span>
+                  <Badge variant={entry.status === 'published' ? 'success' : 'warning'}>
+                    {entry.status === 'published' ? '已发布' : '草稿'}
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                  <span className="tabular-nums">#{entry.id}</span>
+                  <span>{entry.categoryName ?? '未分类'}</span>
+                  <span className="tabular-nums">{formatTime(entry.updatedAt)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    data-testid={`admin-entry-edit-card-${entry.id}`}
+                    onClick={() => setEditingId(entry.id)}
+                  >
+                    编辑
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive flex-1"
+                    data-testid={`admin-entry-delete-card-${entry.id}`}
+                    onClick={() => setPendingDelete({ id: entry.id, name: entry.title })}
+                  >
+                    删除
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden md:block">
           <Table data-testid="admin-entry-list">
             <TableHeader>
               <TableRow>
@@ -277,6 +325,7 @@ export function KnowledgeEntriesPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
 
           <Pagination total={filtered.length} current={current} totalPages={totalPages} onChange={setPage} />
         </CardContent>

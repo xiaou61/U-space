@@ -132,7 +132,7 @@ export function MyAssessmentsPage() {
             <Link
               key={item.entryId}
               to={`/knowledge/entries/${item.entryId}`}
-              className="hover:bg-accent/40 group flex items-center gap-4 px-5 py-3.5 transition-colors"
+              className="hover:bg-accent/40 group flex items-center gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-5"
             >
               {/* 状态用语义色：懂了=success、还不懂=warning。原来一个 outline 一个 secondary，
                   两种灰在列表里几乎分不出来 */}
@@ -142,7 +142,9 @@ export function MyAssessmentsPage() {
               <span className="group-hover:text-primary min-w-0 flex-1 truncate text-sm font-medium transition-colors">
                 {item.title}
               </span>
-              <span className="text-muted-foreground shrink-0 text-xs">{formatRelative(item.updatedAt)}</span>
+              {/* 时间在窄屏不隐藏：它是"我最近判过哪条"的判断依据之一，藏掉等于丢信息。
+                  标题已经 `truncate`，挤压只落在标题上，不撑破行 */}
+              <span className="text-muted-foreground shrink-0 text-[0.6875rem] sm:text-xs">{formatRelative(item.updatedAt)}</span>
             </Link>
           ))}
         </div>

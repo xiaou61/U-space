@@ -105,7 +105,7 @@ export function NoteNewPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <Button disabled={create.isPending} data-testid="new-note-create" onClick={() => create.mutate()}>
           {create.isPending ? <Spinner /> : null}
           创建笔记
@@ -195,7 +195,7 @@ function EntryPicker({
       <label className="text-muted-foreground mb-1.5 block text-xs" htmlFor="entry-picker">
         挂到一条知识库条目上（可选）
       </label>
-      <div className="relative max-w-md">
+      <div className="relative max-w-md max-sm:max-w-none">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
         <Input
           id="entry-picker"
@@ -207,7 +207,7 @@ function EntryPicker({
         />
       </div>
       {keyword.trim() !== '' ? (
-        <div className="border-border bg-popover mt-2 max-w-md overflow-hidden rounded-lg border shadow-sm">
+        <div className="border-border bg-popover mt-2 max-h-[50dvh] max-w-md overflow-y-auto rounded-lg border shadow-sm max-sm:max-w-none">
           {results.isPending ? (
             <p className="text-muted-foreground flex items-center gap-2 px-3 py-2 text-xs">
               <Spinner className="size-3.5" />

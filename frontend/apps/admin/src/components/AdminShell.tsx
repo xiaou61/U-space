@@ -8,12 +8,13 @@ import {
   FolderTree,
   LayoutDashboard,
   Library,
+  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
   Wallet,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 
 interface MenuItem {
@@ -79,27 +80,48 @@ const CRUMBS: Record<string, string[]> = {
 export function AdminShell({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  /** 窄屏抽屉（WORK-016）：<md 时侧栏默认在屏幕外，由顶栏 ☰ 拉开。 */
+  const [drawerOpen, setDrawerOpen] = useState(false)
   // 只记录"用户手动点过"的父菜单；没点过的跟着当前路由走
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const crumbs = CRUMBS[pathname] ?? ['管理端']
 
+  // 选中菜单后自动收起：手机上抽屉盖住内容，不关的话还要再点一次遮罩
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [pathname])
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
+      {/*
+        窄屏遮罩。放在侧栏之前、用 z-40（侧栏 z-50），点它关闭抽屉。
+        桌面端不渲染——>=md 的 `md:hidden` 保证它不会挡住表格。
+      */}
+      {drawerOpen ? (
+        <button
+          type="button"
+          aria-label="关闭菜单"
+          data-testid="admin-drawer-backdrop"
+          onClick={() => setDrawerOpen(false)}
+          className="bg-overlay fixed inset-0 z-40 cursor-default md:hidden"
+        />
+      ) : null}
+
       <aside
-        className={`border-border bg-card sticky top-0 flex h-screen shrink-0 flex-col border-r transition-[width] duration-200 ${
-          collapsed ? 'w-14' : 'w-56'
-        }`}
+        data-open={drawerOpen ? 'true' : 'false'}
+        data-testid="admin-sidebar"
+        className={`border-border bg-card fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r transition-transform duration-200 md:sticky md:top-0 md:z-auto md:h-dvh md:translate-x-0 md:transition-[width] ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${collapsed ? 'md:w-14' : 'md:w-56'}`}
       >
         <div className="border-border flex h-14 items-center gap-2.5 border-b px-3">
           <span className="bg-primary text-primary-foreground grid size-7 shrink-0 place-items-center rounded-md text-xs font-bold">
             P
           </span>
-          {collapsed ? null : (
-            <div className="min-w-0">
-              <div className="truncate text-sm leading-tight font-semibold">Paideia</div>
-              <div className="text-muted-foreground truncate text-[11px] leading-tight">管理端</div>
-            </div>
-          )}
+          <div className={`min-w-0 ${collapsed ? 'md:hidden' : ''}`}>
+            <div className="truncate text-sm leading-tight font-semibold">Paideia</div>
+            <div className="text-muted-foreground truncate text-[11px] leading-tight">管理端</div>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
@@ -141,19 +163,17 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
                     active
                       ? 'text-foreground font-medium'
                       : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
-                  } ${collapsed ? 'justify-center' : ''}`}
+                  } ${collapsed ? 'md:justify-center' : ''}`}
                 >
                   <Icon className="size-4 shrink-0" />
-                  {collapsed ? null : (
-                    <>
-                      <span className="flex-1 truncate text-left">{item.label}</span>
-                      <ChevronDown
-                        className={`size-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
-                      />
-                    </>
-                  )}
+                  <span className={`flex min-w-0 flex-1 items-center gap-2 ${collapsed ? 'md:hidden' : ''}`}>
+                    <span className="flex-1 truncate text-left">{item.label}</span>
+                    <ChevronDown
+                      className={`size-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
+                    />
+                  </span>
                 </button>
-                {open && !collapsed ? (
+                {open ? (
                   <div className="border-border mt-1 ml-4 space-y-1 border-l pl-1">
                     {item.children.map((child) => (
                       <NavLink
@@ -172,7 +192,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
           })}
         </nav>
 
-        <div className="border-border border-t p-2">
+        <div className="border-border hidden border-t p-2 md:block">
           <button
             type="button"
             onClick={() => setCollapsed((value) => !value)}
@@ -180,7 +200,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
             aria-label={collapsed ? '展开菜单' : '收起菜单'}
             data-testid="admin-menu-toggle"
             className={`text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm ${
-              collapsed ? 'justify-center' : ''
+              collapsed ? 'md:justify-center' : ''
             }`}
           >
             {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -190,7 +210,18 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-border bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
+        <header className="border-border bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b px-3 sm:gap-4 sm:px-4">
+          {/* 窄屏的菜单入口：桌面端侧栏常驻，不需要它 */}
+          <button
+            type="button"
+            aria-label="打开菜单"
+            aria-expanded={drawerOpen}
+            data-testid="admin-drawer-toggle"
+            onClick={() => setDrawerOpen(true)}
+            className="hover:bg-accent -ml-1 flex size-11 shrink-0 items-center justify-center rounded-lg md:hidden"
+          >
+            <Menu className="size-5" />
+          </button>
           <nav aria-label="面包屑" className="flex min-w-0 items-center gap-1.5 text-sm">
             <span className="text-muted-foreground shrink-0">首页</span>
             {crumbs.map((crumb, index) => (
@@ -208,7 +239,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
           </div>
         </header>
 
-        <main className="bg-muted/60 flex-1 p-6">{children}</main>
+        <main className="bg-muted/60 flex-1 p-3 sm:p-6">{children}</main>
       </div>
     </div>
   )
@@ -232,16 +263,17 @@ function NavLink({
     <Link
       to={to}
       title={label}
+      data-testid={`admin-nav-${label}`}
       aria-current={active ? 'page' : undefined}
       data-active={active ? 'true' : undefined}
       className={`flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm transition-colors ${
         active
           ? 'border-border bg-accent text-accent-foreground font-medium'
           : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground border-transparent'
-      } ${collapsed ? 'justify-center' : ''}`}
+      } ${collapsed ? 'md:justify-center' : ''}`}
     >
       <Icon className="size-4 shrink-0" />
-      {collapsed ? null : <span className="truncate">{label}</span>}
+      <span className={`truncate ${collapsed ? 'md:hidden' : ''}`}>{label}</span>
     </Link>
   )
 }

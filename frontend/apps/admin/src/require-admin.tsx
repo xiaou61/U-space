@@ -72,7 +72,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 
   if (status === 'loading') {
     return (
-      <div className="text-muted-foreground flex min-h-screen items-center justify-center gap-2 text-sm">
+      <div className="text-muted-foreground flex min-h-dvh items-center justify-center gap-2 text-sm">
         <Spinner />
         正在确认登录状态…
       </div>

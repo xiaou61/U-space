@@ -114,6 +114,44 @@ export function KnowledgeCategoriesPage() {
             </div>
           ) : null}
 
+          {/*
+            窄屏卡片（WORK-016 / AC-007）：表格在 375px 上必然要把"操作"列拖到屏幕外，
+            而操作列正是后台最常用的目标。这里用同一份 `flat` 换一种呈现，不做横向滚动优化。
+            桌面端表格形态一行未动。
+          */}
+          <ul className="divide-border divide-y md:hidden" data-testid="admin-category-cards">
+            {flat.length === 0 && !categories.isPending ? (
+              <li className="text-muted-foreground py-8 text-center text-sm">还没有分类</li>
+            ) : null}
+            {flat.map((category) => (
+              <li key={category.id} className="flex items-start justify-between gap-3 px-3 py-3">
+                <div className="min-w-0">
+                  <div
+                    className="truncate text-sm font-medium"
+                    style={{ paddingLeft: `${category.depth * 12}px` }}
+                  >
+                    {category.name}
+                  </div>
+                  <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                    <span className="tabular-nums">#{category.id}</span>
+                    <span className="font-mono">{category.slug}</span>
+                    <span>{category.parentName ?? '顶级'}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 text-destructive hover:text-destructive"
+                  data-testid={`admin-category-delete-card-${category.id}`}
+                  onClick={() => setPendingDelete({ id: category.id, name: category.name })}
+                >
+                  删除
+                </Button>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden md:block">
           <Table data-testid="admin-category-list">
             <TableHeader>
               <TableRow>
@@ -156,6 +194,7 @@ export function KnowledgeCategoriesPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -16,7 +16,7 @@ import {
 } from '@paideia/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAssistantContext } from '@paideia/assistant'
-import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronLeft, ListTree } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
@@ -129,6 +129,25 @@ export function KnowledgeEntryPage() {
               eyebrow={entry.data.categoryName === null ? '知识库' : entry.data.categoryName}
               title={entry.data.title}
             />
+
+            {/*
+              窄屏的目录（WORK-016）：原来 `<lg` 直接不渲染，等于长文在手机上完全没有"我在哪"。
+              改成折叠面板放进正文列里 —— 默认收起不占地方，要跳章节时展开即可。
+              `EntryToc` 自带"少于两个标题就不渲染"，所以这里不需要再判一次。
+            */}
+            <details
+              className="border-border bg-card mb-6 rounded-xl border px-4 py-3 lg:hidden"
+              data-testid="entry-toc-collapsed"
+            >
+              <summary className="text-muted-foreground flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-medium">
+                <ListTree className="size-4" />
+                本页目录
+              </summary>
+              <div className="mt-2">
+                {/* 窄屏这份用独立 testid：宽屏右栏那份也叫 entry-toc，同页两份会让数量断言数到 2 */}
+                <EntryToc markdown={entry.data.body} testId="entry-toc-mobile" />
+              </div>
+            </details>
 
             <MarkdownBody
               markdown={entry.data.body}
