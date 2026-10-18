@@ -416,6 +416,38 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 
 **影响面**：只影响"全量一次跑完"的绿/红判断；**任何单类验证与运行时行为都不受影响**。
 
+## 迁移文件被改过：`paideia_test` 为什么"history 说已应用、对象却不存在"（2026-10-18，已修）
+
+**结论先行**：不是库坏了，是 **`V14__create_learner_profiles.sql` 在被应用之后又追加了三句 SQL**。Flyway 的校验和按"逐行拼接算 CRC32"，只认文件内容——改了已应用的迁移，它不会重跑，只会让 `flyway_schema_history` 里的记录与文件对不上。
+
+**证据（可复算）**：
+
+- 当前 V14 全文的 Flyway 校验和 = `-796408691`，这正是所有**新建**库记录的值；
+- 把当前 V14 截断到第一句 `CREATE TABLE learner_profiles` 的 `) ENGINE = InnoDB;` = **`2059499851`**，正是坏库里记录的值。
+
+所以坏库里 `learner_profiles` 存在，而 `ai_conversations.harness` 列、`uk_ai_memory_structured_ref` 唯一键、`ai_interview_evaluations` 表三样都不存在（逐项 `information_schema` 查过 = 0）。
+
+**顺带订正一处误判**：WORK-018 报告里写的"换行符变化导致校验和不匹配"是错的。Flyway 按行拼接，CRLF 与 LF 算出来**一样**；真正的差别是内容少了三句。别再为行尾去折腾。
+
+**修法**：`paideia_test` 是丢弃型沙箱，直接删库重建。实测空库跑完 21 个迁移 **1.3 秒**（`Successfully applied 21 migrations … 00:00.905s`），重跑 `KnowledgeReadIntegrationTest` 12 条全绿。服务器上的 `paideia_test` 只到 V13，反而没坏，下次跑会自动补 V14/V15。
+
+**加了两道防线**：
+
+1. **`MigrationChecksumTest`**（`paideia-app/src/test/java/`）：把三处 locations（`db/migration`、`db/devdata`、`paideia-persistence` 的 `db/testdata`）里每个 `.sql` 的校验和登记进 `src/test/resources/migration-checksums.txt`。改了已登记的迁移 → 红；新增迁移没登记 → 也红，用 `-Dmigration.checksums.update=true` 登记（**该开关只登记新文件，洗不掉改旧迁移**，反向验证过两次）。
+2. **`scripts/test-db.sh`**：给一次测试运行分配独占库 `paideia_run_<时间>_<pid>`，URL 加 `createDatabaseIfNotExist=true`，成功后自动删库。指向非本机地址会直接拒绝（远程账号只被授权 `paideia_test.*`，建不了新库）。
+
+**种子 id 不再写死**：`KnowledgeRead` / `KnowledgeSelfAssessment` / `KnowledgeAdmin` 三个类改成按标题/slug 现查（`SeedIds` 工具类）。硬编码 `id==1/2/3/4` 是全量跑时被同库其他写入连累的那几条断言，现在是"查不到就当场红并说明"，不会再看起来像产品坏了。
+
+**日常用法**：
+
+```bash
+scripts/test-db.sh                                   # 在 backend 跑 mvn -B test
+scripts/test-db.sh bash -c 'cd frontend && pnpm --filter @paideia/app test:e2e'
+scripts/test-db.sh --keep mvn -B test                # 失败时保留库排查
+scripts/test-db.sh --drop paideia_run_xxx            # 手动删
+```
+
+
 ## 身份化与模拟面试（WORK-010，2026-10-18 起）
 
 **一条对话 = 公共行为 × 私有数据**：`harness` 是前者（提示词 + 工具集），记忆/历史/凭据是后者（按用户取）。所以**不是"每个场景一个 Agent"**，而是同一个助手在不同页面按这套行为说话。术语上"人"与"行为"要分开——harness 是行为，不是人。

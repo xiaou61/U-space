@@ -3710,3 +3710,26 @@ schema_version: 1
   不是我替别人提交的；`2df4d57` 里我的 `ApiWalkthroughTest` 改动是被那边 `git add` 卷进去的，内容与我本地一致
 - 凭据扫描：两轮（源码切片、工件切片）只命中 `InvalidPasswordException` 这个类名，**无密钥入仓**
 - 未执行：部署
+
+## 2026-10-18 20:15:34 +0800 · maintenance · 修好 paideia_test 并给迁移上锁：校验和守卫 + 一会话一库
+
+- 类型：maintenance
+- 变更：
+  - 重建本机 `paideia_test`（删库重跑 Flyway，21 个迁移 1.3 秒），修好"V14 记为已应用但三处对象不存在"的坏状态
+  - 新增 `MigrationChecksumTest` + `src/test/resources/migration-checksums.txt`：三处 locations 的每个迁移都登记校验和，改旧迁移即红，新增迁移未登记也红（`-Dmigration.checksums.update=true` 登记新文件，洗不掉改旧迁移）
+  - 新增 `scripts/test-db.sh`：一次测试运行一个独占库（`paideia_run_<时间>_<pid>`），`createDatabaseIfNotExist=true` 自动建、成功后自动删；非本机地址直接拒绝
+  - `KnowledgeRead` / `KnowledgeSelfAssessment` / `KnowledgeAdmin` 三个测试类改为按标题/slug 现查种子 id（新增 `SeedIds` 工具类），不再硬编码 `id==1/2/3/4`
+  - `.agent/notes/dev-workflow.md` 新增「迁移文件被改过」一节，并订正 WORK-018 报告里「换行符导致校验和不匹配」的误判
+- 决策：
+  - **根因是改了已应用的迁移，不是并发、不是库坏了**。证据可复算：当前 V14 全文 = `-796408691`（所有新库记录的值），截断到第一句建表语句 = `2059499851`（坏库记录的值）。Flyway 按行拼接算 CRC32，CRLF/LF 结果相同，所以"行尾变化"那条诊断是错的
+  - 修法选**删库重建**而不是 `flyway repair` + 手工补 DDL：后者修不了种子 id=1 的洞与 69 个遗留测试账号，下次全量跑照样红
+  - 共用库的竞争用**一会话一库**解决，成本可忽略（空库迁移 1.3 秒、约 1MB）；`ignore-migration-patterns` 那对补丁保留无害
+- 依据：`flyway_schema_history` 逐条比对（本机 23 个 paideia_* 库）、`information_schema` 逐项核查、新建库对照实验
+- 验证：
+  - 重建后 `KnowledgeReadIntegrationTest` 12 条全绿；`migration-checksums.txt` 的 21 条校验和与数据库记录逐条一致（V14 `-796408691`、V1 `5302915` 等）
+  - 守卫反向验证两次：改一行 V14 → 红并点名文件与新旧校验和；带 `-Dmigration.checksums.update=true` 再改 → **仍然红**（开关洗不掉改旧迁移）。V14 已还原
+  - `scripts/test-db.sh` 三条路径实测：本机正常建库跑完自动删、远程 URL 被拒（exit 2）、`--drop` 手动清理；无残留库
+  - 隔离库跑三个知识库类：12 + 7 + 9 全绿
+  - **全量 `mvn -B test`（隔离库）BUILD SUCCESS：348 执行 / 0 失败 / 5 skipped**（1 条 S3 契约、4 条真实上游，均为既定跳过）。以前全量必红的三个知识库类这次 12/7/9 全绿
+- 本地提交：待提交
+- 远端推送：未执行
