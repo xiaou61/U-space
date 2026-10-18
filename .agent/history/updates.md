@@ -3618,3 +3618,14 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-18 16:30:00 +0800 · WORK-017 · 推送接口自查标准到 GitHub
+
+- 类型：maintenance
+- 变更：origin/master 由 `c548f15` 前进到 `b5c73b6`，含三笔：`e0ca266`（WORK-010 身份化地基，并发会话）、`29f4298`（并发会话的种子问题登记）、`b5c73b6`（本项的接口自查标准）
+- 决策：**HTTPS 走代理在 SSL 握手失败**（`SSL_ERROR_SYSCALL`），改用 SSH 直推，**未修改 origin 配置**。与 2026-10-15 时的判断相反——再次印证"代理与直连哪条通是会变的"，每次先实测
+- 依据：用户 2026-10-18 明确指示"推送一下"；`ssh -T git@github.com` 返回 `Hi xiaou61!`
+- 验证：`git ls-remote origin refs/heads/master` = `b5c73b6ddbdc3e238949d6b4dc8c43f42e8a1b7e`，与本地 HEAD 一致；推送前扫过暂存内容无凭据，只含代码变量名与文档占位符
+- 备注：本地领先的三笔里有**两笔属于并发会话**（`e0ca266` 38 文件 / +2028 行，`29f4298`），已被本次推送一并带上；此前已向用户说明该情况
+- 本地提交：`b5c73b6`
+- 远端推送：已推送 `b5c73b6` 到 origin master（SSH）
