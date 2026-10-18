@@ -3773,3 +3773,13 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-19 00:22:17 +0800 · WORK-019 · WORK-019 实施完成：工具目录 + 内外两层适配器
+
+- 类型：verification
+- 变更：platform 包根新增工具契约与目录；AgentToolBridge 取代 AssistantTools 并经 find_tools 延迟加载；新增 paideia-mcp 模块（Streamable HTTP + 视图 + PAT + 审计 + 限流）；新增 assistant.ask；V16 mcp_access_tokens；前端 /settings/mcp
+- 决策：复用 agentscope 传递带入的 MCP SDK 0.17.0 而不升 2.x（升版本与 AgentScope 冲突）；内部清单强制只读，写工具只走外部 write 视图；契约放 platform 包根（子包会被 Modulith 判成内部实现）
+- 依据：mvn dependency:tree 确认 0.17.0 在 classpath；javap 确认 HttpServletStreamableServerTransportProvider 与 protocolVersions=2025-06-18；McpStartupSmokeTest 证明 Boot4+JDK25 上真能握手
+- 验证：后端 174 执行/0 失败/4 跳过（既有真实上游）；前端单测全绿；app e2e 69 passed/2 skipped；conformance 4 passed（initialize/ping/tools-list/logging），22 条失败逐条说明均在本项范围外；见 verification.md
+- 本地提交：0b760f1
+- 远端推送：未执行

@@ -6,7 +6,7 @@ status: approved
 workflow: full
 depends_on: [requirements, proposal, design]
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 approved_by: xiaou61
 approved_at: 2026-10-18 23:17:03 +0800
 approver_role: CTO
@@ -56,7 +56,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | platform 工具契约与目录
+### TASK-001 | done | platform 工具契约与目录
 
 - 对应：`REQ-001`、`REQ-002`、`REQ-003`、`REQ-004`、`REQ-005`、`AC-001`、`AC-002`
 - 依赖：无
@@ -80,7 +80,7 @@ approver_role: CTO
   5. 写 `search` 打分测试（名称命中 > 标题 > 描述；无命中返回空）→ 实现 → 绿。
 - 验证：`cd backend && mvn -B -pl paideia-platform test -Dtest=ToolCatalogTest` → 期望全部通过，Skipped=0。
 
-### TASK-002 | pending | 知识库与评测工具迁移到目录
+### TASK-002 | done | 知识库与评测工具迁移到目录
 
 - 对应：`REQ-001`、`REQ-024`、`AC-001`、`AC-005`
 - 依赖：TASK-001
@@ -98,7 +98,7 @@ approver_role: CTO
   4. 写「工具参数里传 userId 被忽略」的测试：`my_marks` 永远用 `ToolContext.userId`。
 - 验证：`mvn -B -pl paideia-knowledge test -Dtest='KnowledgeToolsTest*'` → 全绿；若 `mark_entry` blocked，测试只覆盖 `list_marks` 且 tasks 注明。
 
-### TASK-003 | pending | 内部桥接与 find_tools
+### TASK-003 | done | 内部桥接与 find_tools
 
 - 对应：`REQ-006`、`REQ-007`、`REQ-008`、`REQ-009`、`REQ-010`、`AC-006`
 - 依赖：TASK-001
@@ -118,7 +118,7 @@ approver_role: CTO
   5. 写无关查询返回「没有匹配」且不抛异常的测试。
 - 验证：`mvn -B -pl paideia-ai test` → 全绿；`pnpm --filter @paideia/app test:e2e` 助手相关用例通过（工具路径未回归）。
 
-### TASK-004 | pending | NoteApi 与笔记/账号工具
+### TASK-004 | done | NoteApi 与笔记/账号工具
 
 - 对应：`REQ-001`、`REQ-017`、`REQ-024`、`AC-005`
 - 依赖：TASK-001
@@ -136,7 +136,7 @@ approver_role: CTO
   3. 写 `AccountToolsTest`（只返回本人基础信息，不含邮箱验证状态等敏感字段）。
 - 验证：`mvn -B -pl paideia-note,paideia-account test` → 全绿。
 
-### TASK-005 | pending | PAT 表、服务与注销级联
+### TASK-005 | done | PAT 表、服务与注销级联
 
 - 对应：`REQ-015`、`REQ-016`、`REQ-022`、`AC-011`、`AC-012`、`AC-013`（后端部分）
 - 依赖：无（可与 TASK-001 并行）
@@ -155,7 +155,7 @@ approver_role: CTO
   3. 在 `AiUserDeletionListener` 加表名与断言；跑 `AccountDeletionCascadeIntegrationTest`，确认逐表 0 行。
 - 验证：`mvn -B -pl paideia-mcp,paideia-app test -Dtest='PatServiceTest,AccountDeletionCascadeIntegrationTest,McpTokenLifecycleTest'` → 全绿，Skipped 记录在报告里。
 
-### TASK-006 | pending | paideia-mcp 骨架与视图
+### TASK-006 | done | paideia-mcp 骨架与视图
 
 - 对应：`REQ-011`、`REQ-012`、`AC-002`、`AC-004`
 - 依赖：TASK-001
@@ -172,7 +172,7 @@ approver_role: CTO
   3. 用 `McpSyncServer` 注册一个假工具，用 SDK 客户端或 JSON-RPC 原始请求调 `tools/list`，断言只有视图内工具。
 - 验证：`mvn -B -pl paideia-mcp test` → 全绿；`mvn -B -pl paideia-app test -Dtest=ModularityTest` → 边界不报错。
 
-### TASK-007 | pending | PAT 过滤器与 MCP 安全链
+### TASK-007 | done | PAT 过滤器与 MCP 安全链
 
 - 对应：`REQ-013`、`REQ-014`、`AC-003`、`AC-004`
 - 依赖：TASK-005、TASK-006
@@ -186,7 +186,7 @@ approver_role: CTO
   3. 断言现有 JWT 链行为未变（跑 `ApiSurfaceTest` 与一个既有集成用例）。
 - 验证：`mvn -B -pl paideia-app test -Dtest=McpAuthenticationTest,ApiSurfaceTest` → 全绿。
 
-### TASK-008 | pending | 工具执行、错误语义、审计与限流
+### TASK-008 | done | 工具执行、错误语义、审计与限流
 
 - 对应：`REQ-017`、`REQ-018`、`REQ-019`、`REQ-020`、`REQ-021`、`REQ-023`、`AC-005`、`AC-007`、`AC-009`、`AC-010`
 - 依赖：TASK-002、TASK-004、TASK-006、TASK-007
@@ -203,7 +203,7 @@ approver_role: CTO
   4. 写审计测试（捕获日志，断言七个字段、无正文）→ 绿。
 - 验证：`mvn -B -pl paideia-app test -Dtest='McpToolInvokerTest,McpToolsIntegrationTest,McpAuditLoggerTest'` → 全绿。
 
-### TASK-009 | pending | PAT 管理端点与前端页
+### TASK-009 | done | PAT 管理端点与前端页
 
 - 对应：`REQ-015`、`REQ-025`、`AC-013`
 - 依赖：TASK-005
@@ -217,7 +217,7 @@ approver_role: CTO
   2. 写前端测试（创建后展示一次、刷新只显示前缀、吊销二次确认、390px 无横向滚动）→ 红 → 实现 → 绿。
 - 验证：`mvn -B -pl paideia-app test -Dtest=PatControllerTest`；`pnpm --filter @paideia/app test` → 绿。
 
-### TASK-010 | pending | 协议一致性、限流回归与文档
+### TASK-010 | done | 协议一致性、限流回归与文档
 
 - 对应：`REQ-026`、`REQ-027`、`AC-008`、`AC-014`
 - 依赖：TASK-008
@@ -230,7 +230,7 @@ approver_role: CTO
   3. 目录快照测试：`ToolCatalog.snapshot()` 与文档工具表对照（名称、工具组、只读）。
 - 验证：conformance 记录文件存在且结果如实；文档里的 JSON 片段可被 JSON 解析；快照测试绿。
 
-### TASK-011 | pending | 端到端冒烟与验收报告
+### TASK-011 | done | 端到端冒烟与验收报告
 
 - 对应：`AC-001`..`AC-014`
 - 依赖：TASK-001..010
@@ -241,7 +241,7 @@ approver_role: CTO
   3. 逐条对照 AC 写入验证表，未达标的写「未达」与原因。
 - 验证：`verification.md` 每条 AC 有命令或人工步骤与结果；`project-lifecycle.ps1 validate` 通过。
 
-### TASK-012 | pending | assistant.ask 工具与计费
+### TASK-012 | done | assistant.ask 工具与计费
 
 - 对应：`REQ-028`、`AC-015`
 - 依赖：TASK-001、TASK-008
