@@ -3655,3 +3655,46 @@ schema_version: 1
   - **如实登记**：报告为 `partial`——AC-009 的完整面试闭环要有积分才能验；"勾选后才带笔记"只有界面明示、控件未做；全量后端测试有一组已知不稳定（种子条目 id=1，见 notes）
 - 本地提交：`e0ca266`（后端）、`e0de914`（前端）、`57e32b4`（入口修复 + e2e）、本报告与历史随后一笔
 - 远端推送：未执行
+
+## 2026-10-18 19:05:00 +0800 · WORK-018 · 实施完成：简历识别与优化
+
+- 类型：implementation（四件工件全部签署；13 个任务完成）
+- 变更（后端）：
+  - 新增 `paideia-ai/internal/resume`：`ResumeTextExtractor`（PDFBox 3.0.7 + JDK zip/XML）、
+    `ResumeJson`（严格解析 + 引证校验）、`ResumeAnalysisParser`、`ResumeProposalParser`（entryRef/原文/缺口词三道结构校验）、
+    `ResumeKeywordClassifier`（三桶）、`ResumeGate`（四类事实校验）、`ResumeCheckup`（九项体检）、
+    `ResumeDocumentService`、`ResumeOptimizationService`、`ResumeImportService`、`ResumePrompts`
+  - 包根三个端口：`ResumeParser` / `ResumeAnalyzer` / `ResumeProposer`（签名无框架类型），
+    实现共享 `ResumeModelCaller`（不挂工具、非流式、关原生化输出、超时归一）
+  - 两个控制器共 **21 条新端点**，全部 `@ApiAccess(AUTHENTICATED)`，**无一条 PUBLIC_READ**
+  - 迁移 `V15__create_resume_tables.sql` 四张表；`AiUserDeletionListener` 登记四张表
+  - `CreditLedger` 新增 `KIND_RESUME`，`CreditService.settleResume`
+- 变更（前端）：
+  - 新增包 `@paideia/resume`（types / client / autosave 状态机 / diff 渲染），15 条单测
+  - 学习者端 5 条路由：`/resume`、`/resume/create`、`/resume/new`（核对）、`/resume/:id`（编辑）、
+    `/resume/:id/optimize`（提案）、`/resume/versions/:vid/print`（打印）
+  - `globals.css` 补 `@source`；`LearnerHeader` 加「我的简历」导航项（独立 key `resume`）
+- 决策：
+  - **提案是"逐条清单"不是整稿**：第三次模型调用专门产出 `entryRef + 原文 + 改后 + 依据 + 覆盖关键词`，
+    默认全部不采纳，用户逐条勾选（用户决定 5 的落地）
+  - **改后文本可变，但改了就重跑该条闸门**——否则"编辑改后文本"会成为绕过闸门的后门
+  - **定稿免费**（只跑确定性闸门），让用户敢在"再想想"和"定稿"之间反复
+  - **数字校验抓裸数字**（第一版只抓"数字+单位"，实测漏掉 `QPS 提到 50000`）
+- 依据：四件签署工件；`.agent/changes/WORK-018-*/research.md`（三个参考仓库的流程调研）
+- 验证：
+  - 后端 `mvn -B test`（独立库 `paideia_probe`）**BUILD SUCCESS**；paideia-app **168 passed / 4 skipped**（既定无口令跳过）
+  - 简历专项 **49 条**：抽取 10 / JSON 9 / 结构化输出 9 / 三桶 6 / 闸门 15
+  - 前端 `pnpm -r test` **268 passed**；`pnpm --filter @paideia/ui test` **148 passed**
+  - e2e `pnpm --filter @paideia/app test:e2e` **66 passed / 2 skipped**（含新增简历用例与两条移动用例）
+  - **真实识别质量记录**（三份合成样张、真实上游）：双栏 PDF / 表格 PDF / 中英混排 DOCX **3/3 解析成功**，
+    必填字段全对，数字逐字保留；真实计费 `-8/-5/-5 = -18` 分，三次上游超时**全额退款**
+- **修掉一个既有的会删数据的测试缺陷**：`ApiContractTest` 用固定 `1` 当路径变量，对
+  `DELETE /api/v1/knowledge/admin/entries/{id}` 会真的删掉种子条目 1，导致后续 Knowledge 系用例全红。
+  已改为"破坏性方法用不存在的高位 id"，修复后全量绿。**这条缺陷不是本项引入的（WORK-017 起）**。
+- 已知缺口：
+  - 共享测试库 `paideia_test` 的 `V14` 处于"记为已应用但三处改动缺失 + checksum mismatch"状态，
+    本轮全程用独立库验证。**修它会影响所有并发会话，未动手。**
+  - AC-012 只记录不设线；三份样张是合成的，不能代表真实简历分布
+  - 打印视图只做代码级核对（`@page A4` / `break-inside: avoid`），**未做真实打印产物像素核对**
+- 本地提交：未提交
+- 远端推送：未执行
