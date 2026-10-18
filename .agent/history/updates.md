@@ -3698,3 +3698,15 @@ schema_version: 1
   - 打印视图只做代码级核对（`@page A4` / `break-inside: avoid`），**未做真实打印产物像素核对**
 - 本地提交：未提交
 - 远端推送：未执行
+
+## 2026-10-18 19:20:00 +0800 · WORK-018 · 推送核验
+
+- 类型：push-check
+- 提交（六笔，按切片）：`c1f86ef` 后端 · `e7621a6` 后端测试 · `11dbc2a` 前端 · `76527c2` e2e + 契约探针修复 · `4e97a63` 工件与报告 · `f93ea67` 单测目录
+- 推送：`git push git@github.com:xiaou61/Paideia.git master`，`f5b0c03..f93ea67`
+- 核验：`git ls-remote` 远端 `refs/heads/master` = `f93ea67c4e4b9bd5b6007f9c2adb5fdd8eecd400`，与本地 HEAD 一致
+- **并发会话的提交一并上去了**：本地领先远端的 8 笔里有 7 笔是别的会话的 WORK-010 收尾（`e0de914`..`2df4d57`）。
+  按 Git 的线性历史它们必须一起走，无法只推我那六笔。已在推送前逐笔确认：它们都在工作区之外（各自已完成），
+  不是我替别人提交的；`2df4d57` 里我的 `ApiWalkthroughTest` 改动是被那边 `git add` 卷进去的，内容与我本地一致
+- 凭据扫描：两轮（源码切片、工件切片）只命中 `InvalidPasswordException` 这个类名，**无密钥入仓**
+- 未执行：部署
