@@ -3287,3 +3287,16 @@ schema_version: 1
 - 环境：审查用 `deepseek-v4.1-flash-1017`（用户指定），约 3,920 万 tokens / 39 分钟；前两把 key 均因 `INSUFFICIENT_BALANCE` 不可用。
 - 本地提交：见本轮提交
 - 远端推送：未执行
+
+## 2026-10-18 13:05:00 +0800 · 补账 · WORK-011 状态归位 + 6 个 stale 报告在当前 HEAD 复验
+
+- 类型：verification
+- 变更：
+  - `WORK-011`：`tasks.md` 追加「任务状态」（12 条计划任务 + 1 条计划外补的 `prepare` 事务修复，就地写明 T-06 形态改向、T-07 随之撤回）；`requirements.md` 订正 4 处与实现不符的 REQ/AC 正文并补「实现选择」；新建 `testing/report.md`（AC-001..009 逐条证据，AC-004 已从 `test.fixme` 转真跑）。状态机由此从「开发实现」变为「完成沉淀 · 已完成」，WORK-012 的硬依赖随之解除
+  - 6 份 stale 报告（001/006/007/009/012/013）各补「复验记录」并重绑锚点；WORK-011/013 因 `d36a304` 改过它们的验收对象，另追加一次在新 HEAD 上的整组重跑
+  - 修两条测试自身的写法错误：`KnowledgeReadIntegrationTest` 把 `%25` 写进 URL（MockMvc 不解码 → 走到全文检索分支，测的不是 LIKE 转义）→ 改 `.param("q", "%")`；`AssistantToolsIntegrationTest` 用含"可能"的长短语当"查不到"，而 ngram 自然语言模式任一 bigram 命中即算命中 → 改生僻字串
+- 决策：**用独立验证库** `paideia_verify_work011`（本机 MySQL，从零跑 Flyway），不碰共用的 `paideia_test`——后者与 `V953` 种子文件已漂移（08:43 改过、09:15 应用的还是旧内容），任何测试类在该库上都起不来上下文；重建共用库属环境清理，未擅自做，已写进报告
+- 验证：后端全量 **143 运行 / 0 失败 / 4 跳过**；前端单测 **240** 条全过、typecheck 0；学习者端 e2e **60 passed / 2 skipped**、管理端 **19 passed**（均在 `1945ce7` 上重跑）
+- 依据：`.agent/changes/WORK-011-*/{requirements,tasks,testing/report}.md`、6 份 report 的新增「复验记录」段
+- 本地提交：`1945ce7`（补账与复验）、本条与两份追加复验随后一笔
+- 远端推送：未执行

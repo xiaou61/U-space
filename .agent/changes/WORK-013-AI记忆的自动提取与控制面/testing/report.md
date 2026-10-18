@@ -4,7 +4,7 @@ work_id: WORK-013
 work: AI 记忆的自动提取与控制面
 status: passed
 evidence: required
-verified_commit: 9c99033
+verified_commit: 1945ce7
 verified_at: 2026-10-17
 ---
 
@@ -114,3 +114,21 @@ verified_at: 2026-10-17
 **这段区间里本项的受影响面**：**本项自己的代码在锚点之后被另一个会话修过两处**（结构化 UPDATE 缺 targetId 会 NPE、两路分页会跳行），均未提交时就已修好；本轮验证把它们算了进来。
 
 **结论**：本项的 12 条集成用例在当前 HEAD 上全绿。**报告里原先那四条未验证项仍然成立**（提炼质量无断言、DELETE 不留动作历史、面板筛选无 e2e、失败不重跑），没有被这次复验消掉。
+
+### 追加复验（1945ce7，2026-10-18）
+
+> 上面那次复验的锚点是 `9c99033`；之后合并了 `d36a304`（第四次审查的 17 条 high 修复，**其中改了
+> `assistant-shell.tsx` / `conversation-panel.tsx` 的会话切换与恢复逻辑、以及记忆的 UPDATE 落库**）。
+> 那些文件正是 WORK-011 与 WORK-013 的验收对象，所以**在原锚点上采到的证据对新代码不再成立**，
+> 本轮在 `1945ce7` 上整组重跑（独立验证库 `paideia_verify_work011` 已重建，从零跑 Flyway）：
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 后端全量 | `source backend/config/remote-db.local.env && cd backend && mvn -B test` | 0 | passed | **143 运行 / 0 失败 / 4 跳过**（跳过的是要真上游的 `AssistantLiveUpstreamIntegrationTest`） |
+| 学习者端 e2e | `pnpm --filter @paideia/app test:e2e` | 0 | passed | **60 passed / 2 skipped / 0 failed**（1.7 分钟） |
+| 管理端 e2e | `pnpm --filter @paideia/admin test:e2e` | 0 | passed | **19 passed / 0 failed**（35.4 秒） |
+| 前端单测 + 类型 | `pnpm test` / `pnpm typecheck` | 0 | passed | 单测 **240** 条全过（ui 148 / knowledge 28 / assistant 25 / core 22 / auth 13 / desktop 4）；typecheck 退出码 0 |
+
+**结论**：会话切换/恢复逻辑在改动之后仍然通过 AC-004/AC-005/AC-006 的端到端断言（e2e 里那几条正是
+点历史、点新开、收起再打开）；记忆的 UPDATE 落库在 `MemoryAutoExtractionIntegrationTest` 的
+"同一件事说两次不新增"里仍然成立。

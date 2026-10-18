@@ -4,7 +4,7 @@ work_id: WORK-011
 work: AI 助手面板重做与会话历史
 status: passed
 evidence: required
-verified_commit: 9c99033
+verified_commit: 1945ce7
 verified_at: 2026-10-18
 ---
 
@@ -71,3 +71,21 @@ verified_at: 2026-10-18
 - **面板形态被用户改过一次**：停靠版已被否决，本报告验的是浮动版。若将来又要"把正文挤开而不是盖住"，要回到 REQ-004 重选形态。
 - **会话有 7 天滑动 TTL**：恢复上次会话只在 TTL 内成立，过期即视为不存在（这是设计，不是缺陷）。
 - **`paideia_test` 的漂移会继续复发**：只要有会话改了 `devdata` 里已应用过的种子文件，请记得同步重建测试库；否则下一个跑测试的人会看到一堆"上下文起不来"。
+
+### 追加复验（1945ce7，2026-10-18）
+
+> 上面那次复验的锚点是 `9c99033`；之后合并了 `d36a304`（第四次审查的 17 条 high 修复，**其中改了
+> `assistant-shell.tsx` / `conversation-panel.tsx` 的会话切换与恢复逻辑、以及记忆的 UPDATE 落库**）。
+> 那些文件正是 WORK-011 与 WORK-013 的验收对象，所以**在原锚点上采到的证据对新代码不再成立**，
+> 本轮在 `1945ce7` 上整组重跑（独立验证库 `paideia_verify_work011` 已重建，从零跑 Flyway）：
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| 后端全量 | `source backend/config/remote-db.local.env && cd backend && mvn -B test` | 0 | passed | **143 运行 / 0 失败 / 4 跳过**（跳过的是要真上游的 `AssistantLiveUpstreamIntegrationTest`） |
+| 学习者端 e2e | `pnpm --filter @paideia/app test:e2e` | 0 | passed | **60 passed / 2 skipped / 0 failed**（1.7 分钟） |
+| 管理端 e2e | `pnpm --filter @paideia/admin test:e2e` | 0 | passed | **19 passed / 0 failed**（35.4 秒） |
+| 前端单测 + 类型 | `pnpm test` / `pnpm typecheck` | 0 | passed | 单测 **240** 条全过（ui 148 / knowledge 28 / assistant 25 / core 22 / auth 13 / desktop 4）；typecheck 退出码 0 |
+
+**结论**：会话切换/恢复逻辑在改动之后仍然通过 AC-004/AC-005/AC-006 的端到端断言（e2e 里那几条正是
+点历史、点新开、收起再打开）；记忆的 UPDATE 落库在 `MemoryAutoExtractionIntegrationTest` 的
+"同一件事说两次不新增"里仍然成立。
