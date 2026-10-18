@@ -31,6 +31,13 @@ class CreditLedger {
      * "点评那一下花了多少"，而它恰恰是单次最贵的一笔（要读整场对话）。
      */
     static final String KIND_INTERVIEW_REVIEW = "INTERVIEW_REVIEW";
+    /**
+     * 简历相关的消耗（WORK-018）。
+     *
+     * <p>与另外几类分开：一次求职 = 解析 + 分析 + 提案三笔，用户要能看出"改一份简历到底花了多少"。
+     * 与面试点评混成一类的话，"最近改简历花了 30 分"这句话就没法回答。
+     */
+    static final String KIND_RESUME = "RESUME";
 
     private Long id;
     private Long userId;

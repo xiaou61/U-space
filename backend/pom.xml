@@ -45,6 +45,12 @@
       子模块只依赖 artifactId。它比 Boot BOM 里的任何东西都独立，所以必须自己管版本。
     -->
     <awssdk.version>2.31.0</awssdk.version>
+    <!--
+      PDFBox（WORK-018 简历识别用）。同样是"项目自带属性 + 子模块只写 artifactId"：
+      它不在 Boot BOM 里，且 3.x 与 2.x 是**不兼容的大版本**（`PDDocument.load` 换成了
+      `Loader.loadPDF`），把版本钉在一处比散在模块里更不容易踩错。
+    -->
+    <pdfbox.version>3.0.7</pdfbox.version>
   </properties>
 
   <dependencyManagement>

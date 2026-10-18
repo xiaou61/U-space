@@ -39,6 +39,12 @@ class AiUserDeletionListener {
             // 代价是注销用户的账不再完整——这是明确选过的方向，别改成"保留审计"。
             {"ai_credit_ledger", "user_id"},
             {"ai_credit_accounts", "user_id"},
+            // 简历（WORK-018）：四张表都要删。`resume_documents` 是主简历本体，另外三张是它的
+            // 快照、岗位版本与提案——任何一张留下来都等于"这个人还在这里"
+            {"resume_proposals", "user_id"},
+            {"resume_versions", "user_id"},
+            {"resume_edit_history", "user_id"},
+            {"resume_documents", "user_id"},
             // 会话最后删：消息跟着它（下面单独删）
             {"ai_conversations", "user_id"},
     };

@@ -147,6 +147,18 @@ public class CreditService {
         settleAs(userId, reserved, CreditLedger.KIND_INTERVIEW_REVIEW, model, inputTokens, outputTokens, refMessageId);
     }
 
+    /**
+     * 简历相关调用的结算（WORK-018）。
+     *
+     * <p>解析 / 分析 / 提案三次调用共用一个种类：它们在用户眼里是"改简历"这一件事，
+     * 拆成三种只会让账目更难读。三次各自的用量仍在流水行里（模型 + 输入 + 输出 token）。
+     */
+    @Transactional
+    public void settleResume(long userId, long reserved, String model,
+                             Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        settleAs(userId, reserved, CreditLedger.KIND_RESUME, model, inputTokens, outputTokens, refMessageId);
+    }
+
     /** 结算，并指定流水种类。私有：种类是领域决定，不该由调用方随手给。 */
     private void settleAs(long userId, long reserved, String kind, String model,
                           Integer inputTokens, Integer outputTokens, Long refMessageId) {
