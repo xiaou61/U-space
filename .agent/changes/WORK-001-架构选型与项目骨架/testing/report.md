@@ -4,7 +4,7 @@ work_id: WORK-001
 work: 架构选型与项目骨架
 status: passed
 evidence: required
-verified_commit: 9c99033
+verified_commit: 0df2f9c
 verified_at: 2026-10-17
 created: 2026-10-09
 updated: 2026-10-12
@@ -97,7 +97,7 @@ accepted_at: 2026-10-09 13:43:08 +0800
 
 锚点改绑到 `d184e36`（其后只有 `.agent/` 工件变化）。
 
-## 复验记录（2026-10-18，锚点 9c99033）
+## 复验记录（2026-10-18，锚点 0df2f9c）
 
 **为什么会有这一段**：原报告的证据是在更早的提交上采的，之后仓库里又落了 WORK-014／015／016 三个工作项
 （源码与配置都变过），校验器因此把本报告判为 `stale`。本轮在**当前 HEAD**（`9c99033`）上重跑了与本项
