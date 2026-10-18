@@ -3753,3 +3753,13 @@ schema_version: 1
   - `pnpm --filter @paideia/app typecheck` 通过
 - 本地提交：`38177e4`、`1d2225d`、`87df2a9`、`bc58d09`
 - 远端推送：已推送前 3 笔（`bc58d09` 待推送）
+
+## 2026-10-18 22:57:15 +0800 · WORK-019 · MCP 网关与工具目录：四件工件起草（内部按需加载 + 外部 MCP server）
+
+- 类型：decision
+- 变更：新增 WORK-019 的 research/requirements/proposal/design/tasks 五份工件；未改任何代码
+- 决策：一份 ToolCatalog 两个适配器；契约放 paideia-platform；外部新增 paideia-mcp 模块用 mcp 2.1.0 + Streamable HTTP + 视图 URL + PAT；内部用 find_tools 延迟加载，不依赖 provider tool search
+- 依据：端点 83、无 OpenAPI、SDK 2.1.0 稳定版仅到 2025-11-25；GitHub inventory 设计
+- 验证：research.md 记录外部事实与仓库核对；工件均为 draft，需求未签，代码未动
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
