@@ -2,12 +2,15 @@
 artifact: design
 work_id: WORK-019
 work: MCP 网关与工具目录
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements, proposal]
 related_to: [WORK-006, WORK-009, WORK-010, WORK-013]
 created: 2026-10-18
 updated: 2026-10-18
+approved_by: xiaou61
+approved_at: 2026-10-18 23:17:03 +0800
+approver_role: CTO
 ---
 
 # 设计 · MCP 网关与工具目录
@@ -76,7 +79,7 @@ tools.stream()
 | `paideia-note` | `NoteTools` | `note.list`、`note.get`、`note.create`、`note.append` |
 | `paideia-account` | `AccountTools` | `account.me` |
 | `paideia-knowledge` | `AssessmentTools` | `assessment.list_marks`、`assessment.mark_entry` |
-| `paideia-ai` | `NoteDraftTool` | `assistant.draft_note`（只产草稿，只在内部分组） |
+| `paideia-ai` | `NoteDraftTool` + `AssistantAskTool` | `assistant.draft_note`（只产草稿，内部分组）、`assistant.ask`（外部问答，复用积分） |
 
 每个实现只注入本模块的 API/用例，不跨模块调用。`note` 目前没有包根 API（只有 `internal`），TASK-003 需要同时在 `paideia-note` 增加最小 `NoteApi`（`find/list/create/append` 四个方法）——这是本项**唯一**对既有模块公共面的扩展。
 
@@ -95,9 +98,23 @@ List<ToolSchema> schemas = bridge.concat(core, discovered);
 - `AgentScopeConversation` 的工具循环增加 `Set<String> discovered`，`find_tools` 的返回解析出工具名后加入；`tools.run(...)` 改为 `bridge.run(ctx, name, args)`。
 - 阈值 `paideia.ai.tools.eager-limit` 默认 12；工具总数 ≤ 阈值时不注入 `find_tools`。
 
+### `assistant.ask` 的形状（REQ-028）
+
+外部工具不能直接复用 `AssistantConversation.stream`——那是**流式**接口、按会话组织、需要 `Listener`，而 MCP 工具调用是一问一答。做法：
+
+- 不复用 `EntrySummarizer`（那是"输入正文 → 结构化卡片"的单次调用，不挂工具），新增一个非流式端口 `AssistantAnswerer`（`ai` 包根），实现复用 `AgentScopeConversation` 的模型构建与工具循环，但：
+  - 不带历史（外部调用没有会话）；
+  - 不落 `ai_conversations` / `ai_messages`（REQ-028）；
+  - 结果返回 `String` + `TokenUsage`。
+- 计费：`McpToolInvoker` 在调用前 `reserve`、拿到用量后 `settle`，流水 `kind` 新增 `MCP_ASK`。
+
+这是本项**第二个**对既有模块公共面的扩展（第一个是 `NoteApi`），必须在 design 与 tasks 里同时写明，避免执行时被当成"顺手加了"。`ponytail:` 上限——`AssistantAnswerer` 一期只支持"单问单答 + 最多 4 轮工具"，不做多会话、不做流式。
+
 ### 4. `paideia-mcp`：外部适配器
 
-新 Maven 模块 `backend/paideia-mcp`。
+新 Maven 模块 `backend/paideia-mcp`。**依赖复用 AgentScope 已带入的 `io.modelcontextprotocol.sdk:mcp:0.17.0`**（显式声明同版本，避免被依赖调解到别的版本；`mvn dependency:tree` 已确认它在 `paideia-ai` 链路上）。0.17.0 提供 `HttpServletStreamableServerTransportProvider`、`McpServer.sync(McpStreamableServerTransportProvider)`、`contextExtractor`——够用，且不新增依赖坐标。
+
+> 版本事实：0.17.0 的协议版本常量到 **2025-06-18**（`javap` 实测）。2025-11-25 与 2026-07-28 都不可用；这是选 0.17.0 的已知代价，登记在 `research.md`。
 
 | 类 | 职责 |
 | --- | --- |

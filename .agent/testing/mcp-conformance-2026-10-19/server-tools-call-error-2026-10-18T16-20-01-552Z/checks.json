@@ -1,0 +1,16 @@
+[
+  {
+    "id": "tools-call-error",
+    "name": "ToolsCallError",
+    "description": "Tool returns error correctly",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.573Z",
+    "errorMessage": "Failed: MCP error -32602: Unknown tool: invalid_tool_name",
+    "specReferences": [
+      {
+        "id": "MCP-Error-Handling",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle"
+      }
+    ]
+  }
+]

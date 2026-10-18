@@ -1,0 +1,16 @@
+[
+  {
+    "id": "prompts-get-embedded-resource",
+    "name": "PromptsGetEmbeddedResource",
+    "description": "Get prompt with embedded resource",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.873Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: prompts/get",
+    "specReferences": [
+      {
+        "id": "MCP-Prompts-Embedded-Resources",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/prompts#embedded-resources"
+      }
+    ]
+  }
+]

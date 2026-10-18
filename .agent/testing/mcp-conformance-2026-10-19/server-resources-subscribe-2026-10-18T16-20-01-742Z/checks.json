@@ -1,0 +1,16 @@
+[
+  {
+    "id": "resources-subscribe",
+    "name": "ResourcesSubscribe",
+    "description": "Subscribe to resource successfully",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.764Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: resources/subscribe",
+    "specReferences": [
+      {
+        "id": "MCP-Resources-Subscribe",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources#resource-subscriptions"
+      }
+    ]
+  }
+]

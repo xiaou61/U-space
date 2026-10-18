@@ -1,0 +1,16 @@
+[
+  {
+    "id": "resources-list",
+    "name": "ResourcesList",
+    "description": "Server lists available resources with valid structure",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.668Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: resources/list",
+    "specReferences": [
+      {
+        "id": "MCP-Resources-List",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources#listing-resources"
+      }
+    ]
+  }
+]

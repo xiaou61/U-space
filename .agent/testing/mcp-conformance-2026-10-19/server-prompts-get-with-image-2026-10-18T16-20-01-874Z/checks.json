@@ -1,0 +1,16 @@
+[
+  {
+    "id": "prompts-get-with-image",
+    "name": "PromptsGetWithImage",
+    "description": "Get prompt with image content",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.894Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: prompts/get",
+    "specReferences": [
+      {
+        "id": "MCP-Prompts-Image",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/prompts#image-content"
+      }
+    ]
+  }
+]

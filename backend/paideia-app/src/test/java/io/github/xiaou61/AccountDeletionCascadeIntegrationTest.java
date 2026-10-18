@@ -71,6 +71,8 @@ class AccountDeletionCascadeIntegrationTest {
             {"resume_versions", "user_id"},
             {"resume_edit_history", "user_id"},
             {"resume_documents", "user_id"},
+            // MCP 外部接入凭据（WORK-019）：留下一条就是"这个人还有一把能用的钥匙"
+            {"mcp_access_tokens", "user_id"},
             // 知识库自评（"我对哪些条目懂／不懂"）：本项目第一张用户私有业务数据表
             {"knowledge_self_assessments", "user_id"},
             {"refresh_tokens", "user_id"},
@@ -252,6 +254,11 @@ class AccountDeletionCascadeIntegrationTest {
                 VALUES (?, ?, 1, 'work[0].bullets[0]', 'bullet', '原文', '改后', 'rewrite', '依据',
                         1, 'passed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
                 """, versionId, owner);
+        // MCP 凭据（WORK-019）：必须真种一条，否则新加的断言只会命中空表。
+        jdbcTemplate.update("""
+                INSERT INTO mcp_access_tokens (user_id, name, token_prefix, token_hash, scopes, expires_at, created_at)
+                VALUES (?, '注销用', 'pd_mcp_test', REPEAT('c', 64), 'read', NULL, UTC_TIMESTAMP(3))
+                """, owner);
         // 知识库自评：必须真种一条，否则新加的 USER_DATA 行只会断言到 0 条，等于没验。
         // entry_id 借用种子里任意一条已发布条目（外键指向 knowledge_entries）。
         Long entryId = jdbcTemplate.queryForObject(

@@ -6,5 +6,10 @@
  *
  * <p>这里刻意不用 {@code @ApplicationModule(type = OPEN)}。开放模块会放行外部对本模块内部
  * 的访问，而当前对外契约全部位于本包根，开放只会白白丢掉这条边界检查。
+ *
+ * <p><b>工具契约（WORK-019）也在包根</b>：{@code PaideiaTool} / {@code ToolCatalog} /
+ * {@code ToolDescriptor} 等必须被各业务模块与 {@code paideia-mcp} 引用，放进 {@code tools}
+ * 子包会被上面的规则判成"跨模块访问内部实现"。它们与 {@code SearchQuery} 是同一类东西——
+ * 给别的模块用的契约。
  */
 package io.github.xiaou61.platform;

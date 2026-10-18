@@ -5,7 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.jayway.jsonpath.JsonPath;
-import io.github.xiaou61.ai.internal.tools.AssistantTools;
+import io.github.xiaou61.ai.Harness;
+import io.github.xiaou61.ai.internal.tools.AgentToolBridge;
 import io.github.xiaou61.security.AuthPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.nio.charset.StandardCharsets;
@@ -38,10 +39,10 @@ import org.springframework.test.web.servlet.MvcResult;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @EnabledIfEnvironmentVariable(named = "PAIDEIA_TEST_DB_PASSWORD", matches = ".+")
-class AssistantToolsIntegrationTest {
+class AgentToolBridgeIntegrationTest {
 
     @Autowired
-    AssistantTools tools;
+    AgentToolBridge tools;
 
     @Autowired
     MockMvc mockMvc;
@@ -78,13 +79,13 @@ class AssistantToolsIntegrationTest {
     }
 
     @Test
-    @DisplayName("search_entries 只返回已发布条目——草稿不能经助手漏出去")
+    @DisplayName("knowledge.search 只返回已发布条目——草稿不能经助手漏出去")
     void searchOnlyReturnsPublished() throws Exception {
         String marker = "工具检索" + System.nanoTime();
         long published = createEntry(marker + "甲", "published");
         createEntry(marker + "乙", "draft");
 
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "search_entries", Map.of("keyword", marker));
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "knowledge.search", Map.of("keyword", marker));
 
         assertThat(outcome.error()).isFalse();
         assertThat(outcome.text()).contains("id=" + published + " 标题=" + marker + "甲");
@@ -98,7 +99,7 @@ class AssistantToolsIntegrationTest {
         // 模式下是「任一 bigram 命中即算命中」，所以"绝不可能存在的词"这种长短语会命中任何含
         // "可能/存在"的正文（实测命中了 React 那篇）——它测的就不再是"检索不到"了。
         // 生僻字重复串不参与任何已有 bigram，且长度 ≥2 会走全文检索分支。
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "search_entries",
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "knowledge.search",
                 Map.of("keyword", "瞐瞐瞐瞐瞐"));
 
         assertThat(outcome.error()).isFalse();
@@ -106,9 +107,9 @@ class AssistantToolsIntegrationTest {
     }
 
     @Test
-    @DisplayName("list_categories 给出 id／名称／上级，层级可判")
+    @DisplayName("knowledge.list_categories 给出 id／名称／上级，层级可判")
     void listCategoriesReturnsShapedRows() {
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "list_categories", Map.of());
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "knowledge.list_categories", Map.of());
 
         assertThat(outcome.error()).isFalse();
         assertThat(outcome.text()).isNotBlank();
@@ -116,7 +117,7 @@ class AssistantToolsIntegrationTest {
     }
 
     @Test
-    @DisplayName("my_marks 只给**调用者自己**的标记，别人的拿不到")
+    @DisplayName("knowledge.my_marks 只给**调用者自己**的标记，别人的拿不到")
     void marksBelongToTheCallerOnly() throws Exception {
         long mineEntry = createEntry("甲的标记条目" + System.nanoTime(), "published");
         long theirsEntry = createEntry("乙的标记条目" + System.nanoTime(), "published");
@@ -129,7 +130,7 @@ class AssistantToolsIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"level\":\"unsure\"}"))
                 .andReturn().getResponse().getStatus()).isEqualTo(200);
 
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "my_marks", Map.of());
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "knowledge.my_marks", Map.of());
 
         assertThat(outcome.error()).isFalse();
         assertThat(outcome.text()).contains("id=" + mineEntry);
@@ -142,16 +143,18 @@ class AssistantToolsIntegrationTest {
         // 这条是防回归。将来有人往工具集里加一个真会写库的工具，就等于绕过了
         // "自主只建议不动作"（用户裁决 7）——断了它，加的人必须先想清楚这件事。
         // draft_note 在清单里是**因为**它只返回草稿（下面的用例证明它一行都没写）。
-        assertThat(tools.schemas()).extracting(io.agentscope.core.model.ToolSchema::getName)
-                .containsExactlyInAnyOrder("search_entries", "list_categories", "my_marks", "draft_note");
+        assertThat(tools.core(Harness.ASSISTANT)).extracting(io.agentscope.core.model.ToolSchema::getName)
+                .containsExactlyInAnyOrder("account.me", "assessment.list_marks", "assistant.draft_note",
+                        "knowledge.get_entry", "knowledge.list_categories", "knowledge.my_marks",
+                        "knowledge.search", "note.get", "note.list");
     }
 
     @Test
-    @DisplayName("draft_note 只拟草稿不写库；正文为空时明确失败")
+    @DisplayName("assistant.draft_note 只拟草稿不写库；正文为空时明确失败")
     void draftNoteStagesWithoutWriting() {
         int before = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class);
 
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "draft_note",
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "assistant.draft_note",
                 Map.of("title", "草稿标题", "body", "草稿正文"));
 
         assertThat(outcome.error()).isFalse();
@@ -162,16 +165,16 @@ class AssistantToolsIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class)).isEqualTo(before);
 
         // 空正文的草稿没有意义：失败回给模型，让它补上再提
-        AssistantTools.Outcome empty = tools.run(Long.parseLong(userA), "draft_note", Map.of("body", "   "));
+        AgentToolBridge.Outcome empty = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "assistant.draft_note", Map.of("body", "   "));
         assertThat(empty.error()).isTrue();
         assertThat(empty.draft()).isNull();
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notes", Integer.class)).isEqualTo(before);
     }
 
     @Test
-    @DisplayName("draft_note 没给标题时用兜底标题，而不是生成一条列表里显示空白的笔记")
+    @DisplayName("assistant.draft_note 没给标题时用兜底标题，而不是生成一条列表里显示空白的笔记")
     void draftNoteFallsBackToDefaultTitle() {
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "draft_note", Map.of("body", "只有正文"));
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "assistant.draft_note", Map.of("body", "只有正文"));
         assertThat(outcome.draft()).isNotNull();
         assertThat(outcome.draft().title()).isEqualTo("来自助手的笔记");
     }
@@ -179,7 +182,7 @@ class AssistantToolsIntegrationTest {
     @Test
     @DisplayName("未知工具名返回错误结果而不是抛异常——工具失败不该炸掉整轮对话")
     void unknownToolReturnsErrorOutcome() {
-        AssistantTools.Outcome outcome = tools.run(Long.parseLong(userA), "delete_everything", Map.of());
+        AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "delete_everything", Map.of());
 
         assertThat(outcome.error()).isTrue();
         assertThat(outcome.text()).contains("没有名为");
@@ -195,14 +198,14 @@ class AssistantToolsIntegrationTest {
 
         // 三种坏输入都必须安全返回
         for (Object limit : List.of(1000, 0, -1, "不是数字")) {
-            AssistantTools.Outcome outcome =
-                    tools.run(Long.parseLong(userA), "search_entries", Map.of("keyword", marker, "limit", limit));
+            AgentToolBridge.Outcome outcome = tools.run(Long.parseLong(userA), Harness.ASSISTANT,
+                            "knowledge.search", Map.of("keyword", marker, "limit", limit));
             assertThat(outcome.error()).as("limit=%s", limit).isFalse();
             assertThat(outcome.text()).contains(marker + "0");
         }
 
         // 上限 20：即便要 1000 条也不会把上下文塞爆（这里只有 3 条，验的是"不报错且不超上限"）
-        AssistantTools.Outcome capped = tools.run(Long.parseLong(userA), "search_entries",
+        AgentToolBridge.Outcome capped = tools.run(Long.parseLong(userA), Harness.ASSISTANT, "knowledge.search",
                 Map.of("keyword", marker, "limit", 1000));
         assertThat(capped.text().lines().count()).isLessThanOrEqualTo(20);
     }

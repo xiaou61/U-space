@@ -21,7 +21,8 @@ import io.github.xiaou61.ai.AssistantConversation;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
-import io.github.xiaou61.ai.internal.tools.AssistantTools;
+import io.github.xiaou61.ai.Harness;
+import io.github.xiaou61.ai.internal.tools.AgentToolBridge;
 import io.github.xiaou61.platform.BizException;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +88,7 @@ class ConversationUsageAccumulationTest {
 
         private final ScriptedModel model;
 
-        ScriptedConversation(ScriptedModel model, AssistantTools tools) {
+        ScriptedConversation(ScriptedModel model, AgentToolBridge tools) {
             super(new ConversationProperties(), null, tools);
             this.model = model;
         }
@@ -133,11 +134,13 @@ class ConversationUsageAccumulationTest {
         }
     }
 
-    private static AssistantTools toolsStub() {
-        AssistantTools tools = mock(AssistantTools.class);
-        when(tools.schemas()).thenReturn(List.of());
-        when(tools.run(anyLong(), anyString(), any()))
-                .thenReturn(new AssistantTools.Outcome(false, "工具结果", null));
+    private static AgentToolBridge toolsStub() {
+        AgentToolBridge tools = mock(AgentToolBridge.class);
+        when(tools.core(any())).thenReturn(List.of());
+        when(tools.discoverySchemas()).thenReturn(List.of());
+        when(tools.concat(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(tools.run(anyLong(), any(), anyString(), any()))
+                .thenReturn(new AgentToolBridge.Outcome(false, "工具结果", null, List.of()));
         return tools;
     }
 

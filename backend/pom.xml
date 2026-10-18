@@ -28,6 +28,7 @@
     <module>paideia-note</module>
     <module>paideia-ai</module>
     <module>paideia-sandbox</module>
+    <module>paideia-mcp</module>
     <module>paideia-app</module>
   </modules>
 
@@ -51,6 +52,12 @@
       `Loader.loadPDF`），把版本钉在一处比散在模块里更不容易踩错。
     -->
     <pdfbox.version>3.0.7</pdfbox.version>
+    <!--
+      MCP SDK（WORK-019）。**不是新依赖**：agentscope-core 已经把 0.17.0 传进来，这里显式 pin
+      同一版本，防止依赖调解把它换掉——换掉之后 AgentScope 的 MCP 客户端会在运行期
+      NoSuchMethodError。升级要等 AgentScope 一起升。
+    -->
+    <mcp-sdk.version>0.17.0</mcp-sdk.version>
   </properties>
 
   <dependencyManagement>
@@ -73,6 +80,11 @@
       <dependency>
         <groupId>io.github.xiaou61</groupId>
         <artifactId>paideia-platform</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.xiaou61</groupId>
+        <artifactId>paideia-mcp</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

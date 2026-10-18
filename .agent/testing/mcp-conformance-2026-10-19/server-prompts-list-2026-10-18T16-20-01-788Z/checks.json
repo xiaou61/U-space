@@ -1,0 +1,16 @@
+[
+  {
+    "id": "prompts-list",
+    "name": "PromptsList",
+    "description": "Server lists available prompts with valid structure",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.809Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: prompts/list",
+    "specReferences": [
+      {
+        "id": "MCP-Prompts-List",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/prompts#listing-prompts"
+      }
+    ]
+  }
+]

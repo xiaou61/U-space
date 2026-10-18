@@ -1,0 +1,55 @@
+import type { ApiClient } from '@paideia/core'
+
+/**
+ * MCP 凭据（WORK-019）。
+ *
+ * 三个端点、一个纪律：**创建响应里是明文唯一一次出现的地方**。列表只有前缀，
+ * 服务端不保存明文——刷新之后拿不回来，这是设计而不是缺陷。
+ */
+export interface McpToken {
+  id: number
+  name: string
+  prefix: string
+  scopes: string[]
+  expiresAt: string | null
+  lastUsedAt: string | null
+  revokedAt: string | null
+  createdAt: string | null
+  active: boolean
+}
+
+export interface CreatedMcpToken {
+  id: number
+  token: string
+  prefix: string
+  scopes: string[]
+  expiresAt: string | null
+}
+
+export interface McpTokenInput {
+  name: string
+  scopes: string[]
+  /** 0 表示永不过期；不传走服务端默认（90 天）。 */
+  expiresInDays?: number
+}
+
+export interface McpTokensApi {
+  list(): Promise<McpToken[]>
+  create(input: McpTokenInput): Promise<CreatedMcpToken>
+  revoke(id: number): Promise<void>
+}
+
+export function createMcpTokensApi(client: ApiClient): McpTokensApi {
+  return {
+    list: () => client.requestEnvelope<McpToken[]>('/api/v1/ai/mcp-tokens'),
+    create: (input) =>
+      client.requestEnvelope<CreatedMcpToken>('/api/v1/ai/mcp-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    revoke: async (id) => {
+      await client.requestEnvelope<null>(`/api/v1/ai/mcp-tokens/${id}`, { method: 'DELETE' })
+    },
+  }
+}

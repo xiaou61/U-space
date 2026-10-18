@@ -8,6 +8,7 @@ import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LoginPage } from './pages/LoginPage'
 import { InterviewPage } from './pages/InterviewPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { McpTokensPage } from './pages/McpTokensPage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NoteNewPage } from './pages/NoteNewPage'
 import { NotesPage } from './pages/NotesPage'
@@ -175,6 +176,16 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <MyAssessmentsPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    // MCP 接入凭据（WORK-019）：和"我的身份"一样属于设置，但它是外部助手的入口，
+    // 单独一页比塞进 ProfilePage 清楚——那页讲的是推荐偏好，这页讲的是一把钥匙。
+    path: '/settings/mcp',
+    element: (
+      <RequireAuth>
+        <McpTokensPage />
       </RequireAuth>
     ),
   },

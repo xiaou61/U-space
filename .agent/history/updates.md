@@ -3763,3 +3763,13 @@ schema_version: 1
 - 验证：research.md 记录外部事实与仓库核对；工件均为 draft，需求未签，代码未动
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-18 23:17:03 +0800 · WORK-019 · 签署 .agent/changes/WORK-019-MCP网关与工具目录/requirements.md、.agent/changes/WORK-019-MCP网关与工具目录/proposal.md、.agent/changes/WORK-019-MCP网关与工具目录/design.md、.agent/changes/WORK-019-MCP网关与工具目录/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-019-MCP网关与工具目录/requirements.md、.agent/changes/WORK-019-MCP网关与工具目录/proposal.md、.agent/changes/WORK-019-MCP网关与工具目录/design.md、.agent/changes/WORK-019-MCP网关与工具目录/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-019-MCP网关与工具目录/requirements.md、.agent/changes/WORK-019-MCP网关与工具目录/proposal.md、.agent/changes/WORK-019-MCP网关与工具目录/design.md、.agent/changes/WORK-019-MCP网关与工具目录/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

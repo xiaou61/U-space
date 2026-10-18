@@ -2,12 +2,15 @@
 artifact: proposal
 work_id: WORK-019
 work: MCP 网关与工具目录
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-006, WORK-009, WORK-010, WORK-013]
 created: 2026-10-18
 updated: 2026-10-18
+approved_by: xiaou61
+approved_at: 2026-10-18 23:17:03 +0800
+approver_role: CTO
 ---
 
 # 提案 · MCP 网关与工具目录
@@ -56,12 +59,13 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 
 内部与外部都调这一个方法。测试只测一次，两个适配器共享正确性。
 
-### 3. 外部用稳定版 SDK + 静态视图
+### 3. 外部用**已有**的 SDK，不新增依赖
 
-- 依赖 `io.modelcontextprotocol.sdk:mcp:2.1.0`（`mcp-core` + Jackson 3 绑定），协议 **2025-11-25**。
+- **复用 AgentScope 已传递引入的 `io.modelcontextprotocol.sdk:mcp:0.17.0`**（实测 `mvn dependency:tree -pl paideia-ai` 确认它在 classpath 上，由 `agentscope-core:2.0.0` 带入）。它含 `HttpServletStreamableServerTransportProvider`、`McpServer.sync(streamableTransport)`、`contextExtractor`，协议到 2025-06-18——够用。
+- **不升到 2.x**：那是与 AgentScope 自带版本冲突的升级，且 2026-07-28 只在 2.2.0-M1 里。等 SDK 统一升级时再换适配器。
 - 每个视图在第一次请求时构建一个 `McpSyncServer` 并缓存：视图 = 工具组集合 × 是否含写。
 - 推荐端点：`/mcp`（默认组只读）、`/mcp/write`、`/mcp/x/{toolset}`、`/mcp/x/{toolset}/write`、`/mcp/x/all`。
-- 视图是路径的一部分，所以「清单里有」与「能调用」天然一致；不需要 2026-07-28 才允许的每请求清单变化。
+- 视图是路径的一部分，所以「清单里有」与「能调用」天然一致。
 - 请求上下文：PAT 过滤器把 `userId`/`scopes`/`tokenId` 写进 request attribute → transport 的 `contextExtractor` 放进 `McpTransportContext` → 工具处理函数取出。
 - `/mcp/**` 用**独立的安全链**（`@Order(1)`，`securityMatcher("/mcp/**")`），只跑 PAT 过滤器；不改动现有 JWT 链的顺序，避免「路径规则写反」这类静默失效。
 
@@ -81,7 +85,7 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 - `AgentScopeConversation` 的工具循环从「循环外算一次 schema」改为「每轮用 `core + discovered` 重算」，`find_tools` 的返回把新工具加进本请求的 `discovered` 集合。
 - 不依赖 provider 端 tool search（DeepSeek 没有）；将来接入支持的 provider 时，这个机制仍可保留为兜底。
 
-### 6. 一期工具清单（14 个）
+### 6. 一期工具清单（15 个）
 
 | 工具组 | 工具 | 读/写 |
 | --- | --- | --- |
@@ -89,9 +93,11 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 | note | `note.list`、`note.get`、`note.create`、`note.append` | 后两个写 |
 | account | `account.me` | 读 |
 | assessment | `assessment.list_marks`、`assessment.mark_entry` | 后者写 |
-| assistant | `assistant.draft_note` | 读（只产草稿） |
+| assistant | `assistant.draft_note`、`assistant.ask` | 读（前者只产草稿，后者复用积分） |
 
-外部默认视图 = knowledge + note(读) + account + assessment(读)；`write` 视图再加 4 个写工具（note.create/append、assessment.mark_entry，以及保留位）。`assistant.draft_note` 只在内部视图出现——它的产物是界面草稿，外部客户端没有确认 UI。
+外部默认视图 = knowledge + note(读) + account + assessment(读) + `assistant.ask`；`write` 视图再加 3 个写工具（`note.create`、`note.append`、`assessment.mark_entry`）。`assistant.draft_note` 只在内部视图出现——它的产物是界面草稿，外部客户端没有确认 UI。
+
+**用户裁决（2026-10-18）**：写工具就这三个，其余写操作不暴露；`assistant.ask` 进第一期；PAT 默认 90 天、可选永不过期。
 
 ## 备选方案
 
@@ -111,6 +117,12 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 **最强理由**：无状态与本项目「无 session」完全一致，且 `McpSyncToolRepository.list(ctx)` 原生支持每请求裁剪，客户端缓存与提示词缓存友好。
 **不选的原因**：2.2.0-M1 是里程碑版本，2026-07-28 刚发布不到三个月，主流客户端仍以 2025-06/2025-11 为主；现在只支持新协议会直接降低「接得上」这个首要目标。目录与传输解耦，升级只是多一个适配器。
 **何时改**：当目标客户端普遍声明 2026-07-28，或我们需要每请求动态裁剪（如按订阅等级给工具）时，加第二个 transport provider，不改工具。
+
+### C2. 升级到 mcp 2.1.0（稳定版）
+
+**最强理由**：协议支持到 2025-11-25，比现用的 0.17.0 新一档。
+**不选的原因**：`agentscope-core:2.0.0` 已经把 `mcp:0.17.0` 带进 classpath；升到 2.1.0 等于与 AgentScope 期望的版本对抗，一旦它用了变化过的 API 就会 `NoSuchMethodError`，且是用到某条路径才发现的那种。工具代码与传输解耦，等 SDK 统一升级时再换。
+**何时改**：AgentScope 升级并携带 2.x，或我们决定为 MCP 引入独立类加载隔离（不值得，除非确实需要新协议特性）。
 
 ### D. 只扩 `AssistantTools`，不做 MCP
 
@@ -143,7 +155,8 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 
 | 风险 | 缓解 |
 | --- | --- |
-| SDK 里程碑/稳定版与 Boot 4、Jackson 3 不兼容 | 先做启动冒烟：一个 `McpSyncServer` + Servlet 注册 + `tools/list` 能回包；不通过则退到 2.2.0-M1 的同一 API（工具代码不变） |
+| SDK 里程碑/稳定版与 Boot 4、Jackson 3 不兼容 | 复用已有 0.17.0（它在当前构建里已经工作），启动冒烟确认 `McpServer.sync` + Servlet 注册 + `tools/list` 回包 |
+| 升级 MCP SDK 引入与 AgentScope 的版本冲突 | 不升级；隔离在 `paideia-mcp` 适配器内，工具代码不依赖 SDK 类型 |
 | Modulith 因新模块依赖报边界错误 | `paideia-mcp` 只依赖 `paideia-platform`；工具通过 Bean 收集，不 import 业务包 |
 | 每视图一个 `McpSyncServer` 带来内存增长 | 视图数量 ≤ 12，按需惰性构建；单视图工具 ≤ 20，压测记录内存 |
 | PAT 泄露 | 只存哈希、只显示一次、可吊销、可选过期、按 token 限流；日志只记 tokenId |
@@ -169,6 +182,7 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 | AC-012 迁移与守卫 | TASK-005 |
 | AC-013 PAT 管理页 | TASK-009 |
 | AC-014 接入文档 | TASK-011 |
+| AC-015 `assistant.ask` 计费 | TASK-012 |
 
 ## 待决定事项
 

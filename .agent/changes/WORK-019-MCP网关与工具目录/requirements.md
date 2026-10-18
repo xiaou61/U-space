@@ -2,13 +2,16 @@
 artifact: requirements
 work_id: WORK-019
 work: MCP 网关与工具目录
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增跨全部业务模块的公共工具契约、一个新 Maven 模块与对外协议端点、一张长期凭据表（认证面）、按凭据裁剪的授权逻辑、注销级联与计费路径；属于跨模块 + 公共接口 + 安全 + 数据 + 架构变更
 workflow: full
 related_to: [WORK-006, WORK-009, WORK-010, WORK-013]
 created: 2026-10-18
 updated: 2026-10-18
+approved_by: xiaou61
+approved_at: 2026-10-18 23:17:03 +0800
+approver_role: CTO
 ---
 
 # MCP 网关与工具目录需求
@@ -40,6 +43,9 @@ updated: 2026-10-18
 | 3 | 架构取向 | **分内部与外部两层**：内部是自家超级 AI 直接用；外部是别的助手接入我们的 MCP |
 | 4 | 迭代预期 | 「这个功能会很快的迭代，架构一定要设计好」——优先可扩展的骨架，而不是一次性把 83 个端点转完 |
 | 5 | 参考对象 | 参考 GitHub 等成熟项目的设计架构，不自己发明 |
+| 6 | 写工具一期范围 | 除推荐的 `note.create`/`note.append`/`assessment.mark_entry` 外，其余写操作（知识库管理、账号删除、积分管理）不暴露 |
+| 7 | 是否暴露 `assistant.ask` | **放到第一期**：外部助手可调用平台 AI 问答（复用现有积分与平台凭据） |
+| 8 | PAT 默认过期 | 默认 90 天，可选永不过期 |
 
 ## 实现选择
 
@@ -48,7 +54,7 @@ updated: 2026-10-18
 1. **一份工具目录，两个适配器**：工具的定义（名称、分组、schema、注解、权限、只读标记）是唯一真源；内部 harness 与外部 MCP server 都从它生成各自的清单。禁止两边各维护一份工具表。
 2. **契约放 `paideia-platform`**（共享内核，所有模块已依赖）：`ToolDescriptor`、`PaideiaTool`、`ToolContext`、`ToolResult`、`ToolCatalog`。业务模块实现工具，不依赖 MCP SDK。
 3. **外部新增 `paideia-mcp` Maven 模块**：只依赖 `paideia-platform` 与 MCP SDK；工具实例通过 Spring 收集，模块之间不新增编译依赖。放不进 `paideia-ai`——那会让 ai 反向依赖 note/account，且 MCP 是传输适配层而非 AI 领域。
-4. **用稳定的 `mcp 2.1.0` + Streamable HTTP（协议 2025-11-25）**，不用 2.2.0-M1 的 2026-07-28 实现：客户端（ZCode、Claude Code、Cursor 等）当前说 2025-06/2025-11，先保证接得上。目录与传输无关，将来加 2026-07-28 适配器不改工具代码。
+4. **复用 AgentScope 已传递引入的 MCP SDK 0.17.0**（`io.modelcontextprotocol.sdk:mcp:0.17.0`，含 `HttpServletStreamableServerTransportProvider`，协议到 2025-06-18），**不新增 MCP 依赖**。2026-10-18 实测 `mvn dependency:tree` 确认它已在 `paideia-ai` 的 classpath 上（由 `agentscope-core:2.0.0` 带入），直接升到 2.x 会与 AgentScope 自带版本冲突。目录与传输无关，将来 SDK 统一升级时只换适配器，不改工具代码。
 5. **外部视图按 URL 静态切分**（照 GitHub）：`/mcp`（默认组，只读）、`/mcp/write`（含写，需 write scope）、`/mcp/x/{toolset}`、`/mcp/x/{toolset}/write`。视图片段在启动时构建，`tools/list` 与 `tools/call` 永远一致；不依赖 2026-07-28 才允许的「每请求返回不同列表」。
 6. **外部凭据用长效 PAT**，不用 OAuth 2.1 完整流程（RFC 9728/8707 + 客户端注册成本高，而我们的客户端都支持自定义 Bearer 头）。PAT 哈希入库、可吊销、带 scope 与可选过期；access token 仍然只有 15 分钟，不作为 MCP 凭据。
 7. **内部按需加载用客户端本地机制**：常驻核心包 + 一个 `find_tools` 元工具；命中后把 schema 并进下一轮。不依赖 provider 端 tool search（DeepSeek 没有）。
@@ -142,6 +148,7 @@ updated: 2026-10-18
 
 - **REQ-026 工具名稳定**：工具名一旦公开不得随意改名；如需改名必须保留别名映射一个版本，并在描述里标注弃用。
 - **REQ-027 协议演进**：传输层与目录解耦；将来增加 2026-07-28 无状态传输或 resources/prompts 时，不改动已有工具的实现。
+- **REQ-028 平台 AI 问答工具**：暴露 `assistant.ask(question, entryId?)`，外部助手可让平台代为回答一次学习问题。它复用现有对话能力与平台凭据、按轮计积分；**不写会话历史**（外部调用不是用户的一段会话），返回纯文本结果。
 
 ## 质量要求
 
@@ -184,6 +191,7 @@ updated: 2026-10-18
 - **AC-012 迁移与守卫**：新迁移在生产库执行成功，重复启动校验和不报错；新表登记进注销清单；迁移号不写死。
 - **AC-013 PAT 管理页**：创建后完整 token 只出现一次；刷新后列表只见前缀；吊销后旧 token 立即 401；页面在 390px 宽下无横向滚动。
 - **AC-014 接入文档**：给出 ZCode 与 Claude Desktop 的配置片段（URL + Authorization 头）、三种视图的用途、只读建议；文档里不出现任何真实 token。
+- **AC-015 `assistant.ask` 计费**：余额充足时返回文本并产生一条积分流水；余额为 0 时 402 且上游调用 0 次；调用不新增任何 `ai_conversations` / `ai_messages` 行。
 
 ## 假设
 
@@ -194,6 +202,4 @@ updated: 2026-10-18
 
 ## 待确认问题
 
-1. **写工具进入一期的范围**：推荐一期只开放「笔记创建/更新」与「自评标记」两类写工具，其余写操作（知识库管理、账号删除、积分管理）不暴露。若用户要求更多，逐条列出再定。
-2. **MCP 工具是否需要暴露「调用平台 AI」**（如 `assistant.ask`）：技术上可行且复用积分，但它会带来二次模型调用的成本叠加；推荐二期再做。
-3. **PAT 默认过期**：推荐「默认 90 天，可选永不过期」；若倾向更严可改默认 30 天。
+无阻断项。三条已由用户于 2026-10-18 裁决（见「用户决定」第 6–8 条）。

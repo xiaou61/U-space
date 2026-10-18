@@ -39,6 +39,12 @@ class CreditLedger {
      */
     static final String KIND_RESUME = "RESUME";
 
+    /**
+     * 外部 MCP 问答（WORK-019）。**没有 ref_message_id**：那次调用不落会话消息，
+     * 混进 SETTLE 会让对账时出现"一笔没有对应消息的扣费"。
+     */
+    static final String KIND_MCP_ASK = "MCP_ASK";
+
     private Long id;
     private Long userId;
     private long delta;

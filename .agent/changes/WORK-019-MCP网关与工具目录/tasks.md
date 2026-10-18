@@ -2,11 +2,14 @@
 artifact: tasks
 work_id: WORK-019
 work: MCP 网关与工具目录
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements, proposal, design]
 created: 2026-10-18
 updated: 2026-10-18
+approved_by: xiaou61
+approved_at: 2026-10-18 23:17:03 +0800
+approver_role: CTO
 ---
 
 # 实施任务 · MCP 网关与工具目录
@@ -43,7 +46,7 @@ updated: 2026-10-18
 | 工具抛异常把堆栈/表名泄露给客户端 | TASK-008 | `McpToolInvokerTest.internalErrorIsRedacted` |
 | 调用清单外的工具 | TASK-006/008 | `McpToolsIntegrationTest.toolOutsideViewIsUnknown` |
 | 超限调用打穿上游 | TASK-008 | `McpToolInvokerTest.rateLimitRejectsBeforeInvoke` |
-| 余额 0 仍调上游 | TASK-008 | `McpAiToolTest.zeroBalanceNoUpstreamCall` |
+| 余额 0 仍调上游 | TASK-012 | `McpAiToolTest.zeroBalanceNoUpstreamCall` |
 | find_tools 命中后下一轮仍没有 schema | TASK-003 | `AgentToolBridgeTest.discoveredToolJoinsNextRound` |
 | 工具数低于阈值却注入 find_tools | TASK-003 | `AgentToolBridgeTest.noFindToolBelowThreshold` |
 | PAT 明文落库 | TASK-005 | `PatServiceTest.storesOnlyHash` |
@@ -161,7 +164,7 @@ updated: 2026-10-18
   - `backend/pom.xml`（加模块）、`paideia-app/pom.xml`（依赖）
   - `McpViewRegistryTest`、`McpStartupSmokeTest`
 - 接口：
-  - 依赖 `io.modelcontextprotocol.sdk:mcp:2.1.0`
+  - 依赖 `io.modelcontextprotocol.sdk:mcp:0.17.0`（与 AgentScope 带入的版本一致，显式 pin 防调解）
   - 产出 `McpViewRegistry.server(String view): McpSyncServer`（惰性 + 缓存）
 - 步骤：
   1. 加依赖与模块，写最小 `@SpringBootTest` 冒烟：上下文启动、`ToolCatalog` Bean 就绪 → 绿（先证明 Boot 4 + Jackson 3 + SDK 能共存）。
@@ -196,10 +199,9 @@ updated: 2026-10-18
 - 步骤：
   1. 写错误映射测试（未知工具、schema 违规、内部异常脱敏）→ 红 → 实现 → 绿。
   2. 写归属测试（别人 id → 404、参数带 userId 不越权）→ 红 → 实现 → 绿。
-  3. 写限流测试（超过 N 次不调用工具）→ 红 → 实现（基于既有限流器或简单固定窗口）→ 绿。
-  4. 写 AI 工具零余额测试（402、上游 0 次）→ 红 → 接 `CreditService` → 绿。
-  5. 写审计测试（捕获日志，断言七个字段、无正文）→ 绿。
-- 验证：`mvn -B -pl paideia-app test -Dtest='McpToolInvokerTest,McpToolsIntegrationTest,McpAiToolTest,McpAuditLoggerTest'` → 全绿。
+  3. 写限流测试（超过 N 次不调用工具）→ 红 → 实现（基于`UserRateLimiter` 的同一思路，按 token 维度）→ 绿。
+  4. 写审计测试（捕获日志，断言七个字段、无正文）→ 绿。
+- 验证：`mvn -B -pl paideia-app test -Dtest='McpToolInvokerTest,McpToolsIntegrationTest,McpAuditLoggerTest'` → 全绿。
 
 ### TASK-009 | pending | PAT 管理端点与前端页
 
@@ -230,18 +232,39 @@ updated: 2026-10-18
 
 ### TASK-011 | pending | 端到端冒烟与验收报告
 
-- 对应：全部 AC
+- 对应：`AC-001`..`AC-014`
 - 依赖：TASK-001..010
 - 新建/修改：`.agent/changes/WORK-019-*/verification.md`
 - 步骤：
   1. 起本地后端，用 curl 走完：创建 PAT → list → 调读工具 → 写视图 403 → 吊销 → 401。
   2. 用 ZCode 真实连一次（本机配置里加一条，确认 `tools/list` 可见）。
-  3. 逐条对照 14 个 AC 写入验证表，未达标的写「未达」与原因。
+  3. 逐条对照 AC 写入验证表，未达标的写「未达」与原因。
 - 验证：`verification.md` 每条 AC 有命令或人工步骤与结果；`project-lifecycle.ps1 validate` 通过。
+
+### TASK-012 | pending | assistant.ask 工具与计费
+
+- 对应：`REQ-028`、`AC-015`
+- 依赖：TASK-001、TASK-008
+- 新建/修改：
+  - `backend/paideia-ai/src/main/java/io/github/xiaou61/ai/AssistantAnswerer.java`（新建包根端口）
+  - `.../internal/conversation/AgentScopeAssistantAnswerer.java`（新建，复用模型构建与工具循环，非流式、无历史、不落库）
+  - `.../internal/tools/AssistantAskTool.java`（新建 `PaideiaTool`）
+  - `backend/paideia-ai/src/main/java/io/github/xiaou61/ai/internal/billing/CreditLedger.java`（加 `KIND_MCP_ASK`）
+  - 迁移：`credit_ledger.kind` 若为枚举/CHECK，需要同步（先查 V11 的实际定义，不臆造）
+  - 测试：`AssistantAskToolTest`、`McpAiToolTest` 增补
+- 接口：
+  - `interface AssistantAnswerer { Answer answer(long userId, String question, Long entryId); record Answer(String text, TokenUsage usage) {} }`
+  - 工具名 `assistant.ask`，输入 schema `{question: string, entryId?: integer}`
+- 步骤：
+  1. 查 `credit_ledger.kind` 是否有取值约束；有则迁移加值，无则只加常量。
+  2. 写 `AssistantAskToolTest`（无历史、不落库、返回文本）→ 红 → 实现 → 绿。
+  3. 写零余额测试：402 且上游 0 次；写结算测试：成功调用产生一条 `MCP_ASK` 流水。
+  4. 断言调用后 `ai_conversations` / `ai_messages` 行数不变。
+- 验证：`mvn -B -pl paideia-ai,paideia-app test -Dtest='AssistantAskToolTest,McpAiToolTest'` → 全绿。
 
 ## 完成条件
 
-- 27 条 REQ 与 14 条 AC 都有归属任务与可复查证据。
+- 28 条 REQ 与 15 条 AC 都有归属任务与可复查证据。
 - `mvn -B verify` 全绿且 Skipped 列已核对（无口令时的跳过要单独标明）。
 - 前端 `pnpm -r typecheck` 与相关单测绿；`app` 端 e2e 不回归。
 - 实现与验证结果更新到 `tasks.md` 与 `verification.md`，并追加 `.agent/history/updates.md`。

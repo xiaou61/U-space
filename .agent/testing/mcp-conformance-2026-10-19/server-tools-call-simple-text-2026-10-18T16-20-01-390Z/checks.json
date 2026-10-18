@@ -1,0 +1,16 @@
+[
+  {
+    "id": "tools-call-simple-text",
+    "name": "ToolsCallSimpleText",
+    "description": "Tool returns simple text content",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.418Z",
+    "errorMessage": "Failed: MCP error -32602: Unknown tool: invalid_tool_name",
+    "specReferences": [
+      {
+        "id": "MCP-Tools-Call",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools#calling-tools"
+      }
+    ]
+  }
+]

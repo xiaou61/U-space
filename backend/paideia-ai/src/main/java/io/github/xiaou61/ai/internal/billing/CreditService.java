@@ -204,6 +204,18 @@ public class CreditService {
     }
 
     /**
+     * 外部 MCP 问答的结算（WORK-019）。
+     *
+     * <p>种类单独记（{@code MCP_ASK}）：外部调用不产生会话消息，也**没有 ref_message_id**——
+     * 与对话混成一类之后，用户对账时会发现"一笔没有对应消息的扣费"，那正是需要解释的地方。
+     */
+    @Transactional
+    public void settleExternalAsk(long userId, long reserved, String model,
+                                  Integer inputTokens, Integer outputTokens) {
+        settleAs(userId, reserved, CreditLedger.KIND_MCP_ASK, model, inputTokens, outputTokens, null);
+    }
+
+    /**
      * 管理员调整。
      *
      * @return 调整后的余额

@@ -20,11 +20,12 @@ import io.agentscope.core.model.transport.HttpTransportException;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import io.agentscope.extensions.model.openai.formatter.DeepSeekFormatter;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.provider.GuardedHttpTransport;
-import io.github.xiaou61.ai.internal.tools.AssistantTools;
+import io.github.xiaou61.ai.internal.tools.AgentToolBridge;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
 import java.time.Duration;
@@ -60,11 +61,11 @@ class AgentScopeConversation implements AssistantConversation {
 
     private final ConversationProperties properties;
     private final GuardedHttpTransport transport;
-    private final AssistantTools tools;
+    private final AgentToolBridge tools;
 
     AgentScopeConversation(ConversationProperties properties,
                            GuardedHttpTransport transport,
-                           AssistantTools tools) {
+                           AgentToolBridge tools) {
         this.properties = properties;
         this.transport = transport;
         this.tools = tools;
@@ -81,9 +82,13 @@ class AgentScopeConversation implements AssistantConversation {
         Model model = buildModel(access, options);
 
         List<Msg> conversation = new ArrayList<>(toMessages(request));
-        // 工具集按 harness 取子集（WORK-010 AC-006）：点评那次是空的——它要结构化评分，
+        // 工具集按 harness 从平台目录取（WORK-019）：点评那次是空的——它要结构化评分，
         // 而 DeepSeek 上工具与结构化输出不能同一次调用并用。
-        List<ToolSchema> schemas = tools.schemas(request.harness());
+        List<ToolSchema> core = tools.core(request.harness());
+        List<ToolSchema> discovery = tools.discoverySchemas();
+        // 本请求内已发现的工具名。**每轮重算清单**：find_tools 命中的工具必须在下一次上游调用里
+        // 就出现，否则模型会一直重复搜索（DeepSeek 没有端侧工具搜索，这一步只能自己做）。
+        List<String> discovered = new ArrayList<>();
 
         // 逐轮累加：工具循环里**每一轮都是一次真实的上游调用**，都必须计入用量。
         // 原先只把最后一轮上报出去、中间轮次全丢——BYOK 下是"少报给用户看"，
@@ -91,6 +96,8 @@ class AgentScopeConversation implements AssistantConversation {
         TokenUsage total = null;
         try {
             for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+                List<ToolSchema> schemas = new ArrayList<>(tools.concat(core, discovered));
+                schemas.addAll(discovery);
                 Round roundResult = runRound(model, conversation, schemas, options, listener);
                 if (roundResult == null) {
                     // 上游一轮都没吐出东西：按不可用处理
@@ -108,7 +115,8 @@ class AgentScopeConversation implements AssistantConversation {
 
                 // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
                 conversation.add(roundResult.assistantMessage());
-                conversation.add(new ToolResultMessage(execute(request.userId(), requested, listener)));
+                conversation.add(new ToolResultMessage(
+                        execute(request.userId(), request.harness(), requested, discovered, listener)));
             }
             // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱。
             // **这一条路径也要上报用量**：那几轮的钱是真花了，只是没产出可用结果（原先这里一笔都不记）。
@@ -130,6 +138,16 @@ class AgentScopeConversation implements AssistantConversation {
      * 只能在模型这一层注一个假模型，喂两轮响应（第一轮要工具、第二轮出正文），断言总量是两轮之和。
      */
     Model buildModel(ModelAccess access, GenerateOptions options) {
+        return openAiModel(access, options, transport);
+    }
+
+    /**
+     * 建 OpenAI 兼容模型的公共实现（流式对话与非流式问答共用）。
+     *
+     * <p>抽成静态方法是为了让两条循环用**完全一样**的模型配置——DeepSeek 那几条坑
+     * （思考 token、nativeStructuredOutput 必须关）只写一处，不会有人在一侧漏掉。
+     */
+    static Model openAiModel(ModelAccess access, GenerateOptions options, GuardedHttpTransport transport) {
         return OpenAIChatModel.builder()
                 .apiKey(access.apiKey())
                 .baseUrl(access.baseUrl())
@@ -221,14 +239,17 @@ class AgentScopeConversation implements AssistantConversation {
      * 模型据此换个方式回答，比让整轮对话崩掉好。所以这里不额外设置错误状态——
      * 语义已经在那段文本里，多一层状态只会让读的人以为还有别的分支。
      */
-    private List<ToolResultBlock> execute(long userId, List<ToolUseBlock> requested, Listener listener) {
+    private List<ToolResultBlock> execute(long userId, Harness harness, List<ToolUseBlock> requested,
+                                          List<String> discovered, Listener listener) {
         List<ToolResultBlock> results = new ArrayList<>();
         for (ToolUseBlock call : requested) {
-            AssistantTools.Outcome outcome = tools.run(userId, call.getName(), call.getInput());
+            AgentToolBridge.Outcome outcome = tools.run(userId, harness, call.getName(), call.getInput());
             if (outcome.draft() != null) {
                 // 草稿立刻送到界面：用户的"要不要存"不该等模型把话说完才出现
                 listener.onDraft(outcome.draft());
             }
+            // find_tools 的命中要在下一轮生效：看见什么就记下来（重复的不管，concat 会按名字取工具）
+            discovered.addAll(outcome.discovered());
             results.add(new ToolResultBlock(call.getId(), call.getName(),
                     TextBlock.builder().text(outcome.text()).build()));
         }

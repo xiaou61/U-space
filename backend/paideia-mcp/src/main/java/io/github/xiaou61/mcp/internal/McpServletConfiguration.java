@@ -1,0 +1,71 @@
+package io.github.xiaou61.mcp.internal;
+
+import java.util.EnumSet;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletRegistration;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * 把 `/mcp/*` 的请求交给 MCP 传输层（WORK-019 TASK-006）。
+ *
+ * <p><b>为什么用一个分派 servlet 而不是给每个视图注册一个</b>：视图要按路径段解析，而且应该在
+ * 第一次请求时才构建（否则应用启动就要为没人用的视图建 server）。所以这里注册**一个** servlet
+ * 挂在 `/mcp/*`，由它按路径取（或首次构建）视图、把请求转给该视图的 transport。
+ *
+ * <p>`asyncSupported = true` 必须开：Streamable HTTP 的回复可以是 SSE 流，容器需要支持异步
+ * 分派，否则长连接在容器层就被切断。
+ */
+@Configuration
+class McpServletConfiguration {
+
+    /**
+     * 路径分派。
+     *
+     * <p>`pathInfo` 是 servlet 规范给的"匹配 `/mcp/*` 之后剩下来的部分"：`/mcp/x/all` → `/x/all`。
+     */
+    static final class McpDispatcherServlet extends jakarta.servlet.http.HttpServlet {
+
+        private final McpViewRegistry registry;
+
+        McpDispatcherServlet(McpViewRegistry registry) {
+            this.registry = registry;
+        }
+
+        @Override
+        protected void service(jakarta.servlet.http.HttpServletRequest request,
+                               jakarta.servlet.http.HttpServletResponse response)
+                throws java.io.IOException, jakarta.servlet.ServletException {
+            McpViewRegistry.McpView view;
+            try {
+                view = registry.view(request.getPathInfo());
+            } catch (McpViewRegistry.ViewNotFoundException missing) {
+                // 视图不存在与"端点不存在"给同一个响应，不告诉探测者哪些组存在
+                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            view.transport().service(request, response);
+        }
+    }
+
+    @Bean
+    ServletContextInitializer mcpServletRegistration(McpViewRegistry registry) {
+        McpDispatcherServlet dispatcher = new McpDispatcherServlet(registry);
+        return servletContext -> {
+            ServletRegistration.Dynamic registration = servletContext.addServlet("mcp", dispatcher);
+            if (registration == null) {
+                // 同名 servlet 已存在：说明有第二处注册，属于配置错误，直接失败
+                throw new IllegalStateException("servlet 名称 mcp 已被占用");
+            }
+            registration.setAsyncSupported(true);
+            registration.addMapping("/mcp/*");
+            registration.setLoadOnStartup(1);
+        };
+    }
+
+    /** 容器需要显式声明时用得到；当前的 Tomcat 按 `setAsyncSupported` 即可。 */
+    static EnumSet<DispatcherType> asyncDispatches() {
+        return EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC);
+    }
+}

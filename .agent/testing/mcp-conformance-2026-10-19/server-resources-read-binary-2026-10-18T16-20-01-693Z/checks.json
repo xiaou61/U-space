@@ -1,0 +1,16 @@
+[
+  {
+    "id": "resources-read-binary",
+    "name": "ResourcesReadBinary",
+    "description": "Read binary resource successfully",
+    "status": "FAILURE",
+    "timestamp": "2026-10-18T16:20:01.714Z",
+    "errorMessage": "Failed: MCP error -32601: Method not found: resources/read",
+    "specReferences": [
+      {
+        "id": "MCP-Resources-Read",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources#reading-resources"
+      }
+    ]
+  }
+]

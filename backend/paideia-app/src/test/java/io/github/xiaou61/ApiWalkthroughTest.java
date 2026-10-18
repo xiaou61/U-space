@@ -268,6 +268,12 @@ class ApiWalkthroughTest {
         // ---- AI ----
         call("AI 凭据状态", "GET", "/api/v1/ai/credentials", bearer, null);
         call("我的积分", "GET", "/api/v1/ai/credits", bearer, null);
+        // MCP 接入凭据（WORK-019）：创建 → 列表 → 吊销，三条都要走到
+        MvcResult mcpToken = call("新建 MCP 凭据", "POST", "/api/v1/ai/mcp-tokens", bearer,
+                json(Map.of("name", "自查用", "scopes", java.util.List.of("read"))));
+        long mcpTokenId = idAt(mcpToken);
+        call("MCP 凭据列表", "GET", "/api/v1/ai/mcp-tokens", bearer, null);
+        call("吊销 MCP 凭据", "DELETE", "/api/v1/ai/mcp-tokens/" + mcpTokenId, bearer, null);
         call("读设置", "GET", "/api/v1/ai/settings", bearer, null);
         call("写设置", "PUT", "/api/v1/ai/settings", bearer,
                 json(Map.of("memoryEnabled", true, "referenceSavedMemories", true, "referenceChatHistory", true)));
