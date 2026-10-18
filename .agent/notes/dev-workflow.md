@@ -406,7 +406,13 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 
 **所以最贴合的机制**：全量时 `ApiWalkthroughTest` 跑之前 `knowledge_entries` 的 `AUTO_INCREMENT` 被**重置**过（TRUNCATE 或等价操作），于是"建条目"拿到 **id=1**，与种子行冲突/覆盖，最后它按自己的 `entryId` 去删就把种子删了。单跑时自增是 11，所以复现不出来。**这一步仍未直接证实**（没抓到那次重置）。
 
-**给接手的人的第一条命令**：`grep -rn "TRUNCATE\|AUTO_INCREMENT" backend/*/src/test` —— 找谁重置了自增。第二条：把 `ApiSurfaceTest.concretePath` 里"路径变量一律填 `1`"改成 `999999`（它是唯一一处拿 `1` 撞真实数据的机制，即使不是元凶也该改）。
+**"自增被重置"这个假设也已排除**：全仓 `grep "TRUNCATE"` 与 `"AUTO_INCREMENT"` 在测试代码里零命中，测试配置里也没开 `flyway.clean`、没有任何 `DROP DATABASE`/`CREATE DATABASE`。所以自增没被重置过，这条假设不成立。
+
+**至此确定与不确定分开**：
+- 确定：**有一条复用的连接执行了 `DELETE FROM knowledge_entries WHERE id = 1`**，其上下文与 `ApiWalkthroughTest` 高度吻合；而该测试**单跑时自建条目 id=11、删的也是 11**。
+- 不确定：它在全量时为什么拿到了 `entryId = 1`。**没有抓到那条能解释它的证据**，不再靠推测往下写。
+
+**给接手的人**：最省力的下一步不是继续读代码，而是**在 `ApiWalkthroughTest` 里给 `entryId` 加一条断言**（`assertThat(entryId).isGreaterThan(10)` 或直接断言它不在种子 id 集合里）——它一旦在全量里拿到 1，就会**当场红并指出是它自己**，比任何事后排查都快。第二条：把 `ApiSurfaceTest.concretePath` 里"路径变量一律填 `1`"改成 `999999`（唯一一处拿 `1` 撞真实数据的机制，即使不是元凶也该改）。
 
 **影响面**：只影响"全量一次跑完"的绿/红判断；**任何单类验证与运行时行为都不受影响**。
 
