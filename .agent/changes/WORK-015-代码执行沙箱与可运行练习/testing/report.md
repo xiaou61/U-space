@@ -4,7 +4,7 @@ work_id: WORK-015
 work: 代码执行沙箱与可运行练习
 status: passed
 evidence: required
-verified_commit: HEAD-WORKING-TREE
+verified_commit: a71b411
 verified_at: 2026-10-18
 ---
 
