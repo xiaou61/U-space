@@ -3229,3 +3229,13 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 09:02:42 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-18 09:43:07 +0800 · WORK-016 · 实施完成：移动端最佳适配（12 任务、两端 79 条 e2e 全绿）
+
+- 类型：implementation
+- 变更：五笔提交：fa7af45 共享层（Dialog max-sm 形态、safe-* 工具类、100dvh、助手底部抽屉、交互块命中区、标题 id 回填修正）/ a0107e6 两端导航抽屉与表格转卡片 / bae8907 PWA / 2a60c76 移动 project 与 17 条移动用例 / 7b95298 工件与报告
+- 决策：预缓存只收壳（326 条 11MB → 10 条 109KB）；Dialog 窄屏全用 max-sm: 前缀以不覆盖调用点；桌面壳 --mode desktop 不挂 PWA；管理端只做到窄屏可用
+- 依据：.agent/changes/WORK-016-移动端最佳适配/ 四件工件与 testing/report.md
+- 验证：单测 240 passed；app e2e 60（45 桌面 + 15 移动）；admin e2e 19（9 桌面 + 10 移动）；PWA 2 条通过；typecheck 11 包全过；validate 0 error
+- 本地提交：fa7af45 / a0107e6 / bae8907 / 2a60c76 / 7b95298
+- 远端推送：未执行（需单独授权）
