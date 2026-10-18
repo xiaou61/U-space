@@ -62,6 +62,8 @@ class AccountDeletionCascadeIntegrationTest {
             {"notes", "user_id"},
             {"note_shares", "user_id"},
             {"note_reports", "reporter_user_id"},
+            // 知识库自评（"我对哪些条目懂／不懂"）：本项目第一张用户私有业务数据表
+            {"knowledge_self_assessments", "user_id"},
             {"refresh_tokens", "user_id"},
     };
 
@@ -210,6 +212,16 @@ class AccountDeletionCascadeIntegrationTest {
                 INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at)
                 VALUES (?, REPEAT('b', 64), UUID(), ?)
                 """, owner, Timestamp.from(Instant.now().plusSeconds(3600)));
+        // 知识库自评：必须真种一条，否则新加的 USER_DATA 行只会断言到 0 条，等于没验。
+        // entry_id 借用种子里任意一条已发布条目（外键指向 knowledge_entries）。
+        Long entryId = jdbcTemplate.queryForObject(
+                "SELECT id FROM knowledge_entries WHERE status = 'published' LIMIT 1", Long.class);
+        if (entryId != null) {
+            jdbcTemplate.update("""
+                    INSERT INTO knowledge_self_assessments (user_id, entry_id, level)
+                    VALUES (?, ?, 'understood')
+                    """, owner, entryId);
+        }
     }
 
     private int deletionStatus(String token, String password) throws Exception {

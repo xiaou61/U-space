@@ -3300,3 +3300,19 @@ schema_version: 1
 - 依据：`.agent/changes/WORK-011-*/{requirements,tasks,testing/report}.md`、6 份 report 的新增「复验记录」段
 - 本地提交：`1945ce7`（补账与复验）、本条与两份追加复验随后一笔
 - 远端推送：未执行
+
+## 2026-10-18 14:00:25  · 项目 · 按"中低但要影响主流程"的口径，补修 6 条 medium/security
+
+- 类型：implementation
+- 变更：用户明确口径——**高的一定修；中低里影响业务主流程的也修**。据此补修 6 条（背景：这三份审查报告共 422 条 medium/low，逐条分诊后确认其中 6 条影响真实业务）：
+  - **注销级联漏表**（最要紧）：`knowledge_self_assessments`（"我对哪些条目懂／不懂"，本项目第一张用户私有业务数据表）只有指向 `entry_id` 的外键，**用户删除不会级联到它**，而 knowledge 模块没有 `UserDeletedListener`（ai/note/sandbox 都有）。新增 `KnowledgeUserDeletionListener` 补齐，并在 `AccountDeletionCascadeIntegrationTest` 的 `USER_DATA` 清单里加行 + 真正种一条数据（否则那只断言到 0 条，等于没验）。
+  - **登录成功只清 `identifierKey`**：失败时两个键都记了，`sourceKey` 不清会让同一出口（NAT/公司网）的历史失败在 15 分钟窗口内累积，正常用户凑够 20 次被整体拒绝。补 `clear(sourceKey)`。
+  - **自评取消被发布状态锁死**：`clear` 复用了 `requirePublishedEntry`，管理员把条目改回 draft 后用户无法删除自己的标记（404），私有数据清不掉。取消是幂等操作，改为按 `user_id + entry_id` 直接删。
+  - **出站未禁用重定向**：`GuardedHttpTransport` 用默认 `OkHttpTransport()`（OkHttp `followRedirects=true`），而设计文档与 `UpstreamGuard` 都把"禁重定向"列为 SSRF 缓解手段——允许跟随的话，公网地址可以 302 到内网，第二道闸只看得到用户填的地址。改为注入 `followRedirects(false)` / `followSslRedirects(false)` 的 client + `HttpTransportConfig.defaults()`。
+  - **`ModelAccess` 的 record 自动 `toString()` 带出明文 apiKey**，与"不得进日志"的纪律直接冲突。重写为只留后四位。
+  - **种子账号进了发布物**：`db/devdata`（含口令公开写在仓库里的 `seed-admin`）在 `src/main/resources` 下，会随 jar 分发，安全性只靠 `SPRING_FLYWAY_LOCATIONS` 不被误配。整目录 `git mv` 到 `src/test/resources/db/devdata`；测试 profile 的 locations 不变（`classpath:db/devdata` 仍能解析），部署实例本来就不加载它，行为无变化。
+- 决策：其余 400+ 条 medium/low **不修**（噪声：注释与实现不符、缺错误态、重复查询、魔法值等）。`CredentialService.last4` 那条经查当前代码已无 `last4` 实现（属过期条目），跳过。
+- 依据：三份审查报告（`2026-10-10-scan-8ac11d9.md`、`2026-10-13-8ac11d9..b4ef038.md`、`2026-10-18-a8b8ea0..9c99033.md`）；用户 2026-10-18 指示"中低的就是影响业务主流程的要修复，修复完推送"
+- 验证：后端 `mvn -B verify` **BUILD SUCCESS**，143 个测试 0 失败（4 skipped，`PaginationIntegrationTest` 是既有问题已排除）。**反向验证**：把新增的 `KnowledgeUserDeletionListener` 暂时移走后，`AccountDeletionCascadeIntegrationTest` **当场失败**（2 errors），恢复后通过——证明这条断言确实会咬。前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` **240 条全过**。**未跑 e2e**。
+- 本地提交：见本轮提交
+- 远端推送：见本轮

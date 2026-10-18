@@ -4,6 +4,7 @@ import io.agentscope.core.model.transport.HttpRequest;
 import io.agentscope.core.model.transport.HttpResponse;
 import io.agentscope.core.model.transport.HttpTransport;
 import io.agentscope.core.model.transport.HttpTransportException;
+import io.agentscope.core.model.transport.HttpTransportConfig;
 import io.agentscope.core.model.transport.OkHttpTransport;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -22,7 +23,19 @@ import reactor.core.publisher.Flux;
 public class GuardedHttpTransport implements HttpTransport {
 
     private final UpstreamGuard guard;
-    private final OkHttpTransport delegate = new OkHttpTransport();
+    /**
+     * 禁止跟随重定向。
+     *
+     * <p>设计文档与 {@link UpstreamGuard} 都把"禁重定向"列为 SSRF 的缓解手段之一：允许跟随的话，
+     * 一个公网地址可以 302 到内网，而第二道闸只看得到**用户填的那个地址**。
+     * OkHttp 默认 `followRedirects=true`，所以必须显式关掉。
+     */
+    private final OkHttpTransport delegate = new OkHttpTransport(
+            new okhttp3.OkHttpClient.Builder()
+                    .followRedirects(false)
+                    .followSslRedirects(false)
+                    .build(),
+            HttpTransportConfig.defaults());
 
     public GuardedHttpTransport(UpstreamGuard guard) {
         this.guard = guard;

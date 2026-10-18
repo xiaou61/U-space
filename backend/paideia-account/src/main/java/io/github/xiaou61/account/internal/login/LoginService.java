@@ -76,8 +76,11 @@ public class LoginService {
             throw AuthPort.unauthenticated(GENERIC_FAILURE);
         }
 
-        // 登录成功清掉失败计数，避免历史失败把正常用户挡在门外
+        // 登录成功清掉失败计数，避免历史失败把正常用户挡在门外。
+        // sourceKey 也必须清：失败时两个键都记了，只清 identifier 的话，同一出口（NAT/公司网）
+        // 的历史失败会在 15 分钟窗口内累积，正常用户凑够 20 次就被整体拒绝。
         rateLimiter.clear(identifierKey);
+        rateLimiter.clear(sourceKey);
         return tokenService.issueFor(user);
     }
 }

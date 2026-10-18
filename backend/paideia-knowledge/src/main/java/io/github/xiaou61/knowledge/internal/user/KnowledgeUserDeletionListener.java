@@ -1,0 +1,38 @@
+package io.github.xiaou61.knowledge.internal.user;
+
+import io.github.xiaou61.platform.UserDeletedEvent;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+/**
+ * 注销时删掉本模块的用户私有数据。
+ *
+ * <p>`knowledge_self_assessments` 是本项目第一张用户私有业务数据表（"我对哪些条目懂／不懂"）。
+ * 它的外键只指向 `entry_id`，**用户删除不会级联到它**——不在这里删，注销后这份数据会一直留着，
+ * 与"注销硬删"的承诺不符。
+ *
+ * <p>表清单与 AI/笔记/沙箱那边同样手写（不建跨模块外键），由
+ * {@code AccountDeletionCascadeIntegrationTest} 逐表断言盯着。
+ */
+@Component
+class KnowledgeUserDeletionListener {
+
+    private static final String[][] USER_TABLES = {
+            {"knowledge_self_assessments", "user_id"},
+    };
+
+    private final JdbcTemplate jdbcTemplate;
+
+    KnowledgeUserDeletionListener(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    void onUserDeleted(UserDeletedEvent event) {
+        for (String[] table : USER_TABLES) {
+            jdbcTemplate.update("DELETE FROM " + table[0] + " WHERE " + table[1] + " = ?", event.userId());
+        }
+    }
+}

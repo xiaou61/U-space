@@ -41,9 +41,15 @@ public class SelfAssessmentService {
         selfAssessmentMapper.upsert(userId, entryId, normalized);
     }
 
+    /**
+     * 取消标记。
+     *
+     * <p>**不校验条目是否仍发布**：管理员可以把条目从 published 改回 draft，此时用户此前打的
+     * 标记就再也删不掉了（返回 404），等于把别人的私有数据锁住。取消是幂等的、按
+     * user_id + entry_id 直接删即可。
+     */
     @Transactional
     public void clear(Long userId, Long entryId) {
-        requirePublishedEntry(entryId);
         selfAssessmentMapper.delete(userId, entryId);
     }
 
