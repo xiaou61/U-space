@@ -97,7 +97,7 @@ approver_role: CTO
 ### T-13 | done | 注销级联
 `AiUserDeletionListener` 加 `ai_interview_evaluations`；`AccountDeletionService` 直接删 `learner_profiles`（同库同域，不绕事件）；级联测试的清单与夹具都补了。
 
-### T-14 | blocked | 部署
+### T-14 | pending | 部署（**待用户授权**，不是被依赖卡住）
 **未做**：部署要单独授权，且**线上验收前必须由管理员给验收账号发积分**（本期不做充值）。
 
 ### T-15 | done | 文档
