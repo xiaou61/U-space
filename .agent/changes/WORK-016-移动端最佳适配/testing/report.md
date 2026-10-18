@@ -83,6 +83,28 @@ verified_at: 2026-10-18
 | 部署 | 未部署。PWA 需要 HTTPS 或 localhost 才注册 SW，线上是明文 HTTP + 端口——**需要确认部署形态后再验一次** |
 | 管理端 PWA | 明确不做（REQ-028） |
 
+## 部署后追加（2026-10-18 11:00）
+
+首次部署后发现并修复两处只有上线上才暴露的问题，均已提交：
+
+| 问题 | 现象 | 根因 | 修复 |
+| --- | --- | --- | --- |
+| PWA 入口被安全链拦成 401 | `GET /manifest.webmanifest` 与 `/sw.js` 返回 401，而同批的 `/` 与 `/admin/index.html` 是 200 | 浏览器取 manifest 与注册 SW 都发生在**登录之前**，是无令牌的普通 GET；它们落在 `anyRequest().authenticated()` 之后 | `SecurityConfiguration` 的静态白名单补 PWA 入口（`848d661`）；补 `PwaEntryPointsTest` 三条，并**反向验证**过：去掉白名单两条立刻红 |
+| 管理端窄屏 e2e 在线上全红 | 3 条用例找不到任何元素 | 用例把 hash 路由写死成 `/#/…`；线上管理端在 `/admin/`，于是跳到了学习者端 | 改按 `ADMIN_ENTRY` 拼接（`1b6aaff`）；本地在站点根，所以此前一直没暴露 |
+
+**线上复验**（`E2E_BASE_URL=http://<服务器>:8081`）：
+
+| 对象 | 结果 |
+| --- | --- |
+| PWA 入口 | `/`、`/manifest.webmanifest`、`/sw.js`、`/registerSW.js`、`/pwa-192.png`、`/apple-touch-icon.png`、`/admin/index.html` 全部 **200** |
+| 授权未被放宽 | `/api/v1/me` 仍是 **401** |
+| 产物版本 | 线上 admin bundle 与本地 md5 完全一致；`index.html` 含 `viewport-fit=cover`；manifest 内容与本地一致 |
+| 学习者端移动 e2e | **15 passed** |
+| 管理端移动 e2e | **10 passed** |
+| 管理端全量（本地） | **19 passed** |
+
+未通过但**与本项无关**的 7 条学习者端桌面用例：它们断言的是种子数据（"余额为 0""没有任何消耗""条目正文有表格与代码块"），而线上 `e2e-learner` 已有 99982 积分、内容也不同。属于"这套用例本来就是为种子库写的"，不是部署回归。
+
 ## 需要用户注意的一条
 
 PWA 在**明文 HTTP 的非 localhost 来源**下不会注册 Service Worker（浏览器安全上下文限制）。线上当前是 `http://<ip>:<port>`，因此：

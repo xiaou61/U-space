@@ -3249,3 +3249,13 @@ schema_version: 1
 - 验证：推送后回读远端 ref 与本地 HEAD 相同；工作区干净；推送前扫描 diff 未发现凭据
 - 本地提交：b456788
 - 远端推送：已推送 b456788 到 origin master（SSH）
+
+## 2026-10-18 11:13:28 +0800 · WORK-016 · 部署到线上并修复两处只在线上暴露的问题
+
+- 类型：implementation
+- 变更：release.ps1 部署两次（第一次含前端 167.5s，第二次 -SkipWeb 94.8s）；848d661 补 PWA 入口静态白名单 + PwaEntryPointsTest；1b6aaff 管理端窄屏用例改按 ADMIN_ENTRY 拼 hash；report.md 追加部署后复验一节
+- 决策：PWA 清单/SW/图标必须匿名可读（登录前就要取）；管理端 e2e 的 hash 路由必须以 ADMIN_ENTRY 为前缀而非站点根
+- 依据：线上实测：/manifest.webmanifest 与 /sw.js 原为 401、/ 与 /admin/index.html 为 200；管理端 bundle md5 与本地一致说明不是产物问题而是用例路径错
+- 验证：线上：PWA 入口 6 项全 200、/api/v1/me 仍 401、学习者端移动 15 passed、管理端移动 10 passed；本地管理端全量 19 passed；PwaEntryPointsTest 3 passed 且反向验证过去掉白名单则 2 条红；validate 0 error
+- 本地提交：848d661 / 1b6aaff
+- 远端推送：未执行（待授权）
