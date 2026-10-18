@@ -394,7 +394,21 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 
 **影响**：只影响"全量一次跑完"的绿/红判断，不影响任何单类验证与运行时行为。CI 若按类分片跑不受影响。
 
-**下一步该做的**（给接手的人）：在 `KnowledgeFileIntegrationTest`（位于 Admin 与 Read 之间）前后各插一次 `SELECT id FROM knowledge_entries` 断言，二分到具体语句；或者干脆把 `ApiSurfaceTest` 里"所有路径变量填 1"这条规则改掉（`concretePath` 用 `999999` 之类的不可存在值），它是唯一一处会拿 `1` 去撞真实数据的机制。
+**2026-10-18 追到的确定事实**（比上面那段更进一层）：
+
+| 事实 | 证据 |
+| --- | --- |
+| id=1 **先被插入、后被删除**（不是"从未出现"） | 轮询时间线：`no-table → 0 → 1（17:59:06）→ 0（17:59:20）` |
+| 删除者是一条**长期复用的连接**（5559），执行 `DELETE FROM knowledge_entries WHERE id = 1` | 早期装的 DELETE 触发器 + `information_schema.general_log` 对齐到同一秒 |
+| 那条连接的上下文是 **`ApiWalkthroughTest`** | 同一连接前后在打 `/api/v1/account/profile`、`ai/interviews/*`、`resume/*`、`knowledge/admin/entries/*`，且 `userId = 1` |
+| **但 `ApiWalkthroughTest` 单独跑是清白的** | 临时打点：`WALKTHROUGH_ENTRY_ID=11`（自建条目 id 是 11，删的也是 11） |
+| 种子迁移只应用过一次 | `flyway_schema_history` 里 951–954 的 `installed_on` 全是同一时刻 |
+
+**所以最贴合的机制**：全量时 `ApiWalkthroughTest` 跑之前 `knowledge_entries` 的 `AUTO_INCREMENT` 被**重置**过（TRUNCATE 或等价操作），于是"建条目"拿到 **id=1**，与种子行冲突/覆盖，最后它按自己的 `entryId` 去删就把种子删了。单跑时自增是 11，所以复现不出来。**这一步仍未直接证实**（没抓到那次重置）。
+
+**给接手的人的第一条命令**：`grep -rn "TRUNCATE\|AUTO_INCREMENT" backend/*/src/test` —— 找谁重置了自增。第二条：把 `ApiSurfaceTest.concretePath` 里"路径变量一律填 `1`"改成 `999999`（它是唯一一处拿 `1` 撞真实数据的机制，即使不是元凶也该改）。
+
+**影响面**：只影响"全量一次跑完"的绿/红判断；**任何单类验证与运行时行为都不受影响**。
 
 ## 身份化与模拟面试（WORK-010，2026-10-18 起）
 
