@@ -18,6 +18,18 @@ async function signIn(page: Page) {
   await expect(page.getByTestId('admin-console')).toBeVisible({ timeout: 20_000 })
 }
 
+/**
+ * 管理端的 hash 路由地址。
+ *
+ * <p>**必须拼在 `ADMIN_ENTRY` 上**，不能写死 `/#/…`：本地管理端在站点根（`/`），
+ * 而线上部署时它在 `/admin/`（同一个 jar 同时供学习者端与管理端）。写死根路径的用例
+ * 在线上会跳到学习者端——元素全找不到，看着像"界面坏了"，其实是测错了地方。
+ * 2026-10-18 线上跑 e2e 时实测踩到（3 条窄屏用例全红）。
+ */
+function adminPath(hash: string): string {
+  return `${ADMIN_ENTRY.replace(/\/$/, '')}/#${hash}`
+}
+
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
 }
@@ -32,12 +44,12 @@ async function expectNoOverflow(page: Page, label: string): Promise<void> {
 }
 
 const PAGES = [
-  { path: '/#/', name: '总览' },
-  { path: '/#/knowledge/categories', name: '分类管理' },
-  { path: '/#/knowledge/entries', name: '条目管理' },
-  { path: '/#/reports', name: '举报处理' },
-  { path: '/#/ai-credits/grant', name: '积分调整' },
-  { path: '/#/ai-credits/audit', name: '用量审计' },
+  { hash: '/', name: '总览' },
+  { hash: '/knowledge/categories', name: '分类管理' },
+  { hash: '/knowledge/entries', name: '条目管理' },
+  { hash: '/reports', name: '举报处理' },
+  { hash: '/ai-credits/grant', name: '积分调整' },
+  { hash: '/ai-credits/audit', name: '用量审计' },
 ]
 
 test.describe('管理端窄屏', () => {
@@ -47,13 +59,13 @@ test.describe('管理端窄屏', () => {
 
   for (const item of PAGES) {
     test(`${item.name} 无横向溢出`, async ({ page }) => {
-      await page.goto(item.path)
+      await page.goto(adminPath(item.hash))
       await expectNoOverflow(page, `${item.name} 在 ${page.viewportSize()?.width}px 下`)
     })
   }
 
   test('侧栏默认收起，汉堡能打开抽屉并到达全部菜单', async ({ page }) => {
-    await page.goto('/#/')
+    await page.goto(adminPath('/'))
 
     // 侧栏在窄屏是屏幕外的抽屉，不是常驻的 224px
     const sidebar = page.getByTestId('admin-sidebar')
@@ -84,7 +96,7 @@ test.describe('管理端窄屏', () => {
   })
 
   test('条目列表在窄屏是卡片，且能看到编辑与删除', async ({ page }) => {
-    await page.goto('/#/knowledge/entries')
+    await page.goto(adminPath('/knowledge/entries'))
     await page.waitForTimeout(500)
 
     // 桌面表格在窄屏隐藏
@@ -103,14 +115,14 @@ test.describe('管理端窄屏', () => {
   })
 
   test('分类列表在窄屏是卡片', async ({ page }) => {
-    await page.goto('/#/knowledge/categories')
+    await page.goto(adminPath('/knowledge/categories'))
     await page.waitForTimeout(500)
     await expect(page.getByTestId('admin-category-list')).toBeHidden()
     await expect(page.getByTestId('admin-category-cards')).toBeVisible()
   })
 
   test('窄屏对话框是贴底面板，关闭按钮命中区不小于 44px', async ({ page }) => {
-    await page.goto('/#/knowledge/categories')
+    await page.goto(adminPath('/knowledge/categories'))
     await page.waitForTimeout(500)
 
     // 新建分类的入口在页面头部
