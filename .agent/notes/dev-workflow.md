@@ -50,6 +50,47 @@
 2. **集成测试多 schema 并行不做**：收益（47→约 15 秒）低于"每个用例都在自己 schema 里跑"的改造风险，且现有用例大量 `DELETE FROM 表`，串库代价高。
 3. **合并 Spring 上下文不做**：本地库下 6 个上下文启动合计约 18 秒，合并收益 10–15 秒；而"多一个配置键就多一个上下文"是这个仓库反复踩过的坑（见 `application-test.yml` 的注释）。
 
+## 接口自查（2026-10-18 起，WORK-017）
+
+一套**手动跑**的全接口自查，不接 CI、不改部署脚本。标准与边界见
+[`api-testing-standard.md`](./api-testing-standard.md)，历史记录在 `.agent/testing/runs/`。
+
+```bash
+cd backend && source config/remote-db.local.env
+mvn -B -pl paideia-app test -Dtest=ApiWalkthroughTest
+```
+
+20 秒，自己注册账号、把 69 步（覆盖 62 个端点）走一遍、注销收尾，比对响应结构快照，
+并在 `.agent/testing/runs/` 留一份报告。
+
+**新增或修改接口时必须做的两件事**：
+
+1. 在控制器类（或方法）上标 `@ApiAccess(ApiAccess.Access.…)`（`io.github.xiaou61.platform`）。
+   不标 → `ApiSurfaceTest` 红；标错 → `ApiContractTest` 红（声明 ADMIN 必须真 403）。
+2. 在 `ApiWalkthroughTest` 里加一段真实调用。不加 → 覆盖断言红，点名那条没被打到。
+   加完之后第一次跑会自动把新端点的结构写进 `src/test/resources/api-shape.json`（首次或 `-Dapi.shape.update=true` 时），
+   review 那份 diff 再提交。
+
+**改了响应字段（改名/增删/改类型）时**：结构快照会红并逐条列出差异。确认是有意变更后，
+`mvn -B -pl paideia-app test -Dtest=ApiWalkthroughTest -Dapi.shape.update=true` 更新快照，
+review diff 并与前端改动一起提交。
+
+**五个已经踩到的坑**：
+
+- `RequestMappingHandlerMapping` 有**两个** Bean（Actuator 也注册了一个），注入必须带
+  `@Qualifier("requestMappingHandlerMapping")`，否则上下文起不来。
+- **不要用 `@RequestMapping` 挂业务端点**：不写 `method` 的映射会响应所有动词，
+  `getMethodsCondition()` 为空，按方法枚举的检查会静默跳过它。`ApiSurfaceTest` 现在专门拦这个。
+- **附件接口按字节嗅探类型**，白名单是 png/jpeg/gif/webp/pdf——传 `text/plain` 或随便一段文本会被拒。
+- **注销后 access JWT 仍可用**（`TokenService` 类注释写明的取舍）：它无状态、到期才失效。
+  注销真正切断的是 refresh。断言"注销后 access 立刻 401"是错的。
+- 本地共用库 `paideia_test` 会与 e2e 的 `db/devdata` 漂移（V953/V954 改过内容），
+  表现为 Flyway checksum mismatch。自查请用独立库（`createDatabaseIfNotExist=true` 指向新库名），
+  不要为此改共用库。
+
+**没配 `PAIDEIA_TEST_DB_PASSWORD` 时这三套测试全部 Skipped，`BUILD SUCCESS` 照样成立**——
+看结果先看 `Skipped` 列。这条坑本项目记述过两次。
+
 ## 在线上跑 e2e（2026-10-12 起，改完直接部署再验）
 
 管理端的 e2e **可以不用本地任何东西**：设了 `E2E_BASE_URL` 就跳过 `webServer`，直接打已部署实例。界面类改动走这条最快——不用本地后端、不用本地 dev server、也不用那条 3307 隧道。
@@ -332,3 +373,25 @@ docker image inspect eclipse-temurin:21-jdk-alpine --format '{{index .RepoDigest
 **已知天花板**：容器共享宿主内核，内核漏洞可导致逃逸。要更强隔离就切 gVisor（`runtime: runsc`），或另起独立 runner 服务（应用自身容器化时**必须**换，因为容器里没有 docker socket）。
 
 **测试口径**：本机没有 Docker，`SandboxIntegrationTest` 用桩 `CodeRunner`，覆盖权限/校验/配额/审计/状态映射；真容器只在服务器验。
+
+## 全量测试时种子条目 id=1 神秘消失（2026-10-18，**未定位，已登记**）
+
+**现象**：`mvn -B test` 全量跑时，`KnowledgeReadIntegrationTest`（3 条）、`KnowledgeSelfAssessmentIntegrationTest`（3 条）、`KnowledgeAdminIntegrationTest`（2 条）报"读不到种子条目 id=1"；**每个类单独跑都全绿**，迁移记录完整、`V951` 内容确实插入了 id=1。
+
+**已排除的**（逐个验证过，别再重复）：
+
+| 怀疑对象 | 验证 | 结论 |
+| --- | --- | --- |
+| 迁移没跑 / 种子没插 | 全新库跑单个类 → `[1,2,3,4,5,10]` 齐全 | 排除 |
+| V14 我加的唯一键 | 迁移全表 success=1；单类全绿 | 排除 |
+| `KnowledgeAdminIntegrationTest` | 单跑后 id=1 仍在 | 排除 |
+| `KnowledgeSelfAssessmentIntegrationTest` | 同上 | 排除 |
+| `ApiWalkthroughTest` / `ApiContractTest` / `ApiSurfaceTest` | 同上 | 排除 |
+| 并发会话 drop 库 | 用唯一库名 + 轮询，`曾存在: False` | 排除（不是被删，是**从头就没出现**） |
+| DELETE 触发器审计 | 装好后全量跑，审计表里**没有 id=1 的删除记录** | 排除"被 DELETE" |
+
+**当前最可能的方向**：`曾存在: False` 说明表一旦可见时 id=1 就已缺席——而单类跑同一套迁移却有。差别只在**多个测试类共用一个 Spring 上下文**时 Flyway 的执行时机。这一条没有验证完。
+
+**影响**：只影响"全量一次跑完"的绿/红判断，不影响任何单类验证与运行时行为。CI 若按类分片跑不受影响。
+
+**下一步该做的**（给接手的人）：在 `KnowledgeFileIntegrationTest`（位于 Admin 与 Read 之间）前后各插一次 `SELECT id FROM knowledge_entries` 断言，二分到具体语句；或者干脆把 `ApiSurfaceTest` 里"所有路径变量填 1"这条规则改掉（`concretePath` 用 `999999` 之类的不可存在值），它是唯一一处会拿 `1` 去撞真实数据的机制。
