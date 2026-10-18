@@ -248,6 +248,9 @@ importers:
       '@paideia/platform-web':
         specifier: workspace:*
         version: link:../../packages/platform-web
+      '@paideia/resume':
+        specifier: workspace:*
+        version: link:../../packages/resume
       '@paideia/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -55,6 +55,11 @@ const NAV = [
   { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
   { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
   { key: 'my-assessments' as const, to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
+  // 简历（WORK-018）：求职者面上每次投递都要用的入口。
+  // **不复用 `interview` 这个 key**：身份排序按 key 匹配，复用会让"面试排第一"这条既有
+  // 验收失去观察点（2026-10-18 实测：identity.spec 里首链接断言因此变红）。
+  // 它也不进 preferredNav —— 排序只覆盖那四个入口，简历固定排在它们之后。
+  { key: 'resume' as const, to: '/resume', label: '我的简历', testId: 'learner-nav-resume' },
   { key: 'interview' as const, to: '/interview', label: '模拟面试', testId: 'learner-nav-interview' },
 ]
 
@@ -75,7 +80,7 @@ export function LearnerHeader() {
       .map((key) => NAV.find((item) => item.key === key))
       .filter((item): item is (typeof NAV)[number] => item !== undefined)
     // 配置里没提到的项追加在后面：配置只表达"谁排前面"，不表达"谁被藏起来"
-    return [...ordered, ...NAV.filter((item) => !config.preferredNav.includes(item.key))]
+    return [...ordered, ...NAV.filter((item) => !(config.preferredNav as readonly string[]).includes(item.key))]
   }, [profile?.identity])
   const navigate = useNavigate()
   const [deleting, setDeleting] = useState(false)

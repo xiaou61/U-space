@@ -12,6 +12,11 @@ import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NoteNewPage } from './pages/NoteNewPage'
 import { NotesPage } from './pages/NotesPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ResumeEditorPage } from './pages/ResumeEditorPage'
+import { ResumeImportReviewPage } from './pages/ResumeImportReviewPage'
+import { ResumeListPage, ResumeCreatePage } from './pages/ResumeListPage'
+import { ResumeOptimizePage } from './pages/ResumeOptimizePage'
+import { ResumePrintPage } from './pages/ResumePrintPage'
 import { SharedNotePage } from './pages/SharedNotePage'
 
 /**
@@ -102,6 +107,58 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <InterviewPage />
+      </RequireAuth>
+    ),
+  },
+  // 简历（WORK-018）。三条页面 + 一条打印视图：
+  // 列表/导入 → 核对（未落库）→ 编辑 → 按岗位优化 → 打印。
+  // 打印页**不包 AppShell**（它自己就是不带头尾的 sheet），但仍要求登录：
+  // 它是"我的某个版本"的视图，不是公开分享页。
+  {
+    path: '/resume',
+    element: (
+      <RequireAuth>
+        <ResumeListPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/resume/new',
+    element: (
+      <RequireAuth>
+        <ResumeImportReviewPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/resume/create',
+    element: (
+      <RequireAuth>
+        <ResumeCreatePage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/resume/:id',
+    element: (
+      <RequireAuth>
+        <ResumeEditorPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/resume/:id/optimize',
+    element: (
+      <RequireAuth>
+        <ResumeOptimizePage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/resume/versions/:versionId/print',
+    element: (
+      <RequireAuth>
+        <ResumePrintPage />
       </RequireAuth>
     ),
   },

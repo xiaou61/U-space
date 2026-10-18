@@ -1,0 +1,28 @@
+{
+  "name": "@paideia/resume",
+  "version": "0.0.1",
+  "private": true,
+  "description": "简历识别与优化：DTO、API 客户端、对比渲染与自动保存状态机（WORK-018）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  },
+  "dependencies": {
+    "@paideia/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "happy-dom": "^21.0.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vitest": "5.0.3"
+  }
+}

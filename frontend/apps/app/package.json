@@ -24,7 +24,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "8.4.0",
-    "@paideia/identity": "workspace:*"
+    "@paideia/identity": "workspace:*",
+    "@paideia/resume": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
