@@ -10,12 +10,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import io.github.xiaou61.security.AuthPort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
  *
  * <p>数据自带唯一后缀（{@code System.nanoTime()}）并在末尾清理：种子用的是固定 id，
  * 而这个类会真的往题库里写东西，重跑时不能让上一次的残留把自己顶掉（slug 唯一索引）。
+ *
+ * <p><b>种子 id 现查，不写死</b>（2026-10-18 改）：涉及种子行的断言改按标题查（{@link SeedIds}），
+ * 同库上别处删了种子行不会再让这里红。
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,7 +45,17 @@ class KnowledgeAdminIntegrationTest {
     @Autowired
     private AuthPort authPort;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private SeedIds seeds;
+
     private final String suffix = String.valueOf(System.nanoTime());
+
+    @BeforeEach
+    void resolveSeedIds() {
+        seeds = new SeedIds(jdbcTemplate);
+    }
 
     private String learner() {
         return "Bearer " + authPort.issue(new AuthPort.Subject("1", AuthPort.ROLE_LEARNER)).value();
@@ -102,18 +117,20 @@ class KnowledgeAdminIntegrationTest {
                 .andExpect(jsonPath("$.data.title").value("管理端测试条目"))
                 .andExpect(jsonPath("$.data.categoryName").value("管理端测试分类"));
 
-        // 建立关系：这条新条目是种子条目 3 的前置
+        // 建立关系：这条新条目是种子条目「模块化单体的边界」的前置
+        long modularMonolith = seeds.entry("模块化单体的边界");
         String relation = mockMvc.perform(post("/api/v1/knowledge/admin/relations")
                         .header("Authorization", admin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"fromEntryId\":" + entryId + ",\"toEntryId\":3,\"relationType\":\"prerequisite\"}"))
+                        .content("{\"fromEntryId\":" + entryId + ",\"toEntryId\":" + modularMonolith
+                                + ",\"relationType\":\"prerequisite\"}"))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         long relationId = ((Number) JsonPath.read(relation, "$.data")).longValue();
 
-        mockMvc.perform(get("/api/v1/knowledge/entries/3").header("Authorization", learner()))
+        mockMvc.perform(get("/api/v1/knowledge/entries/" + modularMonolith).header("Authorization", learner()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.prerequisites[?(@.id==" + entryId + ")]").exists());
 
@@ -183,29 +200,39 @@ class KnowledgeAdminIntegrationTest {
 
     @Test
     void selfReferencingRelationIsRejected() throws Exception {
+        long entry = seeds.entry("模块化单体的边界");
+
         mockMvc.perform(post("/api/v1/knowledge/admin/relations")
                         .header("Authorization", admin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"fromEntryId\":3,\"toEntryId\":3,\"relationType\":\"related\"}"))
+                        .content("{\"fromEntryId\":" + entry + ",\"toEntryId\":" + entry
+                                + ",\"relationType\":\"related\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void duplicateRelationIsRejected() throws Exception {
-        // 种子里已经有 1 -> 3 prerequisite
+        // 种子里已经有「依赖注入 → 模块化单体」这条 prerequisite
+        long from = seeds.entry("什么是依赖注入");
+        long to = seeds.entry("模块化单体的边界");
+
         mockMvc.perform(post("/api/v1/knowledge/admin/relations")
                         .header("Authorization", admin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"fromEntryId\":1,\"toEntryId\":3,\"relationType\":\"prerequisite\"}"))
+                        .content("{\"fromEntryId\":" + from + ",\"toEntryId\":" + to
+                                + ",\"relationType\":\"prerequisite\"}"))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void invalidStatusIsRejected() throws Exception {
-        mockMvc.perform(put("/api/v1/knowledge/admin/entries/1")
+        long entry = seeds.entry("什么是依赖注入");
+        long category = seeds.category("backend-basics");
+
+        mockMvc.perform(put("/api/v1/knowledge/admin/entries/" + entry)
                         .header("Authorization", admin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(entryJson("标题", "正文", 1L, "whatever")))
+                        .content(entryJson("标题", "正文", category, "whatever")))
                 .andExpect(status().isBadRequest());
     }
 
