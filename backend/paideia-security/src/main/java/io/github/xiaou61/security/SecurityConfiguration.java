@@ -150,7 +150,26 @@ public class SecurityConfiguration {
                         // 否则连登录页都加载不出来（实测：未放行时 GET / 与 GET /admin/index.html 都是 401）。
                         // SPA 用 Hash 路由，所以**不必**为每个前端路由放行；**放行静态文件不等于放行数据**——
                         // 授权仍然只由 /api/** 上的规则决定，前端守卫从来不是授权边界。
-                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/admin", "/admin/**", "/favicon.ico")
+                        //
+                        // PWA 的三个入口（WORK-016）也必须在这里：浏览器取 manifest 与注册 Service Worker
+                        // 都是**匿名请求**（登录前就要能安装），落在 anyRequest().authenticated() 后面
+                        // 会拿到 401——实测部署后 manifest 与 sw.js 均为 401，PWA 完全不可用。
+                        // 它们只是静态文件，与图标一样不含任何数据。
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/",
+                                "/index.html",
+                                "/assets/**",
+                                "/admin",
+                                "/admin/**",
+                                "/favicon.ico",
+                                // PWA：清单、Service Worker 及其运行时、图标
+                                "/manifest.webmanifest",
+                                "/sw.js",
+                                "/workbox-*.js",
+                                "/registerSW.js",
+                                "/pwa-*.png",
+                                "/apple-touch-icon.png")
                         .permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
