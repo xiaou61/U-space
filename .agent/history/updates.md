@@ -3629,3 +3629,29 @@ schema_version: 1
 - 备注：本地领先的三笔里有**两笔属于并发会话**（`e0ca266` 38 文件 / +2028 行，`29f4298`），已被本次推送一并带上；此前已向用户说明该情况
 - 本地提交：`b5c73b6`
 - 远端推送：已推送 `b5c73b6` 到 origin master（SSH）
+
+## 2026-10-18 16:40:00 +0800 · WORK-010 · 实施完成（T-01..T-13、T-15；T-14 待部署）
+
+- 类型：implementation
+- 变更（后端，已提交 `e0ca266`）：
+  - V14：`learner_profiles`（一列身份 + 求职者四个可空画像）、`ai_conversations.harness`、`ai_memories_structured` 唯一键 `(user_id,kind,ref_id)`、`ai_interview_evaluations`
+  - `Identity` 枚举（只有 `job_seeker` 可选）、`AccountApi.findProfile/saveProfile`、`GET/PUT /api/v1/account/profile`
+  - `Harness` + `HarnessPrompts`（穷尽 switch 无 default）+ `InterviewPrompt`/`ReviewPrompt`；`Request` 加 harness；`AssistantTools.schemas(Harness)`（REVIEW 空集）
+  - 自评桥：`EntryAssessmentChangedEvent` + `@TransactionalEventListener(BEFORE_COMMIT)` + 唯一键 upsert
+  - 点评：`InterviewReviewer` 端口（非流式、无工具）+ `InterviewEvaluationParser`（分数必须 1–5 整数）+ `INTERVIEW_REVIEW` 流水
+  - 注销级联加两张新表
+- 变更（前端，已提交 `e0de914`、`57e32b4`）：新包 `@paideia/identity`；`/profile` 设置页；`/interview` 面试页（含点评与评分卡）；首页与页头按身份重排
+- 决策：
+  - **身份不是角色**：身份不参与任何权限判定；四个"求职者专用"画像字段全部可空；留位身份接口写不进去（避免幽灵状态）
+  - **harness 是公共行为、不是"人"**：一条对话 = 公共行为 × 私有数据；行为记在会话上，恢复时不换人格
+  - **自评桥必须用事件**：AI 已依赖 knowledge，反向调用会成环被 Modulith 拦
+  - **点评不挂工具**：绕开 DeepSeek"工具与结构化输出不能并用"，且评分要可解析
+- 依据：`.agent/changes/WORK-010-*/{requirements,proposal,design,tasks}.md`、`testing/report.md`
+- 验证：
+  - 后端 `paideia-ai` 单测 **50** 条（含新增 7 条）；`IdentityAndAssessmentBridgeIntegrationTest` **5/5**（AC-001/AC-008/AC-005 数据层）；`AccountDeletionCascadeIntegrationTest` 通过
+  - 前端单测 **243** 条、typecheck 0、构建成功（主包 760.83 kB / gzip 236.94 kB）
+  - 学习者端 e2e **63 passed / 2 skipped / 0 failed**（含新增 3 条身份/面试）
+  - **修掉一个自己引入的真缺陷**：首页「源码解读」卡与知识库卡共用排序 key → 被去重整个丢掉（e2e 直接抓到）。修法是给它 `key: null` 并把去重条件从"按 key"改成"按已选中对象"
+  - **如实登记**：报告为 `partial`——AC-009 的完整面试闭环要有积分才能验；"勾选后才带笔记"只有界面明示、控件未做；全量后端测试有一组已知不稳定（种子条目 id=1，见 notes）
+- 本地提交：`e0ca266`（后端）、`e0de914`（前端）、`57e32b4`（入口修复 + e2e）、本报告与历史随后一笔
+- 远端推送：未执行

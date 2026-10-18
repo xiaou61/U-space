@@ -53,3 +53,52 @@ approver_role: CTO
 - **面试成本**：多轮带工具 + 一次点评，单次会话 token 成倍。默认处置：`WORK-009` 已提供单次调用积分上限与请求频次限制；本项不额外加轮次上限，**先看线上真实消耗再定**（真出现单次面试吃掉大量积分，再加轮次或题量上限，属 `WORK-009` 的配置而非本项代码）。
 - **改 `Request` 会波及既有调用方**：与 `WORK-009` 改 `Listener` 是同一类风险——**先让既有用例全绿再往下**。
 - **`ai_memories_structured` 加唯一键**：既有数据理论上都是追加式且 `ref_id` 多为 NULL，唯一键对 NULL 不去重，**加键前要先核一遍线上/测试库有没有冲突行**（有则先清理，见 T-08 的验证）。
+
+## 任务状态（执行记录，2026-10-18 补）
+
+> 计划原文未改。按实际执行结果逐条记账；与计划不一致处就地写明。
+
+### T-01 | done | `learner_profiles` 迁移 + 身份枚举
+`V14__create_learner_profiles.sql`（编号取当时最大号 +1）。`Identity` 枚举一期只有 `job_seeker` 实心，其余三个 `selectable()=false`、接口写不进去。
+
+### T-02 | done | `AccountApi` 读身份 + 画像
+`findProfile` / `saveProfile`；**有账号没画像行返回默认值**（否则每个新用户都要在注册链路插一行，漏插就是"静默地没有身份"）。
+
+### T-03 | done | 身份读写端点 + 设置页
+`GET/PUT /api/v1/account/profile`（`anyRequest().authenticated()` 兜住，路径无角色限制）；`/profile` 页明写"身份不影响你能做什么"。
+
+### T-04 | done | harness 注册表 + 两份新提示词
+`Harness` + `HarnessPrompts`（穷尽 switch，**无 default**）+ `InterviewPrompt` / `ReviewPrompt`；`ConversationPrompt` **一字未改**。
+
+### T-05 | done | `Request` 加 harness，按它选提示词
+`Harness` 进 `Request`（旧构造自动用 `assistant`）；`AgentScopeConversation` 由它选系统提示词。
+
+### T-06 | done | 工具分层
+`AssistantTools.schemas(Harness)`：`ASSISTANT`/`INTERVIEW` 给通用组，`REVIEW` **空集**。
+
+### T-07 | done | 会话记 harness
+`ai_conversations.harness` 可空；`create(userId, entryId, harness)`；恢复时 `Harness.ofOrDefault(conversation.getHarness())`——**行为跟着会话走**。
+
+### T-08 | done | 自评 → 结构化记忆的桥
+`EntryAssessmentChangedEvent` + `@TransactionalEventListener(BEFORE_COMMIT)`；唯一键 `(user_id, kind, ref_id)` + `ON DUPLICATE KEY UPDATE`。**加键前已核过两个库无冲突行**。
+
+### T-09 | done（界面） | 面试页 + 多轮追问
+`/interview`：一次一个问题、思考折叠、会话建时钉死 `harness=interview`。**笔记默认不参与**——当前是"一期根本不送"，比设计更保守；**勾选控件尚未做**（见报告的未验证项 2）。
+
+### T-10 | done | 点评官：独立调用 + 结构化评分
+`InterviewReviewer` 端口（非流式、**不经过工具循环**）+ `InterviewEvaluationParser`（7 条单测）。
+
+### T-11 | done | 评估落库 + 展示
+`ai_interview_evaluations` + `INTERVIEW_REVIEW` 独立流水种类；前端 `EvaluationCard` 展示总分/维度/改进点。
+
+### T-12 | done | 推荐配置包 + 首页与导航重排
+新包 `@paideia/identity` 的 `config.ts`（四套配置，各有真实差异）；首页与页头共用"配置只表达谁排前面、没提到的追加在后面"这条规则。
+
+### T-13 | done | 注销级联
+`AiUserDeletionListener` 加 `ai_interview_evaluations`；`AccountDeletionService` 直接删 `learner_profiles`（同库同域，不绕事件）；级联测试的清单与夹具都补了。
+
+### T-14 | blocked | 部署
+**未做**：部署要单独授权，且**线上验收前必须由管理员给验收账号发积分**（本期不做充值）。
+
+### T-15 | done | 文档
+`.agent/notes/dev-workflow.md` 新增「身份化与模拟面试」一节（含身份≠角色、事件桥为什么不能直接调用、唯一键要先查冲突行、首页排序别让固定卡被去重丢掉）。
