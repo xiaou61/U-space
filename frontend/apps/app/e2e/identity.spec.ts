@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { REMOTE } from './env'
 import { signIn } from './session'
 
 /**
@@ -46,6 +47,7 @@ test('导航按身份重排：求职者有面试入口、且排在第一', async
 })
 
 test('面试页：能发起会话；积分不足时说清楚而不是静默失败', async ({ page }) => {
+  test.skip(REMOTE, '依赖"余额 0 才会被闸拦下"；线上验收账号有积分，这一轮会真调上游')
   await signIn(page)
   await page.goto('/#/interview')
 

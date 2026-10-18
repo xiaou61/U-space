@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { REMOTE } from './env'
 import { signIn } from './session'
 
 /**
@@ -43,6 +44,7 @@ test('记忆面板：能看到"它记住了什么"，并说明可逐条删除', 
 })
 
 test('积分面板：能看到余额与空状态，并说明没有自动充值', async ({ page }) => {
+  test.skip(REMOTE, '断言的是"种子账号余额 0、无消耗"，部署实例上的验收账号有积分与流水')
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
@@ -56,6 +58,8 @@ test('积分面板：能看到余额与空状态，并说明没有自动充值',
 })
 
 test('积分不足时发送给出明确提示，而不是静默失败（也不会打到上游）', async ({ page }) => {
+  // 线上跳过不只是"数据对不上"：部署实例的账号有积分，这一轮会**真的调上游并扣费**
+  test.skip(REMOTE, '依赖"余额 0 才会被闸拦下"；线上账号有积分，跑下去会真调上游')
   // 这一轮会真的发 POST：余额为 0 时后端在调模型**之前**就拒了，
   // 所以它验证的是"接线通了且失败可见"，不会产生任何上游调用与费用。
   await signIn(page)
@@ -174,6 +178,7 @@ test('WORK-011：快捷键开关面板', async ({ page }) => {
 })
 
 test('WORK-011：失败的一轮也会被记住——历史里选得到，新开之后仍在', async ({ page }) => {
+  test.skip(REMOTE, '依赖"余额 0 才会被闸拦下"；线上账号有积分，这一轮会真调上游')
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
@@ -201,6 +206,7 @@ test('WORK-011：失败的一轮也会被记住——历史里选得到，新开
  * 的会话。回滚已修（`prepare` 不再包事务：先提交用户消息，再做积分预留），这条现在可以真跑。
  */
 test('WORK-011：关掉面板再打开，上一次那一段还在（不是空白）', async ({ page }) => {
+  test.skip(REMOTE, '依赖"余额 0 才会被闸拦下"；线上账号有积分，这一轮会真调上游')
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()

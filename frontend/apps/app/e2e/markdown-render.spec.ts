@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+import { REMOTE } from './env'
 import { signIn } from './session'
 
 /**
@@ -17,6 +18,14 @@ import { signIn } from './session'
  */
 
 const ENTRY_WITH_TABLE_AND_CODE = '/#/knowledge/entries/3'
+
+/**
+ * 线上跳过：本组按**固定 id=3** 打开那条带表格与 java 代码块的种子条目。
+ * 部署实例里 id=3 是另一篇内容（没有表格/代码块），断言会全部落空。
+ */
+test.beforeEach(() => {
+  test.skip(REMOTE, '依赖 db/devdata 里带表格与代码块的条目 id=3；部署实例同号条目内容不同')
+})
 
 /** 取某个元素的某个计算属性（读不出来就抛，避免"读到空串还当通过"）。 */
 function computed(page: import('@playwright/test').Page, selector: string, property: string) {
