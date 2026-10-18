@@ -4,7 +4,7 @@ work_id: WORK-010
 work: 身份化千人千面与求职者面
 status: partial
 evidence: required
-verified_commit: 57e32b4
+verified_commit: 495a07a
 verified_at: 2026-10-18
 ---
 
