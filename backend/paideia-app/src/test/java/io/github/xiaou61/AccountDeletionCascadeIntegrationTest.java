@@ -53,6 +53,9 @@ class AccountDeletionCascadeIntegrationTest {
             {"ai_memories_structured", "user_id"},
             {"ai_memories_text", "user_id"},
             {"ai_user_settings", "user_id"},
+            // WORK-010：身份画像与面试评估也必须是"注销后逐表为 0"
+            {"learner_profiles", "user_id"},
+            {"ai_interview_evaluations", "user_id"},
             {"ai_model_credentials", "user_id"},
             {"ai_entry_summaries", "owner_user_id"},
             // 积分账户与流水（WORK-009）。用户决定 8：注销时**一并删**，守住"注销即级联硬删"。
@@ -182,6 +185,9 @@ class AccountDeletionCascadeIntegrationTest {
         jdbcTemplate.update("INSERT INTO ai_memories_structured (user_id, kind, content) VALUES (?, 'k', '事实')", owner);
         jdbcTemplate.update("INSERT INTO ai_memories_text (user_id, content) VALUES (?, '说过的话')", owner);
         jdbcTemplate.update("INSERT INTO ai_user_settings (user_id, updated_at) VALUES (?, UTC_TIMESTAMP(3))", owner);
+        jdbcTemplate.update("INSERT INTO learner_profiles (user_id, identity, updated_at) VALUES (?, 'job_seeker', UTC_TIMESTAMP(3))", owner);
+        jdbcTemplate.update("INSERT INTO ai_interview_evaluations (user_id, conversation_id, score_json, created_at) "
+                + "VALUES (?, 999999, '{\"overall\":3}', UTC_TIMESTAMP(3))", owner);
         jdbcTemplate.update("""
                 INSERT INTO ai_model_credentials (user_id, base_url, model, api_key_cipher, api_key_last4)
                 VALUES (?, 'https://1.1.1.1/v1', 'm', X'00', 'abcd')

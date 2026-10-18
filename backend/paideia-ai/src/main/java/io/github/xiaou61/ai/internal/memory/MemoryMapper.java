@@ -122,6 +122,38 @@ interface MemoryMapper {
             """)
     int updateText(MemoryRow memory);
 
+    /**
+     * 自评桥的写入（WORK-010 T-08）：按 `(user_id, kind, ref_id)` **覆盖**，不追加。
+     *
+     * <p>依赖 V14 加的 `uk_ai_memory_structured_ref`。`ON DUPLICATE KEY UPDATE` 而不是
+     * "先查后写"：一条语句既原子，也不需要事务包装（两次改自评并发时不会插出两条）。
+     *
+     * <p>这里**显式把 source 写成 auto**：内容由系统按自评生成，不是用户手写的那句话。
+     */
+    @Insert("""
+            INSERT INTO ai_memories_structured
+                (user_id, kind, ref_id, content, source)
+            VALUES
+                (#{userId}, #{kind}, #{refId}, #{content}, 'auto')
+            ON DUPLICATE KEY UPDATE
+                content = VALUES(content),
+                source = VALUES(source),
+                reason = NULL
+            """)
+    int upsertStructuredByRef(@Param("userId") long userId,
+                              @Param("kind") String kind,
+                              @Param("refId") long refId,
+                              @Param("content") String content);
+
+    /** 取消自评时删掉那条记忆（按 ref 定位，不需要记住它的 id）。 */
+    @Delete("""
+            DELETE FROM ai_memories_structured
+            WHERE user_id = #{userId} AND kind = #{kind} AND ref_id = #{refId}
+            """)
+    int deleteStructuredByRef(@Param("userId") long userId,
+                              @Param("kind") String kind,
+                              @Param("refId") long refId);
+
     /** 清空一路（REQ-009 的"清空并关闭"）。返回删掉的条数，界面据此说清清掉了几条。 */
     @Delete("DELETE FROM ai_memories_structured WHERE user_id = #{userId}")
     int clearStructured(@Param("userId") long userId);

@@ -223,6 +223,38 @@ public class MemoryStore {
     }
 
     /**
+     * 自评桥的写入（WORK-010 T-08）：同一条目**覆盖**，不追加。
+     *
+     * <p>内容是给人看的一句话（"第 12 条《模块化单体的边界》：还不懂"），不是 raw 的等级值——
+     * 记忆每轮都会被读进提示词，一句能直接读懂的话比 `entry_understanding=unsure` 有用。
+     *
+     * <p>**只覆盖这条桥自己的记录**（`kind = entry_understanding` + 同一个 `ref_id`）：
+     * 用户手点「记住这条」写的是全文那一路，仍然是追加；模型自动整理写的是别的 kind，
+     * 也不受这个唯一键影响。
+     */
+    @Transactional
+    public void rememberEntryAssessment(long userId, long entryId, String title, String level) {
+        String content = "第 " + entryId + " 条《" + title + "》：" + labelOfLevel(level);
+        mapper.upsertStructuredByRef(userId, SelfAssessmentMemoryBridge.KIND, entryId,
+                requireLength(content, "记忆内容", MAX_STRUCTURED_CHARS));
+    }
+
+    /** 取消自评时删掉那条记忆。返回删掉的行数（0 表示本来就没有，不算错）。 */
+    @Transactional
+    public int forgetEntryAssessment(long userId, long entryId) {
+        return mapper.deleteStructuredByRef(userId, SelfAssessmentMemoryBridge.KIND, entryId);
+    }
+
+    /** 等级 → 中文。不认识的值原样带出去：宁可显示一个怪词，也不要静默丢掉用户的选择。 */
+    private static String labelOfLevel(String level) {
+        return switch (level == null ? "" : level) {
+            case "understood" -> "已掌握";
+            case "unsure" -> "还不懂";
+            default -> level;
+        };
+    }
+
+    /**
      * 清空两路（REQ-009 的"清空并关闭"）。
      *
      * <p>返回删掉的**总条数**：界面要说"清掉了 N 条"，而不是只说"已清空"——

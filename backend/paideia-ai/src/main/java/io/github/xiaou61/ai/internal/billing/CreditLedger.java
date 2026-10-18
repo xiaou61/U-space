@@ -24,6 +24,13 @@ class CreditLedger {
      * 合成一类会让用户对着账目算不明白，也没法在面板上单独显示"最近一次自动整理花了多少"。
      */
     static final String KIND_MEMORY_EXTRACT = "MEMORY_EXTRACT";
+    /**
+     * 面试点评的消耗（WORK-010）。
+     *
+     * <p>与对话的消耗分开记：一场面试是"多轮 + 一次点评"，混成一类的话用户看不出
+     * "点评那一下花了多少"，而它恰恰是单次最贵的一笔（要读整场对话）。
+     */
+    static final String KIND_INTERVIEW_REVIEW = "INTERVIEW_REVIEW";
 
     private Long id;
     private Long userId;

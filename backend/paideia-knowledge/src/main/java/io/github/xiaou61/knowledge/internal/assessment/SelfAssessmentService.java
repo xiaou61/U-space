@@ -3,6 +3,7 @@ package io.github.xiaou61.knowledge.internal.assessment;
 import io.github.xiaou61.knowledge.internal.entry.Entry;
 import io.github.xiaou61.knowledge.internal.entry.EntryMapper;
 import io.github.xiaou61.platform.BizException;
+import io.github.xiaou61.platform.EntryAssessmentChangedEvent;
 import io.github.xiaou61.platform.ErrorCode;
 import java.util.List;
 import java.util.Optional;
@@ -25,10 +26,13 @@ public class SelfAssessmentService {
 
     private final SelfAssessmentMapper selfAssessmentMapper;
     private final EntryMapper entryMapper;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
-    SelfAssessmentService(SelfAssessmentMapper selfAssessmentMapper, EntryMapper entryMapper) {
+    SelfAssessmentService(SelfAssessmentMapper selfAssessmentMapper, EntryMapper entryMapper,
+                          org.springframework.context.ApplicationEventPublisher events) {
         this.selfAssessmentMapper = selfAssessmentMapper;
         this.entryMapper = entryMapper;
+        this.events = events;
     }
 
     public record AssessedItem(Long entryId, String title, String level, java.time.Instant updatedAt) {
@@ -39,6 +43,9 @@ public class SelfAssessmentService {
         String normalized = normalizeLevel(level);
         requirePublishedEntry(entryId);
         selfAssessmentMapper.upsert(userId, entryId, normalized);
+        // 桥（WORK-010 T-08）：自评改了就宣布一声，让 AI 模块把它记成结构化记忆。
+        // 用事件而不是直接调 AI——AI 已依赖本模块，反向调用会成环（Modulith 会拦）。
+        events.publishEvent(new EntryAssessmentChangedEvent(userId, entryId, normalized));
     }
 
     /**
@@ -51,6 +58,8 @@ public class SelfAssessmentService {
     @Transactional
     public void clear(Long userId, Long entryId) {
         selfAssessmentMapper.delete(userId, entryId);
+        // level 为 null 表示"取消了"——监听方据此删掉那条记忆，否则标记没了助手还记着，是假记忆
+        events.publishEvent(new EntryAssessmentChangedEvent(userId, entryId, null));
     }
 
     public List<AssessedItem> listMine(Long userId, String level) {

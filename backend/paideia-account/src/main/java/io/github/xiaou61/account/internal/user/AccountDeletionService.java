@@ -30,15 +30,19 @@ public class AccountDeletionService {
     private final RefreshTokenMapper refreshTokens;
     private final PasswordHasher hasher;
     private final ApplicationEventPublisher events;
+    /** 画像与本模块同库同域，这里直接删（不绕事件）。 */
+    private final io.github.xiaou61.account.internal.profile.LearnerProfileService profiles;
 
     AccountDeletionService(UserMapper users,
                            RefreshTokenMapper refreshTokens,
                            PasswordHasher hasher,
-                           ApplicationEventPublisher events) {
+                           ApplicationEventPublisher events,
+                           io.github.xiaou61.account.internal.profile.LearnerProfileService profiles) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.hasher = hasher;
         this.events = events;
+        this.profiles = profiles;
     }
 
     @Transactional
@@ -49,6 +53,9 @@ public class AccountDeletionService {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码不正确");
         }
         refreshTokens.deleteByUser(userId);
+        // 画像与本模块同库同域（WORK-010）：直接删，不必绕一圈事件。
+        // 其它模块的用户数据仍由 UserDeletedEvent 各自删除（方向是单向的）。
+        profiles.deleteByUser(userId);
         users.deleteById(userId);
         // 事务提交前由各模块监听并删掉自己的数据（见 UserDeletedEvent 的说明）
         events.publishEvent(new UserDeletedEvent(userId));

@@ -1,6 +1,7 @@
 package io.github.xiaou61.ai.internal.tools;
 
 import io.agentscope.core.model.ToolSchema;
+import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.knowledge.KnowledgeApi;
 import java.util.List;
@@ -56,8 +57,35 @@ public class AssistantTools {
         }
     }
 
-    /** 交给模型的工具清单。描述写清"什么时候该用"，模型选不选得对主要靠它。 */
+    /**
+     * 交给模型的工具清单（通用助手 / 面试官）。
+     *
+     * <p>描述写清"什么时候该用"，模型选不选得对主要靠它。
+     */
     public List<ToolSchema> schemas() {
+        return allSchemas();
+    }
+
+    /**
+     * 按 harness 给工具子集（WORK-010 T-06 / AC-006）。
+     *
+     * <p><b>一期只有"取子集"，没有"加新工具"</b>：面试官靠提示词驱动，点评官明确不挂工具
+     * （它要结构化评分，而 DeepSeek 上工具与结构化输出不能同一次调用并用）。
+     * 因此这里的形状是"通用组给谁、谁不给"——将来加场景工具时，在这个方法里加一组即可。
+     *
+     * <p>穷尽 switch 且**没有 default**：新增 harness 时编译器会强制你决定它的工具集，
+     * 而不是静默继承通用组（那等于把场景工具泄漏给不该有的场景）。
+     */
+    public List<ToolSchema> schemas(Harness harness) {
+        return switch (harness) {
+            // 通用助手与面试官都能读平台内容、读自己的标记：那些是"回答/追问需要的事实"
+            case ASSISTANT, INTERVIEW -> allSchemas();
+            // 点评是一次**纯文本输入 → 结构化输出**的评估：不读库、不检索、不写任何东西
+            case REVIEW -> List.of();
+        };
+    }
+
+    private List<ToolSchema> allSchemas() {
         return List.of(
                 ToolSchema.builder()
                         .name(SEARCH_ENTRIES)

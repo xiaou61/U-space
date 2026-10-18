@@ -2,6 +2,7 @@ package io.github.xiaou61.ai.internal.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import io.github.xiaou61.platform.ApiAccess;
 
 /**
  * 助手对话端点。
@@ -41,12 +43,17 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * <p>事件：{@code thinking}（思考增量）、{@code content}（正文增量）、
  * {@code done}（带用量，可能为 null）、{@code error}（带可见消息）。{@code done} 与 {@code error} 互斥且各一次。
  */
+@ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
 @RequestMapping("/api/v1/ai/conversations")
 class AssistantConversationController {
 
     /** 建会话。`entryId` 可空——助手在任意页都能开，不非得绑在某个条目上。 */
-    record CreateRequest(Long entryId) {
+    /**
+     * @param harness 这段会话用哪套公共行为（WORK-010）。不传 = 通用助手；
+     *                面试页传 `interview`。**会话建好之后行为就跟着会话走**（恢复时按它选）。
+     */
+    record CreateRequest(Long entryId, String harness) {
     }
 
     record MessageRequest(String message) {
@@ -84,7 +91,8 @@ class AssistantConversationController {
     ApiResponse<ConversationService.ConversationView> create(@RequestBody(required = false) CreateRequest request) {
         long userId = AiRequester.require();
         Long entryId = request == null ? null : request.entryId();
-        long id = conversations.create(userId, entryId);
+        Harness harness = Harness.ofOrDefault(request == null ? null : request.harness());
+        long id = conversations.create(userId, entryId, harness);
         return ApiResponse.ok(new ConversationService.ConversationView(id, entryId, null));
     }
 
@@ -139,7 +147,7 @@ class AssistantConversationController {
         try {
             assistant.stream(
                     new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
-                            turn.entryTitle(), turn.entryBody(), turn.memorySnippets()),
+                            turn.entryTitle(), turn.entryBody(), turn.memorySnippets(), turn.harness()),
                     turn.access(),
                     new AssistantConversation.Listener() {
                         @Override

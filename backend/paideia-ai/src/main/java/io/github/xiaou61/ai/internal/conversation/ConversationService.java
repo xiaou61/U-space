@@ -3,6 +3,7 @@ package io.github.xiaou61.ai.internal.conversation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.ConversationTurn;
+import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
@@ -149,14 +150,26 @@ public class ConversationService {
                                   String entryBody,
                                   List<String> memorySnippets,
                                   ModelAccess access,
-                                  long reservedCredits) {
+                                  long reservedCredits,
+                                  Harness harness) {
     }
 
     public long create(long userId, Long entryId) {
+        return create(userId, entryId, Harness.ASSISTANT);
+    }
+
+    /**
+     * 建一段**带公共行为**的会话（WORK-010）。
+     *
+     * <p>harness 存进会话里，恢复时按它选行为——否则用户从通用入口继续一段面试对话会中途换人格。
+     * 通用助手也显式写 `assistant`（不写 NULL）：否则"NULL 是什么行为"要靠读代码才知道。
+     */
+    public long create(long userId, Long entryId, Harness harness) {
         Conversation conversation = new Conversation();
         conversation.setUserId(userId);
         conversation.setEntryId(entryId);
         conversation.setExpiresAt(Instant.now().plus(properties.getTtl()));
+        conversation.setHarness((harness == null ? Harness.ASSISTANT : harness).key());
         conversations.insert(conversation);
         return conversation.getId();
     }
@@ -220,8 +233,10 @@ public class ConversationService {
         // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
         // 放在限流之后：被限流的那一轮本来就不该占用户的额度。**它的后面不能再有会抛的动作。**
         long reserved = credits.reserve(userId, credits.estimate());
+        // 行为跟着**会话**走（WORK-010）：从通用入口继续一段面试对话，仍是面试官在说话。
+        Harness harness = Harness.ofOrDefault(conversation.getHarness());
         return new TurnPreparation(conversationId, history, trimmed, entry.title(), entry.body(),
-                snippets, access.get(), reserved);
+                snippets, access.get(), reserved, harness);
     }
 
     /**

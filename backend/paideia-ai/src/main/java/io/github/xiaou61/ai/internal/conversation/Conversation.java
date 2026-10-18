@@ -22,6 +22,13 @@ class Conversation {
      * 才会去跑整理。两件事共用一个字段是刻意的——分成"锁"和"游标"两个字段，它们迟早会不一致。
      */
     private Long lastMemoryExtractMessageId;
+    /**
+     * 这段会话用哪套公共行为（WORK-010）。`null` = 通用助手（既有会话全是 NULL，行为不变）。
+     *
+     * <p>恢复会话时按它选行为，所以**从通用入口继续一段面试对话仍是面试行为**——行为跟着
+     * 会话走，比跟着入口走更符合"那是同一个人说过的话"。
+     */
+    private String harness;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -63,6 +70,14 @@ class Conversation {
 
     void setLastMemoryExtractMessageId(Long lastMemoryExtractMessageId) {
         this.lastMemoryExtractMessageId = lastMemoryExtractMessageId;
+    }
+
+    String getHarness() {
+        return harness;
+    }
+
+    void setHarness(String harness) {
+        this.harness = harness;
     }
 
     Instant getCreatedAt() {

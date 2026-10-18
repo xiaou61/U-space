@@ -81,7 +81,9 @@ class AgentScopeConversation implements AssistantConversation {
         Model model = buildModel(access, options);
 
         List<Msg> conversation = new ArrayList<>(toMessages(request));
-        List<ToolSchema> schemas = tools.schemas();
+        // 工具集按 harness 取子集（WORK-010 AC-006）：点评那次是空的——它要结构化评分，
+        // 而 DeepSeek 上工具与结构化输出不能同一次调用并用。
+        List<ToolSchema> schemas = tools.schemas(request.harness());
 
         // 逐轮累加：工具循环里**每一轮都是一次真实的上游调用**，都必须计入用量。
         // 原先只把最后一轮上报出去、中间轮次全丢——BYOK 下是"少报给用户看"，
@@ -245,7 +247,10 @@ class AgentScopeConversation implements AssistantConversation {
 
     private List<Msg> toMessages(Request request) {
         List<Msg> messages = new ArrayList<>();
-        messages.add(Msg.builder().role(MsgRole.SYSTEM).textContent(ConversationPrompt.system()).build());
+        // 提示词按 harness 选（WORK-010 T-05）：这是"公共行为"唯一的落点，
+        // 上下文/记忆/凭据都不受影响。
+        messages.add(Msg.builder().role(MsgRole.SYSTEM)
+                .textContent(HarnessPrompts.system(request.harness())).build());
         if (request.hasEntryContext()) {
             // 条目正文放系统侧：放用户侧会被模型当成"用户说的话"
             messages.add(Msg.builder()

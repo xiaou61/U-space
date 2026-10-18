@@ -135,6 +135,18 @@ public class CreditService {
         settleAs(userId, reserved, CreditLedger.KIND_MEMORY_EXTRACT, model, inputTokens, outputTokens, refMessageId);
     }
 
+    /**
+     * 面试点评的结算（WORK-010）。
+     *
+     * <p>种类单独记：一场面试里点评是单次最贵的一笔（要读整场对话），与逐轮对话混成一类之后，
+     * 用户无法回答"这次面试到底花在哪"。
+     */
+    @Transactional
+    public void settleInterviewReview(long userId, long reserved, String model,
+                                      Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        settleAs(userId, reserved, CreditLedger.KIND_INTERVIEW_REVIEW, model, inputTokens, outputTokens, refMessageId);
+    }
+
     /** 结算，并指定流水种类。私有：种类是领域决定，不该由调用方随手给。 */
     private void settleAs(long userId, long reserved, String kind, String model,
                           Integer inputTokens, Integer outputTokens, Long refMessageId) {

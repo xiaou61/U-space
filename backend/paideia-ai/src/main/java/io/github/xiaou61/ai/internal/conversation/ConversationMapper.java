@@ -25,14 +25,14 @@ import org.apache.ibatis.annotations.Update;
 interface ConversationMapper {
 
     @Insert("""
-            INSERT INTO ai_conversations (user_id, entry_id, expires_at)
-            VALUES (#{userId}, #{entryId}, #{expiresAt})
+            INSERT INTO ai_conversations (user_id, entry_id, expires_at, harness)
+            VALUES (#{userId}, #{entryId}, #{expiresAt}, #{harness})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Conversation conversation);
 
     @Select("""
-            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, created_at, updated_at
+            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, harness, created_at, updated_at
             FROM ai_conversations
             WHERE id = #{id} AND user_id = #{userId} AND expires_at > #{now}
             """)
@@ -41,7 +41,7 @@ interface ConversationMapper {
                                                  @Param("now") Instant now);
 
     @Select("""
-            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, created_at, updated_at
+            SELECT id, user_id, entry_id, expires_at, last_memory_extract_message_id, harness, created_at, updated_at
             FROM ai_conversations
             WHERE user_id = #{userId} AND expires_at > #{now}
             ORDER BY updated_at DESC, id DESC

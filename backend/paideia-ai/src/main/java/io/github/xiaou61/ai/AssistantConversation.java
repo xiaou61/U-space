@@ -35,17 +35,33 @@ public interface AssistantConversation {
      * @param entryTitle     可选：当前条目标题（为空表示这轮没有条目上下文）
      * @param entryBody      可选：当前条目正文；超长由实现截断
      * @param memorySnippets 召回的记忆（本人私有），每条一行；为空表示这次没有可用记忆
+     * @param harness        这一轮用哪套**公共行为**（WORK-010）。`null` 视为 {@link Harness#ASSISTANT}；
+     *                       面试页显式给 {@link Harness#INTERVIEW}，点评给 {@link Harness#REVIEW}。
+     *                       **它与记忆/历史/凭据无关**——那些是私有数据，按用户取
      */
     record Request(long userId,
                    List<ConversationTurn> history,
                    String userMessage,
                    String entryTitle,
                    String entryBody,
-                   List<String> memorySnippets) {
+                   List<String> memorySnippets,
+                   Harness harness) {
 
         public Request {
             history = history == null ? List.of() : List.copyOf(history);
             memorySnippets = memorySnippets == null ? List.of() : List.copyOf(memorySnippets);
+            harness = harness == null ? Harness.ASSISTANT : harness;
+        }
+
+        /**
+         * 兼容构造：只给前六项时用通用助手行为。
+         *
+         * <p>留着它是为了让既有调用方与不关心 harness 的测试不必都多写一个 `null`——
+         * 而"没写就是通用助手"恰好就是默认语义。
+         */
+        public Request(long userId, List<ConversationTurn> history, String userMessage,
+                       String entryTitle, String entryBody, List<String> memorySnippets) {
+            this(userId, history, userMessage, entryTitle, entryBody, memorySnippets, Harness.ASSISTANT);
         }
 
         /** 有没有条目上下文。实现据此决定是否把正文放进提示词。 */

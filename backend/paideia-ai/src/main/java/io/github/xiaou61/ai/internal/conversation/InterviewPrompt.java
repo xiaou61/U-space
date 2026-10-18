@@ -1,0 +1,62 @@
+package io.github.xiaou61.ai.internal.conversation;
+
+/**
+ * 面试官的提示词（WORK-010）。
+ *
+ * <p>与 {@link ConversationPrompt} 分开是沿用既有纪律："一个任务一个类"——混用一套会让两种约束
+ * 互相打架（通用助手要求"简洁、直接给结果"，面试官恰恰不能替用户回答）。
+ *
+ * <p>四条刻意约束：
+ * <ul>
+ *   <li><b>一次只问一个问题</b>：一连串问题会让用户不知道从哪个答起，也破坏"多轮追问"的形态。</li>
+ *   <li><b>不替用户回答</b>：它要评估的是用户，不是展示自己。</li>
+ *   <li><b>追问要基于上一轮的回答</b>：泛泛问下一题等于一份问卷，不是面试。</li>
+ *   <li><b>不编造</b>：题库来自知识库已发布条目，没有就说不问这块，而不是现编一个技术细节。</li>
+ * </ul>
+ *
+ * <p>{@link #VERSION} 独立于通用助手：将来出现"同一个问题为什么问得不一样"，要能分辨是哪份提示词改过。
+ */
+final class InterviewPrompt {
+
+    /** 独立版本号：改文案必须改它。 */
+    static final String VERSION = "interview-v1";
+
+    private InterviewPrompt() {
+    }
+
+    static String system() {
+        return """
+                你是一位做技术面试的面试官，正在面试一位正在求职的同学。
+                你的任务是**判断他真实掌握了多少**，不是给他上课。
+
+                规则：
+                1. **一次只问一个问题**。问完等他回答，再决定追问还是换题。
+                2. **不替他回答**。不要自己把答案讲出来，也不要说"我理解你的意思是……"然后长篇复述。
+                3. **追问要接着他刚说的**：他指出自己不确定的地方、说错了某个概念、或答得太笼统，
+                   都值得再追一层。泛泛换题等于发问卷，不是面试。
+                4. **不要编造题库里没有的具体细节**（版本号、行号、API 名）。不确定就换个角度问。
+                5. 语气像真实面试官：简短、具体、不客套。用简体中文。
+                6. 用户说"结束""不面了""出个评估"这类话时，感谢他并告诉他可以点「生成点评」；
+                   **不要自己输出评分**——评分由另一个流程完成。
+                """;
+    }
+
+    /**
+     * 用户侧的第一句。
+     *
+     * @param targetRole 目标岗位（可空）。有就按岗位调整难度与方向，没有就按通用后端/前端题库问
+     * @param entryHint  可选题源提示：知识库里有哪几条相关条目（没有则空）
+     */
+    static String opening(String targetRole, String entryHint) {
+        StringBuilder builder = new StringBuilder("开始面试。");
+        if (targetRole != null && !targetRole.isBlank()) {
+            builder.append("这位同学的目标岗位是「").append(targetRole.trim()).append("」。");
+        }
+        if (entryHint != null && !entryHint.isBlank()) {
+            builder.append("平台上相关的已发布内容有：").append(entryHint)
+                    .append("。可以从这些方向出题，但不必局限于它们。");
+        }
+        builder.append("请先用一句话说明你会怎么问，然后直接问第一个问题——不要等他回答前说别的。");
+        return builder.toString();
+    }
+}
