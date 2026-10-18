@@ -3239,3 +3239,13 @@ schema_version: 1
 - 验证：单测 240 passed；app e2e 60（45 桌面 + 15 移动）；admin e2e 19（9 桌面 + 10 移动）；PWA 2 条通过；typecheck 11 包全过；validate 0 error
 - 本地提交：fa7af45 / a0107e6 / bae8907 / 2a60c76 / 7b95298
 - 远端推送：未执行（需单独授权）
+
+## 2026-10-18 10:10:47 +0800 · WORK-016 · 推送 WORK-016 六笔提交到 GitHub master
+
+- 类型：maintenance
+- 变更：origin/master 由 e9168ee 前进到 b456788，含 fa7af45 / a0107e6 / bae8907 / 2a60c76 / 7b95298 / b456788 六笔
+- 决策：当前 HTTPS 到 github.com 不通（curl 返回 000），改走 SSH 直推，未修改 origin 配置
+- 依据：git ls-remote 回读 refs/heads/master = b4567882293e6b07e059bc6c168fa967d2211a29，与本地 HEAD 一致
+- 验证：推送后回读远端 ref 与本地 HEAD 相同；工作区干净；推送前扫描 diff 未发现凭据
+- 本地提交：b456788
+- 远端推送：已推送 b456788 到 origin master（SSH）
