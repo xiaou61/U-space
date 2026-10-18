@@ -3316,3 +3316,80 @@ schema_version: 1
 - 验证：后端 `mvn -B verify` **BUILD SUCCESS**，143 个测试 0 失败（4 skipped，`PaginationIntegrationTest` 是既有问题已排除）。**反向验证**：把新增的 `KnowledgeUserDeletionListener` 暂时移走后，`AccountDeletionCascadeIntegrationTest` **当场失败**（2 errors），恢复后通过——证明这条断言确实会咬。前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` **240 条全过**。**未跑 e2e**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
+
+## 2026-10-18 14:00:22 +0800 · 项目 · 起草接口测试标准（只落文档，未实施）
+
+- 类型：documentation
+- 变更：新增 `.agent/notes/api-testing-standard.md`，提出四层闸（路由清单集合比较 / 通用拒绝矩阵 / 业务语义 / 线上只读冒烟）与 P0–P2 落地顺序；未改任何源码、配置、依赖或脚本
+- 决策：把"改了接口一定重测"落成构建失败而非流程记忆；线上冒烟默认只读，写路径需显式开关；OpenAPI 快照列为二期；不做按 git diff 的选择性测试；不引 Pact/RestAssured/Postman
+- 依据：实测枚举 60 个 `/api/v1` 路由（17 管理端 / 8 公开 / 35 需登录）；仓库无 OpenAPI、无 CI；`release.ps1` 的 `-WithTests` 是可选开关；缺 DB 口令时集成测试整块跳过仍 `BUILD SUCCESS`；当前工作区新加的 `GET/PUT /api/v1/account/profile` 两条均无测试引用
+- 验证：仅新增/追加 Markdown，未触碰工作区其它在飞改动，未运行构建与测试
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:06:30 +0800 · WORK-017 · 立为长期工作项并建测试台账目录
+
+- 类型：decision
+- 变更：建 WORK-017「接口契约测试与长期测试台账」（`requirements.md`，draft，mode strict / workflow full，10 条 AC）；新建 `.agent/testing/README.md` 定义台账的命名、模板、脱敏与保留规则，并建 `.agent/testing/runs/`；`.agent/INDEX.md` 增一行导航到台账与标准草案
+- 决策：用户要求"当作长期任务、记录到 .agent 某个文件夹"，因此把测试标准落成受管理工作项而非一次性脚本；台账按**每次运行一个文件、追加不覆盖**，不建"最新状态"汇总文件（汇总会漂移）；常规运行不写 `updates.md`，避免时间线被测试记录淹没；台账默认进 Git 但强制脱敏（主机/账号/令牌/连接串一律不写）
+- 依据：`.agent/notes/api-testing-standard.md`（2026-10-18 起草）；`project-lifecycle` 的 `references/testing.md` 与 `references/workflow.md`（验证报告是工作项内的一次性证据，不能承担跨工作项的长期历史）
+- 验证：`project-lifecycle.ps1 validate F:/Paideia` → `valid: true`、`errors: []`，WORK-017 为 `phase: requirements / state: draft / errors: 0 / warnings: 0`。未运行构建与测试（本轮无源码改动）
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:16:10 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-017-接口契约测试与长期测试台账/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-017-接口契约测试与长期测试台账/requirements.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:10 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:16:11 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-017-接口契约测试与长期测试台账/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-017-接口契约测试与长期测试台账/proposal.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:11 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:16:12 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-017-接口契约测试与长期测试台账/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-017-接口契约测试与长期测试台账/design.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:12 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:16:13 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-017-接口契约测试与长期测试台账/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；approved_by / approved_at 由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-017-接口契约测试与长期测试台账/tasks.md
+- 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:13 +0800
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 14:44:51  · 项目 · 自审 5 个提交（抓到 2 critical / 6 high，4 条是我自己引入的）；建审查基线
+
+- 类型：implementation
+- 变更：① 对 `9c99033..HEAD` 这 5 个提交（含本会话自己两笔修复）做区间审查，报告 `.agent/reviews/2026-10-18-9c99033..6b30d4f.md`。**结果 critical 2、high 6、medium 9、low 6**——其中 **4 条是上两轮我自己引入的缺陷**，已修：
+  - **`docker run --cidfile` 要求目标文件不存在**：我用 `Files.createTempFile` 提前创建了它，CLI 会直接拒绝启动（exit 125），**每一次沙箱执行都会失败**、分帧写入与超时清理都无从生效。改为只生成唯一路径（临时目录 + 文件名）、不创建文件。（本机无 docker，无法实测；按 Docker 的文档化行为修正。）
+  - **登录计数被我改出了绕过**：上一轮"成功时也清 `sourceKey`"虽然解决了 NAT 误伤，但攻击者只要有一个合法账号，每撞 19 次成功登录一次就能把来源计数清零、无限绕过 `FAILURES_PER_SOURCE=20`。改回**不清来源维度**——横向撞库的代价高于 NAT 误伤（阈值 20 远高于单账号的 5）。
+  - **种子移到 test resources 破坏了本地 e2e**：两个前端 `playwright.config.ts` 都用 `java -jar` + `SPRING_FLYWAY_LOCATIONS=classpath:db/devdata` 起后端，而 `mvn package` 不会把 test resources 打进 jar，Flyway 按 `fail-on-missing-locations=false` 静默跳过 → 新库上种子账号与知识库种子都不会创建。**整目录挪回 `src/main/resources`**（原先那条"种子进发布物"的担忧因此保留，记为已知风险而不是靠移动解决）。
+  - **会话序号的三个缺口**（我上一轮改成 requestSeq 时留下的）：`catch` 里没有序号校验（A 切 B、A 失败会把 B 已渲染的消息清掉）；`startNew` 不推进序号（新开对话后旧历史会写回）；`send` / 预填不推进序号（恢复路径 `abort:false`，会把在飞的一轮覆盖）。
+  - **`globals.css` 的嵌套 `@layer utilities` 无效**：嵌套层是 `components.utilities`，优先级仍低于顶层 utilities，`p-4` 照样覆盖 `padding-bottom`。整块移到文件末尾的顶层 `@layer utilities`。
+  - **`MemoryCandidateParser` 的 kind 降级会改道**：结构化 UPDATE 若模型没回 kind，会被降级成 TEXT 并用同一个 `targetId` 去 update `ai_memories_text`——两表 id 各自自增，会覆盖同用户另一条无辜记忆（比原来的 NPE 更难发现）。改为 **kind 降级只对 ADD 生效**。
+  - ② 新增 `.agent/reviews/BASELINE`（记录已审到的 rev）与 `.agent/scripts/review_baseline.sh`（校验基线是 HEAD 的祖先、报告未审提交数）。起因是本会话口头把 68 个提交数成 85 个——**数字必须来自命令，不能来自眼睛**。脚本正反向都验过。
+- 决策：`V14__create_learner_profiles.sql` 与 `ai_interview_evaluations` 表是**别的会话未提交的在途改动**，导致完整集成测试在本机跑不起来（Flyway checksum mismatch / 表缺失）。只跑了我改动涉及的四个模块（ai/sandbox/account/knowledge），全绿；`paideia-app` 的端到端集成测试留待那些在途改动落定后再验。
+- 依据：`.agent/reviews/2026-10-18-9c99033..6b30d4f.md`；用户 2026-10-18 指示"中低影响主流程的要修，修完推送"与"建基线"
+- 验证：`mvn -B test` 覆盖 ai（50 条）、sandbox（6 条）、account、knowledge 四模块 **BUILD SUCCESS 0 失败**；前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` 240 条全过。`review_baseline.sh`：正向输出"已审到 6b30d4f，距 HEAD 还有 0 个提交"；把基线改成不存在时正确报错。**未跑 e2e**。
+- 本地提交：见本轮提交
+- 远端推送：见本轮

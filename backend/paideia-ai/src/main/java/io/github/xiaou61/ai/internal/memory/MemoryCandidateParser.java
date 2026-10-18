@@ -93,7 +93,14 @@ public class MemoryCandidateParser {
 
         String kind = MemoryKinds.normalize(text(node, "kind"));
         MemoryCandidate.Store effective = store;
-        if (effective == MemoryCandidate.Store.STRUCTURED && kind == null) {
+        // kind 只对 ADD 有意义。
+        //
+        // **UPDATE 绝不能因为 kind 缺失/不认识就改道到 TEXT**：两路的 id 各自自增、彼此独立，
+        // 拿结构化记忆的 targetId 去 update ai_memories_text 会命中同一用户另一条无辜记忆并
+        // 覆盖它的内容（比抛错更难发现）。而提示词对 UPDATE 只要求给 targetId 与所在 store，
+        // 模型很可能不回 kind —— 这条路径相当现实。
+        if (action != MemoryCandidate.Action.UPDATE
+                && effective == MemoryCandidate.Store.STRUCTURED && kind == null) {
             // 结构化那路必须有白名单内的 kind；模型没给或不认识 → 落全文那路（设计 §4）
             effective = MemoryCandidate.Store.TEXT;
         }

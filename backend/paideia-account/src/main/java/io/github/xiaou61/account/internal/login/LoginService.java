@@ -76,11 +76,12 @@ public class LoginService {
             throw AuthPort.unauthenticated(GENERIC_FAILURE);
         }
 
-        // 登录成功清掉失败计数，避免历史失败把正常用户挡在门外。
-        // sourceKey 也必须清：失败时两个键都记了，只清 identifier 的话，同一出口（NAT/公司网）
-        // 的历史失败会在 15 分钟窗口内累积，正常用户凑够 20 次就被整体拒绝。
+        // 成功清掉**标识维度**的失败计数，避免历史失败把正常用户挡在门外。
+        //
+        // 来源（sourceKey）维度**不清**：它防的是"同一出口横向撞库"，而攻击者只要手里有一个
+        // 合法账号，就能每撞 19 次成功登录一次把来源计数清零、无限绕过 FAILURES_PER_SOURCE。
+        // NAT/公司出口被历史失败误伤的代价（阈值 20 比单账号的 5 高得多）小于放掉横向撞库。
         rateLimiter.clear(identifierKey);
-        rateLimiter.clear(sourceKey);
         return tokenService.issueFor(user);
     }
 }

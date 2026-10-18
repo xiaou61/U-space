@@ -100,6 +100,10 @@ export function ConversationPanel({
           })),
         )
       } catch (cause) {
+        // 序号已被更晚的一次切换取代：本次的失败不该把界面上那段会话清掉
+        if (requestSeqRef.current !== seq) {
+          return
+        }
         // 会话过期（7 天滑动）是常态：清掉本地记忆，退回"新的一段"，而不是留一个打不开的 id
         storeConversation(null)
         setConversationId(null)
@@ -183,6 +187,8 @@ export function ConversationPanel({
       return
     }
     touchedRef.current = true
+    // 同上：预填之后在飞的恢复不能再用历史覆盖这行草稿
+    requestSeqRef.current += 1
     setInput(pendingPrompt.text)
     clearPendingPrompt(pendingPrompt.id)
   }, [pendingPrompt, clearPendingPrompt])
@@ -211,6 +217,9 @@ export function ConversationPanel({
   /** 新开一段：清空界面并**把本地记成"空白"**，这样关掉再打开也不会把旧的拉回来。 */
   const startNew = () => {
     touchedRef.current = true
+    // 让在飞的 openConversation / 挂载恢复失效：否则它回来时序号仍匹配，会把旧会话的历史
+    // 写进这个刚刚清空的新会话里。
+    requestSeqRef.current += 1
     abortRef.current?.abort()
     abortRef.current = null
     setConversationId(null)
@@ -242,6 +251,8 @@ export function ConversationPanel({
       return
     }
     touchedRef.current = true
+    // 让在飞的挂载恢复失效：恢复路径带 abort:false，不推进序号的话它回来会覆盖这一轮
+    requestSeqRef.current += 1
     setBusy(true)
     setError(null)
     setInput('')

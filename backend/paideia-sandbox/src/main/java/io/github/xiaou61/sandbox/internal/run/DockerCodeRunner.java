@@ -56,19 +56,23 @@ class DockerCodeRunner implements CodeRunner {
 
     @Override
     public CodeRun.Result run(CodeRun.Request request) {
-        Path cidFile;
+        // docker run --cidfile 要求目标路径**不存在**（CLI 会先 stat，已存在就直接拒绝启动、
+        // 以 exit 125 失败）。所以这里只生成一个唯一路径，不创建文件；用临时目录保证可写。
+        Path cidDir;
         try {
-            cidFile = Files.createTempFile("paideia-sandbox-", ".cid");
+            cidDir = Files.createTempDirectory("paideia-sandbox-");
         } catch (IOException cause) {
-            throw new SandboxUnavailableException("无法创建容器 id 文件：" + cause.getMessage(), cause);
+            throw new SandboxUnavailableException("无法创建容器 id 目录：" + cause.getMessage(), cause);
         }
+        Path cidFile = cidDir.resolve("container.cid");
         try {
             return execute(request, DockerCommand.of(request.language(), properties, cidFile.toString()));
         } finally {
             try {
                 Files.deleteIfExists(cidFile);
+                Files.deleteIfExists(cidDir);
             } catch (IOException ignored) {
-                // 临时文件删不掉不影响结果
+                // 清理失败不影响结果
             }
         }
     }

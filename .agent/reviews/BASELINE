@@ -1,0 +1,9 @@
+# 代码审查基线
+
+每次审查从 `reviewed_through` 到 `HEAD`。基线必须**始终是 HEAD 的祖先**，否则说明历史被重写过、之前的审查结论不再覆盖现在的代码。
+
+改这一行只能跟在一次真实审查之后——不要手写一个没审过的提交。
+
+reviewed_through: 6b30d4f
+reviewed_at: 2026-10-18 14:30 +0800
+last_report: .agent/reviews/2026-10-18-9c99033..6b30d4f.md
