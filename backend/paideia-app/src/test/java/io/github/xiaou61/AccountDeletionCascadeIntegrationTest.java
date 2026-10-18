@@ -65,6 +65,12 @@ class AccountDeletionCascadeIntegrationTest {
             {"notes", "user_id"},
             {"note_shares", "user_id"},
             {"note_reports", "reporter_user_id"},
+            // 简历（WORK-018）：简历是本项目最敏的一类 PII，四张表都必须逐表归零。
+            // 只断言主简历会让"注销后还留着旧提案与岗位版本"这种残留悄悄过关。
+            {"resume_proposals", "user_id"},
+            {"resume_versions", "user_id"},
+            {"resume_edit_history", "user_id"},
+            {"resume_documents", "user_id"},
             // 知识库自评（"我对哪些条目懂／不懂"）：本项目第一张用户私有业务数据表
             {"knowledge_self_assessments", "user_id"},
             {"refresh_tokens", "user_id"},
@@ -218,6 +224,34 @@ class AccountDeletionCascadeIntegrationTest {
                 INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at)
                 VALUES (?, REPEAT('b', 64), UUID(), ?)
                 """, owner, Timestamp.from(Instant.now().plusSeconds(3600)));
+        // 简历四张表（WORK-018）：主简历 → 快照 → 岗位版本 → 提案，都真种一行。
+        // 只种主简历会让另外三张的断言变成"断言一个空表"，等于没验。
+        jdbcTemplate.update("""
+                INSERT INTO resume_documents (user_id, title, is_default, revision, data_json, plain_text,
+                                              created_at, updated_at)
+                VALUES (?, '主简历', 1, 1, '{}', '原文', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+                """, owner);
+        long resumeId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM resume_documents WHERE user_id = ?", Long.class, owner);
+        jdbcTemplate.update("""
+                INSERT INTO resume_edit_history (document_id, user_id, data_json, created_at)
+                VALUES (?, ?, '{}', UTC_TIMESTAMP(3))
+                """, resumeId, owner);
+        jdbcTemplate.update("""
+                INSERT INTO resume_versions (document_id, user_id, company, role, jd_text, status,
+                                             analysis_json, final_json, created_at, updated_at)
+                VALUES (?, ?, '公司', '岗位', 'JD 文本', 'finalized', '{}', '{}',
+                        UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+                """, resumeId, owner);
+        long versionId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM resume_versions WHERE user_id = ?", Long.class, owner);
+        jdbcTemplate.update("""
+                INSERT INTO resume_proposals (version_id, user_id, seq, entry_ref, field,
+                                              original_text, proposed_text, change_type, rationale,
+                                              accepted, gate_status, created_at, updated_at)
+                VALUES (?, ?, 1, 'work[0].bullets[0]', 'bullet', '原文', '改后', 'rewrite', '依据',
+                        1, 'passed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+                """, versionId, owner);
         // 知识库自评：必须真种一条，否则新加的 USER_DATA 行只会断言到 0 条，等于没验。
         // entry_id 借用种子里任意一条已发布条目（外键指向 knowledge_entries）。
         Long entryId = jdbcTemplate.queryForObject(
