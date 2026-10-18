@@ -54,6 +54,10 @@ const ROUTES = [
   { path: '/#/notes', name: '我的笔记' },
   { path: '/#/notes/new', name: '新建笔记' },
   { path: '/#/my-assessments', name: '我的自评' },
+  // 简历（WORK-018）：这三页在手机上也要能打开且不撑破布局。
+  // 编辑页与提案页是三栏/两栏布局，窄屏必须自动堆叠——那正是最容易出横向溢出的地方。
+  { path: '/#/resume', name: '我的简历' },
+  { path: '/#/resume/create', name: '新建简历' },
   { path: '/#/login', name: '登录' },
   { path: '/#/register', name: '注册' },
   { path: '/#/share/00000000-0000-0000-0000-000000000000', name: '分享页' },

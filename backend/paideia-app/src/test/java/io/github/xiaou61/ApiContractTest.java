@@ -244,9 +244,23 @@ class ApiContractTest {
         return "Bearer " + authPort.issue(new AuthPort.Subject("1", AuthPort.ROLE_ADMIN)).value();
     }
 
-    /** 发一个最小的探测请求；路径变量按名替换，不存在的 id 用 1 或随机 UUID。 */
+    /**
+     * 发一个最小的探测请求；路径变量按语义替换。
+     *
+     * <p><b>这里曾经有一个会删数据的缺陷（2026-10-18 查出并修）</b>：路径变量被一律填成
+     * `1`，而 `DELETE /api/v1/knowledge/admin/entries/{id}` 用管理员令牌探测时会**真的删掉
+     * 种子条目 1**。后果不是这条用例红，而是**后面跑的 KnowledgeRead / KnowledgeSelfAssessment
+     * 全部红**——症状是"找不到 id=1 的条目"，看起来像知识库坏了，实际是这个探测留下的后果。
+     * 更糟的是它会静默发生：删除成功返回 200，而这里只看 traceId。
+     *
+     * <p>现在的规则：**破坏性方法（DELETE / 写类 POST 与 PUT）一律不碰真实资源**，用不存在的
+     * 高位 id（{@value #PROBE_ID}）。这样探测要么 404、要么被参数校验拒，都不会改库。
+     * 非破坏性方法仍填 `1`——读一个不存在的 id 与读存在的 id 对响应头没有区别。
+     */
+    private static final String PROBE_ID = "9223372036854775806";
+
     private MvcResult perform(ApiSurfaceTest.Endpoint endpoint, String bearer, String body) throws Exception {
-        var builder = request(HttpMethod.valueOf(endpoint.method()), concretePath(endpoint.pattern()));
+        var builder = request(HttpMethod.valueOf(endpoint.method()), concretePath(endpoint));
         if (bearer != null) {
             builder.header("Authorization", bearer);
         }
@@ -256,14 +270,22 @@ class ApiContractTest {
         return mockMvc.perform(builder).andReturn();
     }
 
-    private static String concretePath(String pattern) {
+    /** 这个方法会改库吗？DELETE 与带体写入都算。 */
+    private boolean isDestructive(ApiSurfaceTest.Endpoint endpoint) {
+        return "DELETE".equals(endpoint.method())
+                || "PUT".equals(endpoint.method())
+                || ("POST".equals(endpoint.method()) && hasRequestBody(endpoint));
+    }
+
+    private String concretePath(ApiSurfaceTest.Endpoint endpoint) {
+        String pattern = endpoint.pattern();
         // 只有两处变量有语义要求：shareId 必须是 UUID 形状，source 只认 structured/text。
-        // 其余一律填 1——按名单逐个替换会在新增路径变量时漏掉，症状是 MockMvc 抛
-        // "Not enough variable values"，与接口行为无关。
         String replaced = pattern
                 .replace("{shareId}", UUID.randomUUID().toString())
                 .replace("{source}", "text");
-        return replaced.replaceAll("\\{[^}]+}", "1");
+        // 破坏性方法绝不填 1：那会命中种子里真实存在的 id，把数据删掉/改掉
+        String filler = isDestructive(endpoint) ? PROBE_ID : "1";
+        return replaced.replaceAll("\\{[^}]+}", filler);
     }
 
     private Integer readCode(MvcResult result) throws Exception {
