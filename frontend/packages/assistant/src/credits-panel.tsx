@@ -10,6 +10,11 @@ const KIND_LABEL: Record<string, string> = {
   RESERVE: '预扣',
   SETTLE: '结算',
   REFUND: '退还',
+  // 下面三种是"用途单独记"的消耗。不登记的话面板会显示原始英文码，
+  // 而那正是"我没聊几次怎么花了这么多"最需要看懂的地方。
+  MEMORY_EXTRACT: '自动整理记忆',
+  INTERVIEW_REVIEW: '面试点评',
+  RESUME: '简历优化',
 }
 
 /**

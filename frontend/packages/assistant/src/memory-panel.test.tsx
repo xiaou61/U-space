@@ -65,6 +65,8 @@ function fakeApi(overrides: Partial<AssistantApi> = {}): AssistantApi {
     settings: vi.fn(async () => settings()),
     saveSettings: vi.fn(async (value: MemorySettings) => value),
     clearMemories: vi.fn(async () => ({ cleared: 2, settings: settings({ memoryEnabled: false }) })),
+    reviewInterview: unused,
+    interviewEvaluations: unused,
     remember: unused,
     sendMessage: unused,
     ...overrides,

@@ -6,6 +6,8 @@ import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
 import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LoginPage } from './pages/LoginPage'
+import { InterviewPage } from './pages/InterviewPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NoteNewPage } from './pages/NoteNewPage'
 import { NotesPage } from './pages/NotesPage'
@@ -92,6 +94,22 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <NoteNewPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/interview',
+    element: (
+      <RequireAuth>
+        <InterviewPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/profile',
+    element: (
+      <RequireAuth>
+        <ProfilePage />
       </RequireAuth>
     ),
   },

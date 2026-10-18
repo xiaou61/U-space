@@ -1,8 +1,9 @@
 import { createKnowledgeApi, plainText, recentReading } from '@paideia/knowledge'
+import { configFor, createIdentityApi } from '@paideia/identity'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpen, Layers, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
+import { ArrowRight, BookOpen, Layers, MessagesSquare, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 
@@ -11,8 +12,32 @@ import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
 
-const QUICK_LINKS = [
+/**
+ * 快捷入口。`key` 与身份的 `preferredNav` 对齐（WORK-010 T-12）。
+ *
+ * <p>只有顺序会变，**集合不变**（面试页是导航里的入口，这里不重复）：首页是"我该从哪开始"，
+ * 把身份最相关的那张卡排前面就够了；藏掉入口会让"推荐"变成"限制"。
+ */
+type QuickLinkKey = 'knowledge' | 'notes' | 'my-assessments' | 'interview'
+
+const QUICK_LINKS: {
+  key: QuickLinkKey
+  to: string
+  testId: string
+  icon: typeof BookOpen
+  title: string
+  description: string
+}[] = [
   {
+    key: 'interview' as const,
+    to: '/interview',
+    testId: 'home-entry-interview',
+    icon: MessagesSquare,
+    title: '模拟面试',
+    description: '一次一个问题，结束拿一份结构化评分。',
+  },
+  {
+    key: 'knowledge' as const,
     to: '/knowledge',
     testId: 'home-entry-knowledge',
     icon: BookOpen,
@@ -20,7 +45,10 @@ const QUICK_LINKS = [
     description: '按分类浏览、按关键词检索，打开条目阅读。',
   },
   {
-    // 源码解读是知识库里的一个分类；总览条目由作者发布后挂在这里
+    // 源码解读是知识库里的一个分类；总览条目由作者发布后挂在这里。
+    // 它不参与身份排序（不属于任何身份的 preferredNav），所以 key 用 knowledge：
+    // 排序只看前四张卡，这张永远是"追加在后面"的那一类。
+    key: 'knowledge' as const,
     to: '/knowledge/entries?q=源码解读',
     testId: 'home-entry-source-reading',
     icon: Sparkles,
@@ -28,6 +56,7 @@ const QUICK_LINKS = [
     description: '跟着架构地图一步步读真实开源代码，边猜边练。',
   },
   {
+    key: 'notes' as const,
     to: '/notes',
     testId: 'home-entry-notes',
     icon: NotebookPen,
@@ -35,6 +64,7 @@ const QUICK_LINKS = [
     description: '随手记点什么，或让助手把答案存进来。',
   },
   {
+    key: 'my-assessments' as const,
     to: '/my-assessments',
     testId: 'home-entry-assessments',
     icon: Target,
@@ -56,6 +86,21 @@ const QUICK_LINKS = [
  */
 export function HomePage() {
   const { user } = useAuth()
+  // 推荐顺序按身份来（WORK-010 T-12）。读不到身份就用默认：首页不能因为推荐接口慢而空掉
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => createIdentityApi(api).profile(),
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+  const quickLinks = useMemo(() => {
+    const config = configFor(profile?.identity)
+    const ordered = config.preferredNav
+      .map((key) => QUICK_LINKS.find((item) => item.key === key))
+      .filter((item): item is (typeof QUICK_LINKS)[number] => item !== undefined)
+    // 配置只表达"谁排前面"，没提到的追加在后面（与页头同一口径）
+    return [...ordered, ...QUICK_LINKS.filter((item) => !config.preferredNav.includes(item.key))]
+  }, [profile?.identity])
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   /**
@@ -278,7 +323,7 @@ export function HomePage() {
 
       <Section title="快捷入口">
         <div className="grid gap-4 sm:grid-cols-3" data-testid="home-entries">
-          {QUICK_LINKS.map((item) => (
+          {quickLinks.map((item) => (
             <Card key={item.to} className="hover:shadow-card transition-shadow">
               <CardContent className="pt-6">
                 <span className="tile-surface border-border mb-3 flex size-10 items-center justify-center rounded-lg border">

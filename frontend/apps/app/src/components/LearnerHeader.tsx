@@ -1,4 +1,6 @@
 import { useAuth } from '@paideia/auth'
+import { configFor, createIdentityApi } from '@paideia/identity'
+import { useQuery } from '@tanstack/react-query'
 import {
   Alert,
   AlertDescription,
@@ -20,8 +22,8 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@paideia/ui'
-import { ChevronDown, LogOut, Menu, Search, UserX } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { ChevronDown, LogOut, Menu, Search, UserRound, UserX } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
 import { api } from '../api'
@@ -43,15 +45,38 @@ import { api } from '../api'
  * 页面里等于每次都要先走进去。它只负责把关键词带到条目列表页（`?q=`），真正的检索逻辑
  * 仍然只有一处。
  */
+/**
+ * 导航项。`key` 与 `@paideia/identity` 的 `preferredNav` 对齐，用来按身份重排。
+ *
+ * <p>**面试入口不是所有人都有**：它只在身份的配置包含 `interview` 时出现（一期就是求职者）。
+ * 这是"按身份推荐"唯一一处会改变**入口集合**的地方——其余都只是顺序差别。
+ */
 const NAV = [
-  { to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
-  { to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
-  { to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
+  { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
+  { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
+  { key: 'my-assessments' as const, to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
+  { key: 'interview' as const, to: '/interview', label: '模拟面试', testId: 'learner-nav-interview' },
 ]
 
 export function LearnerHeader() {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
+  // 导航按身份重排（WORK-010 T-12）。读不到身份时退回默认配置、**不阻塞页头**：
+  // 页头是每页都有的东西，不能因为一个推荐用的接口慢就整页转圈。
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => createIdentityApi(api).profile(),
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+  const nav = useMemo(() => {
+    const config = configFor(profile?.identity)
+    const ordered = config.preferredNav
+      .map((key) => NAV.find((item) => item.key === key))
+      .filter((item): item is (typeof NAV)[number] => item !== undefined)
+    // 配置里没提到的项追加在后面：配置只表达"谁排前面"，不表达"谁被藏起来"
+    return [...ordered, ...NAV.filter((item) => !config.preferredNav.includes(item.key))]
+  }, [profile?.identity])
   const navigate = useNavigate()
   const [deleting, setDeleting] = useState(false)
   const [password, setPassword] = useState('')
@@ -127,7 +152,7 @@ export function LearnerHeader() {
           </DialogHeader>
 
           <nav aria-label="移动导航" className="flex flex-col gap-1">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
               return (
                 <Link
@@ -166,7 +191,7 @@ export function LearnerHeader() {
       </Dialog>
 
       <nav aria-label="主导航" className="hidden items-center gap-0.5 md:flex">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           // 条目页的地址是 /knowledge/entries/:id，所以前缀匹配也算在知识库里
           const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
           return (
@@ -241,6 +266,12 @@ export function LearnerHeader() {
               </span>
             </DropdownMenuLabel>
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          {/* 身份是"我是谁"的一部分，与账号同级；它不是权限设置，所以不放在"危险动作"那一簇 */}
+          <DropdownMenuItem data-testid="account-profile" onClick={() => { void navigate('/profile'); setNavOpen(false) }}>
+            <UserRound className="size-4" />
+            身份与目标
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {/* 注销与登出都收进菜单：它们是低频且危险的动作，摆在页头只会天天误点 */}
           <DropdownMenuItem data-testid="account-deletion-open" onClick={() => setDeleting(true)}>

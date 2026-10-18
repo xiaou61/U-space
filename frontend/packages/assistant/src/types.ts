@@ -163,3 +163,26 @@ export interface NoteDraftInput {
   title?: string
   body: string
 }
+
+/** 一个维度的评分（WORK-010）。 */
+export interface InterviewDimension {
+  name: string
+  /** 1–5。后端会拒掉越界与非整数，所以这里不必再夹。 */
+  score: number
+  comment: string
+}
+
+/** 一场面试的评估。 */
+export interface InterviewEvaluation {
+  overall: number
+  dimensions: InterviewDimension[]
+  strengths: string[]
+  improvements: string[]
+}
+
+/** 评估 + 它的落库标识与时间。 */
+export interface InterviewEvaluationView {
+  id: number
+  evaluation: InterviewEvaluation
+  createdAt: string
+}

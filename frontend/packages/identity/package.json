@@ -1,0 +1,28 @@
+{
+  "name": "@paideia/identity",
+  "version": "0.0.1",
+  "private": true,
+  "description": "学习者身份：DTO、API 客户端与按身份的推荐配置包（WORK-010）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  },
+  "dependencies": {
+    "@paideia/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "happy-dom": "^21.0.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vitest": "5.0.3"
+  }
+}

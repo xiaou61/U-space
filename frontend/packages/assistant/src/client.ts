@@ -7,6 +7,7 @@ import type {
   CredentialView,
   CreditsView,
   HistoryMessage,
+  InterviewEvaluationView,
   MemoryClearResult,
   MemorySettings,
   MemoryView,
@@ -24,9 +25,19 @@ export interface AssistantApi {
   /** 生成或命中。这是唯一会花用户额度的动作。 */
   generate(entryId: number, visibility: SummaryVisibility): Promise<SummaryView>
   /** 建会话。`entryId` 可空——助手在任意页都能开，条目只是可选上下文。 */
-  createConversation(entryId: number | null): Promise<ConversationView>
+  /**
+   * 建一段会话。
+   *
+   * <p>`harness` 是**公共行为**（WORK-010）：面试页传 `interview`，点评用 `review`。
+   * 不传 = 通用助手。**行为会记在会话上**——从通用入口继续一段面试对话仍是面试行为。
+   */
+  createConversation(entryId: number | null, harness?: 'assistant' | 'interview'): Promise<ConversationView>
   /** 本人的会话列表（**不含消息内容**，只用来选一条）。 */
   conversations(): Promise<ConversationView[]>
+  /** 面试点评（一次性结果，非流式）。 */
+  reviewInterview(conversationId: number): Promise<InterviewEvaluationView>
+  /** 我历次面试的评估。 */
+  interviewEvaluations(): Promise<InterviewEvaluationView[]>
   /** 读回某会话的消息（**旧 → 新**），供界面恢复历史。 */
   messages(conversationId: number): Promise<HistoryMessage[]>
   /** 本人的记忆控制面设置（本人范围：请求体里没有 `userId`，传不了别人的）。 */
@@ -94,14 +105,27 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         body: JSON.stringify({ entryId, visibility }),
       }),
 
-    createConversation: (entryId) =>
+    createConversation: (entryId, harness) =>
       client.requestEnvelope<ConversationView>(`${base}/conversations`, {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ entryId }),
+        body: JSON.stringify({ entryId, harness }),
       }),
 
     conversations: () => client.requestEnvelope<ConversationView[]>(`${base}/conversations`),
+
+    /**
+     * 给一段面试生成点评（WORK-010）。
+     *
+     * <p>**不是 SSE**：点评是一次性结果，要同步拿到评分再展示与落库。
+     */
+    reviewInterview: (conversationId) =>
+      client.requestEnvelope<InterviewEvaluationView>(`${base}/interviews/${conversationId}/review`, {
+        method: 'POST',
+      }),
+
+    /** 我历次面试的评估（新 → 旧）。 */
+    interviewEvaluations: () => client.requestEnvelope<InterviewEvaluationView[]>(`${base}/interviews/evaluations`),
 
     messages: (conversationId) =>
       client.requestEnvelope<HistoryMessage[]>(`${base}/conversations/${conversationId}/messages`),
