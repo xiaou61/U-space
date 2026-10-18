@@ -1,6 +1,6 @@
 import { Alert, AlertDescription, AlertTitle, Badge, Button, preloadMarkdown, Spinner } from '@paideia/ui'
 import { Sparkles, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
 import type { AssistantApi } from './client'
 import { ConversationPanel } from './conversation-panel'
@@ -296,7 +296,7 @@ export function AssistantShell({
     view !== null && !(onlyMine && view.source === 'others' && view.visibility === 'public') ? view : null
 
   /** 拖拽标题栏 / 拖拽握把共用：按位移改位置或尺寸，松手才落本地。 */
-  const beginDrag = (event: React.PointerEvent<HTMLElement>, mode: 'move' | 'resize') => {
+  const beginDrag = (event: ReactPointerEvent<HTMLElement>, mode: 'move' | 'resize') => {
     event.preventDefault()
     const target = event.currentTarget
     // 指针起点与面板原值**必须分开存**：`{x: clientX, ...panel}` 会被 spread 覆盖掉，位移就全错了

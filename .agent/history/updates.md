@@ -3269,3 +3269,21 @@ schema_version: 1
 - 验证：线上健康检查 status=UP；PWA 入口 200、/api/v1/me 401；工作区干净
 - 本地提交：8bde7ab
 - 远端推送：已推送 8bde7ab 到 origin master（SSH）
+
+## 2026-10-18 12:51:27  · 项目 · 第四次审查（`a8b8ea0..9c99033`）：修完 17 条 high
+
+- 类型：implementation
+- 变更：对上次基线之后的 85 个提交（237 文件 / +33,207 −3,093）做区间审查，报告 `.agent/reviews/2026-10-18-a8b8ea0..9c99033.md`（critical 0、high 17、medium 83、low 66）。按"只修严重项"修完全部 17 条 high，涉及 14 个文件 + 1 个新种子迁移：
+  - **沙箱（WORK-015）两处真缺陷**：`DockerCodeRunner` 把源码与用户 stdin 顺序写进同一条流，而容器脚本是 `cat > file`（会一直读到 EOF）——stdin 被追加进源码、程序本身只拿到 EOF，**「标准输入」功能实际完全不可用**；改为分帧协议（首行写源码字节数，容器用 `dd bs=1 count=N` 精确取走）。超时分支原来只 `destroyForcibly()` 杀宿主上的 docker CLI，容器仍归 daemon 管（`--rm` 只在容器自己退出时生效），一个 `while(true)` 会带着配额一直跑；补 `--cidfile` + 超时后 `docker rm -f` 兜底。
+  - **记忆自动整理（WORK-013）两处数据问题**：`MemoryCandidateParser` 在结构化那路无条件把 `targetId` 写死 null，而 `applyAuto` 的 `overwrite(..., long targetId, ...)` 会在拆箱处 NPE——**结构化记忆永远无法 UPDATE**，且 NPE 让整批整理回滚；同时 kind 漂移会把结构化 UPDATE 改道到 TEXT 表、命中同 id 的无辜记录（两表 id 各自自增）。两处都修，`MemoryStore` 另加 null 守卫当兜底。`MemoryStore.list` 把同一个 offset 分别下发两路再拼接，一页能返回 2×limit 条、且调用方按 `items.length` 推进偏移量会整段跳过数据；改为两路各取 `offset+limit`、合并按时间排序后统一切片。
+  - **积分（WORK-009）**：`send()` 里 `prepare()` 已扣预留，但 `executor.execute()` 抛异常（线程池满/关闭）时任务根本没跑，这笔预留既到不了 `settleOnce` 也无其他补偿出口——用户白扣分。补 try/catch 全额退还后再抛。
+  - **沙箱配额**：`RunRequest.entryId` 无约束，负数会让 `code_runs.entry_id`（BIGINT UNSIGNED）的审计 INSERT 报 Out of range，而代码已经真的跑完了——除 500 外 `countSince` 还漏记，等于送了一条免配额通道。加 `@Positive`。
+  - **前端**：`conversation-panel` 的 `touchedRef` 只增不减，"用户主动切换会话"与"首次挂载拉列表"都被它拦住（界面显示旧会话却挂着新 id；全新挂载时「历史」按钮整段不出现）——拆成"只拦首次恢复"+ 请求序号；`assistant-shell` 用了 `React.PointerEvent` 却没导入 React 命名空间（typecheck 会挂），改成具名 `PointerEvent` 类型导入；`knowledge/markdown-body` 换懒加载渲染器后标题 id 回填 effect 失效（首次渲染时容器还没有标题，Suspense 在子组件内部解析不触发重渲染），补 `MutationObserver`；`code-challenge` 占位项 `value=""` 经 `Number('')` 得 0，选回「选择…」无法清空且会被判为已答/答对；`AdminShell` 折叠侧栏时子菜单仍渲染（56px 宽里溢出）；`app/playwright.config` 设了 `PWA_BASE_URL` 仍无条件带 `storageState`（干净机器 ENOENT、残留则复用过期令牌）。
+  - **样式与脚本**：`globals.css` 的 dialog-footer 安全区内边距写在 `@layer components` 里，会被 utilities 层的 `p-4` 覆盖（层序 components < utilities），移入 `@layer utilities`；`collect-md-corpus.mjs` 写到 `assistant/src/markdown-corpus.json`，而测试读的是 `ui/src/markdown/corpus.json`——重采永远刷不到真正参与测试的语料。
+  - **种子订正**：`V953` 里自测题 starter 少一个右括号（读者点「运行」必然 SyntaxError）。**不能用改 V953 的方式修**——它已执行过，改它会触发 Flyway checksum mismatch，实测让全部上下文起不来；改为新增 `V954__fix_source_reading_starter.sql` 按 id=10 REPLACE 那一段。
+- 决策：17 条全部修复，无一条判为误报。过程中确认 `PaginationIntegrationTest` 失败是**既有问题**（`paideia-persistence` 的 `DriverManagerDataSource` 拿不到 runtime 作用域的 mysql 驱动），用 `git stash` 在未改动基线上复现同样错误，与本轮无关，未修。
+- 依据：`.agent/reviews/2026-10-18-a8b8ea0..9c99033.md`；用户 2026-10-18 指示"继续审查最新新加的哪些"
+- 验证：后端 `mvn -B verify` **BUILD SUCCESS**，143 个测试 0 失败（4 skipped；`DockerCommandTest` 6/6、`MemoryCandidateParserTest` 11/11、`UpstreamGuardTest` 18/18、`SandboxIntegrationTest` 8/8、`PwaEntryPointsTest` 3/3）。前端 `pnpm -r typecheck` 11 个包全过、`pnpm -r test` **240 条全过**（core 22、platform-desktop 4、ui 148、knowledge 28、auth 13、assistant 25）。测试库环境用 `backend/config/remote-db.local.env`（本机 MySQL 127.0.0.1:3306）。**未跑 e2e**。
+- 环境：审查用 `deepseek-v4.1-flash-1017`（用户指定），约 3,920 万 tokens / 39 分钟；前两把 key 均因 `INSUFFICIENT_BALANCE` 不可用。
+- 本地提交：见本轮提交
+- 远端推送：未执行

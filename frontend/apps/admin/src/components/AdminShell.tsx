@@ -173,7 +173,7 @@ export function AdminShell({ actions, children }: { actions?: ReactNode; childre
                     />
                   </span>
                 </button>
-                {open ? (
+                {open && !collapsed ? (
                   <div className="border-border mt-1 ml-4 space-y-1 border-l pl-1">
                     {item.children.map((child) => (
                       <NavLink

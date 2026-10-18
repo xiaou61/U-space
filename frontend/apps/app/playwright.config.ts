@@ -24,7 +24,9 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: REMOTE_BASE_URL ?? process.env.PWA_BASE_URL ?? 'http://127.0.0.1:5173',
-    storageState: AUTH_FILE,
+    // PWA 预览不跑 globalSetup，AUTH_FILE 不会被生成：这时带上它要么 ENOENT 让整个 run 挂掉，
+    // 要么静默复用上次留下的过期令牌。PWA 用例本身不需要身份。
+    ...(process.env.PWA_BASE_URL === undefined ? { storageState: AUTH_FILE } : {}),
     // 首次重试才留 trace：稳定运行时零开销，失败时会话可完整回放
     trace: 'on-first-retry',
   },

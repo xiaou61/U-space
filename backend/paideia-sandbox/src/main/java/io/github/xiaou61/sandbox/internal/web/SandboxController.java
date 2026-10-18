@@ -10,6 +10,7 @@ import io.github.xiaou61.sandbox.internal.run.RunSlot;
 import io.github.xiaou61.sandbox.internal.run.SandboxProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -126,7 +127,9 @@ class SandboxController {
             @NotBlank @Size(max = 16) String language,
             @NotBlank String code,
             @Size(max = 4_000) String stdin,
-            Long entryId,
+            // code_runs.entry_id 是 BIGINT UNSIGNED：负数会让审计 INSERT 报 Out of range，
+            // 而那时代码已经真的跑完了 —— 除了 500，countSince 还会漏记，等于送了一条免配额通道。
+            @Positive Long entryId,
             @Size(max = 64) String caseId) {
     }
 

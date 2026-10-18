@@ -92,6 +92,29 @@ export function MarkdownBody({
         node.id = heading.id
       }
     })
+
+    // 渲染器是懒加载的（Streamdown 走 Suspense）：首次执行这个 effect 时容器里往往还没有标题，
+    // 等 chunk 就绪后标题才挂上来，而 Suspense 在子组件内部解析、不会让本组件重渲染，
+    // 依赖 [headings] 也不会重跑——首个条目的标题就永远没有 id，目录点了不跳。
+    // 用 MutationObserver 补一次：只要正文子树变化就重新按顺序回填。
+    const observer = new MutationObserver(() => {
+      const late = Array.from(root.querySelectorAll<HTMLElement>('h1, h2, h3, h4')).filter(
+        (node) => node.closest('[data-testid]') === root && node.id === '',
+      )
+      late.forEach((node) => {
+        const position = (
+          Array.from(root.querySelectorAll<HTMLElement>('h1, h2, h3, h4')).filter(
+            (candidate) => candidate.closest('[data-testid]') === root,
+          ) as HTMLElement[]
+        ).indexOf(node)
+        const heading = headings[position]
+        if (heading !== undefined) {
+          node.id = heading.id
+        }
+      })
+    })
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
   }, [headings])
 
   // 必须是稳定引用：它变了会让上游的块级记忆化失效（长文每次重渲染都重解析整篇）

@@ -359,11 +359,16 @@
    * 这条规则只作用于 `<sm`，桌面端对话框（居中、不滚动）行为完全不变。
    */
   @media (width < 40rem) {
-    [data-slot='dialog-footer'] {
-      position: sticky;
-      bottom: 0;
-      z-index: 1;
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    /* 必须放在 utilities 层：DialogFooter 自带 p-4 属于 utilities，
+       而层序是 components < utilities —— 写在 components 里 padding-bottom 一定会被覆盖，
+       env(safe-area-inset-bottom) 永远不生效。 */
+    @layer utilities {
+      [data-slot='dialog-footer'] {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      }
     }
   }
 

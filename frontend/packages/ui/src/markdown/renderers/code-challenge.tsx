@@ -86,7 +86,20 @@ function FillBody({ challenge, onGraded }: { challenge: FillChallenge; onGraded:
                   data-testid={`challenge-blank-${index}`}
                   value={selected[index] ?? ''}
                   disabled={checked}
-                  onChange={(event) => setSelected((previous) => ({ ...previous, [index]: Number(event.target.value) }))}
+                  onChange={(event) => {
+                    const raw = event.target.value
+                    setSelected((previous) => {
+                      const next = { ...previous }
+                      if (raw === '') {
+                        // 选回「选择…」必须真的清空：写 0 会被当成"选了第 0 个"，
+                        // 既无法撤销，也会让"已作答"与判对判错都算错。
+                        delete next[index]
+                      } else {
+                        next[index] = Number(raw)
+                      }
+                      return next
+                    })
+                  }}
                   className={`mx-1 rounded border px-1 py-0.5 font-mono text-xs ${
                     checked
                       ? selected[index] === challenge.answers[index]

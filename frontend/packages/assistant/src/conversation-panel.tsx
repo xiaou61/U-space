@@ -54,13 +54,18 @@ export function ConversationPanel({
   const [memoryEnabled, setMemoryEnabled] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
   /**
-   * 用户是否已经自己动过这一段（发消息 / 新开 / 切换）。
+   * 用户是否已经自己动过这一段（发消息 / 新开 / 预填）。
    *
    * <p>挂载时的"恢复上次会话"是**异步**的（先列会话、再拉消息），而用户可能在这几十毫秒里已经
-   * 点了发送。恢复完成后如果照旧写入，就会把在飞的那一轮 **abort 掉**（实测报
-   * `signal is aborted without reason`）或把消息覆盖回历史。所以一旦用户动过，恢复就作废。
+   * 点了发送。恢复完成后如果照旧写入，就会把在飞的那一轮 **abort 掉**或把消息覆盖回历史。
+   *
+   * <p>**只用于"首次挂载的那一次恢复"**：用户主动切换会话（openConversation）不该被它拦住，
+   * 否则界面会显示旧会话的消息却挂在新的 conversationId 上。所以它一旦置真就不再复位，
+   * 而首次恢复的 effect 也只认它一次。
    */
   const touchedRef = useRef(false)
+  /** 会话切换的请求序号：只让最后一次切换的结果落地。 */
+  const requestSeqRef = useRef(0)
 
   /** 切到某条会话：读回它的消息（旧 → 新）并记住。 */
   const openConversation = useCallback(
@@ -74,9 +79,13 @@ export function ConversationPanel({
       storeConversation(id)
       setDrafts([])
       setError(null)
+      const seq = ++requestSeqRef.current
       try {
         const history = await api.messages(id)
-        if (touchedRef.current) {
+        // 这里是**用户主动切换**，不是挂载恢复：不能看 touchedRef（发过消息的用户切历史
+        // 会被这条直接 return，界面显示旧消息却挂着新的 conversationId）。
+        // 只丢弃"已被下一次切换取代"的响应。
+        if (requestSeqRef.current !== seq) {
           return
         }
         setMessages(
@@ -107,10 +116,16 @@ export function ConversationPanel({
     void (async () => {
       try {
         const list = await api.conversations()
-        if (!alive || touchedRef.current) {
+        if (!alive) {
           return
         }
+        // 会话列表本身与"用户是否发过消息"无关：这里不能因为 touchedRef 为真就跳过，
+        // 否则全新挂载（点「问 AI」打开面板）时 sessions 永远为空，「历史」按钮整段不出现。
         setSessions(list)
+        if (touchedRef.current) {
+          // 但"恢复上次那一段"必须让位——用户已经在当前这段里说上话了
+          return
+        }
         const stored = readStoredConversation()
         if (stored.kind === 'new') {
           // 刚点过「新开对话」：保持空白，**不要**再去恢复旧的

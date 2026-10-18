@@ -112,7 +112,14 @@ class AssistantConversationController {
                 conversations.prepare(userId, conversationId, request == null ? null : request.message());
 
         SseEmitter emitter = new SseEmitter((long) 100_000);
-        executor.execute(() -> runTurn(userId, conversationId, turn, emitter));
+        try {
+            executor.execute(() -> runTurn(userId, conversationId, turn, emitter));
+        } catch (RuntimeException cause) {
+            // 线程池满/已关闭时任务根本没跑起来：这笔预留到不了 settleOnce、也没有别的补偿出口，
+            // 用户会被白扣一次分。全额退还再抛出——同步阶段的异常能走全局异常处理拿到正常状态码。
+            settleOnce(new boolean[1], userId, turn, null, null);
+            throw cause;
+        }
         return emitter;
     }
 

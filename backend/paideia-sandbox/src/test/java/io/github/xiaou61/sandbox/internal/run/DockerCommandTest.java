@@ -50,7 +50,7 @@ class DockerCommandTest {
 
     @Test
     void java命令包含全部加固参数且不挂载宿主() {
-        List<String> command = DockerCommand.of("java", props());
+        List<String> command = DockerCommand.of("java", props(), "/tmp/x.cid");
         assertHardened(command);
         assertThat(command).contains("eclipse-temurin:21-jdk-alpine");
         assertThat(command.get(command.size() - 1)).isEqualTo(DockerCommand.scriptFor("java"));
@@ -59,7 +59,7 @@ class DockerCommandTest {
 
     @Test
     void python命令同样加固() {
-        List<String> command = DockerCommand.of("python", props());
+        List<String> command = DockerCommand.of("python", props(), "/tmp/x.cid");
         assertHardened(command);
         assertThat(command).contains("python:3.12-alpine");
         assertThat(command.get(command.size() - 1)).isEqualTo(DockerCommand.scriptFor("python"));
@@ -68,17 +68,17 @@ class DockerCommandTest {
     @Test
     void 配置了runtime才加runtime参数() {
         SandboxProperties plain = props();
-        assertThat(DockerCommand.of("java", plain)).noneMatch(item -> item.startsWith("--runtime"));
+        assertThat(DockerCommand.of("java", plain, "/tmp/x.cid")).noneMatch(item -> item.startsWith("--runtime"));
 
         SandboxProperties gvisor = props();
         gvisor.setRuntime("runsc");
-        assertThat(DockerCommand.of("java", gvisor)).contains("--runtime=runsc");
+        assertThat(DockerCommand.of("java", gvisor, "/tmp/x.cid")).contains("--runtime=runsc");
     }
 
     @Test
     void 语言标识大小写不敏感但不支持的语言被拒() {
-        assertThat(DockerCommand.of("JAVA", props())).contains(DockerCommand.scriptFor("java"));
-        assertThatThrownBy(() -> DockerCommand.of("ruby", props()))
+        assertThat(DockerCommand.of("JAVA", props(), "/tmp/x.cid")).contains(DockerCommand.scriptFor("java"));
+        assertThatThrownBy(() -> DockerCommand.of("ruby", props(), "/tmp/x.cid"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("不支持的语言");
     }
@@ -98,7 +98,7 @@ class DockerCommandTest {
         properties.setMemory("128m");
         properties.setCpus("0.25");
         properties.setPidsLimit(32);
-        List<String> command = DockerCommand.of("python", properties);
+        List<String> command = DockerCommand.of("python", properties, "/tmp/x.cid");
         assertThat(command).contains("--memory=128m", "--memory-swap=128m", "--cpus=0.25", "--pids-limit=32");
     }
 }

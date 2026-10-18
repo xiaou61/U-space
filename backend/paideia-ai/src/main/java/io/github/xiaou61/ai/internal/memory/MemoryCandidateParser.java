@@ -98,7 +98,15 @@ public class MemoryCandidateParser {
             effective = MemoryCandidate.Store.TEXT;
         }
         if (effective == MemoryCandidate.Store.STRUCTURED) {
-            return new MemoryCandidate(action, effective, null, kind, refId, trimmed, reason);
+            // UPDATE 也必须带 targetId：结构化那路同样要按 id 覆盖，缺了它会带 null 到
+            // applyAuto，那里参数是基本类型 long，拆箱即 NPE，整批整理一起回滚。
+            Long targetId = action == MemoryCandidate.Action.UPDATE
+                    ? positiveId(text(node, "targetId"))
+                    : null;
+            if (action == MemoryCandidate.Action.UPDATE && targetId == null) {
+                throw failure("UPDATE 没有给 targetId");
+            }
+            return new MemoryCandidate(action, effective, targetId, kind, refId, trimmed, reason);
         }
 
         if (action == MemoryCandidate.Action.UPDATE) {

@@ -132,7 +132,9 @@ for (const item of selected) {
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const target = path.join(here, '..', 'frontend', 'packages', 'assistant', 'src', 'markdown-corpus.json')
+// 必须是 markdown.test.tsx 真正 import 的那一份（./corpus.json）：
+// 写到别处等于重采后测试永远拿到旧语料，而且"合并而非覆盖"读的也是那个错路径上的旧文件。
+const target = path.join(here, '..', 'frontend', 'packages', 'ui', 'src', 'markdown', 'corpus.json')
 
 /**
  * **只重采了部分时要合并，不能覆盖**：`ONLY=…` 重跑两条却把整个语料文件写成两条，

@@ -20,11 +20,23 @@ import java.util.Locale;
  */
 final class DockerCommand {
 
-    /** 容器内执行脚本：从 stdin 落盘，再编译/运行。脚本本身是常量，不含用户内容。 */
-    private static final String JAVA_SCRIPT =
-            "cat > /tmp/Main.java && cd /tmp && javac Main.java && java Main";
-    private static final String PYTHON_SCRIPT =
-            "cat > /tmp/main.py && cd /tmp && python main.py";
+    /**
+     * 容器内执行脚本：从 stdin 落盘，再编译/运行。
+     *
+     * <p><b>分帧协议</b>：先读一行「源码字节数」，再读恰好那么多字节作为源码，剩下的才是
+     * 程序的标准输入。不能简单 `cat > file` 把代码和 stdin 一起倒进去——`cat` 会一直吃到 EOF，
+     * 用户传入的 stdin 会被追加进源码（变成莫名其妙的编译错误），而程序自己拿到的是 EOF。
+     *
+     * <p>脚本本身是常量，不含用户内容。
+     */
+    private static final String JAVA_SCRIPT = """
+            read -r size
+            dd bs=1 count="$size" of=/tmp/Main.java 2>/dev/null
+            cd /tmp && javac Main.java && java Main""";
+    private static final String PYTHON_SCRIPT = """
+            read -r size
+            dd bs=1 count="$size" of=/tmp/main.py 2>/dev/null
+            cd /tmp && python main.py""";
 
     private DockerCommand() {
     }
@@ -32,8 +44,9 @@ final class DockerCommand {
     /**
      * @param language 已校验过的语言标识（java / python）
      * @param props    资源与运行时配置
+     * @param cidFile  容器 id 落到哪个文件（超时兜底删容器用）
      */
-    static List<String> of(String language, SandboxProperties props) {
+    static List<String> of(String language, SandboxProperties props, String cidFile) {
         String image = props.imageFor(language);
         if (image == null) {
             throw new IllegalArgumentException("不支持的语言：" + language);
@@ -62,6 +75,9 @@ final class DockerCommand {
                 "--ulimit", "nproc=64",
                 // 停止超时 0：超时后立即 SIGKILL，不给程序自己收尾的机会
                 "--stop-timeout=0",
+                // 记录容器 id：宿主上的 docker CLI 被强杀后容器仍归 daemon 管，
+                // `--rm` 只在容器自己退出时生效。调用方据此在超时分支里补一刀 docker rm -f。
+                "--cidfile", cidFile,
                 // 时区固定：输出不随部署机漂移
                 "-e", "TZ=UTC",
                 // 入口：脚本从 stdin 读代码

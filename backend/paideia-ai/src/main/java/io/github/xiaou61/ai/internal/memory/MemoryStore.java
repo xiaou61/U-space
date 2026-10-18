@@ -190,14 +190,22 @@ public class MemoryStore {
     public List<MemoryItem> list(long userId, int limit, int offset) {
         int pageSize = limit <= 0 ? PAGE_LIMIT : Math.min(limit, PAGE_LIMIT);
         int from = Math.max(offset, 0);
+        // offset 不能分别下发给两路：那样一页最多 2×pageSize 条，而调用方按 items.length 推进
+        // 偏移量，两路各自的第 from 条之后会被整段跳过。改为两路各取 from+pageSize 条、
+        // 合并排序后再统一切掉前 from 条。
+        int fetch = from + pageSize;
         List<MemoryItem> items = new ArrayList<>();
-        for (MemoryRow row : mapper.selectStructuredRecent(userId, pageSize, from)) {
+        for (MemoryRow row : mapper.selectStructuredRecent(userId, fetch, 0)) {
             items.add(toItem(MemoryItem.Source.STRUCTURED, row));
         }
-        for (MemoryRow row : mapper.selectTextRecent(userId, pageSize, from)) {
+        for (MemoryRow row : mapper.selectTextRecent(userId, fetch, 0)) {
             items.add(toItem(MemoryItem.Source.TEXT, row));
         }
-        return items;
+        items.sort((a, b) -> b.createdAt().compareTo(a.createdAt()));
+        if (items.size() <= from) {
+            return List.of();
+        }
+        return List.copyOf(items.subList(from, Math.min(items.size(), from + pageSize)));
     }
 
     /**
@@ -254,8 +262,11 @@ public class MemoryStore {
                     affected++;
                 }
                 case UPDATE -> {
-                    boolean updated = overwrite(userId, toItemSource(candidate.store()), candidate.targetId(),
-                            candidate.content(), conversationId, refMessageId, candidate.reason());
+                    // targetId 为 null 说明解析阶段没给出来：直接记未命中，不能让自动拆箱抛 NPE
+                    // 把同批的其它写入一起回滚（applyAuto 是整批一个事务）。
+                    boolean updated = candidate.targetId() != null
+                            && overwrite(userId, toItemSource(candidate.store()), candidate.targetId(),
+                                    candidate.content(), conversationId, refMessageId, candidate.reason());
                     if (updated) {
                         affected++;
                     } else {

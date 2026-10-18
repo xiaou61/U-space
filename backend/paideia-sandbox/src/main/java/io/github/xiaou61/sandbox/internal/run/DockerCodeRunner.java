@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -54,7 +56,24 @@ class DockerCodeRunner implements CodeRunner {
 
     @Override
     public CodeRun.Result run(CodeRun.Request request) {
-        List<String> command = DockerCommand.of(request.language(), properties);
+        Path cidFile;
+        try {
+            cidFile = Files.createTempFile("paideia-sandbox-", ".cid");
+        } catch (IOException cause) {
+            throw new SandboxUnavailableException("无法创建容器 id 文件：" + cause.getMessage(), cause);
+        }
+        try {
+            return execute(request, DockerCommand.of(request.language(), properties, cidFile.toString()));
+        } finally {
+            try {
+                Files.deleteIfExists(cidFile);
+            } catch (IOException ignored) {
+                // 临时文件删不掉不影响结果
+            }
+        }
+    }
+
+    private CodeRun.Result execute(CodeRun.Request request, List<String> command) {
         long started = System.nanoTime();
         Process process;
         try {
@@ -63,10 +82,12 @@ class DockerCodeRunner implements CodeRunner {
             throw new SandboxUnavailableException("启动容器失败：" + cause.getMessage(), cause);
         }
 
-        // stdin 写完就关：脚本要读到 EOF 才会往下执行
+        // 分帧写入：第一行是源码字节数，容器先用 dd 精确取走源码，剩下的才是程序的标准输入。
+        // 直接顺序写会让 `cat` 把 stdin 也吞进源码文件（见 DockerCommand 的说明）。
         try (OutputStream stdin = process.getOutputStream()) {
-            String input = request.code() + "\n";
-            stdin.write(input.getBytes(StandardCharsets.UTF_8));
+            byte[] code = request.code().getBytes(StandardCharsets.UTF_8);
+            stdin.write((code.length + "\n").getBytes(StandardCharsets.UTF_8));
+            stdin.write(code);
             if (request.stdin() != null && !request.stdin().isEmpty()) {
                 stdin.write(request.stdin().getBytes(StandardCharsets.UTF_8));
             }
@@ -91,8 +112,11 @@ class DockerCodeRunner implements CodeRunner {
             throw new SandboxUnavailableException("执行被中断", cause);
         }
         if (!finished) {
-            // 强杀：容器是 --rm 的，docker CLI 被杀后容器会随 --stop-timeout=0 立即终止
+            // 强杀宿主上的 docker CLI 只是第一步：CLI 被 SIGKILL 后来不及通知 daemon，
+            // 容器仍由 daemon 管着（--rm 只在容器自己退出时生效）。不补这一刀，
+            // 一个 while(true) 会带着 0.5 CPU / 256MB 一直跑，超时约束形同虚设。
             process.destroyForcibly();
+            removeContainer(command);
         }
 
         joinQuietly(outReader);
@@ -148,6 +172,38 @@ class DockerCodeRunner implements CodeRunner {
     private static void joinQuietly(Thread thread) {
         try {
             thread.join(TimeUnit.SECONDS.toMillis(2));
+        } catch (InterruptedException cause) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * 超时兜底：按 cidfile 里的容器 id 强删。
+     *
+     * <p>失败也不抛——超时的结论已经确定，删不掉只是留下一个会被后续清理捞走的容器，
+     * 不能让清理动作把"超时"这个结果改成 500。
+     */
+    private static void removeContainer(List<String> command) {
+        int index = command.indexOf("--cidfile");
+        if (index < 0 || index + 1 >= command.size()) {
+            return;
+        }
+        Path cidFile = Path.of(command.get(index + 1));
+        try {
+            if (!Files.exists(cidFile)) {
+                return;
+            }
+            String id = Files.readString(cidFile, StandardCharsets.UTF_8).trim();
+            if (id.isEmpty()) {
+                return;
+            }
+            new ProcessBuilder("docker", "rm", "-f", id)
+                    .redirectErrorStream(true)
+                    .start()
+                    .waitFor(10, TimeUnit.SECONDS);
+            log.info("超时后已强删容器 {}", id);
+        } catch (IOException cause) {
+            log.warn("超时后强删容器失败：{}", cause.getMessage());
         } catch (InterruptedException cause) {
             Thread.currentThread().interrupt();
         }
