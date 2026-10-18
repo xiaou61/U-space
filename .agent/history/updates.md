@@ -3162,3 +3162,30 @@ schema_version: 1
 - 如实登记：本机无 Docker（真容器只在服务器验）、gVisor 未装、真 OOM 未端到端构造、线上 7 条 e2e 因依赖本地种子而失败（既有问题与本项无关）、生产库留下 5 行真机验证审计
 - 本地提交：随本条一起提交
 - 远端推送：未执行
+
+## 2026-10-18 08:52:57 +0800 · WORK-016 · 补架构条款：自适应行为落在共享层（REQ-023 / AC-013）
+
+- 类型：decision
+- 变更：requirements.md 增加 REQ-023（窄屏形态必须是同组件的另一种呈现，导航归外壳、弹窗归 packages/ui 的 Dialog、助手归 AssistantShell，页面只管字段与操作）与 AC-013；订正路由计数（app 11 条、admin 6 个实际页面）；实现选择补两条否定项（不引 useBreakpoint/ResponsiveProvider，不新建通用 RecordCard）
+- 决策：否决「每个页面各自实现移动端骨架」与「引入 JS 运行时断点系统」；管理端「仅 Web」解释为不产出桌面包、不限定视口宽度
+- 依据：grep 路由：app 11 条 path、admin 8 条 path（含 2 条重定向）；.agent/rules/always.md:94 管理端「仅 Web」；仓库已有 CSS 断点体系与 Dialog 浮层原语
+- 验证：validate 0 error；仅 WORK-016 自身超 20KB 的软警告
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-18 08:56:00 +0800 · WORK-014 / WORK-015 · 推送并完整部署（含前端）
+
+- 类型：maintenance
+- 变更：`git push origin master`（`c1fcc4f..5ab2d26`，走 HTTPS 直连，本次可用）；`scripts/release.ps1` 完整部署（后端 + 学习者端/管理端前端），耗时 81.3 秒
+- 决策：用完整部署而不是 `-SkipWeb`——本次前端新增了运行题型，只发后端会让线上仍是旧 bundle
+- 依据：`git log origin/master..HEAD` 只有两笔（其余实现提交已被先前的推送带上）
+- 验证（线上实测）：
+  - `systemctl is-active paideia` → active；`/actuator/health` → **200**
+  - 沙箱就绪日志：`runtime=docker-default images=[eclipse-temurin:21-jdk-alpine, python:3.12-alpine]`
+  - 迁移：`Successfully validated 13 migrations`、`Schema paideia is up to date`
+  - 前端产物 `assets/index-B-_HrJeZ.js` 逐个 token 命中：`code-tour` / `block-ask` / `learning-path` / `code-map` / `challenge-run` / `quiz-score` / `sandbox`
+  - 线上沙箱冒烟：`/status` → `ready=true`、`usedToday=5`；`print(2**10)` → `stdout="1024\n"`、810ms
+  - 生产库 `knowledge_entries` 无 id=10（样板条目只在 `db/devdata` 的测试库），符合预期：线上内容由管理端录入
+- 已知：另一会话的 `WORK-016-移动端最佳适配/` 仍是未跟踪目录，未被本次提交或推送带上
+- 本地提交：本条单独一笔
+- 远端推送：已执行（本条随后一并推送）
