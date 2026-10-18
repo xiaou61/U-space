@@ -3733,3 +3733,23 @@ schema_version: 1
   - **全量 `mvn -B test`（隔离库）BUILD SUCCESS：348 执行 / 0 失败 / 5 skipped**（1 条 S3 契约、4 条真实上游，均为既定跳过）。以前全量必红的三个知识库类这次 12/7/9 全绿
 - 本地提交：待提交
 - 远端推送：未执行
+
+## 2026-10-18 20:40:00 +0800 · maintenance · WORK-018 推送并部署；线上 e2e 闸门恢复可信
+
+- 类型：deployment
+- 变更：
+  - 推送 `38177e4`、`1d2225d`、`87df2a9` 到 origin/master（`1b576e2..87df2a9`）
+  - `powershell -File scripts/release.ps1` 发版到 codenest-online，**141.9 秒**，健康检查通过
+  - 生产库 `paideia` 从 V13 前进到 **V15**：`learner_profiles`、`ai_interview_evaluations`、`resume_*` 四张表全部落地
+  - `assistant.spec.ts` / `identity.spec.ts` / `markdown-render.spec.ts` 共 8 条打线上时按既有约定 `test.skip(REMOTE, …)`
+- 决策：
+  - 部署前查过 V14 的唯一键前置：线上 `ai_memories_structured` **0 行**，加 `uk_ai_memory_structured_ref` 无冲突风险
+  - 那 8 条不是回归，是**数据假设不成立**：线上 `e2e-learner` 余额 `99979`（不是 0）、条目 id=3 是「TCP 三次握手为什么是三次」（不是种子里带表格与代码块的「模块化单体的边界」）。不跳过会一片假红，且积分那几条会**真调上游扣费**
+- 依据：`flyway_schema_history` / `information_schema` 线上实测；e2e `env.ts` 里已写明的 REMOTE 约定
+- 验证：
+  - 线上：`/actuator/health` 200、`/api/v1/resumes` 401（未登录，符合预期）、`/resume` 401（整端登录门，与 `/profile`、`/interview` 一致）
+  - 线上 e2e（`E2E_BASE_URL`）：**47 passed / 21 skipped / 0 failed**，其中 `resume.spec.ts` 单跑 1 passed
+  - 本地 e2e（隔离库、`E2E_BASE_URL` 未设）：受影响三个 spec **16 passed / 0 skipped**——证明跳过只在远程生效，本地仍然真跑
+  - `pnpm --filter @paideia/app typecheck` 通过
+- 本地提交：`38177e4`、`1d2225d`、`87df2a9`、`bc58d09`
+- 远端推送：已推送前 3 笔（`bc58d09` 待推送）
