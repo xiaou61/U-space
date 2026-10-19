@@ -48,6 +48,7 @@ public class MemoryExtractionService {
     private final CredentialService credentials;
     private final CreditService credits;
     private final TaskExecutor executor;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     MemoryExtractionService(MemoryProperties properties,
                             AiSettingsStore settings,
@@ -56,7 +57,8 @@ public class MemoryExtractionService {
                             MemoryExtractor extractor,
                             CredentialService credentials,
                             CreditService credits,
-                            @Qualifier("applicationTaskExecutor") TaskExecutor executor) {
+                            @Qualifier("applicationTaskExecutor") TaskExecutor executor,
+                            io.github.xiaou61.ai.RunRecorder recorder) {
         this.properties = properties;
         this.settings = settings;
         this.conversations = conversations;
@@ -65,6 +67,7 @@ public class MemoryExtractionService {
         this.credentials = credentials;
         this.credits = credits;
         this.executor = executor;
+        this.recorder = recorder;
     }
 
     /**
@@ -129,22 +132,32 @@ public class MemoryExtractionService {
             }
 
             TokenUsage usage = null;
+            var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                    .of(io.github.xiaou61.ai.RunKind.MEMORY_EXTRACT, userId)
+                    .withConversation(slice.conversationId())
+                    .withModel(access.get().model()));
             try {
                 MemoryExtractor.MemoryExtraction result = extractor.extract(
                         new MemoryExtractor.MemoryExtractionRequest(slice.turns(), pool), access.get());
                 usage = result.usage();
                 int affected = memories.applyAuto(userId, slice.conversationId(), slice.upToMessageId(),
                         result.candidates());
-                credits.settleMemoryExtraction(userId, reserved, access.get().model(),
+                int charged = credits.settleMemoryExtraction(userId, reserved, access.get().model(),
                         usage == null ? null : usage.inputTokens(),
                         usage == null ? null : usage.outputTokens(),
                         slice.upToMessageId());
+                run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+                run.addCredits(charged);
+                run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
                 log.info("ai.memory.extracted userId={} conversationId={} candidates={} affected={}",
                         userId, slice.conversationId(), result.candidates().size(), affected);
             } catch (RuntimeException failure) {
                 settleOrRefund(userId, reserved, usage, slice.upToMessageId(), access.get());
+                run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "extraction_failed");
                 log.warn("ai.memory.extraction_failed userId={} conversationId={} reason={}",
                         userId, slice.conversationId(), failure.getMessage());
+            } finally {
+                run.close();
             }
         } catch (RuntimeException unexpected) {
             // 到这里说明连准备阶段就炸了（读设置/读记忆等）。不能让它冒到线程池外：那会只剩一个

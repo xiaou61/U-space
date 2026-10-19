@@ -149,6 +149,8 @@ class ConversationUsageAccumulationTest {
         conversation.stream(
                 new AssistantConversation.Request(1L, List.of(), "在吗", null, null, List.of()),
                 new ModelAccess("http://localhost", "scripted", "k"),
+                new io.github.xiaou61.ai.internal.telemetry.NoopRunRecorder().begin(
+                        io.github.xiaou61.ai.RunSpec.of(io.github.xiaou61.ai.RunKind.CHAT, 1L)),
                 recorder);
         return recorder;
     }

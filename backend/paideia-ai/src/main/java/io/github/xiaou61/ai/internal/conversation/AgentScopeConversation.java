@@ -20,6 +20,8 @@ import io.agentscope.core.model.transport.HttpTransportException;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import io.agentscope.extensions.model.openai.formatter.DeepSeekFormatter;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.RunRecorder;
+import io.github.xiaou61.ai.SpanSpec;
 import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.ConversationTurn;
 import io.github.xiaou61.ai.ModelAccess;
@@ -75,7 +77,7 @@ class AgentScopeConversation implements AssistantConversation {
     }
 
     @Override
-    public void stream(Request request, ModelAccess access, Listener listener) {
+    public void stream(Request request, ModelAccess access, RunRecorder.RunScope run, Listener listener) {
         GenerateOptions options = GenerateOptions.builder()
                 .modelName(access.model())
                 .stream(true)
@@ -104,7 +106,21 @@ class AgentScopeConversation implements AssistantConversation {
                 if (!core.isEmpty()) {
                     schemas.addAll(discovery);
                 }
-                Round roundResult = runRound(model, conversation, schemas, options, listener);
+                // 每一轮都是一次真实的上游调用 → 各开一步（WORK-022）。步与轮次总量都要记：
+                // 步用于"这一轮慢在哪"，总量用于统计。
+                Round roundResult;
+                try (RunRecorder.StepScope step = run.step(SpanSpec.llm(round + 1))) {
+                    roundResult = runRound(model, conversation, schemas, options, listener);
+                    if (roundResult == null) {
+                        step.failed("upstream_unavailable");
+                    } else {
+                        TokenUsage usage = roundResult.usage();
+                        if (usage != null) {
+                            step.tokens(usage.inputTokens(), usage.outputTokens(), 0);
+                        }
+                        step.succeeded();
+                    }
+                }
                 if (roundResult == null) {
                     // 上游一轮都没吐出东西：按不可用处理
                     listener.onUsage(total);
@@ -132,7 +148,7 @@ class AgentScopeConversation implements AssistantConversation {
                 // 用 `new ToolResultMessage(List)` 把多条打包成一条时，formatter 只产出一个 tool
                 // 消息，上游直接 400（"insufficient tool messages following tool_calls message"）。
                 for (ToolResultBlock result : execute(request.userId(), request.harness(),
-                        requested, discovered, listener)) {
+                        requested, discovered, listener, run)) {
                     conversation.add(new ToolResultMessage(result));
                 }
             }
@@ -261,12 +277,24 @@ class AgentScopeConversation implements AssistantConversation {
      * <p>失败**不抛**：把错误文本当成结果交回去（文本里写明"工具执行失败"），
      * 模型据此换个方式回答，比让整轮对话崩掉好。所以这里不额外设置错误状态——
      * 语义已经在那段文本里，多一层状态只会让读的人以为还有别的分支。
+     *
+     * <p>每次工具调用各开一步（WORK-022）：工具现在唯一的可视化就是这里，
+     * "哪个工具失败、哪个慢"只能靠它回答。
      */
     private List<ToolResultBlock> execute(long userId, Harness harness, List<ToolUseBlock> requested,
-                                          List<String> discovered, Listener listener) {
+                                          List<String> discovered, Listener listener,
+                                          RunRecorder.RunScope run) {
         List<ToolResultBlock> results = new ArrayList<>();
         for (ToolUseBlock call : requested) {
-            AgentToolBridge.Outcome outcome = tools.run(userId, harness, call.getName(), call.getInput());
+            AgentToolBridge.Outcome outcome;
+            try (RunRecorder.StepScope step = run.step(SpanSpec.tool(call.getName()))) {
+                outcome = tools.run(userId, harness, call.getName(), call.getInput());
+                if (outcome.error()) {
+                    step.failed("tool_error");
+                } else {
+                    step.succeeded();
+                }
+            }
             if (outcome.draft() != null) {
                 // 草稿立刻送到界面：用户的"要不要存"不该等模型把话说完才出现
                 listener.onDraft(outcome.draft());

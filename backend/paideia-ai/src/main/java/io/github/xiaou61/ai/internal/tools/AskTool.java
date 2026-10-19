@@ -41,13 +41,16 @@ public class AskTool implements PaideiaTool {
     private final org.springframework.beans.factory.ObjectProvider<AssistantAnswerer> answerer;
     private final io.github.xiaou61.ai.internal.credential.CredentialService credentials;
     private final CreditService credits;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     AskTool(org.springframework.beans.factory.ObjectProvider<AssistantAnswerer> answerer,
             io.github.xiaou61.ai.internal.credential.CredentialService credentials,
-            CreditService credits) {
+            CreditService credits,
+            io.github.xiaou61.ai.RunRecorder recorder) {
         this.answerer = answerer;
         this.credentials = credentials;
         this.credits = credits;
+        this.recorder = recorder;
     }
 
     @Override
@@ -87,24 +90,36 @@ public class AskTool implements PaideiaTool {
         // **预扣本身也在 try 里**：402 是预期的业务结果，应当变成一条可读的工具错误返回给
         // 外部模型，而不是冒泡成"工具执行失败"（那会让它以为是自己参数写错了）。
         long reserved = 0;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.MCP_ASK, context.userId())
+                .withModel(modelAccess.model()));
         try {
+            run.attribute("reqChars", question.length());
             reserved = credits.reserve(context.userId(), credits.estimate());
             AssistantAnswerer.Answer answer =
                     answerer.getObject().answer(context.userId(), question, entryId, modelAccess);
             TokenUsage usage = answer.usage();
+            int charged;
             if (usage == null) {
                 credits.refund(context.userId(), reserved, null, "外部问答未返回用量");
+                charged = 0;
             } else {
-                credits.settleExternalAsk(context.userId(), reserved, modelAccess.model(),
+                charged = credits.settleExternalAsk(context.userId(), reserved, modelAccess.model(),
                         usage.inputTokens(), usage.outputTokens());
+                run.tokens(usage.inputTokens(), usage.outputTokens(), 0);
             }
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             return ToolResult.ok(answer.text(), Map.of("answer", answer.text()));
         } catch (RuntimeException failure) {
             // 预留成功过才退：reserve 自己抛错时余额没被扣
             if (reserved > 0) {
                 credits.refund(context.userId(), reserved, null, "外部问答失败");
             }
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "mcp_ask_failed");
             return ToolResult.fail(messageOf(failure));
+        } finally {
+            run.close();
         }
     }
 

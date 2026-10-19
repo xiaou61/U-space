@@ -24,9 +24,11 @@ public interface AssistantConversation {
     /**
      * @param request 这一轮的上下文与用户输入
      * @param access  本次调用用的凭据（明文只在这次调用期间存在，与 {@link EntrySummarizer} 同一纪律）
+     * @param run     这一轮的观测作用域（WORK-022）。实现把每次上游调用、每次工具调用各开一步；
+     *                **它只记不判**：采集关掉时拿到的是空实现，七个调用点一字不改
      * @param listener 增量回调
      */
-    void stream(Request request, ModelAccess access, Listener listener);
+    void stream(Request request, ModelAccess access, RunRecorder.RunScope run, Listener listener);
 
     /**
      * @param userId         当前调用者的账号 id。**工具读数据只认它**——模型无法提供或改写这个值

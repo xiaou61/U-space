@@ -18,6 +18,7 @@ src/main/resources/db/migration/V18__create_learning_progress.sql -1986278591
 src/main/resources/db/migration/V19__create_concept_and_view_tables.sql -388111039
 src/main/resources/db/migration/V1__create_account_tables.sql 5302915
 src/main/resources/db/migration/V20__add_entry_read_indexes.sql -1148086735
+src/main/resources/db/migration/V21__create_ai_telemetry_tables.sql -891669932
 src/main/resources/db/migration/V2__pin_account_table_collation.sql 725228782
 src/main/resources/db/migration/V3__create_knowledge_tables.sql -1994379107
 src/main/resources/db/migration/V4__create_ai_tables.sql -1560154385

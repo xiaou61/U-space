@@ -317,10 +317,10 @@ class AssistantConversationIntegrationTest {
         configureCredential(userA);
         long conversationId = createConversation(userA, null);
         doAnswer(invocation -> {
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             listener.onFailed(new BizException(ErrorCode.INTERNAL, "上游模型服务暂时不可用，请稍后再试"));
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
 
         MvcResult result = sendMessage(userA, conversationId, "会失败的问题");
         assertThat(body(result)).contains("event:error").contains("上游模型服务暂时不可用");
@@ -370,12 +370,12 @@ class AssistantConversationIntegrationTest {
         List<AssistantConversation.Request> seen = new ArrayList<>();
         doAnswer(invocation -> {
             seen.add(invocation.getArgument(0));
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             listener.onContent("好的");
             listener.onUsage(null);
             listener.onCompleted();
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
 
         // 消息里带上关键词：全文那一路是**按当前这轮的话**检索的（第 2 条裁决取舍——
         // 用全文检索而不是语义检索，代价就是字面对不上就召不回）
@@ -448,7 +448,7 @@ class AssistantConversationIntegrationTest {
 
     /** 桩：按顺序回调思考、正文、结束。失败路径由各用例自己 doAnswer。 */    private void stubStream(String thinking, String content, TokenUsage usage) {
         doAnswer(invocation -> {
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             if (!thinking.isEmpty()) {
                 listener.onThinking(thinking);
             }
@@ -458,7 +458,7 @@ class AssistantConversationIntegrationTest {
             listener.onUsage(usage);
             listener.onCompleted();
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
     }
 
     private long createConversation(String subject, Long entryId) throws Exception {

@@ -27,6 +27,21 @@ spring:
         queue-capacity: 8
 
 paideia:
+  ai:
+    telemetry:
+      # AI 调用统计（WORK-022）。**关掉不删历史数据**：只停止产生新记录，
+      # 业务行为完全不变（采集端口换成空实现，埋点代码一字不改）。
+      enabled: true
+      # 成功轮次的保留比例。失败 / 超时 / 中断**永远保留**——采样是为了省存量，不是为了藏问题。
+      sampling: 1.0
+      # 保留天数。清理任务按它删，统计接口的时间窗也按它收敛。
+      retention-days: 90
+      # 有界队列容量。满则丢弃并计数，绝不阻塞调用方。
+      queue-capacity: 10000
+      # 停在 running 超过这么多小时的，清理任务标成 interrupted。
+      stuck-after-hours: 6
+      # 单次批处理条数上限。
+      batch-size: 50
   web:
     cors:
       # 默认不放行任何跨域来源。需要时在此加入前端与桌面壳的来源；

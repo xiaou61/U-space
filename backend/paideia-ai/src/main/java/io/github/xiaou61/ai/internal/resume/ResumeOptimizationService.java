@@ -61,6 +61,7 @@ public class ResumeOptimizationService {
     private final ResumeJson json;
     private final CredentialService credentials;
     private final CreditService credits;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -68,7 +69,7 @@ public class ResumeOptimizationService {
                               ResumeDocumentService documentService, ResumeAnalyzer analyzer,
                               ResumeProposer proposer, ResumeKeywordClassifier classifier,
                               ResumeGate gate, ResumeJson json, CredentialService credentials,
-                              CreditService credits) {
+                              CreditService credits, io.github.xiaou61.ai.RunRecorder recorder) {
         this.documents = documents;
         this.children = children;
         this.documentService = documentService;
@@ -79,6 +80,7 @@ public class ResumeOptimizationService {
         this.json = json;
         this.credentials = credentials;
         this.credits = credits;
+        this.recorder = recorder;
     }
 
     // ── 视图 ────────────────────────────────────────────────────────
@@ -150,6 +152,9 @@ public class ResumeOptimizationService {
 
         long reserved = credits.reserve(userId, credits.estimate());
         TokenUsage usage = null;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.RESUME_OPTIMIZE, userId)
+                .withModel(access.model()));
         try {
             ResumeAnalyzer.Analyzed analyzed = analyzer.analyze(document.data(), version.getJdText(), access);
             usage = analyzed.usage();
@@ -164,15 +169,21 @@ public class ResumeOptimizationService {
 
             children.updateAnalysis(versionId, userId, writeAnalysis(version, analyzed.analysis(), classified, view),
                     Instant.now());
-            credits.settleResume(userId, reserved, access.model(),
+            int charged = credits.settleResume(userId, reserved, access.model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), versionId);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.analyzed userId={} versionId={} keywords={} gaps={}",
                     userId, versionId, total, total - covered);
             return view;
         } catch (RuntimeException failure) {
             settleOrRefund(userId, reserved, access, usage, "简历岗位分析失败");
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "resume_analyze_failed");
             throw failure;
+        } finally {
+            run.close();
         }
     }
 
@@ -208,6 +219,9 @@ public class ResumeOptimizationService {
 
         long reserved = credits.reserve(userId, credits.estimate());
         TokenUsage usage = null;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.RESUME_OPTIMIZE, userId)
+                .withModel(access.model()));
         try {
             ResumeProposer.Proposed proposed = proposer.propose(document.data(), version.getJdText(),
                     analysisForModel, gaps, access);
@@ -220,15 +234,21 @@ public class ResumeOptimizationService {
                 ResumeChildMapper.ProposalRow row = toRow(userId, versionId, seq++, proposal, now);
                 children.insertProposal(row);
             }
-            credits.settleResume(userId, reserved, access.model(),
+            int charged = credits.settleResume(userId, reserved, access.model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), versionId);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.proposed userId={} versionId={} proposals={} dropped={}",
                     userId, versionId, proposed.proposals().size(), proposed.dropped());
             return listProposals(userId, versionId);
         } catch (RuntimeException failure) {
             settleOrRefund(userId, reserved, access, usage, "简历改写提案失败");
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "resume_propose_failed");
             throw failure;
+        } finally {
+            run.close();
         }
     }
 

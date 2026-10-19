@@ -2,6 +2,8 @@ import { Navigate, createHashRouter } from 'react-router'
 
 import { AdminHomePage } from './pages/AdminHomePage'
 import { AiCreditsAuditPage } from './pages/AiCreditsAuditPage'
+import { AiRunsListPage } from './pages/AiRunsListPage'
+import { AiRunsOverviewPage } from './pages/AiRunsOverviewPage'
 import { AiCreditsGrantPage } from './pages/AiCreditsGrantPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
@@ -70,6 +72,24 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <AiCreditsGrantPage />
+      </RequireAdmin>
+    ),
+  },
+  // AI 调用统计（WORK-022）。父项只分组，子项才是页面。
+  { path: '/ai-runs', element: <Navigate to="/ai-runs/overview" replace /> },
+  {
+    path: '/ai-runs/overview',
+    element: (
+      <RequireAdmin>
+        <AiRunsOverviewPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/ai-runs/list',
+    element: (
+      <RequireAdmin>
+        <AiRunsListPage />
       </RequireAdmin>
     ),
   },

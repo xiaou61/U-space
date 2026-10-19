@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-022
 work: AI 调用追踪与运营统计
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增两张表与一个迁移（数据边界）；新增公共采集端口与写入队列（公共行为）；新增管理端只读端点与管理端页面；注销级联表清单变更；改动计费结算函数的返回值
 workflow: full
@@ -10,6 +10,9 @@ depends_on: []
 related_to: [WORK-006, WORK-009, WORK-010, WORK-013, WORK-019]
 created: 2026-10-19
 updated: 2026-10-19
+approved_by: xiaou61
+approved_at: 2026-10-19 17:54:59 +0800
+approver_role: CTO
 ---
 
 # AI 调用追踪与运营统计需求

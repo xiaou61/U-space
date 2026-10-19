@@ -45,6 +45,9 @@ class AiUserDeletionListener {
             {"resume_versions", "user_id"},
             {"resume_edit_history", "user_id"},
             {"resume_documents", "user_id"},
+            // AI 调用追踪（WORK-022）：轮次表有 user_id，步骤表没有（它随 trace 走），
+            // 所以步骤在下面按子查询删。**先删步骤再删轮次**——顺序反过来就找不到 trace 了。
+            {"ai_runs", "user_id"},
             // 会话最后删：消息跟着它（下面单独删）
             {"ai_conversations", "user_id"},
     };
@@ -62,6 +65,12 @@ class AiUserDeletionListener {
                 DELETE FROM ai_messages
                 WHERE conversation_id IN (SELECT id FROM ai_conversations WHERE user_id = ?)
                 """, event.userId());
+        // 步骤表没有 user_id：它挂在 trace_id 上。**必须在删 ai_runs 之前**跑，
+        // 否则子查询已经查不到那些 trace 了，步骤会留下来成为孤儿。
+        jdbcTemplate.update(
+                "DELETE FROM ai_run_spans "
+                        + "WHERE run_trace_id IN (SELECT trace_id FROM ai_runs WHERE user_id = ?)",
+                event.userId());
         for (String[] table : USER_TABLES) {
             jdbcTemplate.update("DELETE FROM " + table[0] + " WHERE " + table[1] + " = ?", event.userId());
         }

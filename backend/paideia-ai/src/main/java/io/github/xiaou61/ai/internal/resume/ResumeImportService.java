@@ -40,13 +40,16 @@ public class ResumeImportService {
     private final ResumeParser parser;
     private final CredentialService credentials;
     private final CreditService credits;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     ResumeImportService(ResumeTextExtractor extractor, ResumeParser parser,
-                        CredentialService credentials, CreditService credits) {
+                        CredentialService credentials, CreditService credits,
+                        io.github.xiaou61.ai.RunRecorder recorder) {
         this.extractor = extractor;
         this.parser = parser;
         this.credentials = credentials;
         this.credits = credits;
+        this.recorder = recorder;
     }
 
     /**
@@ -78,19 +81,29 @@ public class ResumeImportService {
         }
         long reserved = credits.reserve(userId, credits.estimate());
         io.github.xiaou61.ai.TokenUsage usage = null;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.RESUME_IMPORT, userId)
+                .withModel(access.get().model()));
         try {
+            run.attribute("reqChars", text.length());
             ResumeParser.Parsed parsed = parser.parse(text, access.get());
             usage = parsed.usage();
-            credits.settleResume(userId, reserved, access.get().model(),
+            int charged = credits.settleResume(userId, reserved, access.get().model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), null);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.parsed userId={} chars={} dropped={} truncatedFields={}",
                     userId, text.length(), parsed.dropped(), parsed.truncated());
             return new Draft(parsed.data(), text, parsed.dropped(), parsed.truncated(),
                     truncatedChars, extracted.pages());
         } catch (RuntimeException failure) {
             refundOrSettleFailed(userId, reserved, access.get(), usage);
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "resume_import_failed");
             throw failure;
+        } finally {
+            run.close();
         }
     }
 

@@ -384,12 +384,12 @@ class MemoryAutoExtractionIntegrationTest {
         doAnswer(invocation -> {
             AssistantConversation.Request request = invocation.getArgument(0);
             assistantsSeen.add(request);
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             listener.onContent(content);
             listener.onUsage(new TokenUsage(10, 5, 15));
             listener.onCompleted();
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
     }
 
     private int saveSettings(boolean memory, boolean saved, boolean history) throws Exception {

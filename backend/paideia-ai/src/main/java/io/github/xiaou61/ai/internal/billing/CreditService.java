@@ -118,9 +118,9 @@ public class CreditService {
      * 没有依据就不该扣。
      */
     @Transactional
-    public void settle(long userId, long reserved, String model, Integer inputTokens, Integer outputTokens,
-                       Long refMessageId) {
-        settleAs(userId, reserved, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens, refMessageId);
+    public int settle(long userId, long reserved, String model, Integer inputTokens, Integer outputTokens,
+                      Long refMessageId) {
+        return settleAs(userId, reserved, CreditLedger.KIND_SETTLE, model, inputTokens, outputTokens, refMessageId);
     }
 
     /**
@@ -130,9 +130,9 @@ public class CreditService {
      * 与对话的消耗混成一类，用户对着账目算不明白，面板也没法单独显示"最近一次整理花了多少"。
      */
     @Transactional
-    public void settleMemoryExtraction(long userId, long reserved, String model,
-                                       Integer inputTokens, Integer outputTokens, Long refMessageId) {
-        settleAs(userId, reserved, CreditLedger.KIND_MEMORY_EXTRACT, model, inputTokens, outputTokens, refMessageId);
+    public int settleMemoryExtraction(long userId, long reserved, String model,
+                                      Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        return settleAs(userId, reserved, CreditLedger.KIND_MEMORY_EXTRACT, model, inputTokens, outputTokens, refMessageId);
     }
 
     /**
@@ -142,9 +142,9 @@ public class CreditService {
      * 用户无法回答"这次面试到底花在哪"。
      */
     @Transactional
-    public void settleInterviewReview(long userId, long reserved, String model,
-                                      Integer inputTokens, Integer outputTokens, Long refMessageId) {
-        settleAs(userId, reserved, CreditLedger.KIND_INTERVIEW_REVIEW, model, inputTokens, outputTokens, refMessageId);
+    public int settleInterviewReview(long userId, long reserved, String model,
+                                     Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        return settleAs(userId, reserved, CreditLedger.KIND_INTERVIEW_REVIEW, model, inputTokens, outputTokens, refMessageId);
     }
 
     /**
@@ -154,16 +154,22 @@ public class CreditService {
      * 拆成三种只会让账目更难读。三次各自的用量仍在流水行里（模型 + 输入 + 输出 token）。
      */
     @Transactional
-    public void settleResume(long userId, long reserved, String model,
-                             Integer inputTokens, Integer outputTokens, Long refMessageId) {
-        settleAs(userId, reserved, CreditLedger.KIND_RESUME, model, inputTokens, outputTokens, refMessageId);
+    public int settleResume(long userId, long reserved, String model,
+                            Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        return settleAs(userId, reserved, CreditLedger.KIND_RESUME, model, inputTokens, outputTokens, refMessageId);
     }
 
     /** 结算，并指定流水种类。私有：种类是领域决定，不该由调用方随手给。 */
-    private void settleAs(long userId, long reserved, String kind, String model,
-                          Integer inputTokens, Integer outputTokens, Long refMessageId) {
+    /**
+     * 结算的公共实现。
+     *
+     * <p>返回**真正扣掉的那一笔**（WORK-022）：观测要记"这一轮花了多少"，
+     * 而那是结算算出来的，调用方原先只知道自己预留了多少。返回 0 表示没扣。
+     */
+    private int settleAs(long userId, long reserved, String kind, String model,
+                         Integer inputTokens, Integer outputTokens, Long refMessageId) {
         if (!billing.isEnabled() || reserved <= 0) {
-            return;
+            return 0;
         }
         long actual = Math.min(
                 billing.creditsFor(model, orZero(inputTokens), orZero(outputTokens)),
@@ -186,6 +192,7 @@ public class CreditService {
         if (deducted > 0) {
             write(userId, -deducted, kind, model, inputTokens, outputTokens, refMessageId, null, note);
         }
+        return (int) Math.max(deducted, 0);
     }
 
     /**
@@ -210,9 +217,9 @@ public class CreditService {
      * 与对话混成一类之后，用户对账时会发现"一笔没有对应消息的扣费"，那正是需要解释的地方。
      */
     @Transactional
-    public void settleExternalAsk(long userId, long reserved, String model,
-                                  Integer inputTokens, Integer outputTokens) {
-        settleAs(userId, reserved, CreditLedger.KIND_MCP_ASK, model, inputTokens, outputTokens, null);
+    public int settleExternalAsk(long userId, long reserved, String model,
+                                 Integer inputTokens, Integer outputTokens) {
+        return settleAs(userId, reserved, CreditLedger.KIND_MCP_ASK, model, inputTokens, outputTokens, null);
     }
 
     /**

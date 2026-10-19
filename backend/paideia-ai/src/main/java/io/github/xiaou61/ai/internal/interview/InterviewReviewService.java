@@ -49,17 +49,20 @@ public class InterviewReviewService {
     private final CreditService credits;
     private final ConversationService conversations;
     private final InterviewEvaluationMapper evaluations;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     InterviewReviewService(InterviewReviewer reviewer,
                           CredentialService credentials,
                           CreditService credits,
                           ConversationService conversations,
-                          InterviewEvaluationMapper evaluations) {
+                          InterviewEvaluationMapper evaluations,
+                          io.github.xiaou61.ai.RunRecorder recorder) {
         this.reviewer = reviewer;
         this.credentials = credentials;
         this.credits = credits;
         this.conversations = conversations;
         this.evaluations = evaluations;
+        this.recorder = recorder;
     }
 
     /** 界面用的评估视图。 */
@@ -92,13 +95,21 @@ public class InterviewReviewService {
         // 预扣在调用之前：余额不足时一个上游请求都不会发出去（AC-010）
         long reserved = credits.reserve(userId, credits.estimate());
         TokenUsage usage = null;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.INTERVIEW_REVIEW, userId)
+                .withConversation(conversationId)
+                .withModel(access.get().model()));
         try {
+            run.attribute("reqChars", transcript.length());
             InterviewReviewer.GeneratedReview result = reviewer.review(transcript, access.get());
             usage = result.usage();
             long id = evaluations.insert(userId, conversationId, result.evaluation());
-            credits.settleInterviewReview(userId, reserved, access.get().model(),
+            int charged = credits.settleInterviewReview(userId, reserved, access.get().model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), id);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.interview.reviewed userId={} conversationId={} overall={}",
                     userId, conversationId, result.evaluation().overall());
             return new EvaluationView(id, result.evaluation(), java.time.Instant.now());
@@ -110,7 +121,12 @@ public class InterviewReviewService {
                 credits.settleInterviewReview(userId, reserved, access.get().model(),
                         usage.inputTokens(), usage.outputTokens(), null);
             }
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED,
+                    failure instanceof io.github.xiaou61.platform.BizException biz && biz.errorCode() != null
+                            ? biz.errorCode().name() : "unknown");
             throw failure;
+        } finally {
+            run.close();
         }
     }
 

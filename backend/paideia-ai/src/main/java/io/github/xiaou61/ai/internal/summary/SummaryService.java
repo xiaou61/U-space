@@ -52,6 +52,7 @@ public class SummaryService {
     /** 卡片与库里的 JSON 互转；用默认配置即可（不依赖容器里的 ObjectMapper）。 */
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final CreditService credits;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     SummaryService(KnowledgeApi knowledge,
                    CredentialService credentials,
@@ -59,7 +60,8 @@ public class SummaryService {
                    EntrySummaryMapper mapper,
                    UserRateLimiter limiter,
                    io.github.xiaou61.ai.internal.credential.AiProperties properties,
-                   CreditService credits) {
+                   CreditService credits,
+                   io.github.xiaou61.ai.RunRecorder recorder) {
         this.knowledge = knowledge;
         this.credentials = credentials;
         this.summarizer = summarizer;
@@ -67,6 +69,7 @@ public class SummaryService {
         this.limiter = limiter;
         this.properties = properties;
         this.credits = credits;
+        this.recorder = recorder;
     }
 
     /** 响应形状。`usage` 命中缓存时为 null；`source` 说明这份结果是谁生成的。 */
@@ -104,20 +107,33 @@ public class SummaryService {
         // 放在限流之后：被限流的那次本来就不该占用户的额度。
         long reserved = credits.reserve(userId, credits.estimate());
         GeneratedSummary generated;
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.ENTRY_SUMMARY, userId)
+                .withModel(access.model())
+                .withPromptVersion(SummaryPrompt.VERSION));
         try {
+            run.attribute("reqChars", content.body() == null ? 0 : content.body().length());
             generated = summarizer.summarize(content.title(), content.body(), access);
+            TokenUsage usage = generated.usage();
+            int charged;
+            if (usage == null) {
+                // 上游没给用量：没有依据就不扣（宁可漏扣，审计页上看得出来）
+                credits.refund(userId, reserved, null, "上游未返回用量");
+                charged = 0;
+            } else {
+                charged = credits.settle(userId, reserved, access.model(),
+                        usage.inputTokens(), usage.outputTokens(), null);
+                run.tokens(usage.inputTokens(), usage.outputTokens(), 0);
+            }
+            run.addCredits(charged);
+            run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
         } catch (RuntimeException failure) {
             // 调用没成功 → 预留全额退回。**失败不落库不够**：钱那一步得显式退。
             credits.refund(userId, reserved, null, "上游失败或返回不可用结果");
+            run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "summary_failed");
             throw failure;
-        }
-        TokenUsage usage = generated.usage();
-        if (usage == null) {
-            // 上游没给用量：没有依据就不扣（宁可漏扣，审计页上看得出来）
-            credits.refund(userId, reserved, null, "上游未返回用量");
-        } else {
-            credits.settle(userId, reserved, access.model(),
-                    usage.inputTokens(), usage.outputTokens(), null);
+        } finally {
+            run.close();
         }
 
         EntrySummary row = new EntrySummary();

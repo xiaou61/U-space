@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-023
 work: 逐行执行与可视化调试
-status: draft
+status: approved
 mode: strict
 mode_reason: 在沙箱里执行用户代码并新增一种录制端点（公共接口 + 执行安全面）；新增事件契约与格式上限（数据边界）；前端新增播放器与三种可视化（跨 @paideia/ui 与 app）；与计费/配额耦合
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-015, WORK-020]
 related_to: [WORK-014, WORK-009, WORK-021]
 created: 2026-10-19
 updated: 2026-10-19
+approved_by: xiaou61
+approved_at: 2026-10-19 17:55:08 +0800
+approver_role: CTO
 ---
 
 # 逐行执行与可视化调试需求

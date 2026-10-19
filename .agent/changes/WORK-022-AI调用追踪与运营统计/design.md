@@ -2,12 +2,15 @@
 artifact: design
 work_id: WORK-022
 work: AI 调用追踪与运营统计
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements, proposal]
 related_to: [WORK-006, WORK-009, WORK-010, WORK-013, WORK-019]
 created: 2026-10-19
 updated: 2026-10-19
+approved_by: xiaou61
+approved_at: 2026-10-19 17:54:59 +0800
+approver_role: CTO
 ---
 
 # AI 调用追踪与运营统计设计

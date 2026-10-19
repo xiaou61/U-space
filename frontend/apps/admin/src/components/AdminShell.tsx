@@ -14,6 +14,8 @@ import {
   PanelLeftOpen,
   Receipt,
   Wallet,
+  Activity,
+  ListOrdered,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
@@ -57,6 +59,16 @@ const MENU: MenuItem[] = [
       { to: '/ai-credits/audit', label: '用量审计', icon: Receipt },
     ],
   },
+  // AI 调用统计（WORK-022）：概览看趋势，明细下钻到步骤。
+  {
+    to: '/ai-runs',
+    label: 'AI 调用',
+    icon: Activity,
+    children: [
+      { to: '/ai-runs/overview', label: '调用概览', icon: Activity },
+      { to: '/ai-runs/list', label: '调用明细', icon: ListOrdered },
+    ],
+  },
 ]
 
 /** 面包屑：按菜单层级写死的路径（首页固定在最前，不再逐级可点）。 */
@@ -68,6 +80,8 @@ const CRUMBS: Record<string, string[]> = {
   '/reports': ['举报处理'],
   '/ai-credits/grant': ['AI 积分', '积分调整'],
   '/ai-credits/audit': ['AI 积分', '用量审计'],
+  '/ai-runs/overview': ['AI 调用', '调用概览'],
+  '/ai-runs/list': ['AI 调用', '调用明细'],
 }
 
 /**

@@ -96,6 +96,10 @@ class ApiWalkthroughTest {
     @Autowired
     CreditService credits;
 
+    /** WORK-022：详情端点需要一个真实 traceId，所以直接查一条刚写下的记录。 */
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @MockitoBean
     CaptchaImageRenderer captchaImageRenderer;
 
@@ -336,12 +340,12 @@ class ApiWalkthroughTest {
 
         // 发一条消息（SSE）。桩住的 AssistantConversation 只吐出完成事件，不连上游。
         doAnswer(invocation -> {
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             listener.onContent("自查回复");
             listener.onUsage(new TokenUsage(5, 10, 15));
             listener.onCompleted();
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
         MvcResult streamed = mvc.perform(MockMvcRequestBuilders
                 .post("/api/v1/ai/conversations/" + conversationId + "/messages")
                 .header("Authorization", bearer)
@@ -457,6 +461,32 @@ class ApiWalkthroughTest {
         call("管理端查某人积分", "GET", "/api/v1/ai/admin/credits/" + userId, adminToken(), null);
         call("管理端调分", "POST", "/api/v1/ai/admin/credits/" + userId + "/adjust", adminToken(),
                 json(Map.of("delta", 100, "note", "自查调分")));
+
+        // ---- AI 调用统计（WORK-022）----
+        // **先造一条确定的失败记录**：概览里的 errorTypes / byKind 是"有哪些值"的数组，
+        // 空数组与有元素是两种形状。不造数据的话，快照会在"单跑有、全量无"之间来回漂
+        // （2026-10-19 实测）。写一行带 error_type 的入档记录比依赖前面的用例更稳。
+        jdbcTemplate.update("""
+                INSERT INTO ai_runs (trace_id, user_id, kind, status, error_type, started_at,
+                                     duration_ms, input_tokens, output_tokens)
+                VALUES (?, ?, 'chat', 'failed', 'INVALID_ARGUMENT', ?, 120, 10, 0)
+                """, "selfcheck" + suffix, userId, java.time.Instant.now());
+        call("AI 调用概览", "GET", "/api/v1/ai/admin/runs/overview", adminToken(), null);
+        call("AI 调用明细", "GET", "/api/v1/ai/admin/runs", adminToken(), null);
+        call("AI 调用筛选项", "GET", "/api/v1/ai/admin/runs/meta", adminToken(), null);
+        // 详情要求一个真实 traceId；上面那轮对话已经写了一条（采集是异步的，等一下）
+        String traceId = null;
+        for (int attempt = 0; attempt < 20 && traceId == null; attempt++) {
+            traceId = jdbcTemplate.query(
+                    "SELECT trace_id FROM ai_runs WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+                    rs -> rs.next() ? rs.getString(1) : null, userId);
+            if (traceId == null) {
+                Thread.sleep(100);
+            }
+        }
+        if (traceId != null) {
+            call("AI 调用详情", "GET", "/api/v1/ai/admin/runs/" + traceId, adminToken(), null);
+        }
 
         // ---- 沙箱 ----
         call("沙箱状态", "GET", "/api/v1/sandbox/status", bearer, null);

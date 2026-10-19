@@ -65,7 +65,7 @@ class AskToolTest {
                         return java.util.List.of(answerer).iterator();
                     }
                 };
-        return new AskTool(provider, credentials, credits);
+        return new AskTool(provider, credentials, credits, new io.github.xiaou61.ai.internal.telemetry.NoopRunRecorder());
     }
 
     @Test

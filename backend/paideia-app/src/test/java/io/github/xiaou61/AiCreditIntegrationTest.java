@@ -107,7 +107,7 @@ class AiCreditIntegrationTest {
         assertThat(result.getResponse().getStatus()).as("响应：%s", body(result)).isEqualTo(402);
         assertThat(body(result)).contains("积分不足");
         // **这是本项最要紧的一条断言**：钱不够就不该产生任何上游调用
-        verify(assistant, never()).stream(any(), any(), any());
+        verify(assistant, never()).stream(any(), any(), any(), any());
         // 被拒的那一轮**留下用户消息、不留助手消息**：这句话用户确实说过，界面也已经画出来了，
         // 抹掉它就是"刷新即丢"。AC-003 只管"上游没有收到任何请求"，不要求丢用户输入。
         assertThat(jdbcTemplate.queryForObject(
@@ -221,12 +221,12 @@ class AiCreditIntegrationTest {
     /** 桩：按顺序回调正文、用量、结束。 */
     private void stubStream(String content, TokenUsage usage) {
         doAnswer(invocation -> {
-            AssistantConversation.Listener listener = invocation.getArgument(2);
+            AssistantConversation.Listener listener = invocation.getArgument(3);
             listener.onContent(content);
             listener.onUsage(usage);
             listener.onCompleted();
             return null;
-        }).when(assistant).stream(any(), any(), any());
+        }).when(assistant).stream(any(), any(), any(), any());
     }
 
     private MvcResult sendMessage(String subject, long conversationId, String message) throws Exception {

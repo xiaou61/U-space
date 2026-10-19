@@ -2,12 +2,15 @@
 artifact: tasks
 work_id: WORK-023
 work: 逐行执行与可视化调试
-status: draft
+status: approved
 workflow: full
 depends_on: [design]
 related_to: [WORK-014, WORK-009, WORK-021]
 created: 2026-10-19
 updated: 2026-10-19
+approved_by: xiaou61
+approved_at: 2026-10-19 17:55:08 +0800
+approver_role: CTO
 ---
 
 # 任务 · 逐行执行与可视化调试

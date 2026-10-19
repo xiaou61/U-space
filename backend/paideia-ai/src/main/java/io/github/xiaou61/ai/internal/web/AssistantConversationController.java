@@ -2,6 +2,10 @@ package io.github.xiaou61.ai.internal.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.RunKind;
+import io.github.xiaou61.ai.RunOutcome;
+import io.github.xiaou61.ai.RunRecorder;
+import io.github.xiaou61.ai.RunSpec;
 import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.MDC;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import io.github.xiaou61.platform.ApiAccess;
 
@@ -74,18 +79,27 @@ class AssistantConversationController {
     private final TaskExecutor executor;
     private final CreditService credits;
     private final MemoryExtractionService memoryExtraction;
+    private final RunRecorder recorder;
     private final ObjectMapper json = new ObjectMapper();
+
+    /**
+     * `TraceIdFilter` 写进 MDC 的键（WORK-022）。这里只读不写：HTTP 侧的追踪标识由过滤器管，
+     * 轮次标识是另一个东西，两者互不覆盖。
+     */
+    private static final String TRACE_MDC_KEY = "traceId";
 
     AssistantConversationController(ConversationService conversations,
                                     AssistantConversation assistant,
                                     @Qualifier("applicationTaskExecutor") TaskExecutor executor,
                                     CreditService credits,
-                                    MemoryExtractionService memoryExtraction) {
+                                    MemoryExtractionService memoryExtraction,
+                                    RunRecorder recorder) {
         this.conversations = conversations;
         this.assistant = assistant;
         this.executor = executor;
         this.credits = credits;
         this.memoryExtraction = memoryExtraction;
+        this.recorder = recorder;
     }
 
     @PostMapping
@@ -121,8 +135,11 @@ class AssistantConversationController {
                 conversations.prepare(userId, conversationId, request == null ? null : request.message());
 
         SseEmitter emitter = new SseEmitter((long) 100_000);
+        // **begin 在提交线程池之前**：这样 started_at 就是"用户按下发送"的时刻，
+        // 排队时间能从 runTurn 的首个时刻减出来（WORK-022 REQ-011）。
+        RunRecorder.RunScope run = runFor(userId, conversationId, turn);
         try {
-            executor.execute(() -> runTurn(userId, conversationId, turn, emitter));
+            executor.execute(() -> runTurn(userId, conversationId, turn, emitter, run));
         } catch (RejectedExecutionException rejected) {
             // 线程池的队列也满了（2026-10-19 起队列有界）：任务根本没跑起来，这笔预留到不了
             // settleOnce、也没有别的补偿出口，用户会被白扣一次分。全额退还。
@@ -130,14 +147,38 @@ class AssistantConversationController {
             // **必须在这里换成 429**：原来的 `throw cause` 会把 RejectedExecutionException
             // 兜成 500，界面上是一句"服务器内部错误"，而真实情况是"现在太忙，等一下再来"。
             settleOnce(new boolean[1], userId, turn, null, null);
+            run.finish(RunOutcome.FAILED, "REJECTED");
+            run.close();
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "当前对话请求较多，请稍后再试");
         } catch (RuntimeException cause) {
-            // 线程池满/已关闭时任务根本没跑起来：这笔预留到不了 settleOnce、也没有别的补偿出口，
-            // 用户会被白扣一次分。全额退还再抛出——同步阶段的异常能走全局异常处理拿到正常状态码。
             settleOnce(new boolean[1], userId, turn, null, null);
+            run.finish(RunOutcome.FAILED, "DISPATCH_FAILED");
+            run.close();
             throw cause;
         }
         return emitter;
+    }
+
+    /**
+     * 起一轮的观测作用域（WORK-022）。
+     *
+     * <p>上下文规模在这里就已知（`prepare` 已经把历史与记忆取出来了），所以一并带上——
+     * "这条回答为什么不好"经常就是"上下文给少了"，而那是事后查不出来的。
+     */
+    private RunRecorder.RunScope runFor(long userId, long conversationId,
+                                        ConversationService.TurnPreparation turn) {
+        RunSpec spec = RunSpec.of(RunKind.CHAT, userId)
+                .withConversation(conversationId)
+                .withHarness(turn.harness().key())
+                .withModel(turn.access().model());
+        RunRecorder.RunScope run = recorder.begin(spec);
+        run.attribute("historyMsgs", turn.history().size());
+        run.attribute("memoryHits", turn.memorySnippets().size());
+        run.attribute("entryChars", turn.entryBody() == null ? 0 : turn.entryBody().length());
+        run.attribute("learningSummaryChars", turn.learningSummary() == null ? 0 : turn.learningSummary().length());
+        run.attribute("reqChars", turn.userMessage() == null ? 0 : turn.userMessage().length());
+        run.attribute("httpTraceId", MDC.get(TRACE_MDC_KEY));
+        return run;
     }
 
     /**
@@ -147,18 +188,22 @@ class AssistantConversationController {
      * 用户那条消息在 {@code prepare} 里已经写了，所以失败不会丢掉用户说过的话。
      */
     private void runTurn(long userId, long conversationId,
-                         ConversationService.TurnPreparation turn, SseEmitter emitter) {
+                         ConversationService.TurnPreparation turn, SseEmitter emitter,
+                         RunRecorder.RunScope run) {
         StringBuilder content = new StringBuilder();
         // 用量单独存一格：onUsage 先于结果回调，这样"失败也要为已烧掉的 token 负责"不必在每条错误路径上再判一次
         TokenUsage[] usageRef = new TokenUsage[1];
         // 结算只做一次的闸（理由见 settleOnce）
         boolean[] settled = {false};
+        // 首字时刻只记一次：TTFT 是"用户等多久才看到第一个字"，记第二次就成了总耗时
+        boolean[] ttftMarked = {false};
         try {
             assistant.stream(
                     new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
                             turn.entryTitle(), turn.entryBody(), turn.learningSummary(),
                             turn.memorySnippets(), turn.harness()),
                     turn.access(),
+                    run,
                     new AssistantConversation.Listener() {
                         @Override
                         public void onThinking(String delta) {
@@ -167,6 +212,10 @@ class AssistantConversationController {
 
                         @Override
                         public void onContent(String delta) {
+                            if (!ttftMarked[0]) {
+                                ttftMarked[0] = true;
+                                run.markTtft();
+                            }
                             content.append(delta);
                             send(emitter, "content", Map.of("delta", delta));
                         }
@@ -201,7 +250,12 @@ class AssistantConversationController {
                             // 先落消息（拿到 id）、再按这个 id 结算：流水的 ref_message_id 能对上那条消息，
                             // "逐条可对账"（AC-006）才有依据
                             long messageId = conversations.complete(userId, conversationId, text, usage);
-                            settleOnce(settled, userId, turn, usage, messageId);
+                            int charged = settleOnce(settled, userId, turn, usage, messageId);
+                            run.tokens(usage == null ? 0 : usage.inputTokens(),
+                                    usage == null ? 0 : usage.outputTokens(), 0);
+                            run.addCredits(charged);
+                            run.attribute("respChars", text.length());
+                            run.finish(RunOutcome.OK, null);
                             // empty=true 告诉前端"这段是提示，不是模型生成的正文"，免得把它当成回答渲染。
                             // 用 HashMap 而不是 Map.of：用量允许为 null，而 Map.of 见到 null 直接抛。
                             Map<String, Object> payload = new HashMap<>();
@@ -219,7 +273,11 @@ class AssistantConversationController {
                         public void onFailed(BizException failure) {
                             // 失败**也要过账**：用量拿到了就按用量扣，没拿到就全额退回。
                             // "失败不落库"只管消息，钱那一步必须显式处理。
-                            settleOnce(settled, userId, turn, usageRef[0], null);
+                            int charged = settleOnce(settled, userId, turn, usageRef[0], null);
+                            run.tokens(usageRef[0] == null ? 0 : usageRef[0].inputTokens(),
+                                    usageRef[0] == null ? 0 : usageRef[0].outputTokens(), 0);
+                            run.addCredits(charged);
+                            run.finish(RunOutcome.FAILED, errorTypeOf(failure));
                             send(emitter, "error", Map.of("message", failure.getMessage() == null
                                     ? "生成失败，请稍后再试" : failure.getMessage()));
                             emitter.complete();
@@ -228,8 +286,12 @@ class AssistantConversationController {
         } catch (RuntimeException unexpected) {
             // 端口约定失败走 onFailed；真出了别的运行时异常也不能让线程静默死掉（客户端会一直等）
             settleOnce(settled, userId, turn, null, null);
+            run.finish(RunOutcome.FAILED, "unexpected");
             send(emitter, "error", Map.of("message", "生成失败，请稍后再试"));
             emitter.complete();
+        } finally {
+            // 幂等：finish 已经调过时这里是空操作；异常路径上它把这一轮兜成 interrupted
+            run.close();
         }
     }
 
@@ -243,18 +305,24 @@ class AssistantConversationController {
      * <p><b>拿不到用量就全额退</b>：没有用量就没有扣费依据。宁可漏扣（审计页上"有用量但 0 扣减"
      * 一眼可见），也不要凭猜扣用户的分。
      */
-    private void settleOnce(boolean[] settled, long userId, ConversationService.TurnPreparation turn,
-                            TokenUsage usage, Long messageId) {
+    private int settleOnce(boolean[] settled, long userId, ConversationService.TurnPreparation turn,
+                           TokenUsage usage, Long messageId) {
         if (settled[0]) {
-            return;
+            return 0;
         }
         settled[0] = true;
         if (usage == null) {
+            // 全额退回：这一次实扣是 0，统计里记 0 而不是"预留值"——预留不是花费
             credits.refund(userId, turn.reservedCredits(), messageId, "上游未返回用量");
-            return;
+            return 0;
         }
-        credits.settle(userId, turn.reservedCredits(), turn.access().model(),
+        return credits.settle(userId, turn.reservedCredits(), turn.access().model(),
                 usage.inputTokens(), usage.outputTokens(), messageId);
+    }
+
+    /** 失败原因归一成低基数标识。**不写异常消息**：它可能含上游地址或响应片段。 */
+    private static String errorTypeOf(BizException failure) {
+        return failure.errorCode() == null ? "unknown" : failure.errorCode().name();
     }
 
     private static Map<String, Object> usagePayload(TokenUsage usage) {
