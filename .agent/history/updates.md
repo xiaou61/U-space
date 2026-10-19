@@ -4043,3 +4043,23 @@ schema_version: 1
 - 验证：后端 `mvn -B -pl paideia-ai,paideia-knowledge,paideia-platform -am test` **127 条 0 失败**（含 `AgentToolBridgeTest` 10/10）；**反向验证**：移除视图校验后新用例失败（`writeToolCannotBeCalledByNameEvenOutOfView`）。前端 `pnpm -r typecheck` 全过、`pnpm -r test` **272 条全过**（含 identity 3、resume 15、knowledge 42）。基线已推进到 `c259084`；**审查期间别的会话又推了 2 个提交（WORK-022 埋点，59 文件），尚未审**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
+
+## 2026-10-19 19:57:38 +0800 · WORK-022 · 实施完成并上线：AI 调用追踪与运营统计
+
+- 类型：implementation
+- 变更：V21 两张表、RunRecorder/RunSink 端口、有界写队列、七条路径埋点、管理端四端点两页面；注销级联与保留期清理
+- 决策：span 用 trace_id 关联（不往返取自增 id）；先插 running 再更新终态；按轮采样且失败永不丢；byStatus 用固定字段避免契约快照漂移
+- 依据：线上实测一次带工具的真实对话：总 5073ms / TTFT 4990ms / 2 轮上游 + 1 次工具；步骤表 llm#1 2672ms → knowledge_search 37ms → llm#2 2198ms
+- 验证：全量后端 504 执行 / 0 失败 / 5 跳过；管理端 e2e 22 passed；学习者端 61 passed / 21 skipped / 0 failed
+- 本地提交：f45a97a 及后一笔 queue_ms 修复
+- 远端推送：已推送 master
+
+## 2026-10-19 19:57:45 +0800 · WORK-023 · 实施完成并上线：逐行执行与可视化调试
+
+- 类型：implementation
+- 变更：trace.py 录制器（类路径常量）、/sandbox/trace 端点（共用配额与加固参数）、TracePlayer 播放器、运行题「逐步执行」按钮
+- 决策：一期做录制回放不做真单步；用 settrace（monitoring 拿不到 frame/locals）；Java 不做行级（JDI 成本高）；变量只存浅层 repr
+- 依据：线上真实 Docker 实测：循环 3 次录到 9 步、变量逐步变化、输出 3；10000 次循环在 300 步截断；除零定位到第 2 行；Java 返回 400 明确拒绝
+- 验证：全量后端 504/0/5；前端 256 条全绿（播放器 6 条）；线上学习者端 61 passed/21 skipped/0 failed；管理端 22 passed
+- 本地提交：a7d3ec3
+- 远端推送：已推送 master
