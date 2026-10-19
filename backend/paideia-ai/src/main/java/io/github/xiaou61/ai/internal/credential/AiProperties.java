@@ -21,8 +21,14 @@ public class AiProperties {
     /** 进提示词的正文上限（字符）。超了按段落截断并在结果里标记。 */
     private int maxInputChars = 8000;
 
-    /** 生成上限。产品形态是短卡片，给 1024 足够；**思考模式默认关闭**（见调用实现）。 */
-    private int maxTokens = 1024;
+    /**
+     * 生成上限。**思考 token 计入这个上限**，而 deepseek-flash 默认就开思考——代码里没有任何
+     * 关掉它的开关，早先注释写的"思考模式默认关闭"与实测不符（2026-10-19 点评在 1024 下思考吃掉
+     * 696 token、输出被截成半截 JSON 而失败）。所以不能按"短产物"给值。
+     *
+     * <p>4096 与对话那一路一致：够一场面试点评的完整 JSON（实测约 1178 token）。
+     */
+    private int maxTokens = 4096;
 
     /** 采样温度。摘要要稳定，取低值。 */
     private double temperature = 0.3;

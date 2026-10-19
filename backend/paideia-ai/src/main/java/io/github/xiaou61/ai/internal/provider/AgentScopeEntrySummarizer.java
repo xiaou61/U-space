@@ -33,9 +33,9 @@ import org.springframework.stereotype.Component;
  *   <li>{@code nativeStructuredOutput(false)} / {@code nativeStructuredOutputWithTools(false)}：
  *       DeepSeek 不支持原生结构化输出，且它"工具与结构化输出同时出现时会跳过工具调用"。
  *       本项没有工具，写死这两个开关是把这条已知限制变成显式声明，而不是等将来加工具时才发现。</li>
- *   <li><b>不开启思考模式</b>：思考 token 会占用 {@code maxTokens}，吃满时上游**静默返回空**。
- *       摘要是短产物，思考的收益抵不上这个坑。要开就必须同时抬高 {@code maxTokens}
- *       并分开处理两类事件（流式时才需要）。</li>
+ *   <li>**思考关不掉**：deepseek-flash 默认就思考，本项目没有关它的开关。思考 token 会占用
+ *       {@code maxTokens}，吃满时上游会把 JSON 截成半截（或静默返回空）——2026-10-19 在点评那路
+ *       实测复现过。所以 {@code AiProperties.maxTokens} 取 4096，不按"短卡片"给值。</li>
  * </ul>
  *
  * <p>调用是**同步**的（{@code blockLast}）：一次请求换一次响应，没有中间的增量可做别的事；

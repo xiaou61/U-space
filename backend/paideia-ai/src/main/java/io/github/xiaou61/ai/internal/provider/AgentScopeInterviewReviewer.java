@@ -29,8 +29,9 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>{@code nativeStructuredOutput(false)}：DeepSeek 不支持原生结构化输出；
  *       我们改用"要求模型只回 JSON + 本地严格校验"那套（{@link InterviewEvaluationParser}）。</li>
- *   <li><b>不开启思考模式</b>：思考 token 会占用 {@code maxTokens}，吃满时上游**静默返回空**，
- *       而"空"在这里会被当成一次失败（不落库），用户会看到"没拿到评估"。</li>
+ *   <li>**思考关不掉**：deepseek-flash 默认就思考，本项目没有关它的开关。思考 token 计入
+ *       {@code maxTokens}，给少了会**把 JSON 截成半截**（2026-10-19 实测：1024 上限下思考吃掉
+ *       696 token，返回的 JSON 缺尾部而解析失败）。所以 {@code AiProperties.maxTokens} 取 4096。</li>
  *   <li>{@code stream(false)}：点评是一次性结果，没有逐步显示的需求。</li>
  * </ul>
  *

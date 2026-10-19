@@ -52,8 +52,12 @@ test('导航按身份重排：求职者有面试入口、且排在第一', async
   await expect(first).toHaveAttribute('data-testid', 'learner-nav-interview')
 })
 
-test('面试页：能发起会话；积分不足时说清楚而不是静默失败', async ({ page }) => {
-  test.skip(REMOTE, '依赖"余额 0 才会被闸拦下"；线上验收账号有积分，这一轮会真调上游')
+test('面试页：能发起会话，且无论余额够不够都给出确定状态（不静默失败）', async ({ page }) => {
+  // 线上账号有积分，这一轮会**真调上游并扣费**；每跑一次 e2e 都花一次钱，所以线上跳过。
+  // 本地不再假设"余额必为 0"（T-14 要求发分，发完这个假设就不成立了），改成断言确定状态。
+  test.skip(REMOTE, '会真调上游并消耗线上账号积分；这条只在本地跑')
+  // 有积分时会真调上游（思考 + 生成通常 10–40 秒），默认 30 秒的用例超时不够
+  test.setTimeout(180_000)
   await signIn(page)
   await page.goto('/#/interview')
 
@@ -62,9 +66,24 @@ test('面试页：能发起会话；积分不足时说清楚而不是静默失�
 
   await page.getByTestId('interview-start').click()
 
-  // 种子账号余额 0：这一轮会被积分闸拦下。断言"给了明确原因"，而不是断言有没有回复
-  await expect(page.getByTestId('interview-line-candidate')).toBeVisible()
-  await expect(page.getByText('积分不足')).toBeVisible()
+  /**
+   * **不断言余额为 0**：种子账号的余额是可变的——WORK-010 T-14 明确要求管理员给验收账号发积分，
+   * 发完之后"必定被积分闸拦下"这条假设就失效了（实测会真拿到回答，于是原断言变红）。
+   *
+   * 断言的是真正的不变量：发起之后**要么有非空的回答，要么有可读的失败原因**，
+   * 且绝不留下一条空的"面试官"气泡。候选人那行是乐观插入的（点下去立刻出现），
+   * 所以必须等到本轮结束（输入框不再 disabled）再判，否则等于什么都没验。
+   * 注意不能用「发送」按钮当信号——它在输入为空时本来就是 disabled。
+   */
+  const input = page.getByTestId('interview-input')
+  await expect(input).toBeVisible()
+  await expect(input).toBeEnabled({ timeout: 120_000 })
+
+  const interviewerText = (await page.getByTestId('interview-line-interviewer').textContent())?.trim() ?? ''
+  const failed = await page.getByText('没成功').isVisible()
+  expect(interviewerText.length > 0 || failed).toBe(true)
   // 失败时不该留一条空的"面试官"气泡在那装样子
-  await expect(page.getByTestId('interview-review')).toBeVisible()
+  if (failed) {
+    expect(interviewerText.length).toBe(0)
+  }
 })
