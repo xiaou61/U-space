@@ -281,6 +281,9 @@ public class ResumeOptimizationService {
                     ? proposedText.substring(0, 2000) : proposedText);
         }
         if (accepted != null) {
+            if (accepted) {
+                requireApplicable(row);
+            }
             row.setAccepted(accepted);
         }
 
@@ -311,6 +314,24 @@ public class ResumeOptimizationService {
         row.setUpdatedAt(now);
         children.updateProposal(row);
         return toView(row);
+    }
+
+    /**
+     * 只允许采纳"定稿时真的能落地"的提案。
+     *
+     * <p>{@code compose} 目前只应用 {@code work[...]} / {@code projects[...].bullets[...]} 的
+     * {@code rewrite}。提示词却允许模型产出 {@code add} / {@code remove} / {@code reorder}、
+     * 整条 {@code work[i]} 引用与 {@code skills[i].items[j]}——不拦的话，用户点了"采纳"、
+     * 定稿里却没有这条改动，是静默的数据丢失。这里在采纳这一步就明说。
+     */
+    private static void requireApplicable(ResumeChildMapper.ProposalRow row) {
+        String ref = row.getEntryRef() == null ? "" : row.getEntryRef();
+        boolean rewrite = "rewrite".equals(row.getChangeType());
+        boolean covered = ref.startsWith("work[") || ref.startsWith("projects[");
+        if (!rewrite || !covered) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT,
+                    "这条提案的改动类型本期无法自动应用（只支持改写工作经历/项目要点），不能采纳");
+        }
     }
 
     // ── 定稿 ────────────────────────────────────────────────────────
@@ -373,9 +394,9 @@ public class ResumeOptimizationService {
     /**
      * 把已采纳的提案合成成定稿内容。
      *
-     * <p>只处理 `rewrite` 与 `remove` 两类能落到字段上的改动；`reorder` 与 `add` 在详情里
-     * 保留为提案记录，但不改结构——一期不做"插入新要点"与"调整顺序"的自动应用，
-     * 那需要在结构化数据里做位置计算，而它的价值远低于"改写已有要点"。
+     * <p>只处理 {@code work[...]} / {@code projects[...].bullets[...]} 的 {@code rewrite}。
+     * 其余类型（{@code add} / {@code remove} / {@code reorder}、整条引用、{@code skills}）
+     * 一期不落地——{@link #requireApplicable} 会在采纳时就拒绝它们，所以走到这里的一定能应用。
      */
     private ResumeData compose(ResumeData source, List<ResumeChildMapper.ProposalRow> accepted) {
         List<ResumeData.Work> work = new ArrayList<>(source.work());

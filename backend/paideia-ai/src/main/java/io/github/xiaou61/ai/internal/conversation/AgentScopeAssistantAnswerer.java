@@ -106,7 +106,13 @@ class AgentScopeAssistantAnswerer implements AssistantAnswerer {
                 return new Answer(content.toString(), total);
             }
             conversation.add(roundResult.assistantMessage());
-            conversation.add(new ToolResultMessage(execute(userId, requested, discovered)));
+            // 每个 tool_call_id 各发一条 ToolResultMessage：OpenAI 协议要求 assistant 的每个
+            // tool_calls 都有对应的 tool 消息。打包成一条时 formatter 只产出一个 tool 消息，
+            // 上游直接 400（"insufficient tool messages following tool_calls message"）——
+            // 同一批改动里 AgentScopeConversation 已按实测修过，这里原本漏了。
+            for (ToolResultBlock result : execute(userId, requested, discovered)) {
+                conversation.add(new ToolResultMessage(result));
+            }
         }
         throw new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止");
     }

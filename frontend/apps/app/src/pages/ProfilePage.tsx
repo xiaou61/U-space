@@ -92,13 +92,7 @@ export function ProfilePage() {
     }
   }, [data, form])
 
-  if (isLoading || form === null) {
-    return (
-      <AppShell title="Paideia" actions={<LearnerHeader />}>
-        <Spinner />
-      </AppShell>
-    )
-  }
+  // 失败时 form 永远是 null，所以 error 必须先判——否则这里会永久转圈、下面的错误提示成了死代码
   if (error !== null) {
     return (
       <AppShell title="Paideia" actions={<LearnerHeader />}>
@@ -111,6 +105,14 @@ export function ProfilePage() {
   }
 
   const selectable = data?.selectableIdentities ?? ['job_seeker']
+  // 加载中：form 还没灌进去。放在 error 之后，失败时才不会卡在这里
+  if (isLoading || form === null) {
+    return (
+      <AppShell title="Paideia" actions={<LearnerHeader />}>
+        <Spinner />
+      </AppShell>
+    )
+  }
   const meta = IDENTITY_META[form.identity]
   const IdentityIcon = meta.icon
 

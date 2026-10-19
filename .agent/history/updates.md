@@ -4023,3 +4023,23 @@ schema_version: 1
 - 并发会话影响：仓库内另有 WORK-022 会话的在飞改动，含**同名 V20 迁移**（`V20__create_ai_telemetry_tables.sql`）。两者不能同时存在，需由该会话改为 V21。
 - 本地提交：325b4ed、869de5d
 - 远端推送：未执行
+
+## 2026-10-19 19:27:59  · 项目 · 第五次区间审查（`6b30d4f..c259084`）：3 critical + 30 high，修掉 3 critical 与 8 条主流程 high
+
+- 类型：implementation
+- 变更：① 审查 48 个提交（430 文件 / +44,031 −532），报告 `.agent/reviews/2026-10-19-6b30d4f..c259084.md`：**critical 3、high 30、medium 131、low 107**（271 条，raw 283）。② 按"高必修、中低只修影响主流程"的口径，修了 **3 条 critical + 8 条 high**：
+  - **critical · `AgentToolBridge.run` 缺视图校验**：只按名字取工具就执行，绕过 `core()` 的只读过滤。模型拼出一个名字就能跑 `note_create` / `assessment_mark_entry` 这类写工具，或 `assistant_ask` 触发嵌套问答再扣一次费。照 `McpToolInvoker.doInvoke` 补视图校验；`discover()` 也按视图过滤（原先只按 toolset，会把写工具列进"下一轮即可调用"）。**新增反向验证用例**：去掉校验后新断言当场红。
+  - **critical · `AgentScopeAssistantAnswerer` 把多工具结果打包成一条 tool 消息**：同一批改动里 `AgentScopeConversation` 已按实测改成"每个 tool_call_id 各发一条"（打包会让上游 400 insufficient tool messages），这条漏改。模型一轮内并行 ≥2 个工具调用必然失败。
+  - **critical · 简历定稿丢失已采纳的改动**：提示词允许 `add`/`remove`/`reorder`、整条引用与 `skills[i].items[j]`，而 `compose` 只应用 `work/projects` 的 `rewrite`——用户点"采纳"后定稿里没有这条改动，静默丢数据。在**采纳这一步**就拒绝无法应用的类型（比补齐 skills 应用更小），并同步订正 `compose` 的方法注释。
+  - **high · 改条目会静默清空站序**：管理端编辑表单不传 `sortOrder`，`EntryAdminService.update` 无条件写回 → 学习线里排好的站序被清空、退回按时间排。改为 null 表示"保持原值"。
+  - **high · 复习队列卡死**：推进阶梯只认"得分变化"，同一套题重做拿同样的分（尤其已 3/3）永不推进，`review_due_at` 永远停在过去。改为**到期且通过就推进**。
+  - **high · `ProfilePage` 永久转圈**：`isLoading || form === null` 在失败时恒真，错误分支是死代码。把 error 判定提到最前。
+  - **high · 创建 MCP 令牌失败会清掉上一份明文**：服务端不留明文，清掉等于永久丢一把仍有效的钥匙。`onError` 不再动 `created`。
+  - **high · 知识概念表单不刷新**：弹窗常驻，`useState(initial)` 只读一次，编辑时带不出原值、切换时残留上次输入。按仓库既有写法加 `key`。
+  - **high · 图谱多重边崩溃**：同一对概念可同时有 prerequisite 与 related，而 graphology `multi:false` 对同一对 source/target 第二条直接抛。按无向对去重。
+  - 另修 2 条 high 相关的构建/行为：`AgentToolBridgeTest` 新增 1 条守卫用例。
+- 决策：30 条 high 里其余 22 条**未修**——多数是简历模块的超时/上限/文本边界、`test-db.sh --drop` 与 `release.ps1 -SkipWeb` 的运维边界、MCP 视图 `defaultsOnly` 死字段，按"只修影响主流程"的口径留待需要时处理。medium/low 共 238 条不修。
+- 依据：`.agent/reviews/2026-10-19-6b30d4f..c259084.md`；用户 2026-10-19 指示"高必修、中低影响主流程的也修"
+- 验证：后端 `mvn -B -pl paideia-ai,paideia-knowledge,paideia-platform -am test` **127 条 0 失败**（含 `AgentToolBridgeTest` 10/10）；**反向验证**：移除视图校验后新用例失败（`writeToolCannotBeCalledByNameEvenOutOfView`）。前端 `pnpm -r typecheck` 全过、`pnpm -r test` **272 条全过**（含 identity 3、resume 15、knowledge 42）。基线已推进到 `c259084`；**审查期间别的会话又推了 2 个提交（WORK-022 埋点，59 文件），尚未审**。
+- 本地提交：见本轮提交
+- 远端推送：见本轮

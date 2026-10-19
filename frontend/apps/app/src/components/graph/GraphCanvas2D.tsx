@@ -59,12 +59,21 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
             y: 0,
           })
         })
+        // 同一对概念可以同时有 prerequisite 与 related 两条记录（后端唯一键含 relation_type），
+        // 而 graphology 在 multi:false 下对同一对 source/target 只会保留一条、第二条直接抛。
+        // 按无向对去重：保留先出现的那条（后端按关系类型排序，前置优先）。
+        const seenPairs = new Set<string>()
         edges.forEach((edge, index) => {
           const from = String(edge.from)
           const to = String(edge.to)
           if (from === to || !graph.hasNode(from) || !graph.hasNode(to)) {
             return
           }
+          const pair = from < to ? `${from}|${to}` : `${to}|${from}`
+          if (seenPairs.has(pair)) {
+            return
+          }
+          seenPairs.add(pair)
           graph.addEdgeWithKey(`${edge.type}-${index}`, from, to, {
             // 边的浓淡也走令牌：前置关系要看得见（border），关联关系要退到背景里（tier-unknown）
             color: resolveVar(edge.type === 'prerequisite' ? '--border' : '--tier-unknown'),

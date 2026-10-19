@@ -95,7 +95,11 @@ public class EntryAdminService {
         existing.setTitle(requireTitle(title));
         existing.setBody(body == null ? "" : body);
         existing.setCategoryId(categoryId);
-        existing.setSortOrder(normalizeSortOrder(sortOrder));
+        // sortOrder 为 null 表示"保持原值"：管理端的编辑表单根本不带这个字段，
+        // 无条件写回会把学习线里排好的站序清空（退回按 published_at/id 排序）。
+        if (sortOrder != null) {
+            existing.setSortOrder(normalizeSortOrder(sortOrder));
+        }
         existing.setStatus(normalized);
         if (willBePublished && !wasPublished) {
             existing.setPublishedAt(Instant.now());

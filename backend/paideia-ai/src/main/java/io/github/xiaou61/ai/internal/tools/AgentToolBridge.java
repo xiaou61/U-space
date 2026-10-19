@@ -153,6 +153,17 @@ public class AgentToolBridge {
         if (FIND_TOOLS.equals(name)) {
             return discover(harness, arguments);
         }
+        // 视图校验：模型只能调用"这个 harness 看得见"的工具。
+        // 只按名字找会绕过 core() 的只读过滤——模型拼出一个名字（或从 discover 结果里看到）
+        // 就能执行 note_create / assessment_mark_entry 这类写工具，甚至 assistant_ask 触发
+        // 嵌套问答再扣一次费。这与 McpToolInvoker.doInvoke 的口径一致。
+        Set<String> toolsets = toolsetsOf(harness);
+        boolean visible = !toolsets.isEmpty()
+                && catalog.view(ToolQuery.internal(toolsets, "USER")).stream()
+                        .anyMatch(candidate -> candidate.name().equals(name));
+        if (!visible) {
+            return Outcome.failed("没有名为「" + name + "」的工具");
+        }
         ToolDescriptor descriptor = catalog.find(name).map(PaideiaTool::descriptor).orElse(null);
         if (descriptor == null) {
             return Outcome.failed("没有名为「" + name + "」的工具");
@@ -174,10 +185,16 @@ public class AgentToolBridge {
         if (query == null) {
             return Outcome.failed("find_tools 需要 query");
         }
-        // 只搜这个 harness 本来就可能用的组，避免把点评/管理类工具暴露给它
+        // 只搜这个 harness 本来就可能用的组，且只保留它在当前视图里**真的能调用**的那些：
+        // 按 toolset 过滤会把写工具列进来（search 不看 readOnly），模型照着清单调却调不动，
+        // 徒增一轮无效往返。
         Set<String> allowed = toolsetsOf(harness);
+        Set<String> callable = allowed.isEmpty() ? Set.of()
+                : catalog.view(ToolQuery.internal(allowed, "USER")).stream()
+                        .map(ToolDescriptor::name).collect(java.util.stream.Collectors.toSet());
         List<ToolDescriptor> hits = catalog.search(query, FIND_LIMIT).stream()
                 .filter(descriptor -> allowed.contains(descriptor.toolset()))
+                .filter(descriptor -> callable.contains(descriptor.name()))
                 .toList();
         if (hits.isEmpty()) {
             return Outcome.text("没有匹配的工具。可以直接告诉用户平台目前没有这项能力。");

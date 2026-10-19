@@ -191,6 +191,9 @@ export function KnowledgeConceptsPage() {
       </Card>
 
       <ConceptFormDialog
+        // 弹窗常驻、只有 open 控制显隐，useState(initial) 只在首次挂载时读一次——
+        // 换一个概念或从编辑切到新建时必须重建，否则表单里留的是上一次的值。
+        key={editing?.id ?? 'new'}
         open={creating || editing !== null}
         initial={editing}
         options={options}

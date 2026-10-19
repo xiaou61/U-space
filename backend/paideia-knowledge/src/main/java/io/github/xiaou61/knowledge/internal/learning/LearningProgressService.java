@@ -137,7 +137,14 @@ public class LearningProgressService {
             }
             stage = 0;
             dueAt = LearningProgressRules.dueAt(now, stage);
+        } else if (passed && dueAt != null && !dueAt.isAfter(now)) {
+            // **到期后的复习**：这一轮通过了就推进阶梯，不能要求"得分必须变化"。
+            // 重做同一套题拿到同样的分（尤其已经 3/3）是常态，否则 review_due_at 永远停在过去，
+            // 「今天该复习 N 站」只能靠 reset 才降得下去。
+            stage = LearningProgressRules.nextStage(stage);
+            dueAt = LearningProgressRules.dueAt(now, stage);
         } else if (passed && scoresChanged) {
+            // 未到期但内容变了（作者加题等）：保持原有语义推进一档
             stage = LearningProgressRules.nextStage(stage);
             dueAt = LearningProgressRules.dueAt(now, stage);
         } else if (!passed) {

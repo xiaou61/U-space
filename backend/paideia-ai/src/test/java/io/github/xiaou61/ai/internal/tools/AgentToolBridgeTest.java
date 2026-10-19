@@ -109,8 +109,20 @@ class AgentToolBridgeTest {
     }
 
     @Test
-    void unknownToolReturnsErrorOutcome() {
-        AgentToolBridge bridge = bridge(List.of(stub("knowledge_search", "knowledge", true)), 12);
+    void writeToolCannotBeCalledByNameEvenOutOfView() {
+        // 只按名字找会绕过 core() 的只读过滤：模型拼出 note_create 就能写库。
+        AgentToolBridge bridge = bridge(List.of(
+                stub("knowledge_search", "knowledge", true),
+                stub("note_create", "note", false)), 12);
+
+        AgentToolBridge.Outcome blocked = bridge.run(7L, Harness.ASSISTANT, "note_create", Map.of());
+
+        assertThat(blocked.error()).isTrue();
+        assertThat(blocked.text()).contains("没有名为");
+    }
+
+    @Test
+    void unknownToolReturnsErrorOutcome() {        AgentToolBridge bridge = bridge(List.of(stub("knowledge_search", "knowledge", true)), 12);
 
         AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "delete_everything", Map.of());
 

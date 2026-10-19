@@ -58,7 +58,7 @@ export function McpTokensPage() {
       await queryClient.invalidateQueries({ queryKey: ['mcp-tokens'] })
     },
     onError: (cause: unknown) => {
-      setCreated(null)
+      // 不动 created：上一份明文可能还没被复制，而服务端不留它——清掉等于永久丢一把仍有效的钥匙
       setCreateError(cause instanceof Error ? cause.message : String(cause))
     },
   })
