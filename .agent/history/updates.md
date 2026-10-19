@@ -3988,3 +3988,38 @@ schema_version: 1
 - 验证：线上导入 3 条（network 2 + source 1）；/learning/lines 返回 4 条线，reading 各 1/2 站；学习线 e2e 4 passed（含线上 reading 分组）
 - 本地提交：3cd28d2
 - 远端推送：已推送 3cd28d2
+
+## 2026-10-19 17:54:59 +0800 · WORK-022 · 签署 .agent/changes/WORK-022-AI调用追踪与运营统计/requirements.md、.agent/changes/WORK-022-AI调用追踪与运营统计/proposal.md、.agent/changes/WORK-022-AI调用追踪与运营统计/design.md、.agent/changes/WORK-022-AI调用追踪与运营统计/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-022-AI调用追踪与运营统计/requirements.md、.agent/changes/WORK-022-AI调用追踪与运营统计/proposal.md、.agent/changes/WORK-022-AI调用追踪与运营统计/design.md、.agent/changes/WORK-022-AI调用追踪与运营统计/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-022-AI调用追踪与运营统计/requirements.md、.agent/changes/WORK-022-AI调用追踪与运营统计/proposal.md、.agent/changes/WORK-022-AI调用追踪与运营统计/design.md、.agent/changes/WORK-022-AI调用追踪与运营统计/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 17:55:08 +0800 · WORK-023 · 签署 .agent/changes/WORK-023-逐行执行与可视化调试/requirements.md、.agent/changes/WORK-023-逐行执行与可视化调试/proposal.md、.agent/changes/WORK-023-逐行执行与可视化调试/design.md、.agent/changes/WORK-023-逐行执行与可视化调试/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-023-逐行执行与可视化调试/requirements.md、.agent/changes/WORK-023-逐行执行与可视化调试/proposal.md、.agent/changes/WORK-023-逐行执行与可视化调试/design.md、.agent/changes/WORK-023-逐行执行与可视化调试/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-023-逐行执行与可视化调试/requirements.md、.agent/changes/WORK-023-逐行执行与可视化调试/proposal.md、.agent/changes/WORK-023-逐行执行与可视化调试/design.md、.agent/changes/WORK-023-逐行执行与可视化调试/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 18:10:00 +0800 · 性能压测与三处修复
+
+- 类型：implementation
+- 变更：开发服务器（codenest-online，4 核/16G）上完成只读接口与 AI 流式的容量压测，并修掉三处瓶颈：
+  1. `V20__add_entry_read_indexes.sql`：`(status, published_at, id)` 与 `(status, category_id, published_at, id)` 两个索引。
+  2. `EntryMapper.findPreviousInCategory/findNextInCategory`：行值比较改为 OR 拆写。
+  3. `application.yml`：助手执行器显式配 core=max=32、queue=8；`AssistantConversationController` 队列满返回 429 并退预扣；`MemoryExtractionService` 队列满静默跳过。
+- 决策：索引用**升序**版本。DESC 版本会让上一篇/下一篇改走更差计划，详情 RPS 减半（三轮交替实测复现）。
+- 依据：压测实测。列表 118→291 RPS、详情 245→307 RPS；20 并发混合负载 248→330 RPS、p95 181→134ms；AI 20 并发首事件中位数 9.7→2.5 秒、p95 19→3 秒。瓶颈原为 MySQL 吃到 175% CPU（非连接池）。
+- 验证：提交树在独立 worktree 内编译通过并跑完 `scripts/test-db.sh` 全量 193 条、0 失败、4 跳过；V20 已在开发服务器执行、两索引已建。
+- 已知未覆盖：写入路径（发笔记/上传/注册）未压测；开发机上另有 Firecrawl/ZCode 常驻服务争抢 CPU，数字含该项噪声。
+- 并发会话影响：仓库内另有 WORK-022 会话的在飞改动，含**同名 V20 迁移**（`V20__create_ai_telemetry_tables.sql`）。两者不能同时存在，需由该会话改为 V21。
+- 本地提交：325b4ed、869de5d
+- 远端推送：未执行
