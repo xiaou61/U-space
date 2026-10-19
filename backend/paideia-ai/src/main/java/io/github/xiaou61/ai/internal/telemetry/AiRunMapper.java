@@ -43,7 +43,7 @@ public interface AiRunMapper {
     @Update("""
             UPDATE ai_runs SET
                 status = #{status}, error_type = #{errorType}, ended_at = #{endedAt},
-                duration_ms = #{durationMs}, ttft_ms = #{ttftMs},
+                queue_ms = #{queueMs}, duration_ms = #{durationMs}, ttft_ms = #{ttftMs},
                 llm_rounds = #{llmRounds}, tool_calls = #{toolCalls},
                 input_tokens = #{inputTokens}, output_tokens = #{outputTokens},
                 cache_read_tokens = #{cacheReadTokens}, credits = #{credits},

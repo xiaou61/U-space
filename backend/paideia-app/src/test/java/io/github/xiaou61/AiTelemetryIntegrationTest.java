@@ -101,6 +101,7 @@ class AiTelemetryIntegrationTest {
                 step.succeeded();
             }
             run.tokens(20, 8, 0);
+            run.markStarted();
             run.markTtft();
             run.attribute("historyMsgs", 3);
             run.addCredits(7);
@@ -109,8 +110,8 @@ class AiTelemetryIntegrationTest {
             awaitRun(traceId, 3);
 
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT status, llm_rounds, tool_calls, input_tokens, output_tokens, credits, ttft_ms "
-                            + "FROM ai_runs WHERE trace_id = ?", traceId);
+                    "SELECT status, llm_rounds, tool_calls, input_tokens, output_tokens, credits, "
+                            + "ttft_ms, queue_ms FROM ai_runs WHERE trace_id = ?", traceId);
             assertThat(row.get("status")).isEqualTo("ok");
             assertThat(((Number) row.get("llm_rounds")).intValue()).isEqualTo(2);
             assertThat(((Number) row.get("tool_calls")).intValue()).isEqualTo(1);
@@ -118,6 +119,8 @@ class AiTelemetryIntegrationTest {
             assertThat(((Number) row.get("output_tokens")).intValue()).isEqualTo(13);
             assertThat(((Number) row.get("credits")).intValue()).isEqualTo(7);
             assertThat(row.get("ttft_ms")).isNotNull();
+            // queue_ms 曾经只写进 SELECT 没写进 UPDATE，于是永远是 NULL（线上实测抓到）
+            assertThat(row.get("queue_ms")).isNotNull();
 
             List<Map<String, Object>> spans = jdbcTemplate.queryForList(
                     "SELECT seq, kind, name, status, input_tokens FROM ai_run_spans "
