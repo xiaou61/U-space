@@ -3793,3 +3793,13 @@ schema_version: 1
 - 验证：后端全量 174 执行/0 失败/0 跳过（含 4 条真实上游）；前端 e2e 69/2；MCP 客户端流程实连：initialize 2025-06-18、/mcp 9 工具、knowledge_list_categories 真返回分类数据、/mcp/write 13 工具含全部写工具
 - 本地提交：6810418
 - 远端推送：未执行
+
+## 2026-10-19 09:47:21 +0800 · WORK-019 · WORK-019 部署上线：V16 迁移执行、线上 /mcp 实连验证
+
+- 类型：maintenance
+- 变更：release.ps1 发版到 codenest-online（183 秒）；生产库从 V15 前进到 V16（mcp_access_tokens）；给 admin 账号签发一张 read,write PAT 供 ZCode 连接；ZCode 配置新增 paideia 指向线上 /mcp
+- 决策：PAT 在服务器上用产品自己的规则签发（同样 sha256 + 前缀），明文只写进本机被忽略的 ZCode 配置，不进仓库也不进对话
+- 依据：journalctl 显示 Successfully applied 1 migration, now at v16；线上 /mcp 未带 token 返回 401、带 PAT 完成 initialize + 9 工具 + 真调 knowledge_list_categories 返回线上分类数据；/mcp/write 13 工具含全部写工具
+- 验证：线上 e2e：学习者端 50 passed / 21 skipped / 0 failed，管理端 19 passed / 0 failed；/actuator/health 200
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

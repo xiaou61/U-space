@@ -80,8 +80,22 @@ updated: 2026-10-19
 - 视图在首次请求时构建并缓存：视图数量个位数，内存可忽略；不按请求动态裁剪清单（那需要 2026-07-28 的 `McpSyncToolRepository.list(ctx)`）。
 - 限流是**单实例内存窗口**：多实例部署时总量会翻倍（漏放，不是错杀）。真需要精确限流时换共享存储。
 
-## 部署注意
+## 部署（2026-10-19 已完成）
 
-- 新增迁移 **V16**（`mcp_access_tokens`），部署时会在生产库执行。
-- 新增根路径 `/mcp/**`：不走 `@ApiAccess`（那是 `/api/v1/**` 的契约工具），由独立的 `@Order(1)` 安全链保护。反向代理/网关需要放行 `/mcp/**`（含 POST/DELETE），否则外部客户端连不上。
+- `powershell -File scripts/release.ps1` → codenest-online，**183.0 秒**，健康检查通过。
+- 生产库从 **V15 前进到 V16**：`journalctl` 显示 `Migrating schema paideia to version "16 - create mcp access tokens"` / `Successfully applied 1 migration … now at version v16`。
+- **线上实连验证**（公网 `http://<服务器>:8081`）：
+  - 无 token → `401 {"error":"unauthorized"}`
+  - 带 PAT `initialize` → `serverInfo paideia 0.0.1`，协议 2025-06-18
+  - `/mcp` → 9 个只读工具
+  - 真调 `knowledge_list_categories` → 返回线上真实分类（计算机基础 / 操作系统 / 计算机网络 / 算法与数据结构 / 人工智能）
+  - `/mcp/write` → 13 个工具，含 `note_create`、`note_append`、`assessment_mark_entry`、`assistant_ask`
+- **线上 e2e**：学习者端 **50 passed / 21 skipped / 0 failed**；管理端 **19 passed / 0 failed**。
+- ZCode 本机配置已加 `paideia` 指向线上 `/mcp`（PAT 带 read+write scope）。**重启 ZCode 后生效**。
+
+### 运维要点
+
+- 新增根路径 `/mcp/**`：不走 `@ApiAccess`（那是 `/api/v1/**` 的契约工具），由独立的 `@Order(1)` 安全链保护。反向代理/网关需放行 `/mcp/**`（含 POST/DELETE）——本次部署环境是 jar 直供，没有反向代理，所以无额外动作。
+- PAT 表 `mcp_access_tokens` 只存 sha256 与前缀；注销时随账号级联硬删。
+- 若要在线上给别的账号发凭据：登录后走「设置 → MCP 接入」页，不要手工插库（手工插库容易漏掉前缀/scope 的一致性）。
 - `paideia.ai.tools.eager-limit`（默认 12）：工具总数超过它时内部助手才启用 `find_tools`。当前目录 12 个工具（外部）/13 个（含内部草稿），**刚好触发启用**。
