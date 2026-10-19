@@ -38,6 +38,10 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
   - **仍然要求**：凭据只存在于被忽略的本地文件；口令不进命令行（用 stdin 传 SQL）；MySQL 的 X 协议端口 33060 保持只监听 127.0.0.1。
   - **关闭 / 回滚**：`bind-address` 改回 `127.0.0.1` + `systemctl restart mysql`；配置备份在服务器 `/etc/mysql/mysql.conf.d/mysqld.cnf.bak-2026-10-16`。若要收窄，把 `paideia_test@'%'` 换成 `@'<固定出口IP>'`。
   - **已知风险**：3306 现在公网可达，扫描器会持续戳它。当前唯一能连的是那个**只碰得到 `paideia_test`** 的账号（密码 32 位随机），但"测试库被写坏"是可能的——那正是它被写坏的用途。若将来要让**本地跑应用连开发库**（`paideia`），那等于把生产库账号暴露到公网，**先单独确认**。
+- **课程内容源在 `content/courses/`**（2026-10-19 由 WORK-020 确立）：改课程走 PR 改 markdown，
+  再跑 `node scripts/import-course.mjs` 导入，**不在管理端手抄**。改完先跑
+  `python scripts/verify_course.py`（它会真执行课程里的示例并比对输出）。
+  新增一条学习线只需要建内容目录 + 跑导入，**不改后端/前端/迁移**。
 - 编码约定（与数据库选型无关，属于通用纪律）：
   - 所有 SQL 只写在 mapper 中，不在 Java 代码里拼接。
   - 时间统一存 UTC，不调用数据库的 `NOW()`/`SYSDATE()` 取业务时间。**建表默认值 `DEFAULT CURRENT_TIMESTAMP(3)` 同样属于"让数据库取时间"**，它按**会话时区**算：服务器 MySQL 的会话时区是 `SYSTEM`（+08:00），因此每个 JDBC 连接串必须同时写 `connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true`——**两个参数缺一不可**，少了后者就是"驱动按 UTC 解释、会话按本地时间写"，所有时间静默快 8 小时（2026-10-10 实测发现并已修，含存量回拨）。服务器没有装载时区表（`SET time_zone='UTC'` 报 1298），驱动会自行折算成 `+00:00` 偏移形式，所以不必装 tz 表。
@@ -64,10 +68,10 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
   - D-13 前端数据层：服务端状态用 **TanStack Query**；客户端临时状态方案暂缓。
   - D-14 消息与异步：**引入 RabbitMQ**（配合 outbox 中继，见上文实现约束）。
 - 仓库结构：**单仓多模块**。后端 Maven 多模块，**每个模块一个 Maven 模块**（`groupId` 为 `io.github.xiaou61`，基础包名同为 `io.github.xiaou61`，artifact 命名 `paideia-<module>`）；非法跨模块依赖必须表现为编译错误。前端 pnpm workspace 同仓。**构建与检查命令（2026-10-09 实测）**：
-  - 后端全量构建与测试：`cd backend && mvn -B verify`。集成测试需要 `PAIDEIA_TEST_DB_PASSWORD`（2026-10-16 起**不需要隧道**：`source backend/config/remote-db.local.env` 即指向公网测试库）；未配置时相关用例跳过并在 stderr 明确提示，构建不因此失败。
-  - 后端本地运行：`cd backend && java -jar paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=local`。**工作目录必须是 `backend/`**，配置从 `./config/application-local.yml` 读取（被忽略，含口令）。
+  - 后端全量构建与测试：`scripts/test-db.sh`（默认在 `backend/` 跑 `mvn -B test`；要连打包一起验用 `cd backend && ../scripts/test-db.sh mvn -B verify`）。它给这一轮分配独占库 `paideia_run_<时间>_<pid>`，跑完自动删；**共用 `paideia_test` 直接 `mvn -B test` 不是证据**——同机可能有别的会话在跑，互相删数据会造出"单类绿、全量红"。集成测试需要口令（2026-10-16 起**不需要隧道**：`source backend/config/remote-db.local.env` 即指向测试库）；未配置时相关用例跳过并在 stderr 明确提示，构建不因此失败——所以**每次都要核 Skipped 列**。
+  - 后端本地运行：`cd backend && java -jar paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=local`。**工作目录必须是 `backend/`**，配置从 `./config/application-local.yml` 读取（被忽略，含口令）。并发会话用 `--server.port=<别的端口>`。
   - 前端类型检查：`cd frontend && pnpm -r typecheck`；单测：`pnpm -r test`。
-  - Web 端到端：`cd frontend && pnpm test:e2e`（需先 `mvn -B -DskipTests package` 产出后端 jar；2026-10-16 起直连公网测试库，**不再需要隧道**，但要先 `source backend/config/remote-db.local.env`）。
+  - Web 端到端：`cd frontend && ../scripts/test-db.sh pnpm test:e2e`（需先 `mvn -B -DskipTests package` 产出后端 jar；2026-10-16 起直连测试库，**不再需要隧道**，但要先 `source backend/config/remote-db.local.env`）。并发会话用 `PAIDEIA_BACKEND_PORT=8081 PAIDEIA_APP_PORT=5183 pnpm test:e2e` 各占一组端口。
   - 公开页构建：`cd frontend && pnpm --filter @paideia/public build`。
   - 桌面端：`cd frontend && pnpm -w build:desktop`。**必须同时设置两个镜像**，否则 electron-builder 会去 GitHub 拉二进制并超时（本网络下实测）：
     `ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/" ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries" pnpm -w build:desktop`

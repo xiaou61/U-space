@@ -9,6 +9,17 @@ const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
 /** 指向已部署实例：设了就跳过本地 webServer（也就**不需要 3307 隧道**）。 */
 const REMOTE_BASE_URL = process.env.E2E_BASE_URL
 
+/**
+ * 端口可覆写：同一台机器上并发跑多个会话时各挑一组（`PAIDEIA_BACKEND_PORT=8081
+ * PAIDEIA_APP_PORT=5183 pnpm test:e2e`）。不覆写就沿用默认值，行为与以前一致。
+ *
+ * <p>这条存在的原因：`reuseExistingServer: true` 在固定端口下会**静默复用别人的后端**，
+ * 于是 e2e 打到别人连的库上——红了看不出是谁的问题，绿了也证明不了自己。
+ */
+const BACKEND_PORT = process.env.PAIDEIA_BACKEND_PORT ?? '8080'
+const APP_PORT = process.env.PAIDEIA_APP_PORT ?? '5173'
+const APP_ORIGINS = `http://127.0.0.1:${APP_PORT},http://localhost:${APP_PORT}`
+
 export default defineConfig({
   /**
    * 登录一次、全体用例复用（线上有登录限流，逐条登录必撞 429）。
@@ -23,7 +34,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: REMOTE_BASE_URL ?? process.env.PWA_BASE_URL ?? 'http://127.0.0.1:5173',
+    baseURL: REMOTE_BASE_URL ?? process.env.PWA_BASE_URL ?? `http://127.0.0.1:${APP_PORT}`,
     // PWA 预览不跑 globalSetup，AUTH_FILE 不会被生成：这时带上它要么 ENOENT 让整个 run 挂掉，
     // 要么静默复用上次留下的过期令牌。PWA 用例本身不需要身份。
     ...(process.env.PWA_BASE_URL === undefined ? { storageState: AUTH_FILE } : {}),
@@ -70,7 +81,7 @@ export default defineConfig({
        * 而数据源连接信息在被 gitignore 的 backend/config/application-local.yml 里（指向本机 3307 隧道）。
        * 因此 e2e 的前置条件是那条 SSH 隧道是通的。
        */
-      command: `java -jar ${BACKEND_JAR} --spring.profiles.active=local`,
+      command: `java -jar ${BACKEND_JAR} --spring.profiles.active=local --server.port=${BACKEND_PORT}`,
       // 必须在 backend 目录启动：Spring Boot 从工作目录读 ./config/ 下的本地配置
       cwd: BACKEND_DIR,
       /**
@@ -104,18 +115,19 @@ export default defineConfig({
         SPRING_FLYWAY_OUT_OF_ORDER: 'true',
         // 学习者端的来源显式给出：浏览器对同源 POST 也会带 Origin 头，
         // 后端按来源判定，未列入直接 403。Actuator 端点另有一份 CORS 配置。
-        PAIDEIA_WEB_CORS_ALLOWED_ORIGINS: 'http://127.0.0.1:5173,http://localhost:5173',
-        MANAGEMENT_ENDPOINTS_WEB_CORS_ALLOWED_ORIGINS: 'http://127.0.0.1:5173,http://localhost:5173',
+        PAIDEIA_WEB_CORS_ALLOWED_ORIGINS: APP_ORIGINS,
+        MANAGEMENT_ENDPOINTS_WEB_CORS_ALLOWED_ORIGINS: APP_ORIGINS,
       },
-      url: 'http://127.0.0.1:8080/actuator/health',
+      url: `http://127.0.0.1:${BACKEND_PORT}/actuator/health`,
       // 注意：若本机已有一个后端在跑，这里会复用它，上面的 env 就不生效，
       // 于是 e2e 会打到那个后端连接的库（通常是 paideia）而找不到种子账号。跑之前先确认没有在跑的后端。
       reuseExistingServer: true,
       timeout: 120_000,
     },
     {
+      // 端口由 vite.config.ts 读 PAIDEIA_APP_PORT 决定，这里不必再传 --port
       command: 'pnpm dev',
-      url: 'http://127.0.0.1:5173',
+      url: `http://127.0.0.1:${APP_PORT}`,
       reuseExistingServer: true,
       timeout: 60_000,
     },

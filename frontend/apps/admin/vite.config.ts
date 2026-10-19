@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react'
 import { themeInitPlugin } from '@paideia/ui/vite'
 import { defineConfig } from 'vite'
 
-const BACKEND = 'http://127.0.0.1:8080'
+// 端口可覆写，理由同学习者端：并发会话各用一组端口。
+const BACKEND = `http://127.0.0.1:${process.env.PAIDEIA_BACKEND_PORT ?? '8080'}`
+const PORT = Number(process.env.PAIDEIA_ADMIN_PORT ?? 5174)
 
 /**
  * 管理端应用。仅 Web：桌面壳只消费 apps/app 的产物，因此本应用**按构造**不进安装包。
@@ -16,13 +18,13 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), themeInitPlugin()],
   server: {
-    port: 5174,
+    port: PORT,
     proxy: {
       '/api': { target: BACKEND, changeOrigin: true },
       '/actuator': { target: BACKEND, changeOrigin: true },
     },
   },
   preview: {
-    port: 5174,
+    port: PORT,
   },
 })

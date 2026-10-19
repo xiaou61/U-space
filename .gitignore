@@ -72,3 +72,7 @@ desktop.ini
 # 不进仓库：它是按本机生成的索引，`codegraph index --force` 可重建。
 # 没有这条规则时，一次 `git add -A` 就会把它提交进公开仓库。
 .codegraph/
+
+# ---- 并发会话的独立工作区（git worktree） ----
+# 多个会话同时改这个仓库时各开一个树，互不踩 target/ 与工作区状态。
+.worktrees/

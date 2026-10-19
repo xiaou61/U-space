@@ -4,7 +4,10 @@ import { themeInitPlugin } from '@paideia/ui/vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const BACKEND = 'http://127.0.0.1:8080'
+// 端口可覆写：同一台机器上并发跑多个会话时各挑一组，否则 e2e 的 reuseExistingServer
+// 会静默复用别人的后端与前端。默认值保持原样。
+const BACKEND = `http://127.0.0.1:${process.env.PAIDEIA_BACKEND_PORT ?? '8080'}`
+const PORT = Number(process.env.PAIDEIA_APP_PORT ?? 5173)
 
 export default defineConfig(({ mode }) => ({
   /**
@@ -92,7 +95,7 @@ export default defineConfig(({ mode }) => ({
     })),
   ].filter(Boolean),
   server: {
-    port: 5173,
+    port: PORT,
     // 开发期由 Vite 代理转发到后端，省去跨域配置。
     // 桌面壳没有代理，那时必须把它的来源加入后端的 CORS 允许列表。
     proxy: {

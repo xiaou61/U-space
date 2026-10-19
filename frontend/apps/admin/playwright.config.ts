@@ -10,6 +10,11 @@ const BACKEND_JAR = 'paideia-app/target/paideia-app-0.0.1-SNAPSHOT.jar'
  */
 const REMOTE_BASE_URL = process.env.E2E_BASE_URL
 
+/** 端口可覆写，理由同学习者端：并发会话各用一组端口，避免静默复用别人的服务。 */
+const BACKEND_PORT = process.env.PAIDEIA_BACKEND_PORT ?? '8080'
+const ADMIN_PORT = process.env.PAIDEIA_ADMIN_PORT ?? '5174'
+const ADMIN_ORIGINS = `http://127.0.0.1:${ADMIN_PORT},http://localhost:${ADMIN_PORT}`
+
 /**
  * 管理端的端到端检查。
  *
@@ -25,7 +30,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: REMOTE_BASE_URL ?? 'http://127.0.0.1:5174',
+    baseURL: REMOTE_BASE_URL ?? `http://127.0.0.1:${ADMIN_PORT}`,
     trace: 'on-first-retry',
   },
   /** 同学习者端：桌面跑全部既有用例，移动 project 只跑 `*.mobile.spec.ts`（WORK-016）。 */
@@ -45,7 +50,7 @@ export default defineConfig({
     ? undefined
     : [
         {
-          command: `java -jar ${BACKEND_JAR} --spring.profiles.active=local`,
+          command: `java -jar ${BACKEND_JAR} --spring.profiles.active=local --server.port=${BACKEND_PORT}`,
           cwd: BACKEND_DIR,
           // 与管理端的说明一致：数据源指向 paideia_test，并额外加载 db/devdata 里的种子账号
           env: {
@@ -71,16 +76,17 @@ export default defineConfig({
             // 管理端的来源必须在后端白名单里。**即使走 Vite 代理也一样**：
             // 浏览器对同源的 POST 也会带 Origin 头，后端按来源判定，未列入直接 403。
             // Actuator 端点有独立的一份 CORS 配置，两处都要给。
-            PAIDEIA_WEB_CORS_ALLOWED_ORIGINS: 'http://127.0.0.1:5174,http://localhost:5174',
-            MANAGEMENT_ENDPOINTS_WEB_CORS_ALLOWED_ORIGINS: 'http://127.0.0.1:5174,http://localhost:5174',
+            PAIDEIA_WEB_CORS_ALLOWED_ORIGINS: ADMIN_ORIGINS,
+            MANAGEMENT_ENDPOINTS_WEB_CORS_ALLOWED_ORIGINS: ADMIN_ORIGINS,
           },
-          url: 'http://127.0.0.1:8080/actuator/health',
+          url: `http://127.0.0.1:${BACKEND_PORT}/actuator/health`,
           reuseExistingServer: true,
           timeout: 120_000,
         },
         {
+          // 端口由 vite.config.ts 读 PAIDEIA_ADMIN_PORT 决定，这里不必再传 --port
           command: 'pnpm dev',
-          url: 'http://127.0.0.1:5174',
+          url: `http://127.0.0.1:${ADMIN_PORT}`,
           reuseExistingServer: true,
           timeout: 60_000,
         },
