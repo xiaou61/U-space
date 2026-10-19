@@ -3823,3 +3823,138 @@ schema_version: 1
 - 验证：`pnpm --filter @paideia/app typecheck` 通过；app e2e 69 passed / 2 skipped（本地）；线上 `E2E_BASE_URL` 跑 identity.spec 2 passed / 1 skipped（面试那条在线上会真调上游）；线上 light/dark 截图确认新界面与线上 bundle（含「选择你的身份」「identity-option-」）
 - 本地提交：1b043b8
 - 远端推送：未执行
+
+## 2026-10-19 11:58:59 +0800 · WORK-020 · 从零开始学编程：起草需求与三件下游工件
+
+- 类型：design
+- 变更：新建 WORK-020（目录 .agent/changes/WORK-020-从零开始学编程），起草 requirements.md / proposal.md / design.md / tasks.md 四件，全部 draft
+- 决策：课程=知识库分类（from-zero 下 python/java 两个子分类）+ 每门 12 课 + 总览；复用六种既有围栏块；新增一张 learning_progress 表与四个学习者端点；通过判定在服务端（每项 >=80%）；复习阶梯 1/3/7/21 天读取时计算；新增 Harness.TUTOR 与 learning_progress 工具；内容源放 content/courses，scripts/verify_course.py 真跑代码，scripts/import-course.mjs 幂等导入
+- 依据：两轮联网调研（Python 官方教程/CS50P/MOOC.fi/Exercism/dev.java/Oracle；提取练习、间隔重复、样例渐隐、Parsons、Khan 掌握度、PNAS 2025 AI 护栏 RCT）；仓库现状核对（知识库无学习行为表、ProgressPort 为同步接口、沙箱默认关闭、devdata 仅测试用）
+- 验证：project-lifecycle validate 报 WORK-020 需求未批准而下游工件已存在（预期状态，四件待签）；WORK-010 的两条错误为本轮之前既有
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-19 12:02:51 +0800 · WORK-020 · 定位改为「学习线」原语：可扩展性升为验收条件
+
+- 类型：design
+- 变更：requirements.md 增加 REQ-025..REQ-029 与 AC-016..AC-019；proposal.md 加「为什么是学习线」「这条原语还能长出什么」与 S0 切片；design.md 加「线的识别与排序」、GET /learning/lines 契约、两个可空列；tasks.md 加 TASK-000 与 TASK-012b，更新评审焦点
+- 决策：线=知识库分类的标记（新增可空 line_kind），不建 learning_lines 表；站顺序用条目可空 sort_order，缺省 (published_at,id)；/learn 与入口由线清单渲染；新增同构线必须零代码（AC-017 用 git status 证明）；源码解读登记为 reading 线
+- 依据：用户「以从0学X为基准、可以扩展出各种各样的东西、可扩展性要强」；仓库核对 EntryMapper 三条 SQL 都按 (published_at,id)，分类已有 parent_id/slug/sort_order 而条目没有顺序列
+- 验证：project-lifecycle validate 对 WORK-020 仍报「需求尚未形成但已有下游工件」——预期，四件仍 draft 未签；其余输出与改动前一致
+- 本地提交：未提交
+- 远端推送：未执行
+
+## 2026-10-19 13:32:19 +0800 · WORK-020 · 签署 .agent/changes/WORK-020-从零开始学编程/requirements.md、.agent/changes/WORK-020-从零开始学编程/proposal.md、.agent/changes/WORK-020-从零开始学编程/design.md、.agent/changes/WORK-020-从零开始学编程/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-020-从零开始学编程/requirements.md、.agent/changes/WORK-020-从零开始学编程/proposal.md、.agent/changes/WORK-020-从零开始学编程/design.md、.agent/changes/WORK-020-从零开始学编程/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-020-从零开始学编程/requirements.md、.agent/changes/WORK-020-从零开始学编程/proposal.md、.agent/changes/WORK-020-从零开始学编程/design.md、.agent/changes/WORK-020-从零开始学编程/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 14:01:23 +0800 · content · 建立阅读线内容通道 + 记录正文文风口径
+
+- 类型：docs
+- 变更：新建 `content/reading/README.md`（阅读线与课程线的分工、内容纪律、文风口径）、`content/reading/network/00-总览.md`、`content/reading/network/01-一次访问.md`（两篇样板，frontmatter 齐全、`learning-path` 与 `quiz` 块 JSON 已校验可解析）
+- 决策：概念型内容放进 `content/reading/` 走 `line_kind=reading`，不套 `content/courses/` 的课程格式——因为 `verify_course.py:280` 强制每课至少一个 `<!-- run -->` 可运行示例，网络/OS/MySQL 类内容没有可跑代码；该做法不需要改任何业务代码
+- 决策：正文只写自己的讲解，不以外站文章为底稿做换词/缩写/调序；选题与章节顺序可借鉴，插图不复用，每篇末尾放一条指向原站的延伸阅读链接
+- 依据：用户要求补小林coding 一系内容并「简单改写」；版权与公开仓库/公开站点的二次发布风险已当面说明；用户随后确认「暂时不写」，并要求正文「通俗易懂」
+- 验证：`python scripts/verify_course.py` 仍通过（25 个课程文件，不受影响）；样板文件 frontmatter 字段与围栏块 JSON 用脚本逐文件解析通过
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 14:12:00 +0800 · WORK-021 · 签署 .agent/changes/WORK-021-个人知识图谱与掌握度/requirements.md、.agent/changes/WORK-021-个人知识图谱与掌握度/proposal.md、.agent/changes/WORK-021-个人知识图谱与掌握度/design.md、.agent/changes/WORK-021-个人知识图谱与掌握度/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-021-个人知识图谱与掌握度/requirements.md、.agent/changes/WORK-021-个人知识图谱与掌握度/proposal.md、.agent/changes/WORK-021-个人知识图谱与掌握度/design.md、.agent/changes/WORK-021-个人知识图谱与掌握度/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-021-个人知识图谱与掌握度/requirements.md、.agent/changes/WORK-021-个人知识图谱与掌握度/proposal.md、.agent/changes/WORK-021-个人知识图谱与掌握度/design.md、.agent/changes/WORK-021-个人知识图谱与掌握度/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 14:41:47 +0800 · WORK-022 · 建项起草：AI 调用追踪与运营统计（四件 draft）
+
+- 类型：decision
+- 变更：新建 .agent/changes/WORK-022-AI调用追踪与运营统计/{requirements,proposal,design,tasks}.md；含两张表 ai_runs/ai_run_spans、采集端口 RunRecorder + RunSink、管理端三端点两页面、注销级联两表、保留期与采样
+- 决策：自建而不接 OTel/Langfuse；一行一轮 + 一行一步；span 用 trace_id 关联避免自增 id 往返；先插 running 再更新终态；按轮采样且失败永不丢；不碰 ai_credit_ledger 与 ai_messages
+- 依据：用户两轮：要追踪并放到后台统计；要做得复杂可扩展。联网核实 OTel GenAI 三层 id（gen_ai.conversation.id/trace/span）、Langfuse Session-Trace-Observation、OpenInference span kind；仓库核对 TraceIdFilter、AssistantConversationController、AgentScopeConversation、AgentToolBridge、CreditService、AiUserDeletionListener、V19 迁移编号
+- 验证：project-lifecycle validate：WORK-022 报「需求尚未形成但已有下游工件」——预期，四件均 draft 未签；无新增其它错误
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 14:55:00 +0800 · WORK-020 · 学习线原语 + 两门课程 + 学习记录 + 导师行为
+
+- 类型：implementation
+- 变更：
+  · V17 加 `knowledge_categories.line_kind` 与 `knowledge_entries.sort_order`（都可空），把 source-reading 标成 reading；V18 建 `learning_progress`
+  · 后端：`LearningLineService`（线=分类投影）、`LearningProgressService`/`Rules`/`Mapper`、四个 `/api/v1/learning/**` 端点、`LearningTools.learning_progress`、`Harness.TUTOR`+`TutorPrompt`、学情经 `KnowledgeApi.learningSummary` 注入提示词、注销级联加一张表
+  · 前端：`@paideia/knowledge` 新增 learning client/types/progress 端口（同步端口 + 600ms 去抖上报 + 与服务端取更高的合并）；`/learn` 页按线清单渲染；首页加「从零开始」并把「继续学习」接到服务端；条目页先取学习记录再渲染正文，课程条目把助手切成 tutor
+  · 内容：`content/courses/{python,java}` 各 13 个文件（12 课 + 总览），`scripts/verify_course.py` 真执行示例，`scripts/import-course.mjs` 幂等导入
+- 决策：
+  · 线不建表：`line_kind` 是分类上的一个标记，名字/顺序沿用分类自己的字段（多一张表就多一处会不同步的真相）
+  · 线的声明搬到内容 frontmatter（`category/line_name/line_kind/line_sort`）：验收时发现脚本写死了 python/java，加第三条线要改脚本——那不算零代码
+  · 通过判定只在服务端按分数算（≥80%，且两类块都要有），请求体里没有 status 字段
+  · 复习 1/3/7/21 天、读取时算到期，不起定时任务
+  · `code-tour` 块不用于自写课程：它的 schema 要求 repo@commit + 许可证，硬填只会得到指向不存在文件的假链接
+- 依据：用户「以从0学X为基准，可以扩展出各种各样的东西，可扩展性要强」；两轮联网调研（课程顺序与学习机制）；PNAS 2025 的 AI 护栏 RCT 决定导师提示词的四级提示
+- 验证：`verify_course.py` 26 文件全绿（含真执行）；导入 26 条 + 22 关系，第二次 created 0/updated 0；零代码加第三条线（git status 前后都是 65 项）；后端 191 执行/0 失败/4 跳过；学习者端 e2e 73/2/0；管理端 19/0
+- 本地提交：未提交（工作区同时有另一会话的 WORK-021 改动，无法只提交本项范围）
+- 远端推送：未执行
+
+## 2026-10-19 15:20:15 +0800 · WORK-021 · 个人知识图谱与掌握度：四张表、掌握度纯函数、图谱页与管理端概念页
+
+- 类型：implementation
+- 变更：新增 V19 迁移（knowledge_concepts / knowledge_entry_concepts / knowledge_concept_edges / knowledge_entry_views）；ConceptMastery 纯函数与四档判定；ConceptGraphService 图谱聚合与 500 节点截断；GET /api/v1/learning/graph 与 POST /api/v1/knowledge/entries/{id}/view；管理端概念 CRUD/挂条目/概念关系七个端点与「概念」页；/graph 页（2D sigma 主入口、3D 3d-force-graph 按需加载、坐标持久化）；knowledge_weak_concepts 工具与导师提示词 v2；注销级联新增浏览表
+- 决策：掌握度不落库、现算；浏览只作兜底信号不计权（满分+读过不该低于满分）；概念间关系不从前置条目推导（会产生 N×M 噪音边）；2D 主入口 + 3D 切换；坐标按结构指纹持久化，掌握度变化不重算布局
+- 依据：用户裁定节点按概念级、2D 为主入口、新开 WORK；调研 pyBKT/learning-commons knowledge-graph/sigma/3d-force-graph 后确认概念级最小结构与库选型
+- 验证：后端 191 执行 / 0 失败 / 4 跳过（均为需真上游用例）；学习者端 e2e 80 passed / 0 skipped / 0 failed；管理端 e2e 19 passed + concepts.spec 1 passed；前端单测 42 passed；app 与 admin typecheck 0 error；AC-009、AC-016 补测通过（后者发现 sigma 无 WebGL 时静默空白，改为挂载前探测）；注销级联做了反向验证
+- 本地提交：待提交
+- 远端推送：未执行
+
+## 2026-10-19 15:52:00 +0800 · 并发会话隔离（P0 + P1，无 WORK 编号）
+
+- 类型：implementation
+- 变更：
+  · `AGENTS.md`「节奏」新增两条：测试库唯一入口 `scripts/test-db.sh`（共用 `paideia_test` 的绿/红都不作数）；并发会话各占一个 `git worktree`，主树留 `master` 只做 review/落库/部署
+  · `.agent/rules/always.md` 构建命令改口径：后端全量 `scripts/test-db.sh`（`-pl` 单模块会因本地 `~/.m2` 陈旧而报 `NoClassDefFoundError`，要用 `-am` 或全量）、e2e 包一层 `../scripts/test-db.sh`、本地运行与 e2e 都写明端口可覆写
+  · `project-lifecycle/references/testing.md`「完成前的硬门」加一条：共享资源上的运行不是证据，共用资源上的红先当竞争、绿也不作数
+  · `frontend/apps/{app,admin}/vite.config.ts`：端口与后端代理目标改读 `PAIDEIA_APP_PORT` / `PAIDEIA_ADMIN_PORT` / `PAIDEIA_BACKEND_PORT`，默认值不变
+  · 两个 `playwright.config.ts`：baseURL、webServer url、后端 `--server.port`、CORS 允许来源全部跟着端口变量走
+  · `.gitignore` 加 `.worktrees/`
+- 决策：
+  · 不引入 swarmgit / lanekeeper / agent-merge 等外部编排器：它们解决的是云端多 agent 编队与 lane 配置化，对单人 + 几个并发会话是过度工程；直接用 git 原生 worktree
+  · 不加测试重试：重试会把竞态藏起来
+  · 选环境变量而不是命令行 `--port`：实测 `pnpm dev -- --port 5199` 会把 `--` 原样交给 vite，端口不生效（起在 5174）
+  · 落库闸（P2，每会话分支 + 合前重测）未做，仍直接提交 `master`
+- 依据：联网调研 GitHub merge queue、Claude Code 原生 worktree、testcontainers / per-run schema、agent-merge；仓库核对 `scripts/test-db.sh` 早已存在但 `AGENTS.md` 与 `always.md` 仍写裸 `mvn -B test`
+- 验证：
+  · `pnpm --filter @paideia/app typecheck`、`--filter @paideia/admin typecheck`：0 error
+  · 端口覆写：`PAIDEIA_APP_PORT=5199 pnpm dev` 起在 5199；`PAIDEIA_ADMIN_PORT=5198 PAIDEIA_BACKEND_PORT=8099 pnpm dev` 起在 5198；两者 `playwright test --list` 正常（82 / 20 条）
+  · 隔离链路：本机 8080 已被另一会话占用的情况下，`PAIDEIA_BACKEND_PORT=8099 PAIDEIA_APP_PORT=5199 ../scripts/test-db.sh pnpm --filter @paideia/app test:e2e -- home.spec.ts` **76 passed / 2 skipped / 4 failed**，起的是自己的后端与前端，没有复用 8080
+  · 那 4 条失败 + 1 条集成失败均为**别处在飞的 WORK-020**：`V17` 的 `UPDATE ... source-reading` 在空库上 0 行（V953 才建该分类，而 V17<V953）。共用库上一直绿是因为 V953 早已应用、V17 后补跑。**与本次改动无关**，已记入 `dev-workflow.md` 给 WORK-020 接手
+  · `mvn -B test` 全量（隔离库）：191 执行 / 2 失败（同上）/ 4 跳过；失败归因已核对到具体断言与迁移
+- 本地提交：未提交（工作区同时有 WORK-020/021/022 三个会话在飞改动）
+- 远端推送：未执行
+
+## 2026-10-19 15:51:17 +0800 · WORK-010 · AC-009 面试闭环补验通过 + 修掉 maxTokens 截断缺陷
+
+- 类型：verification
+- 变更：testing/report.md 补验段：真上游走完开场→追问→点评→评分落库→扣减；status partial→passed；tasks.md T-14 记为「本机验收完成、线上部署仍 pending」；identity.spec.ts 去掉「余额必为 0」假设；AiProperties.maxTokens 1024→4096 并订正四处 provider 注释
+- 决策：maxTokens 默认改 4096：deepseek-flash 思考 token 计入该上限且代码里从来没有关思考的开关（注释与行为不符），1024 下点评 JSON 被截断成半截、必然报「不是合法 JSON」；四条非流式路径（点评/摘要/记忆整理/简历）同受影响
+- 依据：实测：1024 时 finish_reason=length、reasoning 696、JSON 缺尾部；2048 时 stop、completion 1178、JSON 完整。隔离库 paideia_verify_010 + 真实 DeepSeek 凭据
+- 验证：ai 模块 118 条全绿；IdentityAndAssessmentBridge/AccountDeletionCascade/AgentToolBridge/McpStartupSmoke/ApiWalkthrough 共 21 条全绿；identity.spec.ts 3 条全绿且余额 0 与有余额两个分支都跑过；默认配置重启后点评一次通过（overall=2）
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-19 15:51:24 +0800 · WORK-019 · 两个缺口补验通过，报告归位，status partial→passed
+
+- 类型：verification
+- 变更：verification.md 移到 testing/report.md（生命周期工具只认这个路径）；证据表重写成五列规范矩阵；补验 AC-005 归属隔离与 AC-015 assistant_ask 真实上游
+- 决策：AC-005 从「只到工具层」升为端到端：两真实账号两真实 PAT，learner 看到自己的笔记、admin 看不到、admin 显式传 userId:1 仍只见自己的空列表；AC-015 真调 DeepSeek 拿到真实回答、MCP_ASK 扣 1 分、会话数不变
+- 依据：MCP 走 /mcp/x/all/write，标准 initialize → notifications/initialized → tools/call；隔离库 paideia_verify_010；真实 DeepSeek 凭据
+- 验证：两个缺口各有实测记录并写进报告补验段；validate 对 WORK-019 不再报错，工作项状态推进到 complete
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

@@ -472,6 +472,23 @@ scripts/test-db.sh --keep mvn -B test                # 失败时保留库排查
 scripts/test-db.sh --drop paideia_run_xxx            # 手动删
 ```
 
+## 并发会话隔离（2026-10-19）
+
+**四层共享都要拆开**，少一层就会复发"单类绿、全量红"：
+
+| 层 | 做法 |
+| --- | --- |
+| 测试库 | `scripts/test-db.sh` 是**唯一入口**。裸跑 `mvn -B test` 连 `paideia_test` 不是证据 |
+| 工作区 | 每个会话 `git worktree add .worktrees/<名字> -b <分支>`（目录已忽略）；主树留 `master` 只做 review/落库/部署 |
+| 端口 | `PAIDEIA_BACKEND_PORT` / `PAIDEIA_APP_PORT` / `PAIDEIA_ADMIN_PORT` 都可覆写，`vite.config.ts` 与两个 `playwright.config.ts` 一起读 |
+| 落库 | 未做（P2）：仍直接提交 `master`，没有"合上前重测"的闸 |
+
+**端口这条是实测过的**：2026-10-19 本机 8080 已被另一个会话的后端占着，用 `PAIDEIA_BACKEND_PORT=8099 PAIDEIA_APP_PORT=5199` 跑学习者端 e2e，起的是自己的后端与前端，76 条通过。固定端口下 `reuseExistingServer: true` 会**静默复用别人的后端**，于是打到别人连的库上——红了看不出是谁的问题，绿了也证明不了自己，这比报错更坏。
+
+**注意 `pnpm dev -- --port N` 没用**：pnpm 把 `--` 原样传给 vite，端口不生效（实测起在 5174）。要改用环境变量。
+
+**独占库顺带抓到的第一个真缺陷**（记在这里供 WORK-020 接手）：`V17__add_learning_lines.sql` 里 `UPDATE ... WHERE slug='source-reading'` 在**空库**上是 0 行——`source-reading` 是 `db/devdata/V953` 建的，而 V17 < V953，全新库按版本顺序先跑 V17。共用开发库上 V953 早已应用、V17 后补跑，所以一直是绿的。症状：`LearningProgressIntegrationTest.linesComeFromCategoryMarks` 与 `learn.spec` 四条红；生产/测试库同样受影响（生产 locations 不含 devdata，这条 UPDATE 永远不生效）。**这是"迁移里引用种子数据"的通用坑**：迁移只能依赖迁移自己创建的东西。
+
 
 ## 身份化与模拟面试（WORK-010，2026-10-18 起）
 
@@ -516,3 +533,26 @@ scripts/test-db.sh --drop paideia_run_xxx            # 手动删
 1. **让这些断言不依赖固定 id**：用"列表里第一条"或"按标题查"取代 `id==1`。这是治本且成本最低的一条。
 2. 每个会话用**自己的库名**跑全量（本轮的 `paideia_guard2` 做法），CI 里天然成立。
 3. 若一定要共用库，把全量测试串行化到一把跨进程锁上。
+
+## 从零开始课程与学习线（WORK-020）
+
+**一条学习线 = 一个知识库分类上的标记**，不建表：`knowledge_categories.line_kind`（`course` / `reading` / NULL）就是全部身份，线名与顺序用分类自己的 `name / slug / sort_order`。站的顺序用 `knowledge_entries.sort_order`（可空）；**没声明的线退回 `(published_at, id)`**，所以存量条目一条都不用改。
+
+**"上一篇/下一篇"仍按 `(published_at, id)`**：声明了 `sort_order` 的线靠"导入时按课号顺序发布"保证两者一致。管理员事后手工插一条同分类条目会打乱课号——这是已知缺口。
+
+**新增一条线不改代码**：① 在 `content/courses/<线>/` 写 `00-总览.md`（frontmatter 必须有 `category / line_name / line_kind / line_sort`）② 按同一套七节写课 ③ 跑
+`node scripts/import-course.mjs --dir content/courses/<线>`。脚本里**没有任何一门课的名字**——第一次做这条验收时它写死了 python/java，已经改成从 frontmatter 读。
+
+**内容门禁**：`python scripts/verify_course.py`。它做三件事：七节顺序与 frontmatter、围栏块 JSON 与上限、**把每个 `<!-- run -->` 示例真的执行一次并逐字比对输出**（Python 用 `python`，Java 写 `Main.java` 再 `javac`+`java`）。所以"课程里的代码能跑"不是靠作者自觉。
+
+**通过判定在服务端**（`LearningProgressRules`）：至少一条挑战 + 一条小测、且每项 `score/total ≥ 80%`。客户端只上报分数，**请求里没有 `status` 字段**——想伪造也没语法。分数合并取更高分（重做一次手滑不降级），重置才清空。
+
+**复习阶梯 1/3/7/21 天**，按"有新得分的再次通过"前进一档；读取时算到期，不起定时任务（一期没有通知渠道）。
+
+**导师行为 `TUTOR`**：先要思路、四级提示、默认不给完整答案。这不是文案偏好——PNAS 2025 的 RCT 里，无护栏的通用 ChatGPT 让练习涨 48% 但撤掉后考试降 17%，加护栏后涨 127% 且撤掉无损失。学情由服务端取（`KnowledgeApi.learningSummary`）注入系统提示词，前端传不了。
+
+**已知缺口**（四条）：
+1. 复习只有"进 `/learn` 看"，没有提醒（无邮件/推送）。
+2. 掌握度是"最高分"，不是知识追踪；重做一次就能通过，质量靠题库不靠算法。
+3. 声明了 `sort_order` 的线，手工插条目会打乱"上一篇/下一篇"。
+4. 导师是否真不给答案只由提示词保证，**没有自动检测完整答案的机制**——语义级行为无法单测。

@@ -97,8 +97,11 @@ approver_role: CTO
 ### T-13 | done | 注销级联
 `AiUserDeletionListener` 加 `ai_interview_evaluations`；`AccountDeletionService` 直接删 `learner_profiles`（同库同域，不绕事件）；级联测试的清单与夹具都补了。
 
-### T-14 | pending | 部署（**待用户授权**，不是被依赖卡住）
-**未做**：部署要单独授权，且**线上验收前必须由管理员给验收账号发积分**（本期不做充值）。
+### T-14 | pending | 部署（线上启用身份与面试）
+**本机验收已完成（2026-10-19）**：在隔离库 `paideia_verify_010` 上由管理员给 `seed-learner` 发 5000 分，
+真连 DeepSeek 走完"开场 → 追问 → 点评 → 评分落库 → 看到扣减"，AC-009 不再被"余额 0"卡住
+（详见 `testing/report.md` 的补验段）。**剩下的只有"部署到线上并在线上再走一次"**——
+本机验证不能替代线上形态（systemd + 8081）的复跑，所以这一行保持 pending，不提前记 done。
 
 ### T-15 | done | 文档
 `.agent/notes/dev-workflow.md` 新增「身份化与模拟面试」一节（含身份≠角色、事件桥为什么不能直接调用、唯一键要先查冲突行、首页排序别让固定卡被去重丢掉）。
