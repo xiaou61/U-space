@@ -3978,3 +3978,13 @@ schema_version: 1
 - 验证：线上健康检查 UP；学习者端 e2e 60 passed/22 skipped/0 failed；管理端 20 passed
 - 本地提交：7dd4258
 - 远端推送：c33ab1e 已推送
+
+## 2026-10-19 17:21:03 +0800 · WORK-020 · 阅读线入库：source-reading 与 network-basics 成为内容源
+
+- 类型：implementation
+- 变更：新增 content/reading/source/00-React并发渲染入口.md（正文从 V953 导出、逐字比对一致）；content/reading/network/ 补 line_kind/line_name/line_sort 三行；learn.spec 撤掉 REMOTE 跳过
+- 决策：不把 devdata 种子搬进生产迁移：把内容搬成内容源，走同一条导入脚本（零代码新增一条线）
+- 依据：V953 只在 devdata，生产迁移目录不含它，所以线上原本没有 source-reading；导出原文后逐字比对 6672 字符一致
+- 验证：线上导入 3 条（network 2 + source 1）；/learning/lines 返回 4 条线，reading 各 1/2 站；学习线 e2e 4 passed（含线上 reading 分组）
+- 本地提交：3cd28d2
+- 远端推送：已推送 3cd28d2
