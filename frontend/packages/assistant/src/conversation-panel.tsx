@@ -348,7 +348,10 @@ export function ConversationPanel({
       </div>
 
       {listOpen ? (
-        <ul className="border-border max-h-48 space-y-1 overflow-y-auto rounded border p-1" data-testid="conversation-sessions">
+        <ul
+          className="border-border bg-popover max-h-48 space-y-0.5 overflow-y-auto rounded-lg border p-1.5 shadow-sm"
+          data-testid="conversation-sessions"
+        >
           {sessions.map((item) => (
             <li key={item.id}>
               <button
@@ -359,7 +362,7 @@ export function ConversationPanel({
                   setListOpen(false)
                   void openConversation(item.id)
                 }}
-                className={`hover:bg-accent/60 flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs ${
+                className={`hover:bg-accent/60 flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
                   item.id === conversationId ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
                 }`}
               >
@@ -373,7 +376,7 @@ export function ConversationPanel({
         </ul>
       ) : null}
 
-      <div className="min-h-[8rem] flex-1 space-y-3 overflow-y-auto" data-testid="conversation-messages">
+      <div className="min-h-[8rem] flex-1 space-y-4 overflow-y-auto" data-testid="conversation-messages">
         {restoring ? (
           <Spinner />
         ) : messages.length === 0 ? (
@@ -383,21 +386,21 @@ export function ConversationPanel({
             <article
               key={index}
               data-testid={`conversation-message-${message.role}`}
-              className={message.role === 'user' ? 'text-right' : ''}
+              className={message.role === 'user' ? 'flex flex-col items-end' : ''}
             >
               {message.thinking === '' ? null : (
                 <details
-                  className="border-border mb-1 rounded border px-2 py-1 text-xs"
+                  className="border-border bg-muted/40 mb-2 w-full rounded-lg border px-3 py-2 text-xs"
                   data-testid="conversation-thinking"
                 >
-                  <summary className="text-muted-foreground cursor-pointer">思考过程</summary>
-                  <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{message.thinking}</p>
+                  <summary className="text-muted-foreground cursor-pointer select-none">思考过程</summary>
+                  <p className="text-muted-foreground mt-1.5 leading-5 whitespace-pre-wrap">{message.thinking}</p>
                 </details>
               )}
               {message.content === '' ? (
                 message.role === 'assistant' && busy ? <Spinner /> : null
               ) : message.role === 'user' ? (
-                <p className="bg-muted inline-block rounded px-2 py-1 text-sm whitespace-pre-wrap">
+                <p className="bg-primary/10 text-foreground max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 text-sm leading-6 whitespace-pre-wrap">
                   {message.content}
                 </p>
               ) : message.emptyHint ? (
@@ -413,18 +416,18 @@ export function ConversationPanel({
                 <Markdown
                   markdown={message.content}
                   streaming={busy && index === messages.length - 1}
-                  className="text-sm"
+                  className="text-sm leading-6"
                 />
               )}
               {message.usage === null ? null : (
-                <p className="text-muted-foreground text-[11px]" data-testid="conversation-usage">
+                <p className="text-muted-foreground mt-1 text-[11px]" data-testid="conversation-usage">
                   本次用量：{message.usage.totalTokens} tokens（输入 {message.usage.inputTokens}／输出{' '}
                   {message.usage.outputTokens}）
                 </p>
               )}
               {/* 只对"真正的回答"给这两个入口：空正文的提示不该被存成笔记或记忆 */}
               {message.role !== 'assistant' || message.content === '' || message.emptyHint ? null : (
-                <div className="mt-1 flex items-center gap-2">
+                <div className="border-border/70 mt-2 flex flex-wrap items-center gap-1 border-t pt-1.5">
                   {onSaveNote === undefined ? null : (
                     <Button
                       variant="ghost"
@@ -492,12 +495,16 @@ export function ConversationPanel({
 
       {/* 助手提出的笔记草稿：**点了才存**。它不是回答的一部分，所以单独放在消息区下面 */}
       {drafts.length === 0 ? null : (
-        <div className="space-y-1" data-testid="conversation-drafts">
+        <div className="space-y-2" data-testid="conversation-drafts">
           {drafts.map((draft, index) => (
-            <div key={index} className="border-border rounded border px-2 py-1" data-testid="conversation-draft">
+            <div
+              key={index}
+              className="border-border bg-muted/30 rounded-lg border p-3"
+              data-testid="conversation-draft"
+            >
               <p className="text-xs font-medium">{draft.title}</p>
-              <p className="text-muted-foreground text-xs whitespace-pre-wrap">{draft.body}</p>
-              <div className="mt-1 flex items-center gap-2">
+              <p className="text-muted-foreground mt-1 text-xs leading-5 whitespace-pre-wrap">{draft.body}</p>
+              <div className="mt-2 flex items-center gap-2">
                 {onSaveNote === undefined ? null : (
                   <Button
                     size="sm"
@@ -542,7 +549,7 @@ export function ConversationPanel({
       )}
 
       <form
-        className="flex items-end gap-2"
+        className="border-border bg-background focus-within:border-ring focus-within:ring-ring/40 flex items-end gap-2 rounded-xl border p-2 transition-colors focus-within:ring-3"
         onSubmit={(event) => {
           event.preventDefault()
           void send()
@@ -554,9 +561,15 @@ export function ConversationPanel({
           rows={2}
           placeholder="问点什么…"
           data-testid="conversation-input"
-          className="border-border bg-background min-h-0 flex-1 resize-none rounded border px-2 py-1 text-sm"
+          className="placeholder:text-muted-foreground min-h-0 flex-1 resize-none bg-transparent px-1.5 py-1 text-sm leading-6 outline-none"
         />
-        <Button type="submit" size="sm" disabled={busy || input.trim() === ''} data-testid="conversation-send">
+        <Button
+          type="submit"
+          size="sm"
+          className="rounded-lg"
+          disabled={busy || input.trim() === ''}
+          data-testid="conversation-send"
+        >
           {busy ? <Spinner /> : <Send className="size-4" />}
           发送
         </Button>

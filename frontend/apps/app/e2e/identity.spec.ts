@@ -19,6 +19,11 @@ test('身份与目标：能改画像并读回，且明写"不影响你能做什�
   // 这句话是这一页最要紧的文案：身份不是第二套权限
   await expect(page.getByText('不影响你能做什么')).toBeVisible()
 
+  // 身份选择是弹窗式卡片：一期只有求职者可点，其余在弹窗里标「准备中」
+  await page.getByTestId('profile-identity').click()
+  await expect(page.getByTestId('identity-option-postgrad')).toBeDisabled()
+  await page.getByTestId('identity-option-job_seeker').click()
+
   const role = `后端开发-${String(Date.now())}`
   await page.getByTestId('profile-target-role').fill(role)
   await page.getByTestId('profile-save').click()
@@ -33,7 +38,8 @@ test('导航按身份重排：求职者有面试入口、且排在第一', async
   await signIn(page)
   // 先把身份确认为求职者（默认就是，但显式存一次避免被别的用例改过）
   await page.goto('/#/profile')
-  await page.getByTestId('profile-identity').selectOption('job_seeker')
+  await page.getByTestId('profile-identity').click()
+  await page.getByTestId('identity-option-job_seeker').click()
   await page.getByTestId('profile-save').click()
   await expect(page.getByTestId('profile-saved')).toBeVisible()
 
