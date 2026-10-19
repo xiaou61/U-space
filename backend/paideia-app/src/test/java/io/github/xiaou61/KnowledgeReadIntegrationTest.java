@@ -181,6 +181,50 @@ class KnowledgeReadIntegrationTest {
                 .andExpect(jsonPath("$.data.dependents[?(@.id==" + modularMonolith + ")]").exists());
     }
 
+    /**
+     * 同分类的上一篇／下一篇。
+     *
+     * <p>这两条 SQL 在 2026-10-19 从行值比较改成了 OR 拆写（为了走索引，快了 18 倍），
+     * 这里守住两个等价性：①按 (published_at, id) 的先后不变；②**同一时间戳时按 id 分先后**——
+     * 后者是行值比较存在的理由，改写最容易在这里漏掉 id 那一半。
+     */
+    @Test
+    void neighboursFollowPublishedAtThenId() throws Exception {
+        // 分类 1 里：依赖注入(2026-01-02) ← 接口与实现分离(2026-01-05)
+        long earlier = seeds.entry("什么是依赖注入");
+        long later = seeds.entry("接口与实现分离");
+
+        mockMvc.perform(get("/api/v1/knowledge/entries/" + earlier).header("Authorization", learner()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.next.id").value(later))
+                .andExpect(jsonPath("$.data.previous").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/knowledge/entries/" + later).header("Authorization", learner()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.previous.id").value(earlier))
+                .andExpect(jsonPath("$.data.next").doesNotExist());
+
+        // 同一时间戳的两条只靠 id 分先后；用完删掉，不污染其它用例读到的列表
+        long sameTime = seeds.entry("接口与实现分离");
+        jdbcTemplate.update("""
+                INSERT INTO knowledge_entries (category_id, title, body, status, published_at, created_at, updated_at)
+                VALUES (1, '同一时间戳的邻居', 'tie-break 用', 'published', ?, ?, ?)
+                """, "2026-01-05 00:00:00.000", "2026-01-01 00:00:00.000", "2026-01-01 00:00:00.000");
+        long tied = jdbcTemplate.queryForObject(
+                "SELECT id FROM knowledge_entries WHERE title = '同一时间戳的邻居'", Long.class);
+        try {
+            mockMvc.perform(get("/api/v1/knowledge/entries/" + sameTime).header("Authorization", learner()))
+                    .andExpect(status().isOk())
+                    // 时间相同、id 更大 → 是它的下一篇
+                    .andExpect(jsonPath("$.data.next.id").value(tied));
+            mockMvc.perform(get("/api/v1/knowledge/entries/" + tied).header("Authorization", learner()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.previous.id").value(sameTime));
+        } finally {
+            jdbcTemplate.update("DELETE FROM knowledge_entries WHERE id = ?", tied);
+        }
+    }
+
     @Test
     void draftDetailIsNotFound() throws Exception {
         // 草稿对学习者按"不存在"处理：既看不到，也问不出"这里是否有个未发布的条目"

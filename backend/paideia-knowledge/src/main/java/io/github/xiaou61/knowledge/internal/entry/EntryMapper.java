@@ -88,8 +88,13 @@ public interface EntryMapper {
     /**
      * 同分类内的上一篇／下一篇，按 (published_at, id) 排序。
      *
-     * <p>用行值比较 `(a, b) < (c, d)` 一次比两个字段，避免"同一秒发布时按 id 再分不出先后"
-     * 导致某一篇重复出现或跳过。
+     * <p>两个条件都要比：同一毫秒发布的两条只能靠 id 分先后，只比时间会重复或跳过。
+     *
+     * <p><b>为什么拆成 `a < 时间 OR (a = 时间 AND id < 参数)` 而不是行值比较
+     * `(published_at, id) < (时间, id)`</b>（2026-10-19 压测改）：两种写法结果完全等价，
+     * 但 MySQL 对行值比较**用不上索引范围**——只能把同分类的行全读出来再逐行过滤，实测
+     * 3.14ms/次；拆开后能走 idx_knowledge_entries_category_order 的区间扫描，0.17ms。
+     * 详情页每请求要跑两次（上一篇、下一篇），这一项占了它耗时的大头。
      *
      * <p><b>这里写的是裸 `&lt;` 而不是 `&amp;lt;`</b>：MyBatis 只在 `<script>` 块里按 XML 解析
      * 注解文本，普通注解里的实体不会被解码——写成 `&amp;lt;` 会原样发给 MySQL 变成语法错误。
@@ -97,18 +102,20 @@ public interface EntryMapper {
     @Select("""
             SELECT id, title FROM knowledge_entries
             WHERE status = 'published' AND category_id = #{categoryId}
-              AND (published_at, id) < (#{publishedAt}, #{id})
+              AND (published_at < #{publishedAt}
+                   OR (published_at = #{publishedAt} AND id < #{id}))
             ORDER BY published_at DESC, id DESC LIMIT 1
             """)
     Optional<Entry> findPreviousInCategory(@Param("categoryId") Long categoryId,
                                            @Param("publishedAt") Instant publishedAt,
                                            @Param("id") Long id);
 
-    /** 见 {@link #findPreviousInCategory} 关于裸 `<` 的说明。 */
+    /** 见 {@link #findPreviousInCategory} 关于裸 `<` 与条件拆写的说明。 */
     @Select("""
             SELECT id, title FROM knowledge_entries
             WHERE status = 'published' AND category_id = #{categoryId}
-              AND (published_at, id) > (#{publishedAt}, #{id})
+              AND (published_at > #{publishedAt}
+                   OR (published_at = #{publishedAt} AND id > #{id}))
             ORDER BY published_at ASC, id ASC LIMIT 1
             """)
     Optional<Entry> findNextInCategory(@Param("categoryId") Long categoryId,
