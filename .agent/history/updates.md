@@ -3783,3 +3783,13 @@ schema_version: 1
 - 验证：后端 174 执行/0 失败/4 跳过（既有真实上游）；前端单测全绿；app e2e 69 passed/2 skipped；conformance 4 passed（initialize/ping/tools-list/logging），22 条失败逐条说明均在本项范围外；见 verification.md
 - 本地提交：0b760f1
 - 远端推送：未执行
+
+## 2026-10-19 09:31:56 +0800 · WORK-019 · 真连 DeepSeek 与 ZCode：修掉六个只有实调才暴露的缺陷
+
+- 类型：verification
+- 变更：测试自己发积分；工具名点号改下划线（DeepSeek 只接受 [a-zA-Z0-9_-]）；思考不进 assistant 历史；tool 结果逐条发；只推最终轮正文；工具 schema 去重；补上游失败日志
+- 决策：工具名用下划线不用点号：内部适配器要把同一批名字发给 DeepSeek 的 OpenAI 兼容接口，两套名字必然分叉；思考只用于界面展示不进历史
+- 依据：实调 400 原文（Invalid 'tools[0].function.name'、insufficient tool messages following tool_calls message）；单测与桩全部看不见这三类问题
+- 验证：后端全量 174 执行/0 失败/0 跳过（含 4 条真实上游）；前端 e2e 69/2；MCP 客户端流程实连：initialize 2025-06-18、/mcp 9 工具、knowledge_list_categories 真返回分类数据、/mcp/write 13 工具含全部写工具
+- 本地提交：6810418
+- 远端推送：未执行
