@@ -490,6 +490,10 @@ class ApiWalkthroughTest {
 
         // ---- 沙箱 ----
         call("沙箱状态", "GET", "/api/v1/sandbox/status", bearer, null);
+        // 逐步录制（WORK-023）：本地测试里沙箱通常没开，这条走的是"不可用"分支——
+        // 那仍然是有效覆盖（端点存在、鉴权生效、错误语义正确）。
+        call("逐步录制", "POST", "/api/v1/sandbox/trace", bearer,
+                json(Map.of("language", "python", "code", "x = 1")), 503);
         MvcResult sandbox = mvc.perform(MockMvcRequestBuilders.post("/api/v1/sandbox/run")
                 .header("Authorization", bearer)
                 .contentType(MediaType.APPLICATION_JSON)

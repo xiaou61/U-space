@@ -38,6 +38,24 @@ final class DockerCommand {
             dd bs=1 count="$size" of=/tmp/main.py 2>/dev/null
             cd /tmp && python main.py""";
 
+    /**
+     * 录制脚本（WORK-023）：用 sys.settrace 逐步记录行号、局部变量与输出。
+     *
+     * <p><b>三条安全约束</b>写在脚本里而不是靠"调用方记得"：
+     * <ol>
+     *   <li>用户代码在**独立命名空间**里 exec，不共享录制器的全局变量；</li>
+     *   <li>`builtins` 只保留一份拷贝，且**不把录制器暴露给用户代码**；</li>
+     *   <li>步数、每步变量数、值长度、总字节都有硬上限，触顶即停止录制并保留已录部分。</li>
+     * </ol>
+     *
+     * <p>输出走**文件描述符 3**（而不是 stdout 混在程序输出里）：程序自己的 print 与
+     * 录制数据必须能分开，否则一个打印 JSON 的程序会让结果解析不出来。
+     */
+    private static final String PYTHON_TRACE_SCRIPT = """
+            read -r size
+            dd bs=1 count="$size" of=/tmp/user_main.py 2>/dev/null
+            cd /tmp && python /opt/trace.py""";
+
     private DockerCommand() {
     }
 
@@ -92,6 +110,48 @@ final class DockerCommand {
         command.add(image);
         command.add("-c");
         command.add("java".equals(normalized) ? JAVA_SCRIPT : PYTHON_SCRIPT);
+        return List.copyOf(command);
+    }
+
+    /**
+     * 录制命令（WORK-023）。
+     *
+     * <p>与 {@link #of} **共用同一套加固参数**（无网络、只读根、非 root、cap 全丢、资源上限）：
+     * 录制不是"更宽松的运行"，它跑的是同样的用户代码。只有两处不同：
+     * <ul>
+     *   <li>入口脚本换成 `python /opt/trace.py`；</li>
+     *   <li>脚本要读 `/opt/trace.py`，所以那个文件必须由镜像提供——本期做法是把
+     *       {@code trace.py} 的内容也经 stdin 送进去，与源码一起分帧，不依赖镜像改造。</li>
+     * </ul>
+     */
+    static List<String> ofTrace(SandboxProperties props, String cidFile, int traceScriptBytes) {
+        List<String> command = new ArrayList<>(List.of(
+                "docker", "run", "--rm", "-i",
+                "--network=none",
+                "--read-only",
+                "--tmpfs", "/tmp:rw,size=64m,exec",
+                "--user", "65534:65534",
+                "--cap-drop=ALL",
+                "--security-opt=no-new-privileges",
+                "--memory=" + props.getMemory(),
+                "--memory-swap=" + props.getMemory(),
+                "--cpus=" + props.getCpus(),
+                "--pids-limit=" + props.getPidsLimit(),
+                "--ulimit", "nofile=64",
+                "--ulimit", "nproc=64",
+                "--stop-timeout=0",
+                "--cidfile", cidFile,
+                "-e", "TZ=UTC",
+                "--entrypoint", "sh"));
+        if (props.getRuntime() != null && !props.getRuntime().isBlank()) {
+            command.add("--runtime=" + props.getRuntime().trim());
+        }
+        command.add(props.imageFor("python"));
+        command.add("-c");
+        // 分帧：先读录制器脚本长度，再读源码长度，最后才是 stdin
+        command.add("read -r tracelen && dd bs=1 count=\"$tracelen\" of=/tmp/trace.py 2>/dev/null"
+                + " && read -r size && dd bs=1 count=\"$size\" of=/tmp/user_main.py 2>/dev/null"
+                + " && cd /tmp && PYTHONPATH=/tmp python /tmp/trace.py");
         return List.copyOf(command);
     }
 

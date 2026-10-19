@@ -14,4 +14,14 @@ public interface CodeRunner {
 
     /** 不可用的原因，给状态端点用；可用时返回 null。 */
     String unavailableReason();
+
+    /**
+     * 录制一次逐步执行（WORK-023）。
+     *
+     * <p>默认实现抛"不支持"：录制是**可选能力**，换执行后端（比如将来的独立 runner 服务）
+     * 时不该因为它没有录制就编译不过。调用方捕获后降级为"一次性运行"。
+     */
+    default CodeRun.TraceResult trace(String code, String stdin, String traceScript) {
+        throw new UnsupportedOperationException("当前执行后端不支持逐步录制");
+    }
 }

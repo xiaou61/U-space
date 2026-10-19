@@ -9,6 +9,7 @@ import io.github.xiaou61.sandbox.internal.run.CodeRun;
 import io.github.xiaou61.sandbox.internal.run.CodeRunner;
 import io.github.xiaou61.sandbox.internal.run.RunSlot;
 import io.github.xiaou61.sandbox.internal.run.SandboxProperties;
+import io.github.xiaou61.sandbox.internal.trace.SandboxTraceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -38,13 +39,16 @@ class SandboxController {
     private final CodeRunner runner;
     private final SandboxQuotaService quota;
     private final RunSlot slots;
+    private final SandboxTraceService trace;
 
     SandboxController(SandboxProperties properties, CodeRunner runner,
-                      SandboxQuotaService quota, RunSlot slots) {
+                      SandboxQuotaService quota, RunSlot slots,
+                      SandboxTraceService trace) {
         this.properties = properties;
         this.runner = runner;
         this.quota = quota;
         this.slots = slots;
+        this.trace = trace;
     }
 
     /**
@@ -119,6 +123,70 @@ class SandboxController {
 
         return ApiResponse.ok(new RunView(result.stdout(), result.stderr(), result.exitCode(),
                 result.durationMs(), result.timedOut(), result.outOfMemory(), result.truncated()));
+    }
+
+    /**
+     * 逐步录制（WORK-023 REQ-001）。
+     *
+     * <p>与 `/run` **同一套鉴权、配额、并发槽与审计**：录制跑的也是用户代码，
+     * 只是多记了一些东西。不另开口子——那会让"配额"变成一张可以绕过的纸。
+     *
+     * <p>只支持 Python：Java 要 JDI + 双 JVM + 调试端口，一期明确不做（REQ 非目标）。
+     * 不支持时返回 **422 + 明确原因**，前端据此退回"一次性运行"（REQ-012）。
+     */
+    @PostMapping("/trace")
+    ApiResponse<TraceView> trace(@Valid @RequestBody RunRequest body) {
+        long userId = currentUserId();
+        String language = body.language().trim().toLowerCase(java.util.Locale.ROOT);
+
+        if (!properties.isSupported(language)) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "只支持 java 与 python");
+        }
+        if (body.code().length() > properties.getMaxCodeChars()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT,
+                    "代码超过 " + properties.getMaxCodeChars() + " 字符");
+        }
+        String stdin = body.stdin() == null ? "" : body.stdin();
+        if (stdin.length() > properties.getMaxStdinChars()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT,
+                    "输入超过 " + properties.getMaxStdinChars() + " 字符");
+        }
+        if (!runner.ready()) {
+            throw new BizException(ErrorCode.SANDBOX_DISABLED,
+                    runner.unavailableReason() == null ? "代码执行不可用" : runner.unavailableReason());
+        }
+
+        try {
+            quota.requireQuota(userId);
+        } catch (BizException rejected) {
+            quota.record(userId, body.entryId(), body.caseId(), language,
+                    CodeRun.Status.REJECTED, null, 0, 0, false, body.code());
+            throw rejected;
+        }
+
+        SandboxTraceService.Trace result;
+        try (RunSlot.Slot ignored = slots.acquire()) {
+            result = trace.trace(language, body.code(), stdin);
+        } catch (UnsupportedOperationException unsupported) {
+            // 降级不是错误：前端会退回"一次性运行"，所以给可读的原因而不是 500
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, unsupported.getMessage());
+        } catch (BizException rejected) {
+            quota.record(userId, body.entryId(), body.caseId(), language,
+                    CodeRun.Status.REJECTED, null, 0, 0, false, body.code());
+            throw rejected;
+        }
+
+        // 超时与否看 reason：录制器在超时被杀时会把 "time_limit" 写进最后一条能读到的 end 事件
+        boolean timedOut = "time_limit".equals(result.reason());
+        quota.record(userId, body.entryId(), body.caseId(), language,
+                timedOut ? CodeRun.Status.TIMEOUT : CodeRun.Status.OK,
+                null, result.durationMs(), 0, result.truncated(), body.code());
+        return ApiResponse.ok(new TraceView(result.steps(), result.output(),
+                result.reason(), result.truncated(), result.durationMs()));
+    }
+
+    record TraceView(List<SandboxTraceService.TraceStep> steps, String output,
+                     String reason, boolean truncated, long durationMs) {
     }
 
     record StatusView(boolean enabled, boolean ready, String runtime, List<String> languages,

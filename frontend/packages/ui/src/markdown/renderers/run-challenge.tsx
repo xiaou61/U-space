@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '../../components/button'
 import { Pill } from './blocks'
-import { useSourceReading, type RunOutput } from './context'
+import { useSourceReading, type RunOutput, type TraceResult } from './context'
 import { judgeRun, type RunChallenge, type RunCase } from './schema'
+import { TracePlayer } from './trace-player'
 
 /**
  * 运行题型（WORK-015）。
@@ -30,6 +31,12 @@ export function RunBody({
   const [running, setRunning] = useState(false)
   const [results, setResults] = useState<{ testCase: RunCase; output: RunOutput; passed: boolean }[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // 逐步录制（WORK-023）。**只在 Python 且端口实现了 trace 时才出现按钮**：
+  // 渲染一个点了会说"不支持"的按钮比不渲染更糟。
+  const [trace, setTrace] = useState<TraceResult | null>(null)
+  const [tracing, setTracing] = useState(false)
+  const canTrace = sandbox !== undefined && typeof sandbox.trace === 'function'
+    && challenge.language === 'python'
 
   useEffect(() => {
     if (sandbox === undefined) {
@@ -84,6 +91,27 @@ export function RunBody({
     }
   }
 
+  const startTrace = async () => {
+    if (sandbox?.trace === undefined) {
+      return
+    }
+    setTracing(true)
+    setError(null)
+    setTrace(null)
+    try {
+      setTrace(await sandbox.trace({
+        language: challenge.language,
+        code,
+        caseId: `${challenge.id}:trace`,
+      }))
+    } catch (cause) {
+      // 降级：录制不可用时退回"一次性运行"，把原因说清楚而不是静默失败
+      setError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setTracing(false)
+    }
+  }
+
   if (ready === false) {
     return (
       <div className="space-y-2">
@@ -123,6 +151,18 @@ export function RunBody({
             通过 {results.filter((item) => item.passed).length} / {results.length}
           </Pill>
         )}
+        {canTrace ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-testid="challenge-trace"
+            disabled={tracing || ready === null}
+            onClick={() => void startTrace()}
+          >
+            {tracing ? '录制中…' : '逐步执行'}
+          </Button>
+        ) : null}
         {results === null ? null : (
           <Button type="button" variant="outline" size="sm" onClick={() => setResults(null)}>
             清空结果
@@ -134,6 +174,13 @@ export function RunBody({
         <p className="text-destructive text-sm" data-testid="challenge-run-error">
           {error}
         </p>
+      )}
+
+      {trace === null ? null : (
+        <div className="rounded-lg border p-3">
+          <p className="mb-2 text-xs font-medium">逐步执行</p>
+          <TracePlayer trace={trace} />
+        </div>
       )}
 
       {results === null ? null : (

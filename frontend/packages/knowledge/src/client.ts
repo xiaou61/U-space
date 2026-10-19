@@ -32,6 +32,7 @@ export interface KnowledgeApi {
   sandboxStatus(): Promise<SandboxStatus>
   /** 执行一次练习代码。**服务端只回实际输出，判定在客户端**。 */
   runCode(input: RunCodeInput): Promise<RunCodeResult>
+  traceCode(input: RunCodeInput): Promise<TraceCodeResult>
   /** 记一次浏览（WORK-021）。旁路数据：失败不影响阅读。 */
   recordView(entryId: number): Promise<null>
 }
@@ -69,6 +70,20 @@ export interface RunCodeResult {
   timedOut: boolean
   outOfMemory: boolean
   truncated: boolean
+}
+
+/**
+ * 逐步录制的结果（WORK-023）。
+ *
+ * <p>`reason` 说明为什么停：`done` / `step_limit` / `time_limit` / `error`。
+ * `truncated` 为真时"只录到这里"，不是失败——那正是设计的形态。
+ */
+export interface TraceCodeResult {
+  steps: { line: number; locals: Record<string, string>; event: string }[]
+  output: string
+  reason: string
+  truncated: boolean
+  durationMs: number
 }
 
 /**
@@ -125,6 +140,14 @@ export function createKnowledgeApi(client: ApiClient): KnowledgeApi {
 
     runCode: (input) =>
       client.requestEnvelope<RunCodeResult>('/api/v1/sandbox/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+
+    /** 逐步录制（WORK-023）。不支持的语言由后端给可读原因，前端据此降级。 */
+    traceCode: (input) =>
+      client.requestEnvelope<TraceCodeResult>('/api/v1/sandbox/trace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),

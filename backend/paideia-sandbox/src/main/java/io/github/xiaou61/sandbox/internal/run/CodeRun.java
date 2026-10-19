@@ -22,6 +22,19 @@ public final class CodeRun {
      * <p>`timedOut` / `oom` 是**结果**不是错误：程序崩了也是有价值的反馈，接口仍然 200。
      * 只有"根本没能执行"（配额、并发、沙箱不可用）才是错误。
      */
+    /**
+     * 录制结果（WORK-023）。
+     *
+     * <p>`events` 是录制器写在 stderr 上的原始行（每行一个 JSON）。**不在这里解析**：
+     * 解析要能容忍"超时被杀、最后一行不完整"，那是服务层的事，执行器只负责搬运。
+     */
+    public record TraceResult(
+            String stdout,
+            String events,
+            long durationMs,
+            boolean timedOut) {
+    }
+
     public record Result(
             String stdout,
             String stderr,

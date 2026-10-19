@@ -58,6 +58,27 @@ export interface RunOutput {
 export interface SandboxPort {
   ready(): Promise<boolean>
   run(input: { language: string; code: string; stdin?: string; caseId?: string }): Promise<RunOutput>
+  /**
+   * 逐步录制（WORK-023）。**可选**：后端没接这条路、或后端拒绝（比如 Java 暂不支持）时，
+   * 前端退回"一次性运行"，不显示播放器。
+   */
+  trace?(input: { language: string; code: string; stdin?: string; caseId?: string }): Promise<TraceResult>
+}
+
+/** 一个录制步。`locals` 是"变量名 → 浅层 repr"，值已在服务端截断。 */
+export interface TraceStep {
+  line: number
+  locals: Record<string, string>
+  event: string
+}
+
+/** 录制结果。`reason` 说明为什么结束：done / step_limit / time_limit / error。 */
+export interface TraceResult {
+  steps: TraceStep[]
+  output: string
+  reason: string
+  truncated: boolean
+  durationMs: number
 }
 
 /** 由页面注入的能力。缺哪一项，对应的交互就不渲染（而不是渲染一个坏掉的按钮）。 */

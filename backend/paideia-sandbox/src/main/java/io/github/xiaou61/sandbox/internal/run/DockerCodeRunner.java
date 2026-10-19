@@ -77,6 +77,90 @@ class DockerCodeRunner implements CodeRunner {
         }
     }
 
+    /**
+     * 录制一次逐步执行（WORK-023）。
+     *
+     * <p>复用同一套加固参数与超时/强删逻辑，只有三处不同：
+     * <ol>
+     *   <li>分帧多一段：先送录制器脚本，再送源码；</li>
+     *   <li>**录制数据从 stderr 读**（stdout 留给程序自己的 print）；</li>
+     *   <li>不判定"程序是否正确"——录制不参与通过判定（REQ-013）。</li>
+     * </ol>
+     *
+     * @return 录制器输出的原始行（每行一个 JSON 事件）+ 程序的 stdout/stderr
+     */
+    @Override
+    public CodeRun.TraceResult trace(String code, String stdin, String traceScript) {
+        Path cidDir;
+        try {
+            cidDir = Files.createTempDirectory("paideia-trace-");
+        } catch (IOException cause) {
+            throw new SandboxUnavailableException("无法创建容器 id 目录：" + cause.getMessage(), cause);
+        }
+        Path cidFile = cidDir.resolve("container.cid");
+        try {
+            byte[] script = traceScript.getBytes(StandardCharsets.UTF_8);
+            List<String> command = DockerCommand.ofTrace(properties, cidFile.toString(), script.length);
+            return executeTrace(code, stdin, script, command);
+        } finally {
+            try {
+                Files.deleteIfExists(cidFile);
+                Files.deleteIfExists(cidDir);
+            } catch (IOException ignored) {
+                // 清理失败不影响结果
+            }
+        }
+    }
+
+    private CodeRun.TraceResult executeTrace(String code, String stdin, byte[] script, List<String> command) {
+        long started = System.nanoTime();
+        Process process;
+        try {
+            process = new ProcessBuilder(command).start();
+        } catch (IOException cause) {
+            throw new SandboxUnavailableException("启动容器失败：" + cause.getMessage(), cause);
+        }
+
+        try (OutputStream out = process.getOutputStream()) {
+            byte[] codeBytes = code.getBytes(StandardCharsets.UTF_8);
+            out.write((script.length + "\n").getBytes(StandardCharsets.UTF_8));
+            out.write(script);
+            out.write((codeBytes.length + "\n").getBytes(StandardCharsets.UTF_8));
+            out.write(codeBytes);
+            if (stdin != null && !stdin.isEmpty()) {
+                out.write(stdin.getBytes(StandardCharsets.UTF_8));
+            }
+            out.flush();
+        } catch (IOException cause) {
+            log.debug("写入录制 stdin 失败（容器可能已退出）：{}", cause.getMessage());
+        }
+
+        BoundedBuffer stdout = new BoundedBuffer(properties.getMaxOutputBytes());
+        BoundedBuffer stderr = new BoundedBuffer(properties.getMaxOutputBytes());
+        Thread outReader = streamReader(process.getInputStream(), stdout);
+        Thread errReader = streamReader(process.getErrorStream(), stderr);
+
+        boolean finished;
+        try {
+            finished = process.waitFor(properties.getTimeoutMs(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException cause) {
+            Thread.currentThread().interrupt();
+            process.destroyForcibly();
+            throw new SandboxUnavailableException("执行被中断", cause);
+        }
+        if (!finished) {
+            process.destroyForcibly();
+            removeContainer(command);
+        }
+        joinQuietly(outReader);
+        joinQuietly(errReader);
+
+        long durationMs = (System.nanoTime() - started) / 1_000_000;
+        log.info("sandbox trace finished={} durationMs={} events={}",
+                finished, durationMs, stderr.text().lines().count());
+        return new CodeRun.TraceResult(stdout.text(), stderr.text(), durationMs, !finished);
+    }
+
     private CodeRun.Result execute(CodeRun.Request request, List<String> command) {
         long started = System.nanoTime();
         Process process;
