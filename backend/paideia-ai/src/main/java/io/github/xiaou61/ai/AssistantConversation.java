@@ -44,6 +44,8 @@ public interface AssistantConversation {
                    String userMessage,
                    String entryTitle,
                    String entryBody,
+                   /** 本人这一站的学习记录摘要（WORK-020）；只有 TUTOR 行为会注入。空串表示没有记录。 */
+                   String learningSummary,
                    List<String> memorySnippets,
                    Harness harness) {
 
@@ -61,7 +63,7 @@ public interface AssistantConversation {
          */
         public Request(long userId, List<ConversationTurn> history, String userMessage,
                        String entryTitle, String entryBody, List<String> memorySnippets) {
-            this(userId, history, userMessage, entryTitle, entryBody, memorySnippets, Harness.ASSISTANT);
+            this(userId, history, userMessage, entryTitle, entryBody, "", memorySnippets, Harness.ASSISTANT);
         }
 
         /** 有没有条目上下文。实现据此决定是否把正文放进提示词。 */

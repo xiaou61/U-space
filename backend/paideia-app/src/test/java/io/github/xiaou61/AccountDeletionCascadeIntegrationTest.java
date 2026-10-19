@@ -75,6 +75,9 @@ class AccountDeletionCascadeIntegrationTest {
             {"mcp_access_tokens", "user_id"},
             // 知识库自评（"我对哪些条目懂／不懂"）：本项目第一张用户私有业务数据表
             {"knowledge_self_assessments", "user_id"},
+            // 学习记录与浏览记录（WORK-020 / WORK-021）：外键都只指向 entry_id，不靠级联
+            {"learning_progress", "user_id"},
+            {"knowledge_entry_views", "user_id"},
             {"refresh_tokens", "user_id"},
     };
 
@@ -267,6 +270,17 @@ class AccountDeletionCascadeIntegrationTest {
             jdbcTemplate.update("""
                     INSERT INTO knowledge_self_assessments (user_id, entry_id, level)
                     VALUES (?, ?, 'understood')
+                    """, owner, entryId);
+            // 学习记录与浏览记录：同样必须真种一条，否则新加的两行断言只会命中空表
+            jdbcTemplate.update("""
+                    INSERT INTO learning_progress
+                        (user_id, entry_id, challenges_json, quizzes_json, status)
+                    VALUES (?, ?, '{}', '{}', 'in_progress')
+                    """, owner, entryId);
+            jdbcTemplate.update("""
+                    INSERT INTO knowledge_entry_views
+                        (user_id, entry_id, view_count, first_viewed_at, last_viewed_at)
+                    VALUES (?, ?, 1, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
                     """, owner, entryId);
         }
     }

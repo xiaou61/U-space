@@ -147,7 +147,8 @@ class AssistantConversationController {
         try {
             assistant.stream(
                     new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
-                            turn.entryTitle(), turn.entryBody(), turn.memorySnippets(), turn.harness()),
+                            turn.entryTitle(), turn.entryBody(), turn.learningSummary(),
+                            turn.memorySnippets(), turn.harness()),
                     turn.access(),
                     new AssistantConversation.Listener() {
                         @Override

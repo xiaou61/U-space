@@ -13,6 +13,8 @@ package io.github.xiaou61.ai;
  *   <li>{@link #INTERVIEW}：面试官。多轮追问，题源是知识库已发布条目。</li>
  *   <li>{@link #REVIEW}：点评官。**工具集为空**的一次独立调用——这同时绕开 DeepSeek
  *       "工具调用与结构化输出不能在同一次调用里并用"那条限制（那次本来就该不带工具）。</li>
+ *   <li>{@link #TUTOR}：编程课导师（WORK-020）。按站点辅导：先要思路、四级提示、默认不给
+ *       完整答案，并且能看到本人的学习记录。</li>
  * </ul>
  *
  * <p><b>选择规则</b>：`页面显式给的 harness` 优先；没给则用身份默认——一期身份默认**恒为**
@@ -26,7 +28,9 @@ public enum Harness {
 
     ASSISTANT("assistant"),
     INTERVIEW("interview"),
-    REVIEW("review");
+    REVIEW("review"),
+    /** 编程课导师（WORK-020）：先要思路、分级提示、默认不给完整答案。 */
+    TUTOR("tutor");
 
     private final String key;
 

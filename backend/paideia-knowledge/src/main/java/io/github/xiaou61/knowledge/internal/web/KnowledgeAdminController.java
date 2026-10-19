@@ -1,6 +1,7 @@
 package io.github.xiaou61.knowledge.internal.web;
 
 import io.github.xiaou61.knowledge.internal.admin.CategoryAdminService;
+import io.github.xiaou61.knowledge.internal.admin.ConceptAdminService;
 import io.github.xiaou61.knowledge.internal.admin.EntryAdminService;
 import io.github.xiaou61.knowledge.internal.admin.RelationAdminService;
 import io.github.xiaou61.knowledge.internal.category.CategoryService;
@@ -11,6 +12,7 @@ import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,15 +44,18 @@ class KnowledgeAdminController {
     private final CategoryAdminService categoryAdminService;
     private final EntryAdminService entryAdminService;
     private final RelationAdminService relationAdminService;
+    private final ConceptAdminService conceptAdminService;
 
     KnowledgeAdminController(CategoryService categoryService,
                              CategoryAdminService categoryAdminService,
                              EntryAdminService entryAdminService,
-                             RelationAdminService relationAdminService) {
+                             RelationAdminService relationAdminService,
+                             ConceptAdminService conceptAdminService) {
         this.categoryService = categoryService;
         this.categoryAdminService = categoryAdminService;
         this.entryAdminService = entryAdminService;
         this.relationAdminService = relationAdminService;
+        this.conceptAdminService = conceptAdminService;
     }
 
     @GetMapping("/categories")
@@ -61,13 +66,14 @@ class KnowledgeAdminController {
     @PostMapping("/categories")
     ApiResponse<Long> createCategory(@Valid @RequestBody CategoryRequest body) {
         return ApiResponse.ok(categoryAdminService
-                .create(body.parentId(), body.name(), body.slug(), body.sortOrder())
+                .create(body.parentId(), body.name(), body.slug(), body.sortOrder(), body.lineKind())
                 .getId());
     }
 
     @PutMapping("/categories/{id}")
     ApiResponse<Void> updateCategory(@PathVariable("id") long id, @Valid @RequestBody CategoryRequest body) {
-        categoryAdminService.update(id, body.parentId(), body.name(), body.slug(), body.sortOrder());
+        categoryAdminService.update(id, body.parentId(), body.name(), body.slug(), body.sortOrder(),
+                body.lineKind());
         return ApiResponse.ok(null);
     }
 
@@ -95,13 +101,14 @@ class KnowledgeAdminController {
     @PostMapping("/entries")
     ApiResponse<Long> createEntry(@Valid @RequestBody EntryRequest body) {
         return ApiResponse.ok(entryAdminService.create(
-                body.title(), body.body(), body.categoryId(), body.status()));
+                body.title(), body.body(), body.categoryId(), body.status(), body.sortOrder()));
     }
 
     /** 更新条目，含状态。**发布就是一次把 status 置为 published 的 PUT**，没有单独的发布端点。 */
     @PutMapping("/entries/{id}")
     ApiResponse<Void> updateEntry(@PathVariable("id") long id, @Valid @RequestBody EntryRequest body) {
-        entryAdminService.update(id, body.title(), body.body(), body.categoryId(), body.status());
+        entryAdminService.update(id, body.title(), body.body(), body.categoryId(), body.status(),
+                body.sortOrder());
         return ApiResponse.ok(null);
     }
 
@@ -123,18 +130,85 @@ class KnowledgeAdminController {
         return ApiResponse.ok(null);
     }
 
+    /** 概念列表（WORK-021），含载体条目数与关系数。 */
+    @GetMapping("/concepts")
+    ApiResponse<List<ConceptAdminService.ConceptSummary>> concepts() {
+        return ApiResponse.ok(conceptAdminService.list());
+    }
+
+    @PostMapping("/concepts")
+    ApiResponse<Long> createConcept(@Valid @RequestBody ConceptRequest body) {
+        return ApiResponse.ok(conceptAdminService.create(body.categoryId(), body.name(), body.summary()));
+    }
+
+    @PutMapping("/concepts/{id}")
+    ApiResponse<Void> updateConcept(@PathVariable("id") long id, @Valid @RequestBody ConceptRequest body) {
+        conceptAdminService.update(id, body.categoryId(), body.name(), body.summary());
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/concepts/{id}")
+    ApiResponse<Void> deleteConcept(@PathVariable("id") long id) {
+        conceptAdminService.delete(id);
+        return ApiResponse.ok(null);
+    }
+
+    /** 把条目挂到概念上。重复关联也算成功。 */
+    @PostMapping("/concepts/{id}/entries")
+    ApiResponse<Void> linkConceptEntry(@PathVariable("id") long id, @Valid @RequestBody ConceptEntryRequest body) {
+        conceptAdminService.linkEntry(id, body.entryId());
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/concepts/{id}/entries/{entryId}")
+    ApiResponse<Void> unlinkConceptEntry(@PathVariable("id") long id, @PathVariable("entryId") long entryId) {
+        conceptAdminService.unlinkEntry(id, entryId);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/concept-edges")
+    ApiResponse<Long> createConceptEdge(@Valid @RequestBody ConceptEdgeRequest body) {
+        return ApiResponse.ok(conceptAdminService.createEdge(
+                body.fromConceptId(), body.toConceptId(), body.relationType()));
+    }
+
+    @DeleteMapping("/concept-edges/{id}")
+    ApiResponse<Void> deleteConceptEdge(@PathVariable("id") long id) {
+        conceptAdminService.deleteEdge(id);
+        return ApiResponse.ok(null);
+    }
+
+    record ConceptRequest(
+            Long categoryId,
+            @NotBlank @Size(max = 64) String name,
+            @Size(max = 500) String summary) {
+    }
+
+    record ConceptEntryRequest(@NotNull Long entryId) {
+    }
+
+    record ConceptEdgeRequest(
+            @NotNull Long fromConceptId,
+            @NotNull Long toConceptId,
+            @NotBlank @Size(max = 32) String relationType) {
+    }
+
     record CategoryRequest(
             Long parentId,
             @NotBlank @Size(max = 64) String name,
             @NotBlank @Size(max = 64) String slug,
-            Integer sortOrder) {
+            Integer sortOrder,
+            /** course / reading / 空。空表示普通分类（WORK-020）。 */
+            @Size(max = 16) String lineKind) {
     }
 
     record EntryRequest(
             @NotBlank @Size(max = 200) String title,
             String body,
             Long categoryId,
-            @NotBlank String status) {
+            @NotBlank String status,
+            /** 学习线里的站序；空 = 未声明，退回 (published_at, id)（WORK-020）。 */
+            Integer sortOrder) {
     }
 
     record RelationRequest(Long fromEntryId, Long toEntryId, @NotBlank String relationType) {

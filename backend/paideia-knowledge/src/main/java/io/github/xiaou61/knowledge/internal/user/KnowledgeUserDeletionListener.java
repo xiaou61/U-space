@@ -21,6 +21,10 @@ class KnowledgeUserDeletionListener {
 
     private static final String[][] USER_TABLES = {
             {"knowledge_self_assessments", "user_id"},
+            // 学习记录（WORK-020）：外键只指向 entry_id，注销不会级联到它
+            {"learning_progress", "user_id"},
+            // 浏览记录（WORK-021）：同上，外键只指向 entry_id
+            {"knowledge_entry_views", "user_id"},
     };
 
     private final JdbcTemplate jdbcTemplate;

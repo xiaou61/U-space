@@ -302,6 +302,14 @@ class AgentScopeConversation implements AssistantConversation {
                     .textContent(ConversationPrompt.entryContext(request.entryTitle(), request.entryBody()))
                     .build());
         }
+        if (request.harness() == Harness.TUTOR && request.learningSummary() != null
+                && !request.learningSummary().isBlank()) {
+            // 学情是平台记录的事实（WORK-020）：只注入导师，且明说来源，避免模型把它当成用户自述
+            messages.add(Msg.builder()
+                    .role(MsgRole.SYSTEM)
+                    .textContent(TutorPrompt.learningContext(request.learningSummary()))
+                    .build());
+        }
         if (!request.memorySnippets().isEmpty()) {
             messages.add(Msg.builder()
                     .role(MsgRole.SYSTEM)

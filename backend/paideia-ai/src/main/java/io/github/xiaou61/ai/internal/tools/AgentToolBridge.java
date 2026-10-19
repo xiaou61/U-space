@@ -86,6 +86,8 @@ public class AgentToolBridge {
             // 面试官与通用助手同样的读能力 + 草稿；它不该替用户写笔记，写工具本来也被只读过滤挡住
             case INTERVIEW -> Set.of("knowledge", "assessment", "assistant");
             case REVIEW -> Set.of();
+            // 导师要能查到本人学情（learning 组），也要按需检索知识点与读条目
+            case TUTOR -> Set.of("knowledge", "learning", "assessment", "assistant");
         };
     }
 

@@ -30,6 +30,7 @@ final class HarnessPrompts {
             case ASSISTANT -> ConversationPrompt.system();
             case INTERVIEW -> InterviewPrompt.system();
             case REVIEW -> ReviewPrompt.system();
+            case TUTOR -> TutorPrompt.system();
         };
     }
 
@@ -39,6 +40,7 @@ final class HarnessPrompts {
             case ASSISTANT -> ConversationPrompt.VERSION;
             case INTERVIEW -> InterviewPrompt.VERSION;
             case REVIEW -> ReviewPrompt.VERSION;
+            case TUTOR -> TutorPrompt.version();
         };
     }
 }

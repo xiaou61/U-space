@@ -146,7 +146,7 @@ class AgentToolBridgeIntegrationTest {
         assertThat(tools.core(Harness.ASSISTANT)).extracting(io.agentscope.core.model.ToolSchema::getName)
                 .containsExactlyInAnyOrder("account_me", "assessment_list_marks", "assistant_draft_note",
                         "knowledge_get_entry", "knowledge_list_categories", "knowledge_my_marks",
-                        "knowledge_search", "note_get", "note_list");
+                        "knowledge_search", "knowledge_weak_concepts", "note_get", "note_list");
     }
 
     @Test

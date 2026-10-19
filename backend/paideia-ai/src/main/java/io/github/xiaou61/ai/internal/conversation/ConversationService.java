@@ -148,6 +148,8 @@ public class ConversationService {
                                   String userMessage,
                                   String entryTitle,
                                   String entryBody,
+                                  /** 本人这一站的学习记录摘要；只有 TUTOR 会用它（WORK-020）。 */
+                                  String learningSummary,
                                   List<String> memorySnippets,
                                   ModelAccess access,
                                   long reservedCredits,
@@ -225,6 +227,13 @@ public class ConversationService {
         // 同样排在写库之前：它只读，且能抛（DB 异常），不能留到预留之后
         EntryContext entry = entryContext(conversation.getEntryId());
         List<String> snippets = memory(settings, userId, trimmed);
+        Harness harness = Harness.ofOrDefault(conversation.getHarness());
+        // 学情在写库与预扣**之前**取：它只读，且能抛（DB 异常），不能留到 reserve 之后。
+        // 只有导师行为需要它——其它行为的提示词里没有对应的段落，注入反而浪费上下文。
+        String learning = "";
+        if (harness == Harness.TUTOR && conversation.getEntryId() != null) {
+            learning = knowledge.learningSummary(userId, conversation.getEntryId());
+        }
 
         appendMessage(conversationId, ConversationMessage.ROLE_USER, trimmed, null);
         // 滑动续期：聊到一半过期比"聊完就丢"更让人费解
@@ -233,10 +242,8 @@ public class ConversationService {
         // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
         // 放在限流之后：被限流的那一轮本来就不该占用户的额度。**它的后面不能再有会抛的动作。**
         long reserved = credits.reserve(userId, credits.estimate());
-        // 行为跟着**会话**走（WORK-010）：从通用入口继续一段面试对话，仍是面试官在说话。
-        Harness harness = Harness.ofOrDefault(conversation.getHarness());
         return new TurnPreparation(conversationId, history, trimmed, entry.title(), entry.body(),
-                snippets, access.get(), reserved, harness);
+                learning, snippets, access.get(), reserved, harness);
     }
 
     /**

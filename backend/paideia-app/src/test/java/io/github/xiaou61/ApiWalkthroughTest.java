@@ -219,6 +219,30 @@ class ApiWalkthroughTest {
         long relationId = idAt(relation);
         call("删关系", "DELETE", "/api/v1/knowledge/admin/relations/" + relationId, adminToken(), null);
 
+        // ---- 概念与图谱（WORK-021）----
+        MvcResult concept = call("建概念", "POST", "/api/v1/knowledge/admin/concepts", adminToken(),
+                json(Map.of("name", "自查概念 " + suffix, "summary", "自查用")));
+        long conceptId = idAt(concept);
+        call("改概念", "PUT", "/api/v1/knowledge/admin/concepts/" + conceptId, adminToken(),
+                json(Map.of("name", "自查概念改名 " + suffix, "summary", "改过的说明")));
+        // **列表必须在建概念之后调**：空库上先调会返回 []，契约快照里这个端点的形状就变成空数组，
+        // 换一台机器重跑必然对不上（2026-10-19 在隔离库上实测红过）。先建再列，形状才确定。
+        call("概念列表", "GET", "/api/v1/knowledge/admin/concepts", adminToken(), null);
+        call("挂条目", "POST", "/api/v1/knowledge/admin/concepts/" + conceptId + "/entries", adminToken(),
+                json(Map.of("entryId", entryId)));
+        call("解关联", "DELETE",
+                "/api/v1/knowledge/admin/concepts/" + conceptId + "/entries/" + entryId, adminToken(), null);
+        MvcResult concept2 = call("建概念二", "POST", "/api/v1/knowledge/admin/concepts", adminToken(),
+                json(Map.of("name", "自查概念二 " + suffix)));
+        long conceptId2 = idAt(concept2);
+        MvcResult conceptEdge = call("建概念关系", "POST", "/api/v1/knowledge/admin/concept-edges",
+                adminToken(), json(Map.of("fromConceptId", conceptId, "toConceptId", conceptId2,
+                        "relationType", "prerequisite")));
+        long conceptEdgeId = idAt(conceptEdge);
+        call("删概念关系", "DELETE", "/api/v1/knowledge/admin/concept-edges/" + conceptEdgeId,
+                adminToken(), null);
+        call("删概念", "DELETE", "/api/v1/knowledge/admin/concepts/" + conceptId2, adminToken(), null);
+
         // 附件类型白名单是 png/jpeg/gif/webp/pdf，且服务端按**字节**嗅探而不是看扩展名 ——
         // 所以这里必须塞真的 PNG 头，不是随便一段文本（第一版就栽在这里）
         MockMultipartFile file = new MockMultipartFile("file", "walk.png", "image/png",
@@ -239,6 +263,17 @@ class ApiWalkthroughTest {
                 json(Map.of("level", "understood")));
         call("我标记过的", "GET", "/api/v1/knowledge/self-assessments", bearer, null);
         call("取消自评", "DELETE", "/api/v1/knowledge/entries/" + entryId + "/self-assessment", bearer, null);
+        call("记一次浏览", "POST", "/api/v1/knowledge/entries/" + entryId + "/view", bearer, null);
+
+        // ---- 学习线与学习记录（WORK-020）----
+        call("学习线清单", "GET", "/api/v1/learning/lines", bearer, null);
+        call("我的学习记录", "GET", "/api/v1/learning/progress", bearer, null);
+        call("单站记录", "GET", "/api/v1/learning/entries/" + entryId, bearer, null);
+        call("上报得分", "PUT", "/api/v1/learning/entries/" + entryId, bearer,
+                json(Map.of("challenges", Map.of("smoke", Map.of("score", 1, "total", 1)),
+                        "quizzes", Map.of("smoke", Map.of("score", 1, "total", 1)))));
+        call("我的知识图谱", "GET", "/api/v1/learning/graph", bearer, null);
+        call("重置本站", "DELETE", "/api/v1/learning/entries/" + entryId, bearer, null);
 
         // ---- 笔记与分享 ----
         MvcResult note = call("建笔记", "POST", "/api/v1/notes", bearer,
@@ -448,6 +483,7 @@ class ApiWalkthroughTest {
                 json(Map.of("refreshToken", refresh3)), 401);
 
         // ---- 清理知识库夹具 ----
+        bestEffort("DELETE", "/api/v1/knowledge/admin/concepts/" + conceptId, adminToken());
         bestEffort("DELETE", "/api/v1/knowledge/admin/entries/" + entryId2, adminToken());
         bestEffort("DELETE", "/api/v1/knowledge/admin/entries/" + entryId, adminToken());
         bestEffort("DELETE", "/api/v1/knowledge/admin/categories/" + categoryId, adminToken());

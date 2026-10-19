@@ -1,5 +1,6 @@
 import { ThemeToggle } from '@paideia/ui'
 import {
+  Boxes,
   ChevronDown,
   ChevronRight,
   Coins,
@@ -40,6 +41,7 @@ const MENU: MenuItem[] = [
     children: [
       { to: '/knowledge/categories', label: '分类管理', icon: FolderTree },
       { to: '/knowledge/entries', label: '条目管理', icon: FileText },
+      { to: '/knowledge/concepts', label: '概念', icon: Boxes },
     ],
   },
   // 举报处理是学习者端分享出去的内容的**唯一治理入口**（用户裁决 11：由管理员处理）
@@ -62,6 +64,7 @@ const CRUMBS: Record<string, string[]> = {
   '/': ['总览'],
   '/knowledge/categories': ['知识库', '分类管理'],
   '/knowledge/entries': ['知识库', '条目管理'],
+  '/knowledge/concepts': ['知识库', '概念'],
   '/reports': ['举报处理'],
   '/ai-credits/grant': ['AI 积分', '积分调整'],
   '/ai-credits/audit': ['AI 积分', '用量审计'],
