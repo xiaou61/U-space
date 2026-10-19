@@ -10,6 +10,7 @@ import io.github.xiaou61.ai.internal.settings.AiSettingsStore;
 import io.github.xiaou61.platform.BizException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -70,6 +71,10 @@ public class MemoryExtractionService {
      * 一轮结束之后调一次（**必须在回答已经发出之后**）。
      *
      * <p>不满足条件时什么都不做，也不抛异常：它是"顺手看一眼"，任何失败都不该影响那一轮对话。
+     *
+     * <p><b>队列满时直接放弃这次整理</b>（2026-10-19 起执行器队列有界）：调用点就在
+     * {@code emitter.complete()} 之后，异常会窜回"已经结束的那一轮"，把一次成功的回答变成
+     * 错误事件。少整理一次记忆没有代价——游标没推进，下次到点会再来。
      */
     public void scheduleIfDue(long userId, long conversationId) {
         int rounds = properties.getRoundsPerExtraction();
@@ -80,7 +85,14 @@ public class MemoryExtractionService {
             return;
         }
         conversations.claimExtractionSlice(userId, conversationId, rounds)
-                .ifPresent(slice -> executor.execute(() -> run(userId, slice)));
+                .ifPresent(slice -> {
+                    try {
+                        executor.execute(() -> run(userId, slice));
+                    } catch (RejectedExecutionException busy) {
+                        log.info("ai.memory.skip_pool_full userId={} conversationId={}",
+                                userId, conversationId);
+                    }
+                });
     }
 
     /**

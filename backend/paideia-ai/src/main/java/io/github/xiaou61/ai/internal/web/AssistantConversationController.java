@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.MediaType;
@@ -122,6 +123,14 @@ class AssistantConversationController {
         SseEmitter emitter = new SseEmitter((long) 100_000);
         try {
             executor.execute(() -> runTurn(userId, conversationId, turn, emitter));
+        } catch (RejectedExecutionException rejected) {
+            // 线程池的队列也满了（2026-10-19 起队列有界）：任务根本没跑起来，这笔预留到不了
+            // settleOnce、也没有别的补偿出口，用户会被白扣一次分。全额退还。
+            //
+            // **必须在这里换成 429**：原来的 `throw cause` 会把 RejectedExecutionException
+            // 兜成 500，界面上是一句"服务器内部错误"，而真实情况是"现在太忙，等一下再来"。
+            settleOnce(new boolean[1], userId, turn, null, null);
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "当前对话请求较多，请稍后再试");
         } catch (RuntimeException cause) {
             // 线程池满/已关闭时任务根本没跑起来：这笔预留到不了 settleOnce、也没有别的补偿出口，
             // 用户会被白扣一次分。全额退还再抛出——同步阶段的异常能走全局异常处理拿到正常状态码。

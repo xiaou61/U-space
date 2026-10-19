@@ -20,6 +20,7 @@ import io.github.xiaou61.security.AuthPort;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -203,6 +204,31 @@ class AssistantConversationIntegrationTest {
         // 按 JSON 取值而不是比字符串：MySQL 的 JSON 列会**规范化**存储
         // （键重排、冒号后加空格），紧凑串读回来就变了形。
         assertThat(JsonPath.<Integer>read(usageJson, "$.total")).isEqualTo(33);
+    }
+
+    @Test
+    @DisplayName("线程池队列满：429 而不是 500，且这一轮的预扣全额退回")
+    void rejectedExecutionIsRefundedAndReportedAsBusy() throws Exception {
+        // 2026-10-19 起执行器队列有界：并发超限时 execute 直接抛 RejectedExecutionException。
+        // 两条断言各守一件事——状态码要是"等会儿再来"（500 会让人以为服务崩了），
+        // 钱要退回去（预扣发生在派发之前，任务没跑起来就没人能结算）。
+        configureCredential(userA);
+        long userId = Long.parseLong(userA);
+        long balanceBefore = creditService.balance(userId);
+        long conversationId = createConversation(userA, null);
+        doThrow(new RejectedExecutionException("queue full"))
+                .when(executor).execute(any());
+
+        MvcResult rejected = mockMvc.perform(post("/api/v1/ai/conversations/" + conversationId + "/messages")
+                        .header("Authorization", token(userA))
+                        .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"现在很忙吗\"}"))
+                .andReturn();
+
+        assertThat(rejected.getResponse().getStatus()).isEqualTo(429);
+        assertThat(body(rejected)).contains("请稍后再试");
+        assertThat(creditService.balance(userId)).isEqualTo(balanceBefore);
     }
 
     @Test

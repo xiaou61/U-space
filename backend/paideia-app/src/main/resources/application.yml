@@ -7,6 +7,24 @@ spring:
       # 而不是让容器在解析阶段就拒掉。真正超过 12 MB 才由 MaxUploadSizeExceededException 兜住。
       max-file-size: 12MB
       max-request-size: 12MB
+  task:
+    execution:
+      # 助手流式回答的执行器（2026-10-19 压测后显式配置）。
+      #
+      # 默认值在这台 4 核机上实测的问题是**静默排队**：Boot 默认 core=8、队列无界
+      # （max-size 实际是 Integer.MAX_VALUE），所以第 9 条流不会报错，只是整段等在队列里。
+      # 20 并发时队列堆到 13，首事件中位数 9.7 秒、p95 19 秒，而服务端零错误——
+      # 用户看到的是"助手半天不说话"，日志里什么也查不到。
+      #
+      # 为什么核心数给到 32：这些线程几乎全程在等上游流（AI 压测期间 Java 进程 CPU 接近 0），
+      # 不是算力瓶颈，8 这个默认值是按 CPU 密集任务定的。
+      # 为什么队列只有 8：队列是"安静地让人等"。超过约 40 条同时在飞之后，
+      # 宁可立刻回 429 让人刷新重试，也不要让他等 20 秒才看到第一个字。
+      thread-name-prefix: paideia-async-
+      pool:
+        core-size: 32
+        max-size: 32
+        queue-capacity: 8
 
 paideia:
   web:
