@@ -14,6 +14,8 @@ export type {
   AdminEntrySummary,
   AdminRelation,
   CategoryInput,
+  ConceptInput,
+  ConceptSummary,
   EntryInput,
   KnowledgeAdminApi,
 } from './admin-client'
@@ -30,7 +32,33 @@ export { MAX_HEADING_LEVEL, createSlugger, extractHeadings, slugify } from './he
 export type { Heading } from './heading-slug'
 export { FigureWithLightbox } from './image-lightbox'
 export { resolveMediaUrl } from './media'
+export {
+  circularLayout,
+  layoutKey,
+  loadPositions,
+  resetPositions,
+  savePositions,
+  type Point,
+} from './concept-graph-layout'
 export { createEntryProgressPort, recentReading, type RecentReading } from './source-reading-progress'
+export { createLearningApi, type LearningApi } from './learning-client'
+export { createServerProgressPort, mergeProgress, type ServerProgressPort } from './learning-progress'
+export type {
+  BlockScore,
+  ConceptCarrier,
+  ConceptEdge,
+  ConceptEvidence,
+  ConceptGraph,
+  ConceptGraphStats,
+  ConceptNode,
+  EntryProgressView,
+  LearningLine,
+  LearningStation,
+  LearningStatus,
+  LineKind,
+  MasteryTier,
+  ProgressReport,
+} from './learning-types'
 export { plainText } from './plain-text'
 export { SelfAssessmentButtons } from './self-assessment'
 export { MarkdownBody } from './markdown-body'

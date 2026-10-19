@@ -12,20 +12,24 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "3d-force-graph": "1.80.1",
     "@paideia/assistant": "workspace:*",
     "@paideia/auth": "workspace:*",
     "@paideia/core": "workspace:*",
+    "@paideia/identity": "workspace:*",
     "@paideia/knowledge": "workspace:*",
     "@paideia/platform-desktop": "workspace:*",
     "@paideia/platform-web": "workspace:*",
+    "@paideia/resume": "workspace:*",
     "@paideia/ui": "workspace:*",
     "@tanstack/react-query": "5.104.1",
+    "graphology": "0.26.0",
+    "graphology-layout-forceatlas2": "0.10.1",
     "lucide-react": "1.54.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "8.4.0",
-    "@paideia/identity": "workspace:*",
-    "@paideia/resume": "workspace:*"
+    "sigma": "4.0.3"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",

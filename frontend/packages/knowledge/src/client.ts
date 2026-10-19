@@ -32,6 +32,8 @@ export interface KnowledgeApi {
   sandboxStatus(): Promise<SandboxStatus>
   /** 执行一次练习代码。**服务端只回实际输出，判定在客户端**。 */
   runCode(input: RunCodeInput): Promise<RunCodeResult>
+  /** 记一次浏览（WORK-021）。旁路数据：失败不影响阅读。 */
+  recordView(entryId: number): Promise<null>
 }
 
 /** 沙箱能力。`reason` 在不可用时说明原因（未开启 / Docker 不在 / 镜像缺失）。 */
@@ -127,5 +129,8 @@ export function createKnowledgeApi(client: ApiClient): KnowledgeApi {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
       }),
+
+    recordView: (entryId) =>
+      client.requestEnvelope<null>(`/api/v1/knowledge/entries/${entryId}/view`, { method: 'POST' }),
   }
 }

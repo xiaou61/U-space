@@ -1,9 +1,19 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
+/** 一次对话的公共行为（WORK-020 起新增 tutor）。 */
+export type AssistantHarness = 'assistant' | 'interview' | 'tutor'
+
 /** 悬浮壳能看到的"当前内容"。 */
 export interface AssistantContextValue {
   entryId: number | null
   entryTitle: string | null
+  /**
+   * 这一页的助手用哪种行为。**默认通用助手**；课程条目页会设成 `tutor`（WORK-020）。
+   *
+   * <p>为什么放在页面而不是壳里：只有页面知道"我正在看的是不是一门课"。
+   * 壳只负责把它传给建会话的请求——行为会记在会话上，恢复时不丢。
+   */
+  harness: AssistantHarness
   /** 只影响显示范围（把别人的公开结果折叠掉），**不是权限**：私有结果由服务端的查询拦。 */
   onlyMine: boolean
 }
@@ -20,7 +30,7 @@ export interface PendingPrompt {
 }
 
 interface AssistantContextApi extends AssistantContextValue {
-  setEntry: (entry: { id: number; title: string } | null) => void
+  setEntry: (entry: { id: number; title: string; harness?: AssistantHarness } | null) => void
   setOnlyMine: (onlyMine: boolean) => void
   pendingPrompt: PendingPrompt | null
   /** 打开助手并把这句话填进输入框；**不发送**。 */
@@ -43,14 +53,17 @@ const AssistantContext = createContext<AssistantContextApi | null>(null)
 export function AssistantProvider({ children }: { children: ReactNode }) {
   const [entryId, setEntryId] = useState<number | null>(null)
   const [entryTitle, setEntryTitle] = useState<string | null>(null)
+  const [harness, setHarness] = useState<AssistantHarness>('assistant')
   const [onlyMine, setOnlyMine] = useState(false)
   const [pendingPrompt, setPendingPrompt] = useState<PendingPrompt | null>(null)
 
   // setEntry 必须**稳定**：调用方（条目页）把它放进 useEffect 的依赖里，
   // 每次渲染都换一个新函数会让那个 effect 反复跑。
-  const setEntry = useCallback((entry: { id: number; title: string } | null) => {
+  const setEntry = useCallback((entry: { id: number; title: string; harness?: AssistantHarness } | null) => {
     setEntryId(entry === null ? null : entry.id)
     setEntryTitle(entry === null ? null : entry.title)
+    // 离开条目页时回到通用助手：否则"上一次看的是课程"会让之后每个页面的助手都用导师口径
+    setHarness(entry === null ? 'assistant' : entry.harness ?? 'assistant')
   }, [])
 
   const ask = useCallback((text: string) => {
@@ -69,6 +82,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     () => ({
       entryId,
       entryTitle,
+      harness,
       onlyMine,
       setEntry,
       setOnlyMine,
@@ -76,7 +90,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       ask,
       clearPendingPrompt,
     }),
-    [entryId, entryTitle, onlyMine, setEntry, pendingPrompt, ask, clearPendingPrompt],
+    [entryId, entryTitle, harness, onlyMine, setEntry, pendingPrompt, ask, clearPendingPrompt],
   )
 
   return <AssistantContext.Provider value={value}>{children}</AssistantContext.Provider>

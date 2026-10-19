@@ -1,9 +1,20 @@
-import { createKnowledgeApi, plainText, recentReading } from '@paideia/knowledge'
+import { createKnowledgeApi, createLearningApi, plainText, recentReading } from '@paideia/knowledge'
 import { configFor, createIdentityApi } from '@paideia/identity'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpen, Layers, MessagesSquare, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  GraduationCap,
+  Layers,
+  MessagesSquare,
+  Network,
+  NotebookPen,
+  Search,
+  Sparkles,
+  Target,
+} from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 
@@ -11,6 +22,7 @@ import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
+const learning = createLearningApi(api)
 
 /**
  * 快捷入口。`key` 与身份的 `preferredNav` 对齐（WORK-010 T-12）。
@@ -18,7 +30,7 @@ const knowledge = createKnowledgeApi(api)
  * <p>只有顺序会变，**集合不变**（面试页是导航里的入口，这里不重复）：首页是"我该从哪开始"，
  * 把身份最相关的那张卡排前面就够了；藏掉入口会让"推荐"变成"限制"。
  */
-type QuickLinkKey = 'knowledge' | 'notes' | 'my-assessments' | 'interview'
+type QuickLinkKey = 'learn' | 'knowledge' | 'notes' | 'my-assessments' | 'interview' | 'graph'
 
 const QUICK_LINKS: {
   /** 参与身份排序的入口才有 key；`null` 表示永远追加在末尾。 */
@@ -30,12 +42,28 @@ const QUICK_LINKS: {
   description: string
 }[] = [
   {
+    key: 'learn' as const,
+    to: '/learn',
+    testId: 'home-entry-learn',
+    icon: GraduationCap,
+    title: '从零开始',
+    description: 'Python / Java 两条线，一课二十分钟，边学边练。',
+  },
+  {
     key: 'interview' as const,
     to: '/interview',
     testId: 'home-entry-interview',
     icon: MessagesSquare,
     title: '模拟面试',
     description: '一次一个问题，结束拿一份结构化评分。',
+  },
+  {
+    key: 'graph' as const,
+    to: '/graph',
+    testId: 'home-entry-graph',
+    icon: Network,
+    title: '知识图谱',
+    description: '看自己每个知识点掌握到哪一步，哪些该复习了。',
   },
   {
     key: 'knowledge' as const,
@@ -110,6 +138,28 @@ export function HomePage() {
    * 用 `useMemo` 而不是 state：这个值每次进入首页重新算一次就够，也不需要监听其他标签页。
    */
   const recent = useMemo(() => recentReading(3), [])
+  /**
+   * 服务端的"继续学习"（WORK-020）：跨设备以它为准。
+   *
+   * <p>本地那份不删——它记录"读到第几步"，服务端记录"这一站通没通过"，两者互补。
+   * 接口失败时退回本地，首页那块不会因此整块消失。
+   */
+  const serverProgress = useQuery({
+    queryKey: ['learning-progress', 'home'],
+    queryFn: () => learning.progress(6),
+    retry: false,
+  })
+  const continueLearning = useMemo(() => {
+    const items = serverProgress.data ?? []
+    return items
+      .filter((item) => item.status === 'in_progress' || item.status === 'passed')
+      .slice(0, 3)
+      .map((item) => ({
+        entryId: item.entryId,
+        title: item.title,
+        label: item.status === 'passed' ? '已通过 · 可复习' : '学到一半',
+      }))
+  }, [serverProgress.data])
 
   // 一次请求同时供"条目总数"与"最近更新"两块用：首页不该为两个数字打两次接口
   const entries = useQuery({
@@ -247,8 +297,40 @@ export function HomePage() {
         />
       </div>
 
-      {/* 「继续学习」（WORK-014）：只有真读过才出现——空着一条"还没开始"只是噪音 */}
-      {recent.length === 0 ? null : (
+      {/* 「继续学习」：服务端有记录就优先用它（跨设备一致），否则退回本地阅读痕迹。
+          只有真读过才出现——空着一条"还没开始"只是噪音。 */}
+      {continueLearning.length > 0 ? (
+        <Section
+          title="继续学习"
+          description="接着上次那一站往下走。"
+          actions={
+            <Button variant="ghost" size="sm" render={<Link to="/learn" />}>
+              全部学习线
+            </Button>
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-3" data-testid="home-continue-learning">
+            {continueLearning.map((item) => (
+              <Link
+                key={item.entryId}
+                to={`/knowledge/entries/${item.entryId}`}
+                data-testid={`home-continue-${item.entryId}`}
+                className="border-border bg-card hover:border-primary/40 hover:shadow-card group flex items-start gap-3 rounded-xl border p-4 transition-all hover:-translate-y-0.5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="group-hover:text-primary block truncate text-sm font-medium transition-colors">
+                    {item.title}
+                  </span>
+                  <span className="text-muted-foreground mt-1 block text-xs">{item.label}</span>
+                </span>
+                <ArrowRight className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
+      {continueLearning.length > 0 || recent.length === 0 ? null : (
         <Section
           title="继续学习"
           description="接着上次那一条读下去。"

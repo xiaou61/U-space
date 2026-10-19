@@ -77,6 +77,31 @@ export interface KnowledgeAdminApi {
   deleteRelation(id: number): Promise<null>
 
   uploadFile(file: File): Promise<UploadedFile>
+
+  /** 概念维护（WORK-021）：概念是图谱节点，条目是它的载体。 */
+  concepts(): Promise<ConceptSummary[]>
+  createConcept(input: ConceptInput): Promise<number>
+  updateConcept(id: number, input: ConceptInput): Promise<null>
+  deleteConcept(id: number): Promise<null>
+  linkConceptEntry(conceptId: number, entryId: number): Promise<null>
+  unlinkConceptEntry(conceptId: number, entryId: number): Promise<null>
+  createConceptEdge(fromConceptId: number, toConceptId: number, relationType: string): Promise<number>
+  deleteConceptEdge(id: number): Promise<null>
+}
+
+export interface ConceptSummary {
+  id: number
+  name: string
+  summary: string | null
+  categoryId: number | null
+  entryLinks: number
+  edges: number
+}
+
+export interface ConceptInput {
+  categoryId: number | null
+  name: string
+  summary?: string | null
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -135,5 +160,38 @@ export function createKnowledgeAdminApi(client: ApiClient): KnowledgeAdminApi {
       // **不要手动设 Content-Type**：multipart 的分隔符由浏览器生成，自己设会把 boundary 写错
       return client.requestEnvelope<UploadedFile>(`${base}/files`, { method: 'POST', body: form })
     },
+
+    concepts: () => client.requestEnvelope<ConceptSummary[]>(`${base}/concepts`),
+    createConcept: (input) =>
+      client.requestEnvelope<number>(`${base}/concepts`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(input),
+      }),
+    updateConcept: (id, input) =>
+      client.requestEnvelope<null>(`${base}/concepts/${id}`, {
+        method: 'PUT',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(input),
+      }),
+    deleteConcept: (id) => client.requestEnvelope<null>(`${base}/concepts/${id}`, { method: 'DELETE' }),
+    linkConceptEntry: (conceptId, entryId) =>
+      client.requestEnvelope<null>(`${base}/concepts/${conceptId}/entries`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ entryId }),
+      }),
+    unlinkConceptEntry: (conceptId, entryId) =>
+      client.requestEnvelope<null>(`${base}/concepts/${conceptId}/entries/${entryId}`, {
+        method: 'DELETE',
+      }),
+    createConceptEdge: (fromConceptId, toConceptId, relationType) =>
+      client.requestEnvelope<number>(`${base}/concept-edges`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ fromConceptId, toConceptId, relationType }),
+      }),
+    deleteConceptEdge: (id) =>
+      client.requestEnvelope<null>(`${base}/concept-edges/${id}`, { method: 'DELETE' }),
   }
 }

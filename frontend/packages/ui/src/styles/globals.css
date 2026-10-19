@@ -91,6 +91,15 @@
   --warning-foreground: hsl(0 0% 100%);
   --info: hsl(199 75% 34%);
   --info-foreground: hsl(0 0% 100%);
+  /*
+   * 掌握度档位色（WORK-021）。图谱画布（sigma / 3d-force-graph）要的是**可解析的颜色值**，
+   * 不是 Tailwind 类名——所以它必须来自令牌，而不是组件里写死的十六进制。
+   * 组件在运行时用 getComputedStyle 读这四个变量。
+   */
+  --tier-unknown: hsl(215 16% 62%);
+  --tier-learning: hsl(213 85% 62%);
+  --tier-familiar: hsl(152 55% 48%);
+  --tier-mastered: hsl(243 62% 52%);
   --border: hsl(220 14% 90%);
   /* 输入控件的线比普通分隔线略重一点，否则表单看起来"没有边界" */
   --input: hsl(220 14% 84%);
@@ -136,6 +145,11 @@
   --warning-foreground: hsl(32 80% 12%);
   --info: hsl(199 70% 66%);
   --info-foreground: hsl(199 80% 10%);
+  /* 档位色在深色下整体提亮，与上面的语义色同一处理 */
+  --tier-unknown: hsl(215 16% 58%);
+  --tier-learning: hsl(213 85% 70%);
+  --tier-familiar: hsl(152 45% 62%);
+  --tier-mastered: hsl(243 72% 74%);
   --border: hsl(222 14% 20%);
   --input: hsl(222 14% 26%);
   --ring: hsl(243 72% 74%);

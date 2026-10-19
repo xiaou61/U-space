@@ -33,7 +33,7 @@ export function ConversationPanel({
   api: AssistantApi
   onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
-  const { entryId, entryTitle, pendingPrompt, clearPendingPrompt } = useAssistantContext()
+  const { entryId, entryTitle, harness, pendingPrompt, clearPendingPrompt } = useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessions, setSessions] = useState<ConversationView[]>([])
@@ -267,7 +267,7 @@ export function ConversationPanel({
     try {
       let id = conversationId
       if (id === null) {
-        id = (await api.createConversation(entryId)).id
+        id = (await api.createConversation(entryId, harness)).id
         setConversationId(id)
         storeConversation(id)
       }

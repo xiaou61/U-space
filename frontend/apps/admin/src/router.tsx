@@ -4,6 +4,7 @@ import { AdminHomePage } from './pages/AdminHomePage'
 import { AiCreditsAuditPage } from './pages/AiCreditsAuditPage'
 import { AiCreditsGrantPage } from './pages/AiCreditsGrantPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
+import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
 import { NoteReportsPage } from './pages/NoteReportsPage'
 import { RequireAdmin } from './require-admin'
@@ -34,6 +35,14 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <KnowledgeCategoriesPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/knowledge/concepts',
+    element: (
+      <RequireAdmin>
+        <KnowledgeConceptsPage />
       </RequireAdmin>
     ),
   },

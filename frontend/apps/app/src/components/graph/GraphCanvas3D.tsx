@@ -1,7 +1,7 @@
 import { circularLayout, loadPositions, type ConceptEdge, type ConceptNode } from '@paideia/knowledge'
 import { useEffect, useRef, useState } from 'react'
 
-import { tierStyle } from './tier-style'
+import { tierColor } from './tier-style'
 
 interface Props {
   nodes: ConceptNode[]
@@ -50,7 +50,7 @@ export function GraphCanvas3D({ nodes, edges, layoutKeyValue, selectedId, onSele
           nodes: nodes.map((node) => ({
             id: String(node.id),
             name: node.name,
-            color: tierStyle(node.tier).color,
+            color: tierColor(node.tier),
             val: node.tier === 'unknown' ? 1 : 1 + node.score * 2,
             x: points[node.id]?.x ?? 0,
             y: points[node.id]?.y ?? 0,
@@ -68,7 +68,7 @@ export function GraphCanvas3D({ nodes, edges, layoutKeyValue, selectedId, onSele
           .nodeLabel((node) => (node as { name: string }).name)
           .nodeColor((node) => (node as { color: string }).color)
           .onNodeClick((node) => onSelect(Number((node as { id: string }).id)))
-          .backgroundColor('rgba(0,0,0,0)')
+          .backgroundColor('transparent')
 
         destroy = () => {
           renderer.pauseAnimation()

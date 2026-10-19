@@ -1,4 +1,4 @@
-import { Markdown, preloadMarkdown, type MarkdownProps, type SandboxPort } from '@paideia/ui'
+import { Markdown, preloadMarkdown, type MarkdownProps, type ProgressPort, type SandboxPort } from '@paideia/ui'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { extractHeadings } from './heading-slug'
@@ -45,6 +45,7 @@ export function MarkdownBody({
   onAskAssistant,
   onOpenEntry,
   sandbox,
+  progress: injectedProgress,
 }: {
   markdown: string
   className?: string
@@ -62,6 +63,11 @@ export function MarkdownBody({
   onOpenEntry?: (entryId: number) => void
   /** 由应用注入：代码执行（WORK-015）。不传时「运行」按钮不渲染。 */
   sandbox?: SandboxPort
+  /**
+   * 由应用注入的进度端口（WORK-020）。不传时用本地 `localStorage` 实现——
+   * 课程页会传一个"本地 + 服务端合并"的端口，管理端预览与笔记预览什么都不用改。
+   */
+  progress?: ProgressPort
 }) {
   const container = useRef<HTMLDivElement>(null)
   // 只依赖 markdown：同一份正文的标题序列是确定的
@@ -130,7 +136,8 @@ export function MarkdownBody({
     [mediaBaseUrl],
   )
 
-  const progress = useMemo(() => createEntryProgressPort(entryId, entryTitle), [entryId, entryTitle])
+  const localProgress = useMemo(() => createEntryProgressPort(entryId, entryTitle), [entryId, entryTitle])
+  const progress = injectedProgress ?? localProgress
 
   const documentContext = useMemo(
     () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox }),

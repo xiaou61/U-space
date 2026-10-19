@@ -13,7 +13,7 @@ export interface IdentityConfig {
   /** 首页优先推荐的知识库分类 slug（按顺序；不存在的忽略）。 */
   preferredCategories: string[]
   /** 导航顺序：把哪几个入口提前。 */
-  preferredNav: readonly ('knowledge' | 'notes' | 'my-assessments' | 'interview')[]
+  preferredNav: readonly ('learn' | 'knowledge' | 'notes' | 'my-assessments' | 'interview')[]
   /** 助手在"没有条目上下文"时的开场白。 */
   assistantGreeting: string
   /** 面试页的开场说明（面试官自己会再问第一题）。 */
@@ -31,25 +31,25 @@ const CONFIGS: Record<Identity, IdentityConfig> = {
     // 求职者优先看到**面试与底层原理**这两块：面试问的正是这些，而日常学习更偏"按分类随手读"。
     // 这个差别必须真实存在——否则"切换身份"在首页上看不出任何变化（AC-002 就无从验收）。
     preferredCategories: ['java-concurrency', 'architecture', 'backend-basics'],
-    preferredNav: ['interview', 'knowledge', 'notes', 'my-assessments'],
+    preferredNav: ['interview', 'learn', 'knowledge', 'notes', 'my-assessments'],
     assistantGreeting: '问点什么吧。找工作期间，我可以帮你看漏了哪些知识点、也可以陪你模拟面试。',
     interviewIntro: '我会一次问一个问题，答不上来就说"不会"，我会换个角度。随时可以说"结束"。',
   },
   postgrad: {
     preferredCategories: ['backend-basics', 'architecture'],
-    preferredNav: ['knowledge', 'notes', 'my-assessments'],
+    preferredNav: ['learn', 'knowledge', 'notes', 'my-assessments'],
     assistantGreeting: '问点什么吧，比如让它解释当前内容里的一个概念。',
     interviewIntro: '我会一次问一个问题。随时可以说"结束"。',
   },
   civil_service: {
     preferredCategories: ['backend-basics', 'architecture'],
-    preferredNav: ['knowledge', 'notes', 'my-assessments'],
+    preferredNav: ['learn', 'knowledge', 'notes', 'my-assessments'],
     assistantGreeting: '问点什么吧，比如让它解释当前内容里的一个概念。',
     interviewIntro: '我会一次问一个问题。随时可以说"结束"。',
   },
   daily_learning: {
     preferredCategories: ['backend-basics', 'java-concurrency', 'architecture'],
-    preferredNav: ['knowledge', 'notes', 'my-assessments'],
+    preferredNav: ['learn', 'knowledge', 'notes', 'my-assessments'],
     assistantGreeting: '问点什么吧，比如让它解释当前内容里的一个概念。',
     interviewIntro: '我会一次问一个问题。随时可以说"结束"。',
   },

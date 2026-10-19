@@ -4,6 +4,8 @@ import {
   MarkdownBody,
   SelfAssessmentButtons,
   createKnowledgeApi,
+  createLearningApi,
+  createServerProgressPort,
 } from '@paideia/knowledge'
 import type { EntryRef, SelfAssessmentLevel } from '@paideia/knowledge'
 import {
@@ -17,7 +19,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAssistantContext } from '@paideia/assistant'
 import { ArrowLeft, ArrowRight, ChevronLeft, ListTree } from 'lucide-react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { api } from '../api'
@@ -25,6 +27,7 @@ import { LearnerHeader } from '../components/LearnerHeader'
 import { API_BASE_URL } from '../env'
 
 const knowledge = createKnowledgeApi(api)
+const learning = createLearningApi(api)
 
 /**
  * 条目详情：**一栏阅读正文 + 右侧常驻目录**。
@@ -71,15 +74,66 @@ export function KnowledgeEntryPage() {
     enabled: valid,
   })
 
+  /**
+   * 学习记录（WORK-020）：**先取再渲染正文**。
+   *
+   * <p>顺序很重要：渲染块时会用进度端口读出"上次做到哪"，服务端的值必须在那之前到手，
+   * 否则块先按空进度画一遍、再跳变。所以这里用 `isPending` 挡住正文。
+   *
+   * <p>取不到（非课程条目、接口失败）时传 null，端口照常工作——只是本次得分只留在本地。
+   */
+  const serverProgress = useQuery({
+    queryKey: ['learning-entry', entryId],
+    queryFn: () => learning.entry(entryId),
+    enabled: valid,
+    retry: false,
+  })
+
+  const progressPort = useMemo(() => {
+    if (!valid || serverProgress.isPending || entry.data === undefined) {
+      return undefined
+    }
+    return createServerProgressPort({
+      entryId,
+      title: entry.data.title,
+      initial: serverProgress.data ?? null,
+      report: (body) => learning.report(entryId, body),
+      clear: () => learning.reset(entryId),
+    })
+  }, [valid, serverProgress.isPending, serverProgress.data, entry.data, entryId])
+
   // 把"当前在读哪一条"交给悬浮壳：它是唯一知道这件事的地方。
   // 离开页面时清空，壳随即回到"打开一条内容后可用"的状态。
   useEffect(() => {
     if (entry.data === undefined) {
       return
     }
-    setEntry({ id: entry.data.id, title: entry.data.title })
+    // 课程条目用导师行为（WORK-020）：判断依据是服务端给的学习线类别，不是标题或地址。
+    // 学情还没取到时先按通用助手——它没有学情段落，也不会假装看过记录。
+    setEntry({
+      id: entry.data.id,
+      title: entry.data.title,
+      harness: serverProgress.data?.lineKind === 'course' ? 'tutor' : 'assistant',
+    })
     return () => setEntry(null)
-  }, [entry.data, setEntry])
+  }, [entry.data, serverProgress.data?.lineKind, setEntry])
+
+  /**
+   * 记一次浏览（WORK-021）。
+   *
+   * <p>用 ref 挡住重复上报：严格模式下 effect 会跑两次，切标签页回来也可能重渲染，
+   * 那些都不该多算一次。刷新页面才算新的一次。
+   *
+   * <p>失败静默：旁路数据不值得让阅读页报错。
+   */
+  const viewReported = useRef<number | null>(null)
+  useEffect(() => {
+    if (!valid || entry.data === undefined || viewReported.current === entryId) {
+      return
+    }
+    viewReported.current = entryId
+    void knowledge.recordView(entryId).catch(() => undefined)
+  }, [valid, entryId, entry.data])
 
   // 标记与取消共用一次 mutation：对用户来说是"改我的标记"，不是两个动作
   const assess = useMutation({
@@ -122,7 +176,14 @@ export function KnowledgeEntryPage() {
         </Alert>
       ) : null}
 
-      {entry.isSuccess ? (
+      {entry.isSuccess && serverProgress.isPending ? (
+        <p className="text-muted-foreground flex items-center gap-2 text-sm" data-testid="entry-progress-loading">
+          <Spinner />
+          读取学习记录…
+        </p>
+      ) : null}
+
+      {entry.isSuccess && !serverProgress.isPending ? (
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_15rem]">
           <article className="min-w-0 lg:max-w-[46rem]">
             <PageHeader
@@ -157,6 +218,7 @@ export function KnowledgeEntryPage() {
               onAskAssistant={ask}
               onOpenEntry={openEntry}
               sandbox={sandbox}
+              progress={progressPort}
             />
 
             <div className="mt-10">

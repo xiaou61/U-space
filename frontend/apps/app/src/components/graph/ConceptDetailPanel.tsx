@@ -2,7 +2,7 @@ import type { ConceptNode } from '@paideia/knowledge'
 import { BookOpen, Clock } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { tierStyle } from './tier-style'
+import { tierColor, tierStyle } from './tier-style'
 
 interface Props {
   concept: ConceptNode | null
@@ -25,7 +25,7 @@ export function ConceptDetailPanel({ concept }: Props) {
             <p key={tier} className="flex items-center gap-2">
               <span
                 className="inline-block size-2.5 rounded-full"
-                style={{ backgroundColor: tierStyle(tier).color }}
+                style={{ backgroundColor: tierColor(tier) }}
               />
               {tierStyle(tier).label}
               <span className="opacity-70">— {tierStyle(tier).hint}</span>
@@ -42,13 +42,13 @@ export function ConceptDetailPanel({ concept }: Props) {
     <aside className="border-border/60 rounded-xl border p-5" data-testid="concept-detail">
       <h2 className="text-lg font-semibold">{concept.name}</h2>
       <p className="text-muted-foreground mt-1 text-sm">
-        <span className="inline-block size-2.5 rounded-full" style={{ backgroundColor: style.color }} />{' '}
+        <span className="inline-block size-2.5 rounded-full" style={{ backgroundColor: tierColor(concept.tier) }} />{' '}
         {style.label} · {Math.round(concept.score * 100)}%
         {concept.categoryName !== null ? ` · ${concept.categoryName}` : ''}
       </p>
 
       {concept.reviewDue ? (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-warning mt-2 flex items-center gap-1.5 text-xs">
           <Clock className="size-3.5" />
           到期该复习了
         </p>

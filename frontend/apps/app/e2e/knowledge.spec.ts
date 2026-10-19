@@ -276,3 +276,19 @@ test('自评标记刷新后仍在，并出现在「我标记过的内容」里',
   await page.getByTestId('self-assessment-understood').click()
   await expect(page.getByTestId('self-assessment-understood')).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('打开条目会记一次浏览（WORK-021）：请求真的发出去了', async ({ page }) => {
+  await signIn(page)
+  await openAllEntries(page)
+  await firstEntryLink(page).click()
+  await expect(page).toHaveURL(/#\/knowledge\/entries\/\d+$/)
+
+  // 只在接口层验"记了"：浏览是旁路数据，界面上不该有任何可见痕迹。
+  // 这里用一个在导航之后才挂的监听器，再刷新一次页面，观察真实请求。
+  const viewCall = page.waitForRequest(
+    (request) => request.method() === 'POST' && /\/api\/v1\/knowledge\/entries\/\d+\/view$/.test(request.url()),
+    { timeout: 15_000 },
+  )
+  await page.reload()
+  await viewCall
+})

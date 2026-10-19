@@ -2,9 +2,11 @@ import { RequireAuth } from '@paideia/auth'
 import { createHashRouter } from 'react-router'
 
 import { HomePage } from './pages/HomePage'
+import { GraphPage } from './pages/GraphPage'
 import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
 import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
+import { LearnPage } from './pages/LearnPage'
 import { LoginPage } from './pages/LoginPage'
 import { InterviewPage } from './pages/InterviewPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -49,6 +51,24 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <HomePage />
+      </RequireAuth>
+    ),
+  },
+  // 学习线首页（WORK-020）：卡片由服务端返回的线清单渲染，加一门语言不改这里。
+  {
+    path: '/learn',
+    element: (
+      <RequireAuth>
+        <LearnPage />
+      </RequireAuth>
+    ),
+  },
+  // 个人知识图谱（WORK-021）：2D 主入口，3D 是切换视角。
+  {
+    path: '/graph',
+    element: (
+      <RequireAuth>
+        <GraphPage />
       </RequireAuth>
     ),
   },

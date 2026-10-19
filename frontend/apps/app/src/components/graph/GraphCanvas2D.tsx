@@ -1,7 +1,7 @@
 import { circularLayout, loadPositions, savePositions, type ConceptEdge, type ConceptNode, type Point } from '@paideia/knowledge'
 import { useEffect, useRef, useState } from 'react'
 
-import { tierStyle } from './tier-style'
+import { resolveVar, tierColor } from './tier-style'
 
 interface Props {
   nodes: ConceptNode[]
@@ -54,7 +54,7 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
           graph.addNode(String(node.id), {
             label: node.name,
             size: node.tier === 'unknown' ? 6 : 8 + node.score * 6,
-            color: tierStyle(node.tier).color,
+            color: tierColor(node.tier),
             x: 0,
             y: 0,
           })
@@ -66,7 +66,8 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
             return
           }
           graph.addEdgeWithKey(`${edge.type}-${index}`, from, to, {
-            color: edge.type === 'prerequisite' ? '#cbd5e1' : '#e2e8f0',
+            // 边的浓淡也走令牌：前置关系要看得见（border），关联关系要退到背景里（tier-unknown）
+            color: resolveVar(edge.type === 'prerequisite' ? '--border' : '--tier-unknown'),
             size: edge.type === 'prerequisite' ? 1.4 : 1,
           })
         })
