@@ -38,7 +38,7 @@ public final class AccountTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "account.me", "account", "读取当前账号的身份与目标",
+                    "account_me", "account", "读取当前账号的身份与目标",
                     "读取**当前调用者自己**的身份（如「找工作」）与目标岗位/城市/投递阶段。"
                             + "不含邮箱、密码、角色等敏感字段。用户问「我是谁」「我的目标是什么」时用它。",
                     Map.of("type", "object", "properties", Map.of(), "required", List.of()),

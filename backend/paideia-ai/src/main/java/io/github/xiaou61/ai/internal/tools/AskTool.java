@@ -15,7 +15,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
- * `assistant.ask`：让外部助手调用平台 AI 回答一次（WORK-019 REQ-028）。
+ * `assistant_ask`：让外部助手调用平台 AI 回答一次（WORK-019 REQ-028）。
  *
  * <p><b>为什么这个工具自己管计费</b>：其余工具要么不花钱、要么由调用它的用例自己收钱；而这里
  * 每一次调用都会真实地打一次上游模型，不预留就会在并发下超扣。所以它先
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AskTool implements PaideiaTool {
 
-    static final String NAME = "assistant.ask";
+    static final String NAME = "assistant_ask";
     private static final int MAX_QUESTION = 2_000;
 
     /**

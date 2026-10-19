@@ -50,15 +50,15 @@ class McpToolInvokerTest {
 
     private McpToolInvoker invoker(int perMinute) {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                recording("knowledge.search", "knowledge", true),
-                recording("note.create", "note", false)));
+                recording("knowledge_search", "knowledge", true),
+                recording("note_create", "note", false)));
         return new McpToolInvoker(catalog, new McpRateLimiter(perMinute));
     }
 
     @Test
     void toolOutsideViewIsUnknown() {
         // 写工具在只读视图里：即便名字对，也必须当作"没有这个工具"
-        ToolResult result = invoker(100).invoke(WRITER, McpViews.DEFAULT, "note.create", Map.of());
+        ToolResult result = invoker(100).invoke(WRITER, McpViews.DEFAULT, "note_create", Map.of());
 
         assertThat(result.error()).isTrue();
         assertThat(result.text()).contains("没有名为");
@@ -69,7 +69,7 @@ class McpToolInvokerTest {
     void toolInsideWriteViewRunsForWriteToken() {
         McpViews writeView = McpViews.parse("/x/note/write").orElseThrow();
 
-        ToolResult result = invoker(100).invoke(WRITER, writeView, "note.create", Map.of("title", "x"));
+        ToolResult result = invoker(100).invoke(WRITER, writeView, "note_create", Map.of("title", "x"));
 
         assertThat(result.error()).isFalse();
         assertThat(lastContext.get().origin()).isEqualTo(ToolContext.Origin.EXTERNAL);
@@ -79,7 +79,7 @@ class McpToolInvokerTest {
     void writeToolIsInvisibleToReadOnlyTokenEvenInWriteView() {
         McpViews writeView = McpViews.parse("/x/note/write").orElseThrow();
 
-        ToolResult result = invoker(100).invoke(READER, writeView, "note.create", Map.of());
+        ToolResult result = invoker(100).invoke(READER, writeView, "note_create", Map.of());
 
         assertThat(result.error()).isTrue();
         assertThat(result.text()).contains("没有名为");
@@ -88,7 +88,7 @@ class McpToolInvokerTest {
     @Test
     void ownerFieldsAreStrippedFromArguments() {
         invoker(100).invoke(READER, McpViews.parse("/x/knowledge").orElseThrow(),
-                "knowledge.search", Map.of("keyword", "索引", "userId", 999L, "ownerId", 999L));
+                "knowledge_search", Map.of("keyword", "索引", "userId", 999L, "ownerId", 999L));
 
         assertThat(lastArguments.get())
                 .containsEntry("keyword", "索引")
@@ -101,9 +101,9 @@ class McpToolInvokerTest {
         McpToolInvoker invoker = invoker(2);
         McpViews view = McpViews.parse("/x/knowledge").orElseThrow();
 
-        assertThat(invoker.invoke(READER, view, "knowledge.search", Map.of()).error()).isFalse();
-        assertThat(invoker.invoke(READER, view, "knowledge.search", Map.of()).error()).isFalse();
-        ToolResult third = invoker.invoke(READER, view, "knowledge.search", Map.of());
+        assertThat(invoker.invoke(READER, view, "knowledge_search", Map.of()).error()).isFalse();
+        assertThat(invoker.invoke(READER, view, "knowledge_search", Map.of()).error()).isFalse();
+        ToolResult third = invoker.invoke(READER, view, "knowledge_search", Map.of());
 
         assertThat(third.error()).isTrue();
         assertThat(third.text()).contains("过于频繁");
@@ -114,7 +114,7 @@ class McpToolInvokerTest {
         PaideiaTool exploding = new PaideiaTool() {
             @Override
             public ToolDescriptor descriptor() {
-                return new ToolDescriptor("knowledge.boom", "knowledge", "炸", "描述",
+                return new ToolDescriptor("knowledge_boom", "knowledge", "炸", "描述",
                         Map.of("type", "object", "properties", Map.of()), null,
                         true, false, true, ToolScope.READ, false);
             }
@@ -128,7 +128,7 @@ class McpToolInvokerTest {
         McpToolInvoker invoker = new McpToolInvoker(catalog, new McpRateLimiter(100));
 
         ToolResult result = invoker.invoke(READER, McpViews.parse("/x/knowledge").orElseThrow(),
-                "knowledge.boom", Map.of());
+                "knowledge_boom", Map.of());
 
         assertThat(result.error()).isTrue();
         assertThat(result.text()).doesNotContain("paideia.notes", "jdbc:mysql", "10.0.0.1");
@@ -150,14 +150,14 @@ class McpToolInvokerTest {
         logger.addAppender(appender);
         try {
             invoker(100).invoke(READER, McpViews.parse("/x/knowledge").orElseThrow(),
-                    "knowledge.search", Map.of("keyword", "不该出现在日志里的正文"));
+                    "knowledge_search", Map.of("keyword", "不该出现在日志里的正文"));
 
             assertThat(appender.list).hasSize(1);
             String line = appender.list.get(0).getFormattedMessage();
             assertThat(line)
                     .contains("tokenId=1")
                     .contains("userId=7")
-                    .contains("tool=knowledge.search")
+                    .contains("tool=knowledge_search")
                     .contains("view=knowledge")
                     .contains("durationMs=")
                     .contains("isError=false")

@@ -24,7 +24,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * `assistant.ask` 的计费纪律：**余额不足不发起上游**、成功才结算、失败全额退。
+ * `assistant_ask` 的计费纪律：**余额不足不发起上游**、成功才结算、失败全额退。
  */
 class AskToolTest {
 

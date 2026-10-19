@@ -118,10 +118,24 @@ public class AgentToolBridge {
      *
      * <p>**每轮重算**：模型在上一轮通过 `find_tools` 拿到的新工具，下一轮必须出现在清单里，
      * 否则它会一直重复搜索。
+     *
+     * <p><b>必须按名字去重</b>：`find_tools` 的检索结果里经常包含**本来就在核心包里**的工具
+     * （比如 `knowledge_search`）。去重前同一个工具会以两份完全相同的 schema 发给上游，
+     * 实测的后果是模型开始反复调同一个工具、把同一段回答重复好几遍，直到耗尽最大轮次。
+     * 这不是"多余的几个字节"，是会改变模型行为的输入。
      */
     public List<ToolSchema> concat(List<ToolSchema> core, Collection<String> discovered) {
-        List<ToolSchema> merged = new ArrayList<>(core);
+        Set<String> present = new java.util.HashSet<>();
+        List<ToolSchema> merged = new ArrayList<>();
+        for (ToolSchema schema : core) {
+            if (present.add(schema.getName())) {
+                merged.add(schema);
+            }
+        }
         for (String name : discovered) {
+            if (!present.add(name)) {
+                continue;
+            }
             catalog.find(name).ifPresent(tool -> merged.add(toSchema(tool.descriptor())));
         }
         return List.copyOf(merged);
@@ -179,7 +193,7 @@ public class AgentToolBridge {
 
     /** 草稿工具的结构化输出 → 界面草稿。名字写死在这里是刻意的：这是内部适配器的协议。 */
     private static NoteDraft draftOf(ToolDescriptor descriptor, ToolResult result) {
-        if (result.error() || !"assistant.draft_note".equals(descriptor.name()) || result.structured() == null) {
+        if (result.error() || !"assistant_draft_note".equals(descriptor.name()) || result.structured() == null) {
             return null;
         }
         Object title = result.structured().get("title");

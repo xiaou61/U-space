@@ -5,26 +5,26 @@ import java.util.regex.Pattern;
 /**
  * 工具名规则（WORK-019 REQ-003）。
  *
- * <p>形状固定为 `toolset.verb_object`：**点号是 MCP 规范允许的字符**，同时把"聚合网关撞名"
- * 这个问题提前解决——规范专门提醒过，多个 server 的工具会重名、建议加前缀。我们不等聚合时
- * 才处理，而是从第一天就把工具组写进名字里。
+ * <p><b>为什么是下划线而不是点号</b>：MCP 规范确实允许点号，但**内部适配器要把同一批名字发给
+ * DeepSeek 的 OpenAI 兼容接口**，那条通道只接受 {@code ^[a-zA-Z0-9_-]+$}——点号会被 400 拒绝
+ * （2026-10-19 真调上游时实测：{@code Invalid 'tools[0].function.name'}）。
  *
- * <p>约束是**比规范更紧**的：规范允许大写、连字符与数字开头；这里只允许小写字母开头、
- * 小写字母/数字/下划线的段。理由是这几个字符在 URL 路径、日志字段、配置文件里都不用转义。
+ * <p>两条路可选：两边各用一套名字（MCP 用点号、内部用下划线），或者一个名字两边都能用。
+ * 选后者——"唯一真源"的价值就在于没有第二套名字，否则将来必然有人在 MCP 侧改了名而内部没改。
+ *
+ * <p>前缀仍然强制：没有工具组的工具无法被任何视图切分，只能出现在"全部"里。形状是
+ * {@code <toolset>_<verb_object>}。
+ *
+ * <p>约束比两边规范都**更紧**：只允许小写字母开头、小写字母/数字/下划线。这几个字符在 URL 路径、
+ * 日志字段、配置文件里都不用转义。
  */
 public final class ToolNaming {
 
     /** 最多 128 字符（MCP 规范的建议上限）。 */
     public static final int MAX_LENGTH = 128;
 
-    /**
-     * 两段以上，每段 `[a-z][a-z0-9_]*`，段间用点号。
-     *
-     * <p>要求至少一个点号是刻意的：没有工具组的工具无法被任何视图切分出来，等于只能出现在
-     * "全部"里。强制带前缀，让每个工具从一开始就属于某个组。
-     */
-    private static final Pattern VALID =
-            Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$");
+    /** `<toolset>_<verb_object>`：至少一个下划线，全小写字母/数字/下划线。 */
+    private static final Pattern VALID = Pattern.compile("^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$");
 
     private ToolNaming() {
     }
@@ -33,11 +33,11 @@ public final class ToolNaming {
         return name != null && name.length() <= MAX_LENGTH && VALID.matcher(name).matches();
     }
 
-    /** 从合法名字里取工具组前缀；不合法时返回 null。 */
+    /** 前缀（第一个下划线之前那一段）；不合法时返回 null。 */
     public static String toolsetOf(String name) {
         if (!isValid(name)) {
             return null;
         }
-        return name.substring(0, name.indexOf('.'));
+        return name.substring(0, name.indexOf('_'));
     }
 }

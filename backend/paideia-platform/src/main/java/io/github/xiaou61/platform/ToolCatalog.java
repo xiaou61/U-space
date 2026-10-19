@@ -90,10 +90,9 @@ public final class ToolCatalog {
         }
         // 工具组必须与名字前缀一致：否则视图按组切分时会切出"名字说 knowledge、实际在 note 组"的工具，
         // 外部客户端看名字猜组会一直猜错。
-        String prefix = ToolNaming.toolsetOf(name);
-        if (prefix != null && !prefix.equals(descriptor.toolset())) {
-            problems.add("工具 " + name + " 的名字前缀是 " + prefix + "，但声明的工具组是 "
-                    + descriptor.toolset() + "（两者必须一致）");
+        if (!name.startsWith(descriptor.toolset() + "_")) {
+            problems.add("工具 " + name + " 的名字必须以工具组前缀「" + descriptor.toolset()
+                    + "_」开头（当前工具组声明为 " + descriptor.toolset() + "）");
         }
     }
 

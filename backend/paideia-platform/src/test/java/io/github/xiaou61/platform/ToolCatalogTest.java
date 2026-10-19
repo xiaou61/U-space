@@ -21,19 +21,19 @@ class ToolCatalogTest {
 
     @Test
     void rejectsDuplicateNames() {
-        PaideiaTool first = tool("knowledge.search", "knowledge", true, ToolScope.READ, true);
-        PaideiaTool second = tool("knowledge.search", "knowledge", true, ToolScope.READ, true);
+        PaideiaTool first = tool("knowledge_search", "knowledge", true, ToolScope.READ, true);
+        PaideiaTool second = tool("knowledge_search", "knowledge", true, ToolScope.READ, true);
 
         assertThatThrownBy(() -> new ToolCatalog(List.of(first, second)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("knowledge.search")
+                .hasMessageContaining("knowledge_search")
                 .hasMessageContaining("重复");
     }
 
     @Test
     void rejectsInvalidNames() {
         List<String> invalid = List.of("Search", "knowledge search", "knowledge", "knowledge.", ".search",
-                "knowledge.search-now");
+                "knowledge_search-now");
         for (String name : invalid) {
             assertThatThrownBy(() -> new ToolCatalog(List.of(tool(name, "knowledge", true, ToolScope.READ, true))))
                     .as("名字 %s 应当被拒绝", name)
@@ -44,7 +44,7 @@ class ToolCatalogTest {
 
     @Test
     void rejectsSchemaThatIsNotAnObject() {
-        PaideiaTool broken = new FakeTool(new ToolDescriptor("note.list", "note", "列笔记", "描述",
+        PaideiaTool broken = new FakeTool(new ToolDescriptor("note_list", "note", "列笔记", "描述",
                 Map.of("type", "array"), null, true, false, true, ToolScope.READ, true), ToolResult.ok(""));
 
         assertThatThrownBy(() -> new ToolCatalog(List.of(broken)))
@@ -54,7 +54,7 @@ class ToolCatalogTest {
 
     @Test
     void rejectsToolsetThatDoesNotMatchNamePrefix() {
-        PaideiaTool mismatched = tool("knowledge.search", "note", true, ToolScope.READ, true);
+        PaideiaTool mismatched = tool("knowledge_search", "note", true, ToolScope.READ, true);
 
         assertThatThrownBy(() -> new ToolCatalog(List.of(mismatched)))
                 .isInstanceOf(IllegalStateException.class)
@@ -63,7 +63,7 @@ class ToolCatalogTest {
 
     @Test
     void rejectsReadOnlyToolThatRequiresWriteScope() {
-        PaideiaTool contradictory = tool("note.create", "note", true, ToolScope.WRITE, false);
+        PaideiaTool contradictory = tool("note_create", "note", true, ToolScope.WRITE, false);
 
         assertThatThrownBy(() -> new ToolCatalog(List.of(contradictory)))
                 .isInstanceOf(IllegalStateException.class)
@@ -72,7 +72,7 @@ class ToolCatalogTest {
 
     @Test
     void rejectsReadOnlyAndDestructiveTogether() {
-        PaideiaTool contradictory = new FakeTool(new ToolDescriptor("note.purge", "note", "清理", "描述",
+        PaideiaTool contradictory = new FakeTool(new ToolDescriptor("note_purge", "note", "清理", "描述",
                 OBJECT_SCHEMA, null, true, true, false, ToolScope.READ, false), ToolResult.ok(""));
 
         assertThatThrownBy(() -> new ToolCatalog(List.of(contradictory)))
@@ -83,20 +83,20 @@ class ToolCatalogTest {
     @Test
     void readOnlyViewExcludesWrites() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.create", "note", false, ToolScope.WRITE, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_create", "note", false, ToolScope.WRITE, true)));
 
         List<ToolDescriptor> view = catalog.view(
                 ToolQuery.view(Set.of(), false, null, Set.of(ToolScope.READ, ToolScope.WRITE)));
 
-        assertThat(view).extracting(ToolDescriptor::name).containsExactly("knowledge.search");
+        assertThat(view).extracting(ToolDescriptor::name).containsExactly("knowledge_search");
     }
 
     @Test
     void writeViewIncludesWritesOnlyWhenScopeAllows() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.create", "note", false, ToolScope.WRITE, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_create", "note", false, ToolScope.WRITE, true)));
 
         List<ToolDescriptor> withWrite = catalog.view(
                 ToolQuery.view(Set.of(), true, null, Set.of(ToolScope.READ, ToolScope.WRITE)));
@@ -104,50 +104,50 @@ class ToolCatalogTest {
                 ToolQuery.view(Set.of(), true, null, Set.of(ToolScope.READ)));
 
         assertThat(withWrite).extracting(ToolDescriptor::name)
-                .containsExactly("knowledge.search", "note.create");
-        assertThat(readOnlyScope).extracting(ToolDescriptor::name).containsExactly("knowledge.search");
+                .containsExactly("knowledge_search", "note_create");
+        assertThat(readOnlyScope).extracting(ToolDescriptor::name).containsExactly("knowledge_search");
     }
 
     @Test
     void toolsetFilterKeepsOnlyThatGroup() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.list", "note", true, ToolScope.READ, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_list", "note", true, ToolScope.READ, true)));
 
         assertThat(catalog.view(ToolQuery.view(Set.of("note"), false, null, Set.of(ToolScope.READ))))
-                .extracting(ToolDescriptor::name).containsExactly("note.list");
+                .extracting(ToolDescriptor::name).containsExactly("note_list");
     }
 
     @Test
     void explicitToolBypassesToolsetFilter() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.list", "note", true, ToolScope.READ, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_list", "note", true, ToolScope.READ, true)));
 
-        ToolQuery query = new ToolQuery(Set.of("note"), Set.of("knowledge.search"),
+        ToolQuery query = new ToolQuery(Set.of("note"), Set.of("knowledge_search"),
                 true, null, Set.of(ToolScope.READ), false);
 
         assertThat(catalog.view(query)).extracting(ToolDescriptor::name)
-                .containsExactly("knowledge.search", "note.list");
+                .containsExactly("knowledge_search", "note_list");
     }
 
     @Test
     void adminScopeRequiresAdminRole() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("admin.stats", "admin", true, ToolScope.ADMIN, false)));
+                tool("admin_stats", "admin", true, ToolScope.ADMIN, false)));
 
         assertThat(catalog.view(ToolQuery.view(Set.of(), false, "USER", Set.of(ToolScope.ADMIN)))).isEmpty();
         assertThat(catalog.view(ToolQuery.view(Set.of(), false, "ADMIN", Set.of(ToolScope.ADMIN))))
-                .extracting(ToolDescriptor::name).containsExactly("admin.stats");
+                .extracting(ToolDescriptor::name).containsExactly("admin_stats");
     }
 
     @Test
     void viewOrderIsDeterministic() {
         List<PaideiaTool> tools = new ArrayList<>();
         // 故意用与工具组/名字相反的注册顺序
-        tools.add(tool("note.list", "note", true, ToolScope.READ, true));
-        tools.add(tool("knowledge.search", "knowledge", true, ToolScope.READ, true));
-        tools.add(tool("knowledge.get_entry", "knowledge", true, ToolScope.READ, true));
+        tools.add(tool("note_list", "note", true, ToolScope.READ, true));
+        tools.add(tool("knowledge_search", "knowledge", true, ToolScope.READ, true));
+        tools.add(tool("knowledge_get_entry", "knowledge", true, ToolScope.READ, true));
         ToolCatalog catalog = new ToolCatalog(tools);
 
         List<String> first = catalog.view(ToolQuery.view(Set.of(), false, null, Set.of(ToolScope.READ)))
@@ -155,39 +155,39 @@ class ToolCatalogTest {
         List<String> second = catalog.view(ToolQuery.view(Set.of(), false, null, Set.of(ToolScope.READ)))
                 .stream().map(ToolDescriptor::name).toList();
 
-        assertThat(first).containsExactly("knowledge.get_entry", "knowledge.search", "note.list");
+        assertThat(first).containsExactly("knowledge_get_entry", "knowledge_search", "note_list");
         assertThat(second).isEqualTo(first);
     }
 
     @Test
     void defaultsOnlyKeepsCorePack() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.purge", "note", false, ToolScope.WRITE, false)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_purge", "note", false, ToolScope.WRITE, false)));
 
         assertThat(catalog.view(ToolQuery.core(null))).extracting(ToolDescriptor::name)
-                .containsExactly("knowledge.search");
+                .containsExactly("knowledge_search");
     }
 
     @Test
     void searchRanksNameHitsAboveDescriptionHits() {
         // 名字里命中检索词 vs 只在描述里命中：前者得分更高，排在前面
-        PaideiaTool byName = new FakeTool(new ToolDescriptor("knowledge.recall_entries", "knowledge",
+        PaideiaTool byName = new FakeTool(new ToolDescriptor("knowledge_recall_entries", "knowledge",
                 "按检索条件找条目", "从已发布内容里查找条目", OBJECT_SCHEMA, null, true, false, true,
                 ToolScope.READ, true), ToolResult.ok(""));
-        PaideiaTool byDescription = new FakeTool(new ToolDescriptor("note.list", "note", "列出笔记",
+        PaideiaTool byDescription = new FakeTool(new ToolDescriptor("note_list", "note", "列出笔记",
                 "这里也会提到检索两个字", OBJECT_SCHEMA, null, true, false, true,
                 ToolScope.READ, true), ToolResult.ok(""));
         ToolCatalog catalog = new ToolCatalog(List.of(byDescription, byName));
 
         assertThat(catalog.search("检索", 5)).extracting(ToolDescriptor::name)
-                .containsExactly("knowledge.recall_entries", "note.list");
+                .containsExactly("knowledge_recall_entries", "note_list");
     }
 
     @Test
     void searchReturnsEmptyForUnrelatedQuery() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true)));
 
         assertThat(catalog.search("区块链", 5)).isEmpty();
         assertThat(catalog.search("   ", 5)).isEmpty();
@@ -197,13 +197,13 @@ class ToolCatalogTest {
     @Test
     void snapshotAndToolsetsExposeRegistration() {
         ToolCatalog catalog = new ToolCatalog(List.of(
-                tool("knowledge.search", "knowledge", true, ToolScope.READ, true),
-                tool("note.list", "note", true, ToolScope.READ, true)));
+                tool("knowledge_search", "knowledge", true, ToolScope.READ, true),
+                tool("note_list", "note", true, ToolScope.READ, true)));
 
         assertThat(catalog.size()).isEqualTo(2);
         assertThat(catalog.toolsets()).containsExactlyInAnyOrder("knowledge", "note");
         assertThat(catalog.snapshot()).extracting(ToolDescriptor::name)
-                .containsExactly("knowledge.search", "note.list");
+                .containsExactly("knowledge_search", "note_list");
     }
 
     // ---------------------------------------------------------------- fixtures

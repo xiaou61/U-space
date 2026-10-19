@@ -75,11 +75,11 @@ tools.stream()
 
 | 模块 | 类 | 工具 |
 | --- | --- | --- |
-| `paideia-knowledge` | `KnowledgeTools` | `knowledge.search`、`knowledge.get_entry`、`knowledge.list_categories`、`knowledge.my_marks` |
-| `paideia-note` | `NoteTools` | `note.list`、`note.get`、`note.create`、`note.append` |
-| `paideia-account` | `AccountTools` | `account.me` |
-| `paideia-knowledge` | `AssessmentTools` | `assessment.list_marks`、`assessment.mark_entry` |
-| `paideia-ai` | `NoteDraftTool` + `AssistantAskTool` | `assistant.draft_note`（只产草稿，内部分组）、`assistant.ask`（外部问答，复用积分） |
+| `paideia-knowledge` | `KnowledgeTools` | `knowledge_search`、`knowledge_get_entry`、`knowledge_list_categories`、`knowledge_my_marks` |
+| `paideia-note` | `NoteTools` | `note_list`、`note_get`、`note_create`、`note_append` |
+| `paideia-account` | `AccountTools` | `account_me` |
+| `paideia-knowledge` | `AssessmentTools` | `assessment_list_marks`、`assessment_mark_entry` |
+| `paideia-ai` | `NoteDraftTool` + `AssistantAskTool` | `assistant_draft_note`（只产草稿，内部分组）、`assistant_ask`（外部问答，复用积分） |
 
 每个实现只注入本模块的 API/用例，不跨模块调用。`note` 目前没有包根 API（只有 `internal`），TASK-003 需要同时在 `paideia-note` 增加最小 `NoteApi`（`find/list/create/append` 四个方法）——这是本项**唯一**对既有模块公共面的扩展。
 
@@ -98,7 +98,7 @@ List<ToolSchema> schemas = bridge.concat(core, discovered);
 - `AgentScopeConversation` 的工具循环增加 `Set<String> discovered`，`find_tools` 的返回解析出工具名后加入；`tools.run(...)` 改为 `bridge.run(ctx, name, args)`。
 - 阈值 `paideia.ai.tools.eager-limit` 默认 12；工具总数 ≤ 阈值时不注入 `find_tools`。
 
-### `assistant.ask` 的形状（REQ-028）
+### `assistant_ask` 的形状（REQ-028）
 
 外部工具不能直接复用 `AssistantConversation.stream`——那是**流式**接口、按会话组织、需要 `Listener`，而 MCP 工具调用是一问一答。做法：
 
@@ -181,9 +181,9 @@ POST /mcp/knowledge  Authorization: Bearer pd_mcp_xxx
 ### 外部 `tools/call`
 
 ```
-POST /mcp/write  {"method":"tools/call","params":{"name":"note.create",...}}
+POST /mcp/write  {"method":"tools/call","params":{"name":"note_create",...}}
  → PAT 校验（必须含 write scope，否则 403）
- → ToolCatalog.find("note.create")；不在当前视图 → 协议错误 -32602 "Unknown tool"
+ → ToolCatalog.find("note_create")；不在当前视图 → 协议错误 -32602 "Unknown tool"
  → schema 校验参数；失败 → 协议错误
  → 限流检查（每 token 每分钟 N 次）→ 超限返回 JSON-RPC error（code -32000）
  → ToolContext(userId=principal, scopes, role, origin=EXTERNAL)
@@ -201,7 +201,7 @@ POST /api/v1/assistant/stream
  → 第 1 轮：model(tools = core + discovered)
  → 模型调用 find_tools("知识 分类")
       → 本地检索目录 → 返回命中的描述符+schema → discovered += 命中
- → 第 2 轮：tools = core + discovered（含新工具）→ 模型调用 knowledge.list_categories
+ → 第 2 轮：tools = core + discovered（含新工具）→ 模型调用 knowledge_list_categories
  → bridge.run(...) 执行 → ToolResult 文本回填
 ```
 
@@ -378,7 +378,7 @@ CREATE TABLE mcp_access_tokens (
 
 ## 待决定事项
 
-- 是否需要把 `assistant.draft_note` 暴露给外部（当前设计：不暴露）。
-- 写工具一期清单（当前设计：note.create/append、assessment.mark_entry）。
+- 是否需要把 `assistant_draft_note` 暴露给外部（当前设计：不暴露）。
+- 写工具一期清单（当前设计：note_create/append、assessment_mark_entry）。
 - PAT 默认过期（当前设计：默认 90 天，可选永不过期）。
 - 是否为 `tools/list` 配置 `ttlMs`/`cacheScope`（一期用 SDK 默认，不加缓存提示）。

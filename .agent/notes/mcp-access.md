@@ -69,25 +69,29 @@ Paideia 通过 **MCP（Model Context Protocol）** 把平台能力暴露给外�
 
 | 工具 | 说明 | 写 |
 | --- | --- | --- |
-| `knowledge.search` | 按关键词检索已发布条目 | |
-| `knowledge.get_entry` | 读一篇已发布条目的正文 | |
-| `knowledge.list_categories` | 列全部分类 | |
-| `knowledge.my_marks` | 列我自己的自评标记 | |
-| `note.list` | 列我的笔记（标题 + 摘要） | |
-| `note.get` | 读一篇笔记全文 | |
-| `note.create` | 新建笔记 | ✓ |
-| `note.append` | 追加到笔记末尾 | ✓ |
-| `account.me` | 读我的身份与求职目标 | |
-| `assessment.list_marks` | 列我的自评标记（可按类型过滤） | |
-| `assessment.mark_entry` | 给一条打「懂了 / 还不懂」 | ✓ |
-| `assistant.ask` | 让平台 AI 回答一个问题（**消耗积分**） | ✓ |
-| `assistant.draft_note` | 只起草、不写库（内部助手专用，外部视图不出现） | |
+| `knowledge_search` | 按关键词检索已发布条目 | |
+| `knowledge_get_entry` | 读一篇已发布条目的正文 | |
+| `knowledge_list_categories` | 列全部分类 | |
+| `knowledge_my_marks` | 列我自己的自评标记 | |
+| `note_list` | 列我的笔记（标题 + 摘要） | |
+| `note_get` | 读一篇笔记全文 | |
+| `note_create` | 新建笔记 | ✓ |
+| `note_append` | 追加到笔记末尾 | ✓ |
+| `account_me` | 读我的身份与求职目标 | |
+| `assessment_list_marks` | 列我的自评标记（可按类型过滤） | |
+| `assessment_mark_entry` | 给一条打「懂了 / 还不懂」 | ✓ |
+| `assistant_ask` | 让平台 AI 回答一个问题（**消耗积分**） | ✓ |
+| `assistant_draft_note` | 只起草、不写库（内部助手专用，外部视图不出现） | |
+
+> **命名**：工具名统一用 `工具组_动作` 的下划线形状（如 `knowledge_search`），不是点号。
+> 原因是内部适配器要把同一批名字发给 DeepSeek 的 OpenAI 兼容接口，那条通道只接受
+> `^[a-zA-Z0-9_-]+$`——点号会被 400 拒绝。一份名字两边都能用，就不存在"改了一边忘了另一边"。
 
 **归属永远是凭据绑定的那个人**：工具参数里没有 `userId`，传了也会被丢掉。所以外部助手看不到别人的数据，也不可能通过改参数越权。
 
 ## 5. 计费
 
-只有 `assistant.ask` 会产生费用：它走平台的积分体系，余额不足时**直接失败且不发起任何上游请求**。其余工具不扣积分。
+只有 `assistant_ask` 会产生费用：它走平台的积分体系，余额不足时**直接失败且不发起任何上游请求**。其余工具不扣积分。
 
 ## 6. 排错
 
@@ -98,7 +102,7 @@ Paideia 通过 **MCP（Model Context Protocol）** 把平台能力暴露给外�
 | 404 | 视图名写错（注意只允许小写字母、数字、下划线）。 |
 | 工具报「没有名为 X 的工具」 | 该工具不在当前视图。换到含它的视图（例如写工具需要 `/write`）。 |
 | 工具报「调用过于频繁」 | 默认每 token 每分钟 120 次。 |
-| 工具报「平台尚未配置 AI 服务」 | `assistant.ask` 需要部署配置里配好平台凭据。 |
+| 工具报「平台尚未配置 AI 服务」 | `assistant_ask` 需要部署配置里配好平台凭据。 |
 
 ## 7. 架构备注
 

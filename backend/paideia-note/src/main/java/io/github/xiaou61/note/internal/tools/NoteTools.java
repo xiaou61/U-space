@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 /**
  * 笔记工具组（WORK-019 TASK-004）：两个读、两个写。
  *
- * <p>**写工具是刻意只在 `write` 视图出现的**：`note.create` 与 `note.append` 都会改变用户数据，
+ * <p>**写工具是刻意只在 `write` 视图出现的**：`note_create` 与 `note_append` 都会改变用户数据，
  * 目录把它们标成 `readOnly=false`，只读视图因此拿不到它们。
  *
  * <p><b>不做整篇覆盖</b>：追加已经覆盖"让助手帮我记一条"的真实需求，而整篇替换最容易让用户
@@ -41,7 +41,7 @@ public final class NoteTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "note.list", "note", "列出我的笔记",
+                    "note_list", "note", "列出我的笔记",
                     "列出**当前调用者自己**最近的笔记（标题 + 一段摘要，不含全文）。"
                             + "用户问「我记过什么」「帮我找找之前那条笔记」时先用它。",
                     objectSchema(Map.of(
@@ -75,8 +75,8 @@ public final class NoteTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "note.get", "note", "读取笔记正文",
-                    "按 id 读取**当前调用者自己**的一篇笔记全文。id 一般来自 note.list。"
+                    "note_get", "note", "读取笔记正文",
+                    "按 id 读取**当前调用者自己**的一篇笔记全文。id 一般来自 note_list。"
                             + "不存在或不是本人的都返回「没有找到」——两种情况刻意不区分。",
                     objectSchema(Map.of("noteId", Map.of("type", "integer", "description", "笔记 id"))),
                     null, true, false, true, ToolScope.READ, true);
@@ -107,7 +107,7 @@ public final class NoteTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "note.create", "note", "新建笔记",
+                    "note_create", "note", "新建笔记",
                     "为**当前调用者**新建一条笔记。这是一次写入：内容会立即保存到他的笔记列表里。"
                             + "模型自己判断要不要写之前，应当先确认用户确实表达了「记下来」的意图。",
                     objectSchema(Map.of(
@@ -146,7 +146,7 @@ public final class NoteTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "note.append", "note", "追加到笔记末尾",
+                    "note_append", "note", "追加到笔记末尾",
                     "在**当前调用者自己**的一篇笔记末尾追加一段文字（换两行后接上），"
                             + "不覆盖原有内容。这是一次写入。笔记不存在或不是本人的返回「没有找到」。",
                     objectSchema(Map.of(

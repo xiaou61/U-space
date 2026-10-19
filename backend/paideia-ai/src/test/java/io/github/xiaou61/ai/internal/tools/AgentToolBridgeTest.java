@@ -26,8 +26,8 @@ class AgentToolBridgeTest {
     @Test
     void noFindToolBelowThreshold() {
         AgentToolBridge bridge = bridge(List.of(
-                stub("knowledge.search", "knowledge", true),
-                stub("note.list", "note", true)), 12);
+                stub("knowledge_search", "knowledge", true),
+                stub("note_list", "note", true)), 12);
 
         assertThat(bridge.discoveryEnabled()).isFalse();
         assertThat(bridge.discoverySchemas()).isEmpty();
@@ -37,7 +37,7 @@ class AgentToolBridgeTest {
     void findToolAppearsAboveThreshold() {
         List<PaideiaTool> many = new ArrayList<>();
         for (int index = 0; index < 15; index++) {
-            many.add(stub("knowledge.tool" + index, "knowledge", true));
+            many.add(stub("knowledge_tool" + index, "knowledge", true));
         }
         AgentToolBridge bridge = bridge(many, 12);
 
@@ -49,12 +49,12 @@ class AgentToolBridgeTest {
     @Test
     void coreOnlyExposesReadToolsOfThatHarness() {
         AgentToolBridge bridge = bridge(List.of(
-                stub("knowledge.search", "knowledge", true),
-                stub("assessment.mark_entry", "assessment", false),
-                stub("note.create", "note", false)), 12);
+                stub("knowledge_search", "knowledge", true),
+                stub("assessment_mark_entry", "assessment", false),
+                stub("note_create", "note", false)), 12);
 
         assertThat(bridge.core(Harness.ASSISTANT)).extracting(ToolSchema::getName)
-                .containsExactly("knowledge.search");
+                .containsExactly("knowledge_search");
         assertThat(bridge.core(Harness.REVIEW)).isEmpty();
     }
 
@@ -62,7 +62,7 @@ class AgentToolBridgeTest {
     void discoveredToolJoinsNextRound() {
         List<PaideiaTool> many = new ArrayList<>();
         for (int index = 0; index < 15; index++) {
-            many.add(stub("knowledge.tool" + index, "knowledge", true));
+            many.add(stub("knowledge_tool" + index, "knowledge", true));
         }
         AgentToolBridge bridge = bridge(many, 12);
 
@@ -81,7 +81,7 @@ class AgentToolBridgeTest {
     void unrelatedQuerySaysSoWithoutThrowing() {
         List<PaideiaTool> many = new ArrayList<>();
         for (int index = 0; index < 15; index++) {
-            many.add(stub("knowledge.tool" + index, "knowledge", true));
+            many.add(stub("knowledge_tool" + index, "knowledge", true));
         }
         AgentToolBridge bridge = bridge(many, 12);
 
@@ -97,7 +97,7 @@ class AgentToolBridgeTest {
     void findToolOnlySearchesToolsetsVisibleToThatHarness() {
         List<PaideiaTool> many = new ArrayList<>();
         for (int index = 0; index < 15; index++) {
-            many.add(stub("note.tool" + index, "note", true));
+            many.add(stub("note_tool" + index, "note", true));
         }
         AgentToolBridge bridge = bridge(many, 12);
 
@@ -110,7 +110,7 @@ class AgentToolBridgeTest {
 
     @Test
     void unknownToolReturnsErrorOutcome() {
-        AgentToolBridge bridge = bridge(List.of(stub("knowledge.search", "knowledge", true)), 12);
+        AgentToolBridge bridge = bridge(List.of(stub("knowledge_search", "knowledge", true)), 12);
 
         AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "delete_everything", Map.of());
 
@@ -122,7 +122,7 @@ class AgentToolBridgeTest {
     void draftNoteProducesDraftAndWritesNothing() {
         AgentToolBridge bridge = bridge(List.of(new DraftNoteTool()), 12);
 
-        AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "assistant.draft_note",
+        AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "assistant_draft_note",
                 Map.of("title", "标题", "body", "正文"));
 
         assertThat(result.error()).isFalse();
@@ -133,7 +133,7 @@ class AgentToolBridgeTest {
     void draftNoteFallsBackToDefaultTitle() {
         AgentToolBridge bridge = bridge(List.of(new DraftNoteTool()), 12);
 
-        AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "assistant.draft_note",
+        AgentToolBridge.Outcome result = bridge.run(7L, Harness.ASSISTANT, "assistant_draft_note",
                 Map.of("body", "只有正文"));
 
         assertThat(result.draft()).isNotNull();

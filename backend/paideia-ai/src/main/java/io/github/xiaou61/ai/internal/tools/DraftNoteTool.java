@@ -27,7 +27,7 @@ public class DraftNoteTool implements PaideiaTool {
     @Override
     public ToolDescriptor descriptor() {
         return new ToolDescriptor(
-                "assistant.draft_note", "assistant", "起草一条笔记",
+                "assistant_draft_note", "assistant", "起草一条笔记",
                 "起草一条给当前用户自己看的笔记。用户说「帮我记一条」「把这个记下来」时用它。"
                         + "**它只是草稿，不会真的保存**——要用户点确认才会存进笔记。"
                         + "正文写清完整内容（用户可能直接采用），标题一句话概括。",

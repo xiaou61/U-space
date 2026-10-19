@@ -72,6 +72,16 @@ class AssistantLiveUpstreamIntegrationTest {
     @Autowired
     io.github.xiaou61.ai.internal.billing.BillingProperties billing;
 
+    /**
+     * WORK-009 起每次 AI 调用都要先预扣积分；余额为 0 会在**同步阶段**就被 402 挡下，
+     * 表现为 {@code Async not started}。所以这套真实上游测试必须自己先发积分。
+     *
+     * <p>这条是 2026-10-19 补的：加积分闸那次没人跑过这套（它默认跳过），于是"跳过"掩盖了
+     * "它其实已经跑不通"整整几天——正是那份验收报告里写的"跳过不等于通过"。
+     */
+    @Autowired
+    io.github.xiaou61.ai.internal.billing.CreditService credits;
+
     private final List<Long> createdEntries = new ArrayList<>();
     private String user;
 
@@ -81,6 +91,8 @@ class AssistantLiveUpstreamIntegrationTest {
         jdbcTemplate.update("DELETE FROM ai_conversations");
         jdbcTemplate.update("DELETE FROM ai_model_credentials");
         user = Long.toString(5_000_000_000L + (System.nanoTime() % 1_000_000_000L));
+        // 4 条用例各要一次真实调用，再加上工具循环可能的额外轮次；给足额度避免中途被闸拦下
+        credits.adjust(Long.parseLong(user), 200_000, 1L, "真实上游用例发放");
     }
 
     @AfterEach
@@ -165,6 +177,28 @@ class AssistantLiveUpstreamIntegrationTest {
         credential.setBaseUrl(BASE_URL);
         credential.setModel(MODEL);
         credential.setApiKey(System.getenv("PAIDEIA_TEST_DEEPSEEK_KEY"));
+    }
+
+    /**
+     * 把 SSE 里的 `event:content` 增量拼回一段正文。
+     *
+     * <p>断言必须用这个而不是原始流：模型输出是逐 token 推的，中文会被切在任意位置。
+     */
+    private static String concatenatedContent(String stream) {
+        StringBuilder text = new StringBuilder();
+        String[] lines = stream.lines().toArray(String[]::new);
+        for (int index = 0; index + 1 < lines.length; index++) {
+            if (!"event:content".equals(lines[index].trim()) || !lines[index + 1].startsWith("data:")) {
+                continue;
+            }
+            String payload = lines[index + 1].substring("data:".length());
+            try {
+                text.append(com.jayway.jsonpath.JsonPath.read(payload, "$.delta").toString());
+            } catch (RuntimeException ignored) {
+                // 不是正文增量（比如 done 事件的数据）：跳过
+            }
+        }
+        return text.toString();
     }
 
     /** 发一轮并把真实 SSE 流读完（会真的等上游，超时由会话配置的 60 秒兜住）。 */

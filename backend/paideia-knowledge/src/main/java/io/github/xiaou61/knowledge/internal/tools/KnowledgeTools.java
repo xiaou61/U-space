@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * <p>四个工具放在一个文件里：它们共享同一份 schema 辅助函数与同一个 {@link KnowledgeApi} 契约，
  * 拆四个文件只会让"这一组工具长什么样"更难一眼看全。
  *
- * <p><b>归属只来自 {@link ToolContext}</b>：`knowledge.my_marks` 永远读调用者自己的标记，
+ * <p><b>归属只来自 {@link ToolContext}</b>：`knowledge_my_marks` 永远读调用者自己的标记，
  * 参数里没有"谁的"这个字段。检索与分类是公开内容（只返回已发布），不需要归属。
  */
 public final class KnowledgeTools {
@@ -37,10 +37,10 @@ public final class KnowledgeTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "knowledge.search", "knowledge", "检索知识条目",
+                    "knowledge_search", "knowledge", "检索知识条目",
                     "按关键词检索平台上**已发布**的知识条目，返回条目 id 与标题。"
                             + "用户问「有没有讲过 X」「哪些内容涉及 X」时用它。关键词留空则返回最近的内容。"
-                            + "拿到 id 后如果需要正文，用 knowledge.get_entry。",
+                            + "拿到 id 后如果需要正文，用 knowledge_get_entry。",
                     objectSchema(Map.of(
                             "keyword", Map.of("type", "string", "description", "检索关键词，可为空"),
                             "limit", Map.of("type", "integer", "description", "最多返回几条，默认 5，上限 20"))),
@@ -80,8 +80,8 @@ public final class KnowledgeTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "knowledge.get_entry", "knowledge", "读取知识条目正文",
-                    "按 id 读取一篇**已发布**知识条目的标题与正文。id 一般来自 knowledge.search 的结果。"
+                    "knowledge_get_entry", "knowledge", "读取知识条目正文",
+                    "按 id 读取一篇**已发布**知识条目的标题与正文。id 一般来自 knowledge_search 的结果。"
                             + "条目不存在或尚未发布时返回「没有找到」——两种情况刻意不区分。",
                     objectSchema(Map.of(
                             "entryId", Map.of("type", "integer", "description", "条目 id"))),
@@ -113,7 +113,7 @@ public final class KnowledgeTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "knowledge.list_categories", "knowledge", "列出知识分类",
+                    "knowledge_list_categories", "knowledge", "列出知识分类",
                     "列出平台上全部知识分类（含上级分类 id，层级由 parentId 表示）。"
                             + "用户问「都有哪些分类」「内容是怎么组织的」时用它。",
                     objectSchema(Map.of()), null, true, false, true, ToolScope.READ, true);
@@ -145,7 +145,7 @@ public final class KnowledgeTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "knowledge.my_marks", "knowledge", "列出我标记过的条目",
+                    "knowledge_my_marks", "knowledge", "列出我标记过的条目",
                     "列出**当前调用者自己**标记过「懂了／还不懂」的条目。"
                             + "用户问「我哪些还没搞明白」「帮我复习标记过的内容」时用它。"
                             + "只能读当前调用者自己的标记，无法查询他人。",

@@ -89,10 +89,10 @@ approver_role: CTO
   - `.../AssessmentTools.java`（新建：自评读/写）
   - `backend/paideia-knowledge/src/test/java/.../tools/KnowledgeToolsTest.java`
 - 接口：
-  - 实现 `PaideiaTool`；名称 `knowledge.search`、`knowledge.get_entry`、`knowledge.list_categories`、`knowledge.my_marks`、`assessment.list_marks`、`assessment.mark_entry`
+  - 实现 `PaideiaTool`；名称 `knowledge_search`、`knowledge_get_entry`、`knowledge_list_categories`、`knowledge_my_marks`、`assessment_list_marks`、`assessment_mark_entry`
   - 消费 `KnowledgeApi.searchPublished(String,int)`、`findPublishedContent(long)`、`listCategories()`、`findMarks(long,int)`
 - 步骤：
-  1. 先查 `KnowledgeApi` 是否有写入自评标记的方法；没有则在本任务内只做 `assessment.list_marks`，`mark_entry` 记为 blocked 并在 tasks 里注明原因（不臆造接口）。
+  1. 先查 `KnowledgeApi` 是否有写入自评标记的方法；没有则在本任务内只做 `assessment_list_marks`，`mark_entry` 记为 blocked 并在 tasks 里注明原因（不臆造接口）。
   2. 为四个知识工具写映射测试（参数 → 调用 → 文本），用桩 `KnowledgeApi` → 跑红。
   3. 实现 `KnowledgeTools` → 绿。
   4. 写「工具参数里传 userId 被忽略」的测试：`my_marks` 永远用 `ToolContext.userId`。
@@ -129,7 +129,7 @@ approver_role: CTO
   - `backend/paideia-account/src/main/java/io/github/xiaou61/account/internal/tools/AccountTools.java`
 - 接口：
   - 产出 `interface NoteApi { List<NoteBrief> list(long,int); Optional<NoteContent> find(long,long); long create(long,String,String); long append(long,long,String); }`
-  - 工具名 `note.list`、`note.get`、`note.create`、`note.append`、`account.me`
+  - 工具名 `note_list`、`note_get`、`note_create`、`note_append`、`account_me`
 - 步骤：
   1. 写 `NoteApi` 与实现，先让现有 `NoteController` 的行为测试通过（不改行为）。
   2. 写 `NoteToolsTest`（create 归属、append 到别人笔记 → 404）→ 跑红 → 实现 → 绿。
@@ -241,7 +241,7 @@ approver_role: CTO
   3. 逐条对照 AC 写入验证表，未达标的写「未达」与原因。
 - 验证：`verification.md` 每条 AC 有命令或人工步骤与结果；`project-lifecycle.ps1 validate` 通过。
 
-### TASK-012 | done | assistant.ask 工具与计费
+### TASK-012 | done | assistant_ask 工具与计费
 
 - 对应：`REQ-028`、`AC-015`
 - 依赖：TASK-001、TASK-008
@@ -254,7 +254,7 @@ approver_role: CTO
   - 测试：`AssistantAskToolTest`、`McpAiToolTest` 增补
 - 接口：
   - `interface AssistantAnswerer { Answer answer(long userId, String question, Long entryId); record Answer(String text, TokenUsage usage) {} }`
-  - 工具名 `assistant.ask`，输入 schema `{question: string, entryId?: integer}`
+  - 工具名 `assistant_ask`，输入 schema `{question: string, entryId?: integer}`
 - 步骤：
   1. 查 `credit_ledger.kind` 是否有取值约束；有则迁移加值，无则只加常量。
   2. 写 `AssistantAskToolTest`（无历史、不落库、返回文本）→ 红 → 实现 → 绿。

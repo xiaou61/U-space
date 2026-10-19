@@ -35,7 +35,7 @@ public record ToolQuery(
      *
      * <p><b>只读不是省事，是产品裁决</b>（WORK-006 用户决定：自主只建议不动作）。自家助手能替用户
      * 想、能起草，但不能替他落笔——写库必须经用户在一次点击里确认。所以内部清单永远排除写工具，
-     * 包括 `note.create` 与 `assessment.mark_entry`；`assistant.draft_note` 因为是只读（只产草稿）
+     * 包括 `note_create` 与 `assessment_mark_entry`；`assistant_draft_note` 因为是只读（只产草稿）
      * 才留在清单里。
      */
     public static ToolQuery internal(Set<String> toolsets, String role) {

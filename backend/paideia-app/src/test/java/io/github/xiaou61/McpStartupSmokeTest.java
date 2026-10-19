@@ -54,9 +54,9 @@ class McpStartupSmokeTest {
         String sessionId = initialize("/mcp", created.plaintext());
         List<String> names = tools(("/mcp"), created.plaintext(), sessionId);
 
-        assertThat(names).isNotEmpty().contains("knowledge.search");
+        assertThat(names).isNotEmpty().contains("knowledge_search");
         // 默认视图是只读的：写工具一个都不该出现
-        assertThat(names).doesNotContain("note.create", "note.append", "assessment.mark_entry");
+        assertThat(names).doesNotContain("note_create", "note_append", "assessment_mark_entry");
     }
 
     @Test
@@ -67,7 +67,7 @@ class McpStartupSmokeTest {
         String sessionId = initialize("/mcp/x/knowledge", created.plaintext());
         List<String> names = tools("/mcp/x/knowledge", created.plaintext(), sessionId);
 
-        assertThat(names).isNotEmpty().allMatch(name -> name.startsWith("knowledge."));
+        assertThat(names).isNotEmpty().allMatch(name -> name.startsWith("knowledge_"));
     }
 
     @Test

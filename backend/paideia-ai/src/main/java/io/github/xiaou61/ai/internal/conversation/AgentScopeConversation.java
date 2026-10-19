@@ -31,6 +31,8 @@ import io.github.xiaou61.platform.ErrorCode;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -58,6 +60,7 @@ class AgentScopeConversation implements AssistantConversation {
      * 不是功能上限——真出现"4 轮不够"的实测再提成配置。
      */
     private static final int MAX_TOOL_ROUNDS = 4;
+    private static final Logger log = LoggerFactory.getLogger(AgentScopeConversation.class);
 
     private final ConversationProperties properties;
     private final GuardedHttpTransport transport;
@@ -97,7 +100,10 @@ class AgentScopeConversation implements AssistantConversation {
         try {
             for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
                 List<ToolSchema> schemas = new ArrayList<>(tools.concat(core, discovered));
-                schemas.addAll(discovery);
+                // 核心包为空（点评官）时不加发现元工具：它不该有任何工具
+                if (!core.isEmpty()) {
+                    schemas.addAll(discovery);
+                }
                 Round roundResult = runRound(model, conversation, schemas, options, listener);
                 if (roundResult == null) {
                     // 上游一轮都没吐出东西：按不可用处理
@@ -108,6 +114,12 @@ class AgentScopeConversation implements AssistantConversation {
                 total = add(total, roundResult.usage());
                 List<ToolUseBlock> requested = roundResult.toolCalls();
                 if (requested.isEmpty()) {
+                    // **最终轮**：它的正文才是用户要的答案，一次性推出去。
+                    // 之前每轮都实时 emit，导致工具轮的旁白（"我查一下…"，有时甚至是一份完整答案）
+                    // 与最终回答拼在一起，用户看到同一段话重复两遍（2026-10-19 实测）。
+                    if (roundResult.text() != null && !roundResult.text().isEmpty()) {
+                        listener.onContent(roundResult.text());
+                    }
                     listener.onUsage(total);
                     listener.onCompleted();
                     return;
@@ -115,17 +127,26 @@ class AgentScopeConversation implements AssistantConversation {
 
                 // 让模型看见自己发出的工具调用，再喂回结果——否则下一轮它会重复调用同一个工具
                 conversation.add(roundResult.assistantMessage());
-                conversation.add(new ToolResultMessage(
-                        execute(request.userId(), request.harness(), requested, discovered, listener)));
+                // **每个 tool_call_id 各发一条 ToolResultMessage**（2026-10-19 实测修）：
+                // OpenAI 协议要求 assistant 的每个 tool_calls 都有对应的 tool 消息。
+                // 用 `new ToolResultMessage(List)` 把多条打包成一条时，formatter 只产出一个 tool
+                // 消息，上游直接 400（"insufficient tool messages following tool_calls message"）。
+                for (ToolResultBlock result : execute(request.userId(), request.harness(),
+                        requested, discovered, listener)) {
+                    conversation.add(new ToolResultMessage(result));
+                }
             }
             // 兜底：真的绕成了环就停下，别让一次请求无限花用户的钱。
             // **这一条路径也要上报用量**：那几轮的钱是真花了，只是没产出可用结果（原先这里一笔都不记）。
             listener.onUsage(total);
             listener.onFailed(new BizException(ErrorCode.INTERNAL, "助手尝试调用工具的次数过多，已停止"));
         } catch (HttpTransportException exception) {
+            // 服务端留完整堆栈：用户只看到一句可读的提示，但"为什么失败"必须能查
+            log.warn("assistant.upstream.http-failed userId={}", request.userId(), exception);
             listener.onUsage(total);
             listener.onFailed(toUpstreamFailure(exception));
         } catch (RuntimeException exception) {
+            log.warn("assistant.upstream.failed userId={}", request.userId(), exception);
             listener.onUsage(total);
             listener.onFailed(upstreamUnavailable(exception));
         }
@@ -189,7 +210,7 @@ class AgentScopeConversation implements AssistantConversation {
         TextAccumulator content = new TextAccumulator();
         ThinkingAccumulator thinking = new ThinkingAccumulator();
         ToolCallsAccumulator calls = new ToolCallsAccumulator();
-        int[] emitted = {0, 0};
+        int[] emitted = {0};
         ChatResponse last = null;
 
         for (ChatResponse response : model.stream(conversation, schemas, options)
@@ -205,7 +226,6 @@ class AgentScopeConversation implements AssistantConversation {
                     emit(thinking.getAccumulated(), emitted, 0, listener::onThinking);
                 } else if (block instanceof TextBlock textBlock) {
                     content.add(textBlock);
-                    emit(content.getAccumulated(), emitted, 1, listener::onContent);
                 } else if (block instanceof ToolUseBlock toolCall) {
                     calls.add(toolCall);
                 }
@@ -217,19 +237,22 @@ class AgentScopeConversation implements AssistantConversation {
 
         List<ToolUseBlock> requested = calls.buildAllToolCalls();
         List<ContentBlock> blocks = new ArrayList<>();
-        if (!thinking.getAccumulated().isEmpty()) {
-            blocks.add(TextBlock.builder().text("[思考] " + thinking.getAccumulated()).build());
-        }
+        // **不要把思考包装成 TextBlock 塞回 assistant 消息**（2026-10-19 实测修）：
+        // DeepSeek 的 formatter 看到同一条 assistant 里既有普通文本又有 tool_calls 时，
+        // 会以"assistant 正文 + tool_calls"的形式发出；而把我们自己拼的 "[思考] …" 当成正文
+        // 会让紧随其后的 tool 消息失去合法配对，上游回 400
+        // （"assistant message with 'tool_calls' must be followed by tool messages"）。
+        // 思考本来就只用于界面展示，不进历史。
         if (!content.getAccumulated().isEmpty()) {
             blocks.add(TextBlock.builder().text(content.getAccumulated()).build());
         }
         blocks.addAll(requested);
         Msg assistant = Msg.builder().role(MsgRole.ASSISTANT).content(blocks).build();
-        return new Round(assistant, requested, toUsage(last.getUsage()));
+        return new Round(assistant, content.getAccumulated(), requested, toUsage(last.getUsage()));
     }
 
     /** 一轮的产物。 */
-    private record Round(Msg assistantMessage, List<ToolUseBlock> toolCalls, TokenUsage usage) {
+    private record Round(Msg assistantMessage, String text, List<ToolUseBlock> toolCalls, TokenUsage usage) {
     }
 
     /**

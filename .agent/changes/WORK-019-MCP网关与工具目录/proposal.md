@@ -89,15 +89,15 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 
 | 工具组 | 工具 | 读/写 |
 | --- | --- | --- |
-| knowledge | `knowledge.search`、`knowledge.get_entry`、`knowledge.list_categories`、`knowledge.my_marks` | 读 |
-| note | `note.list`、`note.get`、`note.create`、`note.append` | 后两个写 |
-| account | `account.me` | 读 |
-| assessment | `assessment.list_marks`、`assessment.mark_entry` | 后者写 |
-| assistant | `assistant.draft_note`、`assistant.ask` | 读（前者只产草稿，后者复用积分） |
+| knowledge | `knowledge_search`、`knowledge_get_entry`、`knowledge_list_categories`、`knowledge_my_marks` | 读 |
+| note | `note_list`、`note_get`、`note_create`、`note_append` | 后两个写 |
+| account | `account_me` | 读 |
+| assessment | `assessment_list_marks`、`assessment_mark_entry` | 后者写 |
+| assistant | `assistant_draft_note`、`assistant_ask` | 读（前者只产草稿，后者复用积分） |
 
-外部默认视图 = knowledge + note(读) + account + assessment(读) + `assistant.ask`；`write` 视图再加 3 个写工具（`note.create`、`note.append`、`assessment.mark_entry`）。`assistant.draft_note` 只在内部视图出现——它的产物是界面草稿，外部客户端没有确认 UI。
+外部默认视图 = knowledge + note(读) + account + assessment(读) + `assistant_ask`；`write` 视图再加 3 个写工具（`note_create`、`note_append`、`assessment_mark_entry`）。`assistant_draft_note` 只在内部视图出现——它的产物是界面草稿，外部客户端没有确认 UI。
 
-**用户裁决（2026-10-18）**：写工具就这三个，其余写操作不暴露；`assistant.ask` 进第一期；PAT 默认 90 天、可选永不过期。
+**用户裁决（2026-10-18）**：写工具就这三个，其余写操作不暴露；`assistant_ask` 进第一期；PAT 默认 90 天、可选永不过期。
 
 ## 备选方案
 
@@ -182,8 +182,8 @@ ToolCatalog（唯一真源：命名、分组、schema、注解、scope、只读�
 | AC-012 迁移与守卫 | TASK-005 |
 | AC-013 PAT 管理页 | TASK-009 |
 | AC-014 接入文档 | TASK-011 |
-| AC-015 `assistant.ask` 计费 | TASK-012 |
+| AC-015 `assistant_ask` 计费 | TASK-012 |
 
 ## 待决定事项
 
-需求文档末尾的三条（写工具范围、是否暴露 `assistant.ask`、PAT 默认过期）在批准需求时一并裁决；它们都不阻塞目录与内部阶段的实现，但决定 P4 的工具清单。
+需求文档末尾的三条（写工具范围、是否暴露 `assistant_ask`、PAT 默认过期）在批准需求时一并裁决；它们都不阻塞目录与内部阶段的实现，但决定 P4 的工具清单。

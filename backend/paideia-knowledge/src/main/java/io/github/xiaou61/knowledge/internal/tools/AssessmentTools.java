@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 /**
  * 自评标记的工具组（WORK-019）：一个读、一个写。
  *
- * <p>它与 {@code knowledge.my_marks} 的区别是：那个读的是"知识库模块自己那份视图"，
+ * <p>它与 {@code knowledge_my_marks} 的区别是：那个读的是"知识库模块自己那份视图"，
  * 这两个是给外部助手用的自评入口，写那条会触发既有的 {@code EntryAssessmentChangedEvent}
  * （WORK-013 的"自评 → 结构化记忆"桥），所以外部助手打的标记也会进用户的记忆。
  *
@@ -41,9 +41,9 @@ public final class AssessmentTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "assessment.list_marks", "assessment", "列出我的自评标记",
+                    "assessment_list_marks", "assessment", "列出我的自评标记",
                     "列出**当前调用者自己**标记过「懂了／还不懂」的条目，可按标记类型过滤。"
-                            + "与 knowledge.my_marks 是同一份数据的两个入口；新代码优先用这个。",
+                            + "与 knowledge_my_marks 是同一份数据的两个入口；新代码优先用这个。",
                     KnowledgeTools.objectSchema(Map.of(
                             "level", Map.of("type", "string",
                                     "enum", List.of(LEVEL_UNDERSTOOD, LEVEL_UNSURE),
@@ -77,7 +77,7 @@ public final class AssessmentTools {
         @Override
         public ToolDescriptor descriptor() {
             return new ToolDescriptor(
-                    "assessment.mark_entry", "assessment", "标记条目掌握程度",
+                    "assessment_mark_entry", "assessment", "标记条目掌握程度",
                     "把一篇**已发布**知识条目标记为「懂了」或「还不懂」。这是一次写入：会覆盖该条目上"
                             + "原有的标记，并可能触发助手记忆的更新。调用前请确认用户确实要这样标。",
                     KnowledgeTools.objectSchema(Map.of(
