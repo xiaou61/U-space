@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { REMOTE } from './env'
 import { signIn } from './session'
 
 /**
@@ -65,9 +64,9 @@ test.describe('学习线', () => {
   })
 
   test('已有的源码解读被认成一条线，没有重复建（AC-018）', async ({ page }) => {
-    // `source-reading` 是**本地 e2e 种子**（V953）建的分类，生产迁移目录不含 devdata，
-    // 所以线上库里根本没有它。这条只在本地成立——与其它依赖种子的用例同一约定。
-    test.skip(REMOTE, '依赖本地种子 V953 建的 source-reading 分类；线上没有该分类')
+    // 这条一度只在本地成立（`source-reading` 原本只是 devdata 种子）。
+    // 2026-10-19 已作为内容源（`content/reading/source/`）导入生产库，线上也有了，
+    // 所以不再跳过——它现在正是"线上真的把 reading 线渲染出来了"的证据。
     await page.goto('/#/learn')
     await firstLineCard(page).waitFor({ timeout: 15_000 })
 
