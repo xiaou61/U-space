@@ -76,6 +76,7 @@ final class DefaultRunRecorder implements RunRecorder {
         private int inputTokens;
         private int outputTokens;
         private int cacheReadTokens;
+        private volatile Integer queueMs;
         private volatile Integer ttftMs;
         private volatile int credits;
 
@@ -111,6 +112,14 @@ final class DefaultRunRecorder implements RunRecorder {
             outputTokens += output;
             cacheReadTokens += cacheRead;
             tokens.incrementAndGet();
+        }
+
+        /** 真正开始处理的时刻。排队时间 = 它与 startedAt 的差。 */
+        @Override
+        public void markStarted() {
+            if (queueMs == null) {
+                queueMs = (int) Duration.between(startedAt, Instant.now()).toMillis();
+            }
         }
 
         /** 第一个正文增量出现的时刻；只记第一次。 */
@@ -165,7 +174,7 @@ final class DefaultRunRecorder implements RunRecorder {
             return new RunRecord(traceId, spec.userId(), spec.conversationId(), spec.kind(),
                     spec.harness(), spec.model(), spec.promptVersion(),
                     startedAt, endedAt, status, errorType,
-                    null, millis, ttftMs,
+                    queueMs, millis, ttftMs,
                     llmRounds.get(), toolCalls.get(),
                     inputTokens, outputTokens, cacheReadTokens, credits,
                     attrs, copy);

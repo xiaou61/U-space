@@ -48,6 +48,12 @@ public interface RunRecorder {
         /** 累加到轮次总量。 */
         void tokens(int input, int output, int cacheRead);
 
+        /**
+         * 真正开始处理的时刻。`begin` 到这一步之间的差就是**排队时间**——
+         * 线程池满时它就是"用户等了多久才被捡起来"，重复调用以第一次为准。
+         */
+        void markStarted();
+
         /** 首字时刻。只在第一个正文增量出现时调，重复调用以第一次为准。 */
         void markTtft();
 

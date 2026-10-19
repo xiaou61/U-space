@@ -59,7 +59,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 两张表迁移与数据访问
+### TASK-001 | done | 两张表迁移与数据访问
 
 - 对应：`REQ-001`、`REQ-003`
 - 依赖：无
@@ -85,7 +85,7 @@ approver_role: CTO
   4. 跑 `mvn -pl backend/paideia-app -am test -Dtest=MigrationChecksumTest` 并按提示登记校验和。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=MigrationChecksumTest` → 1 passed
 
-### TASK-002 | pending | 采集端口与内存实现
+### TASK-002 | done | 采集端口与内存实现
 
 - 对应：`REQ-001`、`REQ-002`、`REQ-005`、`AC-001`、`AC-005`
 - 依赖：无
@@ -108,7 +108,7 @@ approver_role: CTO
   4. `TelemetryErrorTypes.of(Throwable)` 返回低基数标识，测试断言返回串里不含异常 message。
 - 验证：`mvn -pl backend/paideia-ai test -Dtest=DefaultRunRecorderTest` → 6 passed
 
-### TASK-003 | pending | 写队列与 MySQL sink
+### TASK-003 | done | 写队列与 MySQL sink
 
 - 对应：`REQ-003`、`REQ-006`、`REQ-016`、`AC-002`、`AC-007`、`AC-008`、`AC-015`
 - 依赖：TASK-001、TASK-002
@@ -131,7 +131,7 @@ approver_role: CTO
   4. 接线开关：`enabled=false` 时装配 `NoopRunRecorder` 并 WARN 一次。
 - 验证：`mvn -pl backend/paideia-ai test -Dtest=RunWriteQueueTest` → 4 passed
 
-### TASK-004 | pending | 对话链路埋点
+### TASK-004 | done | 对话链路埋点
 
 - 对应：`REQ-001`、`REQ-003`、`REQ-011`、`AC-001`、`AC-002`、`AC-003`
 - 依赖：TASK-002、TASK-003
@@ -154,7 +154,7 @@ approver_role: CTO
   8. `perRoundTokensSumToRunTotal`：两轮分别 10/5 与 20/8，断言 run 为 30/13 且两个步骤各自正确。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AiTelemetryIntegrationTest` → 6 passed
 
-### TASK-005 | pending | MDC 传播与日志对齐
+### TASK-005 | done | MDC 传播与日志对齐
 
 - 对应：`REQ-012`、`AC-016`
 - 依赖：无
@@ -173,7 +173,7 @@ approver_role: CTO
   4. 控制器在 `runTurn` 开头 `MDC.put("aiTraceId", traceId)`、`finally` 移除。
 - 验证：`mvn -pl backend/paideia-web test -Dtest=MdcTaskDecoratorTest` → 2 passed；集成测试里一次对话的日志能 grep 到两个键
 
-### TASK-006 | pending | 结算金额外传
+### TASK-006 | done | 结算金额外传
 
 - 对应：`REQ-001`（实扣积分）、`AC-004`
 - 依赖：无
@@ -184,7 +184,7 @@ approver_role: CTO
   3. 集成测试 `creditsMatchLedger`：一轮对话后 `ai_runs.credits` 等于同一 `ref_message_id` 上的流水差额绝对值。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AiCreditIntegrationTest,AiTelemetryIntegrationTest` → 全绿
 
-### TASK-007 | pending | 其余六条路径接入
+### TASK-007 | done | 其余六条路径接入
 
 - 对应：`REQ-004`、`AC-006`
 - 依赖：TASK-002、TASK-003
@@ -201,7 +201,7 @@ approver_role: CTO
   3. 写 `AiTelemetryPathsIntegrationTest`：七条路径各触发一次，`GROUP BY kind` 得到七个值。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AiTelemetryPathsIntegrationTest` → 1 passed（内含七条断言）
 
-### TASK-008 | pending | 注销级联
+### TASK-008 | done | 注销级联
 
 - 对应：`REQ-013`、`AC-013`
 - 依赖：TASK-001
@@ -214,7 +214,7 @@ approver_role: CTO
   3. **反向验证**：临时去掉那两行，确认测试变红，再恢复。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AccountDeletionCascadeIntegrationTest` → 全绿
 
-### TASK-009 | pending | 保留期清理与僵尸行
+### TASK-009 | done | 保留期清理与僵尸行
 
 - 对应：`REQ-015`、`AC-014`
 - 依赖：TASK-001
@@ -227,7 +227,7 @@ approver_role: CTO
   4. 每次打 `ai.telemetry.purged rows=N`。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AiTelemetryRetentionIntegrationTest` → 2 passed
 
-### TASK-010 | pending | 管理端统计端点
+### TASK-010 | done | 管理端统计端点
 
 - 对应：`REQ-008`、`REQ-009`、`REQ-010`、`REQ-014`、`AC-009`、`AC-010`、`AC-011`、`AC-012`
 - 依赖：TASK-001
@@ -248,7 +248,7 @@ approver_role: CTO
   5. 测试：`percentilesMatchManualComputation`、`windowClampedToRetention`、`nonAdminForbidden`、`detailNeverExposesContent`（用含长上下文的记录，断言响应串里不含任何 prompt 片段）。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=AiTelemetryAdminIntegrationTest` → 5 passed
 
-### TASK-011 | pending | 管理端两个页面
+### TASK-011 | done | 管理端两个页面
 
 - 对应：`REQ-008`、`REQ-009`、`REQ-010`、`AC-017`
 - 依赖：TASK-010
@@ -266,7 +266,7 @@ approver_role: CTO
   5. 写 e2e `ai-runs.spec.ts`：概览卡片、筛选、详情步骤表、空状态。
 - 验证：`pnpm --filter @paideia/admin test:e2e -- ai-runs.spec.ts` → 4 passed
 
-### TASK-012 | pending | 配置、文档与收尾
+### TASK-012 | done | 配置、文档与收尾
 
 - 对应：`REQ-016`、`AC-007`、`AC-015`
 - 依赖：TASK-003、TASK-010

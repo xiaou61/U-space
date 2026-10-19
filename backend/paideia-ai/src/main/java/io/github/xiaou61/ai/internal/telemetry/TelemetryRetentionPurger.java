@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
  * <p>用 `fixedDelay` 而不是 cron：它保证"上一次跑完再过一小时"，库慢的时候不会叠起来。
  */
 @Component
-class TelemetryRetentionPurger {
+public class TelemetryRetentionPurger {
 
     private static final Logger log = LoggerFactory.getLogger(TelemetryRetentionPurger.class);
 
@@ -40,7 +40,7 @@ class TelemetryRetentionPurger {
     }
 
     @Scheduled(fixedDelay = 3600_000L)
-    void purge() {
+    public void purge() {
         if (!properties.isEnabled()) {
             return;
         }

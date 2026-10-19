@@ -43,6 +43,10 @@ public final class NoopRunRecorder implements RunRecorder {
         }
 
         @Override
+        public void markStarted() {
+        }
+
+        @Override
         public void markTtft() {
         }
 

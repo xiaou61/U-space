@@ -190,6 +190,8 @@ class AssistantConversationController {
     private void runTurn(long userId, long conversationId,
                          ConversationService.TurnPreparation turn, SseEmitter emitter,
                          RunRecorder.RunScope run) {
+        // 第一件事：记下"被线程池捡起来"的时刻。begin 到这里的差就是排队时间。
+        run.markStarted();
         StringBuilder content = new StringBuilder();
         // 用量单独存一格：onUsage 先于结果回调，这样"失败也要为已烧掉的 token 负责"不必在每条错误路径上再判一次
         TokenUsage[] usageRef = new TokenUsage[1];

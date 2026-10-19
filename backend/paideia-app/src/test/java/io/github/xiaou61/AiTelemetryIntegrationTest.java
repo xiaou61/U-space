@@ -11,6 +11,7 @@ import io.github.xiaou61.ai.RunRecorder;
 import io.github.xiaou61.ai.RunSpec;
 import io.github.xiaou61.ai.SpanSpec;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,6 +41,9 @@ class AiTelemetryIntegrationTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    io.github.xiaou61.ai.internal.telemetry.TelemetryRetentionPurger telemetryPurger;
 
     @MockitoBean
     AssistantConversation assistant;
@@ -167,6 +171,52 @@ class AiTelemetryIntegrationTest {
         assertThat(recorder.enabled()).isTrue();
         assertThat(recorder.getClass().getSimpleName()).isEqualTo("DefaultRunRecorder");
 
+    }
+
+    @Test
+    @DisplayName("保留期清理：过期行与其步骤一起消失，未过期的不受影响")
+    void retentionPurgesExpiredRunsAndSpans() throws Exception {
+        wipe();
+        Instant now = Instant.now();
+        // 造两条：一条 100 天前（过期）、一条 1 天前（保留）
+        jdbcTemplate.update("INSERT INTO ai_runs (trace_id, user_id, kind, status, started_at) "
+                + "VALUES (?, ?, 'chat', 'ok', ?)", "expired-run", 9005L, now.minus(100, ChronoUnit.DAYS));
+        jdbcTemplate.update("INSERT INTO ai_run_spans (run_trace_id, seq, kind, name, status, started_at) "
+                + "VALUES (?, 1, 'llm', 'llm#1', 'ok', ?)", "expired-run", now.minus(100, ChronoUnit.DAYS));
+        jdbcTemplate.update("INSERT INTO ai_runs (trace_id, user_id, kind, status, started_at) "
+                + "VALUES (?, ?, 'chat', 'ok', ?)", "fresh-run", 9005L, now.minus(1, ChronoUnit.DAYS));
+        jdbcTemplate.update("INSERT INTO ai_run_spans (run_trace_id, seq, kind, name, status, started_at) "
+                + "VALUES (?, 1, 'llm', 'llm#1', 'ok', ?)", "fresh-run", now.minus(1, ChronoUnit.DAYS));
+
+        purge();
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_runs WHERE trace_id = 'expired-run'", Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_run_spans WHERE run_trace_id = 'expired-run'", Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ai_runs WHERE trace_id = 'fresh-run'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("僵尸行：停在 running 超过阈值的被标成 interrupted")
+    void stuckRunsAreMarkedInterrupted() throws Exception {
+        wipe();
+        Instant longAgo = Instant.now().minus(10, ChronoUnit.HOURS);
+        jdbcTemplate.update("INSERT INTO ai_runs (trace_id, user_id, kind, status, started_at) "
+                + "VALUES (?, ?, 'chat', 'running', ?)", "stuck-run", 9006L, longAgo);
+
+        purge();
+
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+                "SELECT status, error_type FROM ai_runs WHERE trace_id = 'stuck-run'");
+        assertThat(row.get("status")).isEqualTo("interrupted");
+        assertThat(row.get("error_type")).isEqualTo("stuck");
+    }
+
+    /** 直接调清理器：它平时是 @Scheduled，测试不等一小时。 */
+    private void purge() {
+        telemetryPurger.purge();
     }
 
     @Test
