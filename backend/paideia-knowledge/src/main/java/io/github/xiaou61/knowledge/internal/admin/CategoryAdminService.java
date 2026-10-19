@@ -26,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CategoryAdminService {
 
+    /** 线的类别白名单。新增一种要同时改前端的分组映射，因此刻意写死在代码里。 */
+    private static final List<String> LINE_KINDS = List.of("course", "reading");
+
     private final CategoryMapper categoryMapper;
     private final EntryMapper entryMapper;
 
@@ -35,7 +38,7 @@ public class CategoryAdminService {
     }
 
     @Transactional
-    public Category create(Long parentId, String name, String slug, Integer sortOrder) {
+    public Category create(Long parentId, String name, String slug, Integer sortOrder, String lineKind) {
         String trimmedName = requireText(name, "分类名称不能为空");
         String trimmedSlug = requireSlug(slug);
         requireParent(parentId, null);
@@ -49,6 +52,7 @@ public class CategoryAdminService {
         category.setName(trimmedName);
         category.setSlug(trimmedSlug);
         category.setSortOrder(sortOrder == null ? 0 : sortOrder);
+        category.setLineKind(normalizeLineKind(lineKind));
         try {
             categoryMapper.insert(category);
         } catch (DuplicateKeyException exception) {
@@ -59,7 +63,7 @@ public class CategoryAdminService {
     }
 
     @Transactional
-    public void update(Long id, Long parentId, String name, String slug, Integer sortOrder) {
+    public void update(Long id, Long parentId, String name, String slug, Integer sortOrder, String lineKind) {
         Category existing = categoryMapper.findById(id);
         if (existing == null) {
             throw notFound("分类不存在");
@@ -75,6 +79,7 @@ public class CategoryAdminService {
         existing.setName(trimmedName);
         existing.setSlug(trimmedSlug);
         existing.setSortOrder(sortOrder == null ? 0 : sortOrder);
+        existing.setLineKind(normalizeLineKind(lineKind));
         try {
             categoryMapper.update(existing);
         } catch (DuplicateKeyException exception) {
@@ -121,6 +126,23 @@ public class CategoryAdminService {
             throw invalid(message);
         }
         return value.trim();
+    }
+
+    /**
+     * 学习线的类别（WORK-020）。**空串与 null 都表示"普通分类"**，所以取消标记不需要第二个端点。
+     *
+     * <p>白名单而不是自由字符串：新增一种呈现形态本来就要改前端的分组映射，
+     * 让任意值进库只会得到"线清单里有它、但没有页面认识它"的静默失败。
+     */
+    private static String normalizeLineKind(String lineKind) {
+        if (lineKind == null || lineKind.isBlank()) {
+            return null;
+        }
+        String normalized = lineKind.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!LINE_KINDS.contains(normalized)) {
+            throw invalid("线的类别只能是 " + String.join(" / ", LINE_KINDS));
+        }
+        return normalized;
     }
 
     private static String requireSlug(String slug) {

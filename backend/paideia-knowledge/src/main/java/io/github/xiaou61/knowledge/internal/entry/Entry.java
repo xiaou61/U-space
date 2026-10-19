@@ -15,6 +15,11 @@ public class Entry {
 
     private Long id;
     private Long categoryId;
+    /**
+     * 学习线里的站序（WORK-020）。**可空**：为空表示这条内容没有声明顺序，调用方退回
+     * {@code (published_at, id)}。存量条目全是 null，因此加这一列不改变任何既有排序。
+     */
+    private Integer sortOrder;
     private String title;
     private String body;
     /** **只有列表查询填充**（`LEFT(body, 200)`）；详情查询不填，为 null。 */
@@ -39,6 +44,14 @@ public class Entry {
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getTitle() {

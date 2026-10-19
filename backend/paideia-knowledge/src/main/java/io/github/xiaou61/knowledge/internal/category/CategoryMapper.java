@@ -22,14 +22,14 @@ public interface CategoryMapper {
 
     /** 全量，按展示顺序。装树与"取某分类的整棵子树"都基于这一份结果。 */
     @Select("""
-            SELECT id, parent_id, name, slug, sort_order, created_at, updated_at
+            SELECT id, parent_id, name, slug, sort_order, line_kind, created_at, updated_at
             FROM knowledge_categories
             ORDER BY sort_order, id
             """)
     List<Category> findAll();
 
     @Select("""
-            SELECT id, parent_id, name, slug, sort_order, created_at, updated_at
+            SELECT id, parent_id, name, slug, sort_order, line_kind, created_at, updated_at
             FROM knowledge_categories WHERE id = #{id}
             """)
     Category findById(@Param("id") Long id);
@@ -68,15 +68,16 @@ public interface CategoryMapper {
     long countChildren(@Param("id") Long id);
 
     @Insert("""
-            INSERT INTO knowledge_categories (parent_id, name, slug, sort_order)
-            VALUES (#{parentId}, #{name}, #{slug}, #{sortOrder})
+            INSERT INTO knowledge_categories (parent_id, name, slug, sort_order, line_kind)
+            VALUES (#{parentId}, #{name}, #{slug}, #{sortOrder}, #{lineKind})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Category category);
 
     @Update("""
             UPDATE knowledge_categories
-            SET parent_id = #{parentId}, name = #{name}, slug = #{slug}, sort_order = #{sortOrder}
+            SET parent_id = #{parentId}, name = #{name}, slug = #{slug}, sort_order = #{sortOrder},
+                line_kind = #{lineKind}
             WHERE id = #{id}
             """)
     int update(Category category);

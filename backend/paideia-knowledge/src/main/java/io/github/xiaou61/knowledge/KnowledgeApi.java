@@ -44,6 +44,21 @@ public interface KnowledgeApi {
      */
     List<MarkedEntry> findMarks(long userId, int limit);
 
+    /**
+     * 某个学习者在**某一站**的学习记录摘要（WORK-020），供导师提示词注入。
+     *
+     * <p>只给一行可读文本：状态、各块得分、是否到期待复习。**必须由调用方传入 userId**，
+     * 与 {@link #findMarks} 同一纪律——传别人的 id 就读到别人的学情，所以助手那侧把它
+     * 绑在构造期，不让模型有机会提供。
+     *
+     * <p>没有记录时返回空串（不是 null）：导师提示词里不需要额外分支。
+     */
+    default String learningSummary(long userId, long entryId) {
+        // 默认空实现：本接口是"只在真有消费者时才加方法"的契约，但学情是**可选注入**——
+        // 测试桩与将来的其它实现不该被迫写一个它们不关心的空方法。
+        return "";
+    }
+
     /** 检索结果行：只要 id 与标题；正文由 {@link #findPublishedContent} 另取。 */
     record EntryBrief(long id, String title) {
     }

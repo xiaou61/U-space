@@ -8,6 +8,7 @@ import io.github.xiaou61.knowledge.internal.category.CategoryService;
 import io.github.xiaou61.knowledge.internal.entry.Entry;
 import io.github.xiaou61.knowledge.internal.entry.EntryMapper;
 import io.github.xiaou61.knowledge.internal.entry.EntryService;
+import io.github.xiaou61.knowledge.internal.learning.LearningProgressService;
 import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
 import java.util.List;
@@ -33,15 +34,18 @@ class KnowledgeApiImplementation implements KnowledgeApi {
     private final EntryService entryService;
     private final CategoryService categoryService;
     private final SelfAssessmentService selfAssessments;
+    private final LearningProgressService learningProgress;
 
     KnowledgeApiImplementation(EntryMapper entryMapper,
                                EntryService entryService,
                                CategoryService categoryService,
-                               SelfAssessmentService selfAssessments) {
+                               SelfAssessmentService selfAssessments,
+                               LearningProgressService learningProgress) {
         this.entryMapper = entryMapper;
         this.entryService = entryService;
         this.categoryService = categoryService;
         this.selfAssessments = selfAssessments;
+        this.learningProgress = learningProgress;
     }
 
     @Override
@@ -80,6 +84,43 @@ class KnowledgeApiImplementation implements KnowledgeApi {
                 .limit(saneLimit(limit))
                 .map(item -> new MarkedEntry(item.entryId(), item.title(), item.level()))
                 .toList();
+    }
+
+    @Override
+    public String learningSummary(long userId, long entryId) {
+        // 未登录/条目不存在都按"没有记录"处理：提示词注入不该是失败点
+        if (userId <= 0) {
+            return "";
+        }
+        try {
+            LearningProgressService.View view = learningProgress.get(userId, entryId);
+            StringBuilder summary = new StringBuilder();
+            summary.append("状态：").append("passed".equals(view.status()) ? "已通过" : "学习中");
+            summary.append("；最远步骤：").append(view.tourStep());
+            if (!view.challenges().isEmpty()) {
+                summary.append("；练习得分：").append(scores(view.challenges()));
+            }
+            if (!view.quizzes().isEmpty()) {
+                summary.append("；小测得分：").append(scores(view.quizzes()));
+            }
+            if (view.reviewDueAt() != null) {
+                summary.append("；复习到期：").append(view.reviewDueAt());
+            }
+            return summary.toString();
+        } catch (RuntimeException failure) {
+            // 条目被下架/删掉时 get 会抛 404：学情缺失不是错误
+            return "";
+        }
+    }
+
+    private static String scores(java.util.Map<String, io.github.xiaou61.knowledge.internal.learning.LearningProgressRules.BlockScore> scores) {
+        int got = 0;
+        int total = 0;
+        for (var score : scores.values()) {
+            got += score.score();
+            total += score.total();
+        }
+        return got + "/" + total;
     }
 
     /**

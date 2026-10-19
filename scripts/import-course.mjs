@@ -1,0 +1,355 @@
+#!/usr/bin/env node
+/**
+ * 课程导入脚本（WORK-020 TASK-005）。
+ *
+ * 走**已有的**管理端 API，不新增写接口：
+ *   登录 → 取分类树 → 缺的分类就建（带 line_kind）→ 按「分类 + 标题」幂等建/更条目
+ *   → 按 order 顺序发布（保证 published_at 单调，于是"上一篇/下一篇"与课号一致）
+ *   → 建 prerequisite 关系。
+ *
+ * 三条纪律：
+ * 1. **只碰本脚本负责的分类**：不认识的分类绝不写入，也不删除任何条目——内容源被删掉时
+ *    线上条目保持原样（宁可留一条旧课，也不静默删数据）。
+ * 2. **幂等**：标题、正文、站序、状态都相同时不发请求；第二次运行应当 `created 0 / updated 0`。
+ * 3. **凭据只从环境变量读**，不写文件、不打印。
+ *
+ * 用法：
+ *   PAIDEIA_ADMIN_USER=... PAIDEIA_ADMIN_PASSWORD=... node scripts/import-course.mjs --dry-run
+ *   ... node scripts/import-course.mjs                     # 默认导 content/courses 下全部语言
+ *   ... node scripts/import-course.mjs --dir content/courses/python
+ *   ... node scripts/import-course.mjs --base-url http://127.0.0.1:8081
+ */
+
+import fs from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+/**
+ * 线的声明**全部来自课程文件**，脚本里没有任何一门课的名字。
+ *
+ * 总览（order 0）的 frontmatter 写：`category`（线的 slug）、`line_name`（线的名字）、
+ * `line_kind`（course / reading）、`line_sort`（线在清单里的顺序）。缺省时按
+ * "`course` + 总览标题 + 目录名做 slug" 兜底——仍然不需要改代码。
+ */
+function lineSpecOf(language, lessons) {
+  const overview = lessons.find((lesson) => Number(lesson.meta.order) === 0)
+  const meta = overview?.meta ?? lessons[0].meta
+  const slug = meta.category
+  if (!slug) {
+    throw new Error(`${language}/ 的课程文件缺少 frontmatter category`)
+  }
+  return {
+    slug,
+    name: meta.line_name ?? overview?.meta.title ?? slug,
+    kind: meta.line_kind ?? 'course',
+    sortOrder: Number(meta.line_sort ?? 100),
+  }
+}
+
+function parseArgs(argv) {
+  const options = {
+    dir: path.join(ROOT, 'content', 'courses'),
+    baseUrl: process.env.PAIDEIA_BASE_URL ?? 'http://127.0.0.1:8081',
+    dryRun: false,
+  }
+  for (let index = 0; index < argv.length; index++) {
+    const arg = argv[index]
+    if (arg === '--dry-run') options.dryRun = true
+    else if (arg === '--dir') options.dir = path.resolve(ROOT, argv[++index])
+    else if (arg === '--base-url') options.baseUrl = argv[++index]
+    else if (arg === '--help' || arg === '-h') {
+      console.log('用法：node scripts/import-course.mjs [--dry-run] [--dir <目录>] [--base-url <地址>]')
+      process.exit(0)
+    } else {
+      console.error(`不认识的参数：${arg}`)
+      process.exit(2)
+    }
+  }
+  if (!options.baseUrl.endsWith('/')) options.baseUrl += '/'
+  return options
+}
+
+/* ------------------------------------------------------------------ 课程解析 */
+
+/** 极简 frontmatter：只认 `key: value`，与 verify_course.py 同一口径。 */
+function parseLesson(file) {
+  const text = fs.readFileSync(file, 'utf8')
+  if (!text.startsWith('---')) {
+    throw new Error(`${file}：缺少 frontmatter`)
+  }
+  const end = text.indexOf('\n---', 3)
+  if (end < 0) {
+    throw new Error(`${file}：frontmatter 没有结束标记`)
+  }
+  const meta = {}
+  for (const line of text.slice(3, end).split('\n')) {
+    if (!line.trim() || line.trimStart().startsWith('#')) continue
+    const split = line.indexOf(':')
+    if (split < 0) continue
+    meta[line.slice(0, split).trim()] = line.slice(split + 1).trim()
+  }
+  for (const key of ['title', 'category', 'order', 'status']) {
+    if (!meta[key]) throw new Error(`${file}：frontmatter 缺少 ${key}`)
+  }
+  return { file, meta, body: text.slice(end + 4).replace(/^\n+/, '') }
+}
+
+function collectLessons(dir) {
+  const languages = new Map()
+  // `--dir` 直接指向某一条线的目录时（目录里就是 .md），把它当成一条线。
+  // 这一条决定了"新增一条线只跑一条命令"，不必先建一个上层目录。
+  if (fs.existsSync(dir) && fs.readdirSync(dir).some((name) => name.endsWith('.md'))) {
+    const lessons = fs
+      .readdirSync(dir)
+      .filter((name) => name.endsWith('.md') && name !== 'README.md')
+      .map((name) => parseLesson(path.join(dir, name)))
+      .sort((a, b) => Number(a.meta.order) - Number(b.meta.order))
+    if (lessons.length > 0) {
+      languages.set(path.basename(dir), lessons)
+      return languages
+    }
+  }
+  const entries = fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const language = entry.name
+    const files = fs
+      .readdirSync(path.join(dir, language))
+      .filter((name) => name.endsWith('.md') && name !== 'README.md')
+      .map((name) => path.join(dir, language, name))
+    if (files.length === 0) continue
+    const lessons = files.map(parseLesson).sort((a, b) => Number(a.meta.order) - Number(b.meta.order))
+    languages.set(language, lessons)
+  }
+  return languages
+}
+
+/* ------------------------------------------------------------------ HTTP */
+
+function createClient(baseUrl, token) {
+  async function call(method, route, body) {
+    const response = await fetch(new URL(route.replace(/^\//, ''), baseUrl), {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const text = await response.text()
+    let payload = null
+    try {
+      payload = text ? JSON.parse(text) : null
+    } catch {
+      payload = { raw: text }
+    }
+    if (!response.ok) {
+      throw new Error(`${method} ${route} → HTTP ${response.status}：${text.slice(0, 300)}`)
+    }
+    return payload?.data ?? payload
+  }
+  return {
+    get: (route) => call('GET', route),
+    post: (route, body) => call('POST', route, body),
+    put: (route, body) => call('PUT', route, body),
+  }
+}
+
+async function login(baseUrl) {
+  const user = process.env.PAIDEIA_ADMIN_USER
+  const password = process.env.PAIDEIA_ADMIN_PASSWORD
+  if (!user || !password) {
+    throw new Error('缺少 PAIDEIA_ADMIN_USER / PAIDEIA_ADMIN_PASSWORD（凭据不进仓库，只从环境变量读）')
+  }
+  const client = createClient(baseUrl, null)
+  const tokens = await client.post('/api/v1/auth/login', { identifier: user, password })
+  if (!tokens?.accessToken) {
+    throw new Error('登录没有拿到 accessToken')
+  }
+  return createClient(baseUrl, tokens.accessToken)
+}
+
+/* ------------------------------------------------------------------ 导入 */
+
+/** slug 全库唯一，所以按 slug 找就够，不必关心层级。 */
+function findCategory(nodes, slug) {
+  if (!Array.isArray(nodes)) return null
+  for (const node of nodes) {
+    if (node.slug === slug) return node
+    const hit = findCategory(node.children, slug)
+    if (hit) return hit
+  }
+  return null
+}
+
+async function ensureCategory(client, language, lessons, options) {
+  const spec = lineSpecOf(language, lessons)
+  const tree = await client.get('/api/v1/knowledge/admin/categories')
+  const existing = findCategory(tree, spec.slug)
+  if (existing) {
+    return existing
+  }
+  if (options.dryRun) {
+    console.log(`  [dry-run] 将创建分类 ${spec.name}（${spec.slug}, ${spec.kind}）`)
+    return { id: -1, slug: spec.slug, name: spec.name, children: [] }
+  }
+  const id = await client.post('/api/v1/knowledge/admin/categories', {
+    parentId: null,
+    name: spec.name,
+    slug: spec.slug,
+    sortOrder: spec.sortOrder,
+    lineKind: spec.kind,
+  })
+  console.log(`  + 分类 ${spec.name}（id=${id}）`)
+  return { id, slug: spec.slug, name: spec.name, children: [] }
+}
+
+async function existingEntries(client) {
+  const page = await client.get('/api/v1/knowledge/admin/entries?size=200')
+  return page?.items ?? []
+}
+
+async function importLanguage(client, language, lessons, options, allEntries) {
+  const category = await ensureCategory(client, language, lessons, options)
+  if (category.id < 0) {
+    // dry-run 且分类不存在：把计划打出来就够
+    for (const lesson of lessons) {
+      console.log(`  [dry-run] 将创建/更新条目 ${lesson.meta.title}（order=${lesson.meta.order}）`)
+    }
+    return { created: 0, updated: 0, relations: 0 }
+  }
+
+  const inCategory = allEntries.filter((entry) => entry.categoryId === category.id)
+  const byTitle = new Map(inCategory.map((entry) => [entry.title, entry]))
+  const created = []
+  let updates = 0
+
+  for (const lesson of lessons) {
+    const payload = {
+      title: lesson.meta.title,
+      body: lesson.body,
+      categoryId: category.id,
+      // 先以草稿落库：全部写完再统一发布，保证 published_at 与 order 一致
+      status: 'draft',
+      sortOrder: Number(lesson.meta.order),
+    }
+    const existing = byTitle.get(lesson.meta.title)
+    if (!existing) {
+      if (options.dryRun) {
+        console.log(`  [dry-run] 将创建 ${lesson.meta.title}`)
+      } else {
+        const id = await client.post('/api/v1/knowledge/admin/entries', payload)
+        created.push({ ...payload, id })
+        console.log(`  + ${lesson.meta.title}`)
+      }
+      continue
+    }
+    const detail = await client.get(`/api/v1/knowledge/admin/entries/${existing.id}`)
+    const sameBody = (detail.body ?? '') === lesson.body
+    const sameOrder = (detail.sortOrder ?? null) === payload.sortOrder
+    if (sameBody && sameOrder && detail.status === 'published') {
+      continue
+    }
+    if (options.dryRun) {
+      console.log(`  [dry-run] 将更新 ${lesson.meta.title}`)
+    } else {
+      await client.put(`/api/v1/knowledge/admin/entries/${existing.id}`, payload)
+      console.log(`  ~ ${lesson.meta.title}`)
+    }
+    updates++
+  }
+
+  // 按 order 依次发布：published_at 因此单调，上一篇/下一篇与课号一致
+  if (!options.dryRun) {
+    const orderedIds = []
+    for (const lesson of lessons) {
+      const match = byTitle.get(lesson.meta.title)
+      const id = match?.id ?? created.find((item) => item.title === lesson.meta.title)?.id
+      if (id !== undefined) orderedIds.push({ id, lesson })
+    }
+    for (const { id, lesson } of orderedIds) {
+      if (byTitle.has(lesson.meta.title)) {
+        // 已存在的条目也重新发布一次？不：那会刷新 published_at，打乱既有顺序。
+        // 只在内容/站序有变化时才发布（上面已 PUT），这里不动。
+        continue
+      }
+      await client.put(`/api/v1/knowledge/admin/entries/${id}`, {
+        title: lesson.meta.title,
+        body: lesson.body,
+        categoryId: category.id,
+        status: 'published',
+        sortOrder: Number(lesson.meta.order),
+      })
+    }
+  }
+
+  let relations = 0
+  for (const lesson of lessons) {
+    const prerequisiteTitle = lesson.meta.prerequisite
+    if (!prerequisiteTitle) continue
+    const from = byTitle.get(prerequisiteTitle) ?? created.find((item) => item.title === prerequisiteTitle)
+    const to = byTitle.get(lesson.meta.title) ?? created.find((item) => item.title === lesson.meta.title)
+    if (!from || !to) {
+      console.warn(`  ! 前置关系跳过：${prerequisiteTitle} → ${lesson.meta.title}`)
+      continue
+    }
+    if (options.dryRun) {
+      console.log(`  [dry-run] 将建关系 ${prerequisiteTitle} → ${lesson.meta.title}`)
+      continue
+    }
+    try {
+      await client.post('/api/v1/knowledge/admin/relations', {
+        fromEntryId: from.id,
+        toEntryId: to.id,
+        relationType: 'prerequisite',
+      })
+      relations++
+    } catch (error) {
+      // 唯一键冲突 = 关系已存在，是幂等的正常情况
+      if (!String(error.message).includes('409')) {
+        console.warn(`  ! 关系未建立：${prerequisiteTitle} → ${lesson.meta.title}：${error.message}`)
+      }
+    }
+  }
+
+  return { created: created.length, updated: updates, relations }
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2))
+  const languages = collectLessons(options.dir)
+  if (languages.size === 0) {
+    console.log(`没有找到课程（${options.dir}）`)
+    return
+  }
+
+  const client = options.dryRun && !process.env.PAIDEIA_ADMIN_USER ? null : await login(options.baseUrl)
+  const entries = client ? await existingEntries(client) : []
+  const totals = { created: 0, updated: 0, relations: 0 }
+
+  for (const [language, lessons] of languages) {
+    console.log(`${language}：${lessons.length} 课`)
+    const dryClient = client ?? {
+      get: async () => [],
+      
+      post: async () => 0,
+      put: async () => 0,
+    }
+    const result = await importLanguage(dryClient, language, lessons, options, entries)
+    totals.created += result.created
+    totals.updated += result.updated
+    totals.relations += result.relations
+  }
+
+  console.log(
+    `\n${options.dryRun ? '[dry-run] ' : ''}created ${totals.created} / updated ${totals.updated} / relations ${totals.relations}`,
+  )
+}
+
+main().catch((error) => {
+  console.error(error.message)
+  process.exit(1)
+})

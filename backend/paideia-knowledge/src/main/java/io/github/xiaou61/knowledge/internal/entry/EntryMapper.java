@@ -27,6 +27,10 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface EntryMapper {
 
+    /** 见 {@link #findLineKindOfEntry}。抽成常量只因为注解里的文本块与引号太容易写坏。 */
+    String ENTRY_LINE_KIND_SQL = "SELECT c.line_kind FROM knowledge_entries e "
+            + "JOIN knowledge_categories c ON c.id = e.category_id WHERE e.id = #{id}";
+
     @Select("""
             <script>
             SELECT id, category_id, title, status, published_at, updated_at,
@@ -76,7 +80,7 @@ public interface EntryMapper {
                         @Param("likePattern") String likePattern);
 
     @Select("""
-            SELECT id, category_id, title, body, status, published_at, created_at, updated_at
+            SELECT id, category_id, sort_order, title, body, status, published_at, created_at, updated_at
             FROM knowledge_entries WHERE id = #{id} AND status = 'published'
             """)
     Optional<Entry> findPublishedById(@Param("id") Long id);
@@ -111,6 +115,22 @@ public interface EntryMapper {
                                        @Param("publishedAt") Instant publishedAt,
                                        @Param("id") Long id);
 
+    /**
+     * 一条学习线的全部站，**按声明顺序**（WORK-020）。
+     *
+     * <p>这是"线的顺序"的唯一实现：`sort_order` 为 NULL 的排到最后
+     * （`(sort_order IS NULL)` 在 MySQL 里得到 0/1），声明过的按声明排，同值用
+     * `(published_at, id)` 兜底。别的查询（列表、上一篇/下一篇）仍按原有的
+     * `(published_at, id)` —— 它们是"同分类相邻内容"，不承担线的顺序。
+     */
+    @Select("""
+            SELECT id, category_id, sort_order, title, status, published_at, updated_at
+            FROM knowledge_entries
+            WHERE status = 'published' AND category_id = #{categoryId}
+            ORDER BY (sort_order IS NULL), sort_order, published_at, id
+            """)
+    List<Entry> findPublishedByCategoryOrdered(@Param("categoryId") Long categoryId);
+
     /** 反向链接：把当前条目当作**前置**的那些条目（只列已发布的）。 */
     // 关系类查询统一放在 RelationMapper（前置／反向／相关三种视角在一处更好读）。
 
@@ -143,24 +163,49 @@ public interface EntryMapper {
 
     /** 管理端详情：**不过滤状态**，草稿预览靠它。 */
     @Select("""
-            SELECT id, category_id, title, body, status, published_at, created_at, updated_at
+            SELECT id, category_id, sort_order, title, body, status, published_at, created_at, updated_at
             FROM knowledge_entries WHERE id = #{id}
             """)
     Optional<Entry> findByIdIncludingDraft(@Param("id") Long id);
 
+    /**
+     * 条目所属分类的学习线类别（WORK-020）：course / reading / null。
+     *
+     * <p>前端据此决定这一页的助手用哪种行为——课程页用导师，其它页用通用助手。
+     * 一次 JOIN 就够，不必为它另开一个端点。
+     */
+    @Select(ENTRY_LINE_KIND_SQL)
+    String findLineKindOfEntry(@Param("id") Long id);
+
     @Select("SELECT COUNT(*) FROM knowledge_entries WHERE category_id = #{id}")
     long countByCategory(@Param("id") Long id);
 
+    /**
+     * 按 id 批量取已发布条目的标题（WORK-021）。
+     *
+     * <p>图谱一次要显示成百个概念的载体条目，逐条 {@code findPublishedById} 会把一次查询
+     * 变成几百次。只取标题——图上只需要它能点进去。
+     */
+    @Select("""
+            <script>
+            SELECT id, category_id, title
+            FROM knowledge_entries
+            WHERE status = 'published' AND id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    List<Entry> findPublishedTitlesByIds(@Param("ids") List<Long> ids);
+
     @Insert("""
-            INSERT INTO knowledge_entries (category_id, title, body, status, published_at)
-            VALUES (#{categoryId}, #{title}, #{body}, #{status}, #{publishedAt})
+            INSERT INTO knowledge_entries (category_id, sort_order, title, body, status, published_at)
+            VALUES (#{categoryId}, #{sortOrder}, #{title}, #{body}, #{status}, #{publishedAt})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Entry entry);
 
     @Update("""
             UPDATE knowledge_entries
-            SET category_id = #{categoryId}, title = #{title}, body = #{body},
+            SET category_id = #{categoryId}, sort_order = #{sortOrder}, title = #{title}, body = #{body},
                 status = #{status}, published_at = #{publishedAt}
             WHERE id = #{id}
             """)

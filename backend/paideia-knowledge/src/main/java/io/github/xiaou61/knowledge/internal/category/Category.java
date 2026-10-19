@@ -17,6 +17,11 @@ public class Category {
     private String name;
     private String slug;
     private int sortOrder;
+    /**
+     * 非空表示这个分类是一条**学习线**（WORK-020）：course 从零课程 / reading 源码解读。
+     * 线不另建表——名字、slug、顺序都用分类自己的字段，这里只有一个"它是条线"的标记。
+     */
+    private String lineKind;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -58,6 +63,14 @@ public class Category {
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public String getLineKind() {
+        return lineKind;
+    }
+
+    public void setLineKind(String lineKind) {
+        this.lineKind = lineKind;
     }
 
     public Instant getCreatedAt() {

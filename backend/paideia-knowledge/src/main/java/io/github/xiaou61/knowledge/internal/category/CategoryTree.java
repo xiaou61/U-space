@@ -20,8 +20,13 @@ public final class CategoryTree {
     private CategoryTree() {
     }
 
-    /** 树节点。只放导航需要的东西，不含条目数。 */
-    public record Node(Long id, String name, String slug, List<Node> children) {
+    /**
+     * 树节点。只放导航需要的东西，不含条目数。
+     *
+     * <p>{@code lineKind} 非空表示这个分类是一条学习线（WORK-020）；管理端据此显示"这是条线"，
+     * 学习者端的线清单另有 {@code /api/v1/learning/lines}，不靠这棵树。
+     */
+    public record Node(Long id, String name, String slug, String lineKind, List<Node> children) {
     }
 
     /**
@@ -63,6 +68,7 @@ public final class CategoryTree {
                     child.getId(),
                     child.getName(),
                     child.getSlug(),
+                    child.getLineKind(),
                     childrenOf(child.getId(), byParent, visiting)));
             visiting.remove(child.getId());
         }

@@ -55,6 +55,8 @@ public class EntryAdminService {
             Long categoryId,
             String categoryName,
             String status,
+            /** 学习线站序；null = 未声明（WORK-020）。 */
+            Integer sortOrder,
             Instant publishedAt,
             /** 与本条目有关的全部边（含 id），供管理端删除关系。 */
             List<AdminRelation> relations) {
@@ -65,7 +67,7 @@ public class EntryAdminService {
     }
 
     @Transactional
-    public Long create(String title, String body, Long categoryId, String status) {
+    public Long create(String title, String body, Long categoryId, String status, Integer sortOrder) {
         String normalized = normalizeStatus(status);
         requireCategory(categoryId);
 
@@ -73,6 +75,7 @@ public class EntryAdminService {
         entry.setTitle(requireTitle(title));
         entry.setBody(body == null ? "" : body);
         entry.setCategoryId(categoryId);
+        entry.setSortOrder(normalizeSortOrder(sortOrder));
         entry.setStatus(normalized);
         entry.setPublishedAt(STATUS_PUBLISHED.equals(normalized) ? Instant.now() : null);
         entryMapper.insert(entry);
@@ -80,7 +83,7 @@ public class EntryAdminService {
     }
 
     @Transactional
-    public void update(Long id, String title, String body, Long categoryId, String status) {
+    public void update(Long id, String title, String body, Long categoryId, String status, Integer sortOrder) {
         Entry existing = entryMapper.findByIdIncludingDraft(id)
                 .orElseThrow(() -> notFound("条目不存在"));
         String normalized = normalizeStatus(status);
@@ -92,6 +95,7 @@ public class EntryAdminService {
         existing.setTitle(requireTitle(title));
         existing.setBody(body == null ? "" : body);
         existing.setCategoryId(categoryId);
+        existing.setSortOrder(normalizeSortOrder(sortOrder));
         existing.setStatus(normalized);
         if (willBePublished && !wasPublished) {
             existing.setPublishedAt(Instant.now());
@@ -153,6 +157,7 @@ public class EntryAdminService {
                 entry.getCategoryId(),
                 nameOf(entry.getCategoryId()),
                 entry.getStatus(),
+                entry.getSortOrder(),
                 entry.getPublishedAt(),
                 relations);
     }
@@ -183,6 +188,26 @@ public class EntryAdminService {
             throw invalid("标题不能超过 200 个字符");
         }
         return trimmed;
+    }
+
+    /**
+     * 站序（WORK-020）：非负，或留空。
+     *
+     * <p>{@code 0} 是合法的——课程总览就是 0 号站（它排在最前，正文里带 learning-path）。
+     * 负数没有意义，直接拒。
+     *
+     * <p>**不做唯一性校验**：同一条线里两个站拿到同一个号时，排序会退到
+     * {@code (published_at, id)} 兜底，界面仍然是确定的顺序，而不是报错挡住发布。
+     * 真正需要严格唯一的是导入脚本（它自己保证按 0..n 编号）。
+     */
+    private static Integer normalizeSortOrder(Integer sortOrder) {
+        if (sortOrder == null) {
+            return null;
+        }
+        if (sortOrder < 0) {
+            throw invalid("站序不能为负");
+        }
+        return sortOrder;
     }
 
     private static String normalizeStatus(String status) {
