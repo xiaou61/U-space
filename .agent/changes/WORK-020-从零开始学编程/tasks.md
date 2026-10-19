@@ -152,7 +152,13 @@ line_sort`，脚本里不再出现任何一门课的名字；重跑后新增一�
 
 **验收**：集成测试断言 TUTOR 请求的系统提示含学情数字、ASSISTANT 请求不含；前端单测断言 `createConversation` 收到 `tutor`。
 
-### TASK-016 | pending | 内容导入线上并验收
+### TASK-016 | done | 内容导入线上并验收
+2026-10-19 完成：V17/V18/V19 已随发版应用到生产库（`Current version 16 → 19`）；
+`node scripts/import-course.mjs` 导入 26 课（Python 13 + Java 13）与 22 条前置关系，
+第二次运行 `created 0 / updated 0` 证明幂等。线上 `/api/v1/learning/lines` 返回两条线各 13 站；
+提交小测 + 挑战后 `status=passed`、`passedCount 1/13`、下一站推进到「01 · 环境与第一行代码」。
+线上学习者端 e2e 60 passed / 22 skipped / 0 failed（含 learn.spec 3 条）；
+管理端 e2e 20 passed。
 
 线上跑导入脚本（凭据只从环境变量）；在线上真实完成一课（做题 → 通过 → 下一课）；记录耗时与截图口径。
 

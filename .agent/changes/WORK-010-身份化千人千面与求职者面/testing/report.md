@@ -4,7 +4,7 @@ work_id: WORK-010
 work: 身份化千人千面与求职者面
 status: passed
 evidence: required
-verified_commit: 5f115e0
+verified_commit: 7dd4258
 verified_at: 2026-10-19
 ---
 

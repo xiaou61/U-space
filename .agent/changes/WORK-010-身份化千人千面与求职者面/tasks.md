@@ -97,7 +97,12 @@ approver_role: CTO
 ### T-13 | done | 注销级联
 `AiUserDeletionListener` 加 `ai_interview_evaluations`；`AccountDeletionService` 直接删 `learner_profiles`（同库同域，不绕事件）；级联测试的清单与夹具都补了。
 
-### T-14 | pending | 部署（线上启用身份与面试）
+### T-14 | done | 部署（线上启用身份与面试）
+2026-10-19 完成：发版到 codenest-online（生产库 V16→V19）；线上真人账号走完
+"开场 → 追问 → 点评 → 评分落库 → 扣费"，`overall=2`（三维度 3/3/2）、
+`ai_interview_evaluations` id=1、流水 `SETTLE -1` + `INTERVIEW_REVIEW -2`。
+**顺带修掉一个线上必现缺陷**：`maxTokens=1024` 使点评 JSON 被思考 token 截断
+（见 testing/report.md 补验段）。线上学习者端 e2e 60/22/0、管理端 20/0。
 **本机验收已完成（2026-10-19）**：在隔离库 `paideia_verify_010` 上由管理员给 `seed-learner` 发 5000 分，
 真连 DeepSeek 走完"开场 → 追问 → 点评 → 评分落库 → 看到扣减"，AC-009 不再被"余额 0"卡住
 （详见 `testing/report.md` 的补验段）。**剩下的只有"部署到线上并在线上再走一次"**——

@@ -3958,3 +3958,23 @@ schema_version: 1
 - 验证：两个缺口各有实测记录并写进报告补验段；validate 对 WORK-019 不再报错，工作项状态推进到 complete
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-19 17:12:49 +0800 · WORK-020 · 内容导入线上并验收：26 课 + 22 关系，TASK-016 完成
+
+- 类型：verification
+- 变更：生产库随发版 V16→V19；导入 Python 13 + Java 13 课与 22 条前置关系；新增 testing/report.md（12 条 AC 矩阵）
+- 决策：不动 V17（改它会撞校验和守卫），新增 V955 幂等种子补丁修空库上线标记顺序；learn.spec 依赖 source-reading 的那条在线上跳过
+- 依据：线上实测：lines 两条各 13 站；提交小测+挑战后 passed、1/13、下一站推进；导入脚本第二次 created 0 证明幂等
+- 验证：线上学习者端 e2e 60 passed/22 skipped/0 failed；管理端 20 passed；全量后端 475/0/5；前端 250 单测 + typecheck 0 error
+- 本地提交：7dd4258
+- 远端推送：c33ab1e 已推送到 GitHub（SSH）
+
+## 2026-10-19 17:12:55 +0800 · WORK-010 · 线上部署验收：面试闭环在线上真跑通，T-14 完成
+
+- 类型：verification
+- 变更：发版到 codenest-online；线上真人账号完成开场→追问→点评→评分落库→扣费；T-14 由 pending 改 done
+- 决策：maxTokens 默认 1024→4096（思考 token 计入上限，1024 时点评 JSON 被截断）；identity.spec 去掉「余额必为 0」假设
+- 依据：线上实测 overall=2（维度 3/3/2）、ai_interview_evaluations id=1、流水 SETTLE -1 + INTERVIEW_REVIEW -2
+- 验证：线上健康检查 UP；学习者端 e2e 60 passed/22 skipped/0 failed；管理端 20 passed
+- 本地提交：7dd4258
+- 远端推送：c33ab1e 已推送
