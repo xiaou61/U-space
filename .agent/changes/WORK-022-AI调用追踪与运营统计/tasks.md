@@ -20,7 +20,7 @@ updated: 2026-10-19
 
 ## 全局约束
 
-- 迁移编号取执行时的下一个（当前 V20），**不写死**；新增迁移后按 `MigrationChecksumTest` 的提示用 `-Dmigration.checksums.update=true` 登记校验和。
+- 迁移编号取执行时的下一个（当前 V21），**不写死**；新增迁移后按 `MigrationChecksumTest` 的提示用 `-Dmigration.checksums.update=true` 登记校验和。
 - 时间全部由应用传 `Instant`（UTC），不写 `DEFAULT CURRENT_TIMESTAMP`；SQL 只写 mapper。
 - 采集端口在 `paideia-ai` 包根，签名里**不得出现**任何 Spring / AgentScope / MyBatis 类型。
 - 管理端点位于 `/api/v1/ai/admin/**`（既有 `hasRole("ADMIN")` 规则已覆盖），类上标 `@ApiAccess(ApiAccess.Access.ADMIN)`。
@@ -61,7 +61,7 @@ updated: 2026-10-19
 - 对应：`REQ-001`、`REQ-003`
 - 依赖：无
 - 新建/修改：
-  - `backend/paideia-app/src/main/resources/db/migration/V20__create_ai_telemetry_tables.sql`（新建）
+  - `backend/paideia-app/src/main/resources/db/migration/V21__create_ai_telemetry_tables.sql`（新建）
   - `backend/paideia-ai/src/main/java/io/github/xiaou61/ai/internal/telemetry/AiRunMapper.java`（新建）
   - `backend/paideia-ai/src/main/java/io/github/xiaou61/ai/internal/telemetry/AiRunSpanMapper.java`（新建）
 - 接口：
@@ -77,7 +77,7 @@ updated: 2026-10-19
 - 测试：`MigrationChecksumTest` 通过
 - 步骤：
   1. 写迁移，两表与外键/索引与 `design.md` 逐字一致；
-  2. 起一次测试库让 Flyway 跑到 V20，`SHOW CREATE TABLE` 核对索引与列类型；
+  2. 起一次测试库让 Flyway 跑到 V21，`SHOW CREATE TABLE` 核对索引与列类型；
   3. 写两个 mapper，`attrs` 列按既有约定以 `String` 收写、以 Jackson 解析（与 `token_usage` 同一做法，注意**显式起别名**）；
   4. 跑 `mvn -pl backend/paideia-app -am test -Dtest=MigrationChecksumTest` 并按提示登记校验和。
 - 验证：`mvn -pl backend/paideia-app -am test -Dtest=MigrationChecksumTest` → 1 passed

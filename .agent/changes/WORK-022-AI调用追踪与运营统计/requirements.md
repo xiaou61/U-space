@@ -42,7 +42,7 @@ updated: 2026-10-19
 | 管理端鉴权 | `/api/v1/ai/admin/**` 已有 `hasRole("ADMIN")` 规则，**且排在 `/api/v1/ai/**` 之前**（`SecurityConfiguration`）；`AiCreditAdminController` 类上有 `@ApiAccess(ApiAccess.Access.ADMIN)` |
 | 分页设施 | `paideia-platform` 已有 `PageQuery`（归一化 + `offset()` / `limit()`）与 `PageResult.of(total, query, items)` |
 | 定时任务 | `@EnableScheduling` 在 `paideia-account` 的 `AccountSupportConfiguration`；`@Scheduled` 已有先例（`ExpiredStatePurger`） |
-| 迁移编号 | 已用到 **V19**，下一个是 V20 |
+| 迁移编号 | 已用到 **V20**（条目读索引占用），下一个是 V21 |
 | 管理端菜单 | `AdminShell.tsx` 的侧栏是层级表；`/ai-credits` 已有"父项只分组、子项为页面"的先例 |
 
 ### 调研事实
@@ -139,7 +139,7 @@ updated: 2026-10-19
 
 ## 约束与依赖
 
-- 迁移编号取执行时的下一个（当前下一个是 V20），**不写死**；新增迁移后按 `MigrationChecksumTest` 提示用 `-Dmigration.checksums.update=true` 登记校验和。
+- 迁移编号取执行时的下一个（当前下一个是 V21），**不写死**；新增迁移后按 `MigrationChecksumTest` 提示用 `-Dmigration.checksums.update=true` 登记校验和。
 - 时间全部由应用传 `Instant`（UTC），不写 `DEFAULT CURRENT_TIMESTAMP`；SQL 只写 mapper；手写 MyBatis，不引 MyBatis-Plus。
 - 表不建跨模块外键（与 V4/V5/V11 一致）；注销级联由 `AiUserDeletionListener` 的表清单负责。
 - 新管理端点放在 `/api/v1/ai/admin/**` 前缀下（既有 `hasRole("ADMIN")` 规则已覆盖且顺序正确），类上标 `@ApiAccess(ApiAccess.Access.ADMIN)`。
