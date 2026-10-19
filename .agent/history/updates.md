@@ -3803,3 +3803,13 @@ schema_version: 1
 - 验证：线上 e2e：学习者端 50 passed / 21 skipped / 0 failed，管理端 19 passed / 0 failed；/actuator/health 200
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-19 10:19:49 +0800 · maintenance · 发版提速：183 秒降到 75 秒
+
+- 类型：maintenance
+- 变更：release.ps1 三处改动：前端按需重建（git diff 判 frontend/ 是否改动）、fat jar 不再二次压缩（原样传）、web 只在重建时单独 tar.gz 上传；mvn 输出不再吞掉、打包失败时点名 jar 被占用；远端跳过 web 时校验 web/index.html 存在
+- 决策：fat jar 本质是 zip，二次压缩 32.8 秒只省 9% 体积，是纯 CPU 空转；跳过前端的安全边界是「判断不了就当作改过」+ 远端产物存在性校验 + 标记只在健康检查通过后写
+- 依据：实测：整个 staging tar -czf 32.8s/76.2MB；同一批用 gzip -1 是 2.2s/77.2MB；web 单独 tar.gz 0.3s/4.9MB；vite-plugin-pwa closeBundle 单花 49s（构建日志 callbacks ran for 51.3s vs build 22.9s）；前端热态构建 11.6s+4.9s
+- 验证：实测纯后端发版 75.3 秒（后端打包 18.1s / 跳过前端 / 打包 0.7s / 上传 31.2s / 就位 2.4s / 重启 2.1s / 健康 20.6s）；实测改前端那轮 88.7 秒；线上 health 200、/ 200、/admin/ 200、/mcp 9 工具正常
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
