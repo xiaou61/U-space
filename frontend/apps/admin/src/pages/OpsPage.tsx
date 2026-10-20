@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Activity, Database, HardDrive, RefreshCw, Server, ShieldAlert, Timer } from 'lucide-react'
 
 import { api } from '../api'
-import { auth } from '../auth'
 
 /**
  * 运维面板（WORK-028）。
@@ -80,24 +79,15 @@ const STATUS_STYLE: Record<
 }
 
 /**
- * 面板地址。
+ * 面板地址（`?kiosk` 去掉 Grafana 自己的侧栏与顶栏，只留面板内容）。
  *
- * `?kiosk` 去掉 Grafana 自己的外壳（侧栏与顶栏），只留面板内容。
- * `?ticket=` 是必须的：**浏览器对 iframe 的导航请求不附加 `Authorization` 头**，
- * 没有它 iframe 里的文档请求会被安全链挡成 401（实测一片空白）。
- * 后端只在这一条前缀上接受查询串里的令牌（见 `OpsTicketBearerResolver`）。
+ * **不需要带任何平台令牌**：iframe 的子请求带不上 `Authorization` 头，也带不上查询串，
+ * 所以这套鉴权交给 Grafana 自己的会话 cookie（详见后端 `SecurityConfiguration` 的规则注释）。
+ * 代价是管理员第一次在 iframe 里要用 Grafana 口令登录一次——这是实测后唯一能用的做法。
  */
-function panelUrl(ticket: string): string {
-  // **末尾斜杠是必要的**：Grafana 页面里的静态资源写成相对路径（`public/build/...`），
-  // 浏览器按文档 URL 的目录部分解析。没有斜杠时基准变成 `/d/`，资源全 404，
-  // 页面显示 "Grafana has failed to load its application files"。
-  return `/api/v1/ops/grafana/d/paideia-ops/?kiosk&ticket=${encodeURIComponent(ticket)}`
-}
+const PANEL_URL = '/api/v1/ops/grafana/d/paideia-ops?kiosk'
 
 export function OpsPage() {
-  // access token 只在内存里（不落 localStorage），换页不丢、刷新页面要重新登录。
-  // 面板 iframe 靠它作 ticket，所以拿不到时不渲染 iframe 而不是渲染一个注定 401 的框。
-  const accessToken = auth.tokens.access()
   const summary = useQuery({
     queryKey: ['admin-ops-summary'],
     // requestEnvelope 取的是统一结构的 data 字段；request 返回整包（含 code/message/traceId）。
@@ -190,18 +180,20 @@ export function OpsPage() {
         </div>
       )}
 
+      {/*
+        面板用 Grafana 自己的登录：iframe 的子请求带不上平台令牌（本项目无 Cookie、纯 Bearer），
+        鉴权只能落在 Grafana 的会话上。**第一次打开会要求 Grafana 口令**，之后由浏览器记住。
+        这句话要写在界面上——否则管理员会以为是 bug。
+      */}
+      <p className="text-muted-foreground mb-3 text-xs">
+        面板第一次打开需要 Grafana 口令（它有自己的会话），之后浏览器会记住。
+      </p>
       <Card className="overflow-hidden py-0">
-        {accessToken === null ? (
-          <div className="text-muted-foreground flex items-center gap-2 p-6 text-sm">
-            <Spinner /> 需要登录会话才能加载面板（令牌只存在内存里，刷新页面后请重新登录）。
-          </div>
-        ) : (
-          <iframe
-            title="Paideia 运维面板"
-            src={panelUrl(accessToken)}
-            className="h-[calc(100dvh-15rem)] min-h-[480px] w-full border-0"
-          />
-        )}
+        <iframe
+          title="Paideia 运维面板"
+          src={PANEL_URL}
+          className="h-[calc(100dvh-15rem)] min-h-[480px] w-full border-0"
+        />
       </Card>
     </>
   )

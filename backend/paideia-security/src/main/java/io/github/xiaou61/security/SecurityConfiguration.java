@@ -137,13 +137,21 @@ public class SecurityConfiguration {
                         //   ② Grafana 反代是面板的唯一入口，它内部开匿名 Viewer——
                         //      这条规则一旦静默失效，等于把 Grafana 直接公开给任何登录用户。
                         .requestMatchers("/api/v1/ops/admin/**").hasRole("ADMIN")
-                        // Grafana 的静态资源（JS/CSS/字体/图标）**免鉴权**：iframe 内的子资源请求
-                        // 既不继承 Authorization 头、也拿不到查询串里的 ticket，要求鉴权就永远是 401，
-                        // 面板显示 "Grafana has failed to load its application files"（实测）。
-                        // 与既有 `/assets/**` 放行同一性质：**只是 Grafana 自己的前端产物，不含任何平台数据**。
-                        // 真正的数据在 /api/v1/ops/grafana/api/** 与 dashboard 页，那些仍然要 ADMIN。
-                        .requestMatchers(HttpMethod.GET, "/api/v1/ops/grafana/public/**").permitAll()
-                        .requestMatchers("/api/v1/ops/grafana/**").hasRole("ADMIN")
+                        // Grafana 反代**整体放行，安全边界交给 Grafana 自己**（WORK-028）。
+                        //
+                        // 试过而放弃的三条路，每条都有实测证据：
+                        //   ① 要求 hasRole("ADMIN")：iframe 的导航请求不带 Authorization 头 → 401；
+                        //   ② 加 ?ticket= 查询参数：导航能过，但 SPA 的静态资源与 API 子请求
+                        //      既不继承头、也不带查询串 → 逐个 401，面板永远停在
+                        //      "Grafana has failed to load its application files"；
+                        //   ③ 只放行 /public/**：资源过了，dashboard API 又 401。
+                        // 根因是**本项目无 Cookie、纯 Bearer**，而 Grafana 是 SPA——它需要一套
+                        // 跨请求自动携带的会话，那只能是 Cookie。
+                        //
+                        // 所以：本前缀放行，Grafana **关掉匿名、开内置登录**，由它自己的会话
+                        // cookie 把关。于是"谁能看面板"由 Grafana 口令决定（值在服务器上 600 的
+                        // grafana.env 里，不进仓库）。代价是多一套口令，这一点如实记在报告里。
+                        .requestMatchers("/api/v1/ops/grafana/**").permitAll()
                         // 知识库的管理端写接口。**必须排在下面的 anyRequest() 之前**：
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
                         // 且不会有任何报错——只会在某天表现为"任何已登录的学习者都能改知识库"。
@@ -197,10 +205,6 @@ public class SecurityConfiguration {
                         .permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
-                        // Grafana 面板的 iframe 拿不到 Authorization 头（浏览器对导航请求不附加），
-                        // 所以反代前缀额外接受 ?ticket=<access token>。**只在该前缀上**：
-                        // 别处仍只认头，否则令牌会散落在各种日志里。
-                        .bearerTokenResolver(OpsTicketBearerResolver.INSTANCE)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
         return http.build();
     }

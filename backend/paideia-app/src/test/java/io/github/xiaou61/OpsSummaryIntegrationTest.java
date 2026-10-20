@@ -92,12 +92,15 @@ class OpsSummaryIntegrationTest {
     }
 
     @Test
-    @DisplayName("Grafana 转发路径同样只给管理员")
-    void grafanaProxyIsAdminOnly() {
-        assertThat(mvc.get().uri("/api/v1/ops/grafana/api/health").header("Authorization", tokenFor("learner")))
-                .hasStatus(org.springframework.http.HttpStatus.FORBIDDEN);
+    @DisplayName("Grafana 反代路径在应用侧不设门，鉴权交给 Grafana 自己的会话")
+    void grafanaProxyDefersToGrafanaSession() {
+        // 这里刻意**不断言 403**：iframe 的子请求带不上平台令牌，应用侧无法区分人。
+        // 门在 Grafana 那边（匿名已关闭，未登录只拿到登录页）。测试环境里 Grafana 不可达，
+        // 所以断言的是"没被应用挡成 401/403，而是走到了转发这一步"（502）。
         assertThat(mvc.get().uri("/api/v1/ops/grafana/api/health"))
-                .hasStatus(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                .hasStatus(org.springframework.http.HttpStatus.BAD_GATEWAY);
+        assertThat(mvc.get().uri("/api/v1/ops/grafana/api/health").header("Authorization", tokenFor("learner")))
+                .hasStatus(org.springframework.http.HttpStatus.BAD_GATEWAY);
     }
 
     private String tokenFor(String role) {

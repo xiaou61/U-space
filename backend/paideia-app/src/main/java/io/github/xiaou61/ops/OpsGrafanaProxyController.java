@@ -32,7 +32,17 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>已知限制：Grafana Live（`/api/live/ws`）需要 WebSocket 升级，本转发器不处理，
  * 面板因此用固定间隔自动刷新。触发升级：确实需要秒级推送时。
  */
-@ApiAccess(ApiAccess.Access.ADMIN)
+/**
+ * **访问级别是 {@code PUBLIC_READ}，但这不等于"谁都能看面板"**（WORK-028）。
+ *
+ * <p>本控制器只做转发，鉴权落在 Grafana 自己的会话上：Grafana 关掉了匿名、开内置登录，
+ * 未登录访问只会拿到它的登录页。为什么不能在应用侧要求 ADMIN，见
+ * {@code SecurityConfiguration} 里那段规则注释（iframe 的子请求带不上平台令牌）。
+ *
+ * <p>而**真正含数据的摘要接口仍在 {@code /api/v1/ops/admin/**}，那条规则是 hasRole("ADMIN")**
+ * —— 失败时页面上看到的是摘要卡片（受保护）与一个要 Grafana 口令的面板。
+ */
+@ApiAccess(ApiAccess.Access.PUBLIC_READ)
 @RestController
 class OpsGrafanaProxyController {
 
@@ -74,6 +84,8 @@ class OpsGrafanaProxyController {
                 .timeout(Duration.ofMillis(Math.max(properties.getQueryTimeoutMs(), 5000)));
         copyHeader(request, builder, HttpHeaders.CONTENT_TYPE);
         copyHeader(request, builder, HttpHeaders.ACCEPT);
+        // Grafana 的会话在 Cookie 里；不转发它，iframe 里就永远是未登录状态
+        copyHeader(request, builder, HttpHeaders.COOKIE);
         if (method == HttpMethod.GET) {
             builder.GET();
         } else {
@@ -106,6 +118,8 @@ class OpsGrafanaProxyController {
         if (location != null) {
             headers.set(HttpHeaders.LOCATION, rewriteLocation(location));
         }
+        // 登录成功后 Grafana 会下发会话 cookie；不往回带的话浏览器拿不到它
+        response.headers().allValues(HttpHeaders.SET_COOKIE).forEach(value -> headers.add(HttpHeaders.SET_COOKIE, value));
         return new ResponseEntity<>(response.body(), headers, HttpStatus.valueOf(response.statusCode()));
     }
 
