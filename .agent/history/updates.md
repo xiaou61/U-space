@@ -4496,3 +4496,12 @@ schema_version: 1
 - 验证：单测 18 条（指纹 4 + 解析 8 + 过滤 6）全过；`project-lifecycle.ps1 validate` 中 WORK-025 无错误（报错来自 WORK-027，别人的项）
 - 本地提交：`7cf1ec7`、`554a87f`
 - 远端推送：**未推送**
+
+### 2026-10-20 追加 · 推送核对（WORK-025 及前序提交）
+
+- 类型：maintenance
+- 变更：`git push origin master`，`2943480..e175df2`
+- 依据：HTTPS 直连 200、SSH 认证通过；推送前暂存区为空、密钥扫描无命中
+- 验证：`git ls-remote origin refs/heads/master` = `e175df2d...`，与本地 HEAD 一致；`git rev-list --count origin/master..HEAD` = **0**
+- 推送范围：19 笔。其中属于本次会话的是 `7cf1ec7`（八股文专区）、`554a87f`（去重修复）、`e175df2`（部署记录）；其余为**其他并发会话**的学习轨道（WORK-024）、WORK-027 建项与遥测修复等提交——它们此前也一直只在本地
+- 远端推送：已完成
