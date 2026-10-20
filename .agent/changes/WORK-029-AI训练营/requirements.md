@@ -2,13 +2,16 @@
 artifact: requirements
 work_id: WORK-029
 work: AI训练营
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增五张用户私有表与一批已登录接口（数据与接口面）；新增两次计入积分的模型调用（成本面与不可信输入面）；把模型生成的题目作为用户可见内容（内容质量面）；复用并扩展掌握度证据链（跨模块契约）；涉及注销级联与数据隔离
 workflow: full
 related_to: [WORK-004, WORK-009, WORK-018, WORK-020, WORK-021, WORK-022]
 created: 2026-10-20
 updated: 2026-10-20
+approved_by: xiaou61
+approved_at: 2026-10-20 17:36:07 +0800
+approver_role: CTO
 ---
 
 # AI训练营需求

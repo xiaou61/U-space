@@ -2,11 +2,14 @@
 artifact: tasks
 work_id: WORK-029
 work: AI训练营
-status: draft
+status: approved
 depends_on: [design]
 related_to: [WORK-009, WORK-018, WORK-020, WORK-021, WORK-022]
 created: 2026-10-20
 updated: 2026-10-20
+approved_by: xiaou61
+approved_at: 2026-10-20 17:36:07 +0800
+approver_role: CTO
 ---
 
 # 任务 · AI训练营
