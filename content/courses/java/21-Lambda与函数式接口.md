@@ -2,6 +2,7 @@
 title: 21 · Lambda 与函数式接口
 order: 21
 chapter: 泛型与函数式
+level: advanced
 prerequisite: Stream：把循环压成一条链
 category: java-from-zero
 minutes: 26

@@ -42,7 +42,8 @@ public class TrackService {
     }
 
     /** 地图上的一格。 */
-    public record StageView(long entryId, int seq, String title, String status, Long requiresEntryId) {
+    public record StageView(long entryId, int seq, String title, String status, Long requiresEntryId,
+                            String level) {
     }
 
     /** 地图的一章。 */
@@ -109,7 +110,7 @@ public class TrackService {
             byChapter.computeIfAbsent(stage.chapter() == null ? "" : stage.chapter(),
                             key -> new ArrayList<>())
                     .add(new StageView(stage.entryId(), stage.seq(), stage.title(), status,
-                            stage.requiresEntryId()));
+                            stage.requiresEntryId(), stage.level()));
         }
 
         List<ChapterView> chapters = new ArrayList<>();

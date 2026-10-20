@@ -2,6 +2,7 @@
 title: 20 · Stream：把循环压成一条链
 order: 20
 chapter: 泛型与函数式
+level: advanced
 prerequisite: 日期时间：LocalDate、Instant 与跨时区
 category: java-from-zero
 minutes: 30

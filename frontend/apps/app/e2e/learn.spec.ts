@@ -83,6 +83,34 @@ test.describe('从零开始', () => {
     await expect(page.getByTestId('markdown-body')).toBeVisible({ timeout: 20_000 })
   })
 
+  test('难度可见且能筛选：入门与深入分得开', async ({ page }) => {
+    await page.goto('/#/learn')
+    await firstTrack(page).click()
+    await expect(page.getByTestId('track-map')).toBeVisible({ timeout: 15_000 })
+
+    // 每关都有难度徽章，且文案是大白话
+    const badges = page.locator('[data-testid^="stage-level-"]')
+    expect(await badges.count()).toBeGreaterThan(0)
+    const labels = await badges.evaluateAll((nodes) =>
+      nodes.map((node) => node.textContent?.trim() ?? ''),
+    )
+    expect(labels.some((label) => label === '入门' || label === '进阶' || label === '深入')).toBe(true)
+
+    // 筛选"入门"后，剩下的关卡都必须是入门
+    const beginnerFilter = page.getByTestId('level-filter-beginner')
+    if ((await beginnerFilter.count()) > 0) {
+      const before = await page.locator('[data-testid^="stage-"]').count()
+      await beginnerFilter.click()
+      const after = await page.locator('[data-testid^="stage-"]').count()
+      expect(after).toBeLessThanOrEqual(before)
+      expect(after).toBeGreaterThan(0)
+      const levels = await page.locator('[data-testid^="stage-level-"]').evaluateAll((nodes) =>
+        nodes.map((node) => node.textContent?.trim() ?? ''),
+      )
+      expect(levels.every((label) => label === '入门')).toBe(true)
+    }
+  })
+
   test('轨道与地图在 360px 下不横向溢出', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 })
     await page.goto('/#/learn')

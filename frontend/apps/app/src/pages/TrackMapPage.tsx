@@ -11,12 +11,33 @@ import {
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Check, Lock, Play } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const learning = createLearningApi(api)
+
+/**
+ * 难度标识（WORK-024）。
+ *
+ * <p>用户要的是"一眼看出哪些适合初学者、哪些要有基础"，所以难度必须**写在关卡格子上**，
+ * 而不是藏在设置里。文案用大白话（入门/进阶/深入），不用 beginner/intermediate/advanced。
+ */
+const BEGINNER = { label: '入门', hint: '不需要任何基础', tone: 'bg-success/10 text-success border-success/30' }
+const INTERMEDIATE = { label: '进阶', hint: '需要看过前面的内容', tone: 'bg-info/10 text-info border-info/30' }
+const ADVANCED = { label: '深入', hint: '有一定基础再读，会讲实现细节', tone: 'bg-warning/10 text-warning border-warning/30' }
+
+const LEVEL_META: Record<string, typeof BEGINNER> = {
+  beginner: BEGINNER,
+  intermediate: INTERMEDIATE,
+  advanced: ADVANCED,
+}
+
+function levelMeta(level: string): typeof BEGINNER {
+  return LEVEL_META[level] ?? BEGINNER
+}
 
 /**
  * 一条轨道的关卡地图（WORK-024）。
@@ -37,6 +58,9 @@ export function TrackMapPage() {
     queryFn: () => learning.trackMap(slug),
     enabled: slug !== '',
   })
+  // 难度筛选：null = 全部。用户要能"只看入门"或"只看深入"，
+  // 而地图本身不因此重排（顺序就是学习路径，筛选只减不加）。
+  const [levelFilter, setLevelFilter] = useState<string | null>(null)
 
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />}>
@@ -73,6 +97,42 @@ export function TrackMapPage() {
             description={map.data.summary ?? '沿着下面的关卡一关一关往下走。'}
           />
 
+          {/* 难度筛选：把"快速入门"与"深入"分开看 */}
+          <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="level-filter">
+            <span className="text-muted-foreground text-xs">难度</span>
+            <button
+              type="button"
+              data-testid="level-filter-all"
+              onClick={() => { setLevelFilter(null) }}
+              className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                levelFilter === null ? 'border-primary bg-primary/10 text-primary' : 'border-border'
+              }`}
+            >
+              全部 {map.data.stageCount}
+            </button>
+            {(['beginner', 'intermediate', 'advanced'] as const).map((level) => {
+              const total = map.data.chapters
+                .flatMap((chapter) => chapter.stages)
+                .filter((stage) => stage.level === level).length
+              if (total === 0) {
+                return null
+              }
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  data-testid={`level-filter-${level}`}
+                  onClick={() => { setLevelFilter(level) }}
+                  className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                    levelFilter === level ? levelMeta(level).tone : 'border-border'
+                  }`}
+                >
+                  {levelMeta(level).label} {total}
+                </button>
+              )
+            })}
+          </div>
+
           <div className="space-y-6" data-testid="track-map">
             {map.data.chapters.map((chapter, chapterIndex) => (
               <section key={`${chapter.chapter}-${chapterIndex}`}>
@@ -82,7 +142,9 @@ export function TrackMapPage() {
                   </h2>
                 )}
                 <ol className="space-y-0">
-                  {chapter.stages.map((stage, index) => (
+                  {chapter.stages
+                    .filter((stage) => levelFilter === null || stage.level === levelFilter)
+                    .map((stage, index) => (
                     <li key={stage.entryId} className="relative">
                       {/* 连线：从上一格底部到这一格顶部。第一格不画。 */}
                       {index > 0 ? (
@@ -132,8 +194,18 @@ function StageCell({ stage, slug }: { stage: TrackStage; slug: string }) {
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className={`block text-sm ${locked ? 'text-muted-foreground' : 'font-medium'}`}>
-          {stage.seq}. {stage.title}
+        <span className="flex flex-wrap items-center gap-2">
+          <span className={`text-sm ${locked ? 'text-muted-foreground' : 'font-medium'}`}>
+            {stage.seq}. {stage.title}
+          </span>
+          {/* 难度就写在标题旁边：用户要的是"一眼看出哪些适合初学者" */}
+          <span
+            className={`rounded border px-1.5 py-0.5 text-[10px] leading-none ${levelMeta(stage.level).tone}`}
+            data-testid={`stage-level-${stage.seq}`}
+            title={levelMeta(stage.level).hint}
+          >
+            {levelMeta(stage.level).label}
+          </span>
         </span>
         <span className="text-muted-foreground mt-0.5 block text-xs">
           {done ? '已通关' : locked ? '通过上一关后解锁' : '可以开始'}

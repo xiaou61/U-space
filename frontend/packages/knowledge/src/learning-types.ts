@@ -129,6 +129,8 @@ export interface TrackStage {
   status: 'done' | 'current' | 'locked'
   /** 前置关卡的 entryId；前端据此画连线。 */
   requiresEntryId: number | null
+  /** 难度：beginner / intermediate / advanced。 */
+  level: string
 }
 
 export interface TrackChapter {

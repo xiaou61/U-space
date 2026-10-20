@@ -37,7 +37,7 @@ public interface TrackMapper {
      */
     @Select("""
             SELECT s.id, s.track_id, s.entry_id, s.seq, s.chapter, s.requires_entry_id,
-                   e.title
+                   s.level, e.title
             FROM learning_track_stages s
             JOIN knowledge_entries e ON e.id = s.entry_id
             WHERE s.track_id = #{trackId}
@@ -58,15 +58,16 @@ public interface TrackMapper {
 
     @Insert("""
             INSERT INTO learning_track_stages
-                (track_id, entry_id, seq, chapter, requires_entry_id, created_at)
-            VALUES (#{trackId}, #{entryId}, #{seq}, #{chapter}, #{requiresEntryId}, #{now})
+                (track_id, entry_id, seq, chapter, requires_entry_id, level, created_at)
+            VALUES (#{trackId}, #{entryId}, #{seq}, #{chapter}, #{requiresEntryId}, #{level}, #{now})
             ON DUPLICATE KEY UPDATE
                 seq = VALUES(seq), chapter = VALUES(chapter),
-                requires_entry_id = VALUES(requires_entry_id)
+                requires_entry_id = VALUES(requires_entry_id), level = VALUES(level)
             """)
     int upsertStage(@Param("trackId") long trackId, @Param("entryId") long entryId,
                     @Param("seq") int seq, @Param("chapter") String chapter,
-                    @Param("requiresEntryId") Long requiresEntryId, @Param("now") Instant now);
+                    @Param("requiresEntryId") Long requiresEntryId,
+                    @Param("level") String level, @Param("now") Instant now);
 
     /** 一条轨道：路径标识、名字、一句话介绍。 */
     record Track(long id, String slug, String name, String summary, String kind, int sortOrder) {
@@ -74,6 +75,6 @@ public interface TrackMapper {
 
     /** 一个关卡：地图上的一格。 */
     record Stage(long id, long trackId, long entryId, int seq, String chapter, Long requiresEntryId,
-                 String title) {
+                 String level, String title) {
     }
 }

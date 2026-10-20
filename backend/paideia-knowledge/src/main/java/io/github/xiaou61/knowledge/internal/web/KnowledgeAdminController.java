@@ -82,7 +82,8 @@ class KnowledgeAdminController {
             for (StageRequest stage : body.stages()) {
                 trackMapper.upsertStage(track.id(), stage.entryId(), stage.seq(),
                         stage.chapter() == null ? "" : stage.chapter(),
-                        stage.requiresEntryId(), now);
+                        stage.requiresEntryId(),
+                        stage.level() == null ? "beginner" : stage.level(), now);
             }
         }
         return ApiResponse.ok(null);
@@ -99,7 +100,9 @@ class KnowledgeAdminController {
     }
 
     record StageRequest(long entryId, int seq, @Size(max = 64) String chapter,
-                        Long requiresEntryId) {
+                        Long requiresEntryId,
+                        /** beginner / intermediate / advanced */
+                        @Size(max = 16) String level) {
     }
 
     @GetMapping("/categories")

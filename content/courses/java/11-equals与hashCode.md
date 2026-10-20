@@ -2,6 +2,7 @@
 title: 11 · equals 与 hashCode 必须成对
 order: 11
 chapter: 集合与字符串
+level: intermediate
 prerequisite: 包装类与自动装箱
 category: java-from-zero
 minutes: 28

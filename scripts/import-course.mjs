@@ -51,6 +51,14 @@ function lineSpecOf(language, lessons) {
   }
 }
 
+/** 章节 → 默认难度。作者可以逐课用 `level:` 覆盖。 */
+function levelOfChapter(chapter, index) {
+  if (index === 0) return 'beginner'
+  if (chapter === '入门' || chapter === '基础语法') return 'beginner'
+  if (chapter === '面向对象' || chapter === '集合与字符串') return 'intermediate'
+  return 'advanced'
+}
+
 function parseArgs(argv) {
   const options = {
     dir: path.join(ROOT, 'content', 'courses'),
@@ -334,6 +342,8 @@ async function importLanguage(client, language, lessons, options, allEntries) {
     seq: Number(item.lesson.meta.order ?? index),
     chapter: item.lesson.meta.chapter ?? '',
     requiresEntryId: index === 0 ? null : stageTargets[index - 1].entryId,
+    // 难度：作者的 frontmatter 优先，缺省按章节推——老内容不改也有合理值
+    level: item.lesson.meta.level ?? levelOfChapter(item.lesson.meta.chapter ?? '', index),
   }))
 
   if (options.dryRun) {
