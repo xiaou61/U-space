@@ -240,12 +240,13 @@ async function importLanguage(client, language, lessons, options, allEntries) {
   let updates = 0
 
   for (const lesson of lessons) {
+    // 内容即代码：frontmatter 写 published 就是 published。新建与更新用同一份 payload，
+    // 不再"先草稿、回头再统一发布"——那个两段式正是在更新路径上把已发布条目降级的原因。
     const payload = {
       title: lesson.meta.title,
       body: lesson.body,
       categoryId: category.id,
-      // 先以草稿落库：全部写完再统一发布，保证 published_at 与 order 一致
-      status: 'draft',
+      status: lesson.meta.status === 'published' ? 'published' : 'draft',
       sortOrder: Number(lesson.meta.order),
     }
     const existing = byTitle.get(lesson.meta.title)
@@ -262,41 +263,21 @@ async function importLanguage(client, language, lessons, options, allEntries) {
     const detail = await client.get(`/api/v1/knowledge/admin/entries/${existing.id}`)
     const sameBody = (detail.body ?? '') === lesson.body
     const sameOrder = (detail.sortOrder ?? null) === payload.sortOrder
-    if (sameBody && sameOrder && detail.status === 'published') {
+    if (sameBody && sameOrder && detail.status === payload.status) {
       continue
     }
     if (options.dryRun) {
       console.log(`  [dry-run] 将更新 ${lesson.meta.title}`)
     } else {
       await client.put(`/api/v1/knowledge/admin/entries/${existing.id}`, payload)
-      console.log(`  ~ ${lesson.meta.title}`)
+      console.log(`  ~ ${lesson.meta.title}${payload.status === 'published' ? '' : '（草稿）'}`)
     }
     updates++
   }
 
-  // 按 order 依次发布：published_at 因此单调，上一篇/下一篇与课号一致
-  if (!options.dryRun) {
-    const orderedIds = []
-    for (const lesson of lessons) {
-      const match = byTitle.get(lesson.meta.title)
-      const id = match?.id ?? created.find((item) => item.title === lesson.meta.title)?.id
-      if (id !== undefined) orderedIds.push({ id, lesson })
-    }
-    for (const { id, lesson } of orderedIds) {
-      if (byTitle.has(lesson.meta.title)) {
-        // 已存在的条目也重新发布一次？不：那会刷新 published_at，打乱既有顺序。
-        // 只在内容/站序有变化时才发布（上面已 PUT），这里不动。
-        continue
-      }
-      await client.put(`/api/v1/knowledge/admin/entries/${id}`, {
-        title: lesson.meta.title,
-        body: lesson.body,
-        categoryId: category.id,
-        status: 'published',
-        sortOrder: Number(lesson.meta.order),
-      })
-    }
-  }
+  // 新建的条目在上面已经按 frontmatter 的状态落库，这里不再补发。
+  // （原来的两段式"先草稿再统一发布"只在首次导入时保证过 published_at 单调；
+  //  代价是更新路径会把已发布条目降级，那个代价远大于收益。）
 
   let relations = 0
   for (const lesson of lessons) {

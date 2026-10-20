@@ -50,13 +50,18 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
         const forceAtlas2 = layoutModule.default
 
         const graph = new Graph({ multi: false, type: 'directed' })
+        // 初值必须**散开**：forceAtlas2 靠节点间的斥力推位置，全部落在原点时斥力方向
+        // 没有定义，它不会抛错，只是把所有点原样留在 (0,0)。sigma 面对一个零尺寸的图
+        // 会把相机推到极限，整块画布变成一颗巨大的节点色圆——看起来就是"图谱坏了"。
+        const seed = circularLayout(nodes)
         nodes.forEach((node) => {
+          const point = seed[node.id] ?? { x: 0, y: 0 }
           graph.addNode(String(node.id), {
             label: node.name,
             size: node.tier === 'unknown' ? 6 : 8 + node.score * 6,
             color: tierColor(node.tier),
-            x: 0,
-            y: 0,
+            x: point.x,
+            y: point.y,
           })
         })
         // 同一对概念可以同时有 prerequisite 与 related 两条记录（后端唯一键含 relation_type），
@@ -82,23 +87,30 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
         })
 
         const saved = loadPositions(layoutKeyValue)
+        const positions = saved ?? computeLayout(graph, forceAtlas2, nodes)
         if (saved === null) {
-          savePositions(layoutKeyValue, computeLayout(graph, forceAtlas2, nodes))
-        } else {
-          Object.entries(saved).forEach(([id, point]) => {
-            if (graph.hasNode(id)) {
-              graph.setNodeAttribute(id, 'x', point.x)
-              graph.setNodeAttribute(id, 'y', point.y)
-            }
-          })
+          savePositions(layoutKeyValue, positions)
         }
+        // sigma 会按包围盒自动适配视口，而节点 size 是世界单位：布局越紧凑，自动缩放越猛，
+        // 节点在屏幕上就越大。力导向在十几个节点时会把坐标压到几十个单位，一颗节点能铺满
+        // 半个画布。缩放到固定跨度后，屏幕上的大小与布局紧凑程度脱钩。
+        const scale = normalizeScale(positions)
+        nodes.forEach((node) => {
+          const point = positions[node.id] ?? { x: 0, y: 0 }
+          if (graph.hasNode(String(node.id))) {
+            graph.setNodeAttribute(String(node.id), 'x', point.x * scale)
+            graph.setNodeAttribute(String(node.id), 'y', point.y * scale)
+          }
+        })
 
         // 这三个选项在 sigma 4 的运行期设置里存在，但没进导出的类型声明；
         // 断言一次比把默认值改成手写渲染层便宜得多。
         const renderer = new Sigma(graph, container.current, {
           labelDensity: 0.6,
           labelGridCellSize: 90,
-          labelRenderedSizeThreshold: 6,
+          // 节点半径最小 6（未接触档），阈值取 6 会把它们全部隐去标签——
+          // 而"有哪些还没碰过"恰恰是图谱最该回答的问题。
+          labelRenderedSizeThreshold: 0,
         } as ConstructorParameters<typeof Sigma>[2])
 
         renderer.on('clickNode', ({ node }) => onSelect(Number(node)))
@@ -145,6 +157,29 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
 }
 
 /**
+ * 把布局缩放到一个固定的坐标跨度（最长边 1000 单位）。
+ *
+ * <p>sigma 用节点坐标做世界单位、按包围盒自动适配视口，所以**布局有多紧凑，屏幕上就有多放大**。
+ * 力导向在十几个节点时会把坐标压到几十个单位，一颗半径 14 的节点就能盖住半个画布；
+ * 节点上百个时又反过来只剩几个像素。固定跨度让"屏幕上看起来多大"不再取决于布局。
+ *
+ * <p>1000 这个量级是拿"节点半径 8~14、画布约 1000px"反推的：节点直径占画布 3% 左右，
+ * 连线之间留得下标签。跨度再小标签就会互相压住。
+ *
+ * <p>单点或全重合时返回 1：没有跨度可归一，乘什么都一样。
+ */
+function normalizeScale(positions: Record<number, Point>): number {
+  const points = Object.values(positions)
+  if (points.length < 2) {
+    return 1
+  }
+  const xs = points.map((point) => point.x)
+  const ys = points.map((point) => point.y)
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys))
+  return span > 0 ? 1000 / span : 1
+}
+
+/**
  * 能不能画 WebGL。
  *
  * <p>单独探测而不是等 sigma 报错：实测 sigma 在拿不到上下文时**不抛异常**，
@@ -183,7 +218,12 @@ function computeLayout(
       }
     })
     const complete = nodes.every((node) => Number.isFinite(positions[node.id]?.x))
-    return complete ? positions : circularLayout(nodes)
+    // 有限还不够：全部重合的布局同样"有限"，而它画出的是一个大圆而不是一张图。
+    // 力导向偶尔会退化成这样（尤其节点初始位置相同时），所以额外要求至少有两个点分开。
+    const spread = new Set(
+      Object.values(positions).map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`),
+    ).size
+    return complete && spread > 1 ? positions : circularLayout(nodes)
   } catch {
     return circularLayout(nodes)
   }

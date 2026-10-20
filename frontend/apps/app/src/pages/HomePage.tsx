@@ -174,6 +174,21 @@ export function HomePage() {
     queryKey: ['my-assessments'],
     queryFn: () => knowledge.myAssessments(),
   })
+  /**
+   * 三块"今天的我"的数字。都从已有接口算，不新增请求：
+   * 待复习来自图谱统计，学到一半来自服务端进度，还不懂来自自评列表。
+   */
+  const graph = useQuery({
+    queryKey: ['learning-graph'],
+    queryFn: () => learning.graph(),
+    retry: false,
+    staleTime: 60_000,
+  })
+  const dueReview = graph.data?.stats.dueForReview ?? 0
+  const unsureCount = useMemo(
+    () => (assessments.data ?? []).filter((item) => item.level === 'unsure').length,
+    [assessments.data],
+  )
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
@@ -221,6 +236,29 @@ export function HomePage() {
             <Button variant="ghost" render={<Link to="/knowledge/entries" />}>
               看全部条目
             </Button>
+          </div>
+
+          {/* hero 左栏的空白由"今天该做什么"填上：这里最容易变成一堵墙，
+              而三格小数字正好是"我进来该点哪"的答案。数据全部来自已有接口。 */}
+          <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:mt-10" data-testid="home-hero-stats">
+            <HeroStat
+              label="待复习"
+              value={dueReview}
+              hint={dueReview === 0 ? '暂时没有' : '过期的知识点'}
+              to="/graph"
+            />
+            <HeroStat
+              label="学到一半"
+              value={continueLearning.length}
+              hint={continueLearning.length === 0 ? '还没开始' : '接着往下走'}
+              to="/learn"
+            />
+            <HeroStat
+              label="还不懂"
+              value={unsureCount}
+              hint={unsureCount === 0 ? '都还行' : '标过的条目'}
+              to="/my-assessments"
+            />
           </div>
         </div>
 
@@ -427,6 +465,32 @@ export function HomePage() {
         </div>
       </Section>
     </AppShell>
+  )
+}
+
+/** hero 左栏的一格小数字：比大卡片轻，用来填住"今天该做什么"那块空白。 */
+function HeroStat({
+  label,
+  value,
+  hint,
+  to,
+}: {
+  label: string
+  value: number
+  hint: string
+  to: string
+}) {
+  return (
+    <Link
+      to={to}
+      className="border-border/70 bg-background/70 hover:border-primary/40 group rounded-lg border p-3 transition-colors"
+    >
+      <span className="text-muted-foreground block text-xs">{label}</span>
+      <span className="mt-1 flex items-baseline gap-1.5">
+        <span className="text-xl font-semibold tracking-tight">{value}</span>
+        <span className="text-muted-foreground truncate text-xs">{hint}</span>
+      </span>
+    </Link>
   )
 }
 

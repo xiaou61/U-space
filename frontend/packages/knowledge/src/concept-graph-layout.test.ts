@@ -76,6 +76,18 @@ describe('positions', () => {
     store.set(KEY + 'partial', JSON.stringify({ 1: { x: 1, y: 2 }, 2: { x: 'oops' } }))
     expect(loadPositions('partial')).toEqual({ 1: { x: 1, y: 2 } })
   })
+
+  it('全部重合的存档当作没有存档', () => {
+    // 旧版本节点初值全是 (0,0)，力导向推不开时就把这一整片零存了下来；
+    // 用它画出来的是一颗巨大的色团，不是一张图。
+    store.set(KEY + 'flat', JSON.stringify({ 1: { x: 0, y: 0 }, 2: { x: 0, y: 0 } }))
+    expect(loadPositions('flat')).toBeNull()
+  })
+
+  it('单节点的存档不受重合规则影响', () => {
+    savePositions('k1', { 1: { x: 0, y: 0 } })
+    expect(loadPositions('k1')).toEqual({ 1: { x: 0, y: 0 } })
+  })
 })
 
 describe('circularLayout', () => {

@@ -15,6 +15,7 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 import { api } from '../api'
 import { createAssistantApi } from '@paideia/assistant'
@@ -46,6 +47,19 @@ interface Line {
 export function InterviewPage() {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: () => identity.profile(), retry: false })
   const config = configFor(profile?.identity)
+
+  /**
+   * 历次评估（`GET /ai/interviews/evaluations`）。
+   *
+   * <p>这条接口从 WORK-010 就在，但一直没有页面用它——一场面试结束、评分落库，
+   * 用户下次进来看到的还是"开始面试"，等于把最该看的东西丢了。
+   * 刷新时机跟着 `reviewing` 走：刚生成的点评要立刻出现在列表里。
+   */
+  const history = useQuery({
+    queryKey: ['interview-evaluations'],
+    queryFn: () => assistant.interviewEvaluations(),
+    retry: false,
+  })
 
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [lines, setLines] = useState<Line[]>([])
@@ -130,6 +144,8 @@ export function InterviewPage() {
     setError(null)
     try {
       setEvaluation(await assistant.reviewInterview(conversationId))
+      // 新评分已经落库，列表要跟着变，否则要刷新整页才看得到
+      void history.refetch()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -224,6 +240,58 @@ export function InterviewPage() {
         )}
 
         {evaluation === null ? null : <EvaluationCard view={evaluation} />}
+
+        {history.data === undefined || history.data.length === 0 ? null : (
+          <Card data-testid="interview-history">
+            <CardContent className="pt-6">
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-medium">历次面试</h2>
+                <span className="text-muted-foreground text-xs">
+                  共 {history.data.length} 次 · 最近一次总分{' '}
+                  {history.data[0]?.evaluation.overall ?? '—'} / 5
+                </span>
+              </div>
+              <ul className="divide-border divide-y">
+                {history.data.map((item) => (
+                  <li key={item.id} data-testid="interview-history-item">
+                    <details className="group py-2.5">
+                      <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">
+                          {new Date(item.createdAt).toLocaleString('zh-CN', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium">{item.evaluation.overall} / 5</span>
+                          <ChevronDown className="text-muted-foreground size-4 transition-transform group-open:rotate-180" />
+                        </span>
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {item.evaluation.dimensions.map((dimension) => (
+                          <div key={dimension.name} className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="text-muted-foreground shrink-0">{dimension.name}</span>
+                            <span className="min-w-0 flex-1 truncate text-right">{dimension.comment}</span>
+                            <span className="text-muted-foreground w-10 shrink-0 text-right">
+                              {dimension.score}/5
+                            </span>
+                          </div>
+                        ))}
+                        {item.evaluation.improvements.length === 0 ? null : (
+                          <ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5 text-sm">
+                            {item.evaluation.improvements.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppShell>
   )

@@ -10,7 +10,8 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpenCheck, Map } from 'lucide-react'
+import { ArrowRight, BookOpenCheck, Map, Play } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link } from 'react-router'
 
 import { api } from '../api'
@@ -33,6 +34,21 @@ export function LearnPage() {
     queryKey: ['learning-tracks'],
     queryFn: () => learning.tracks(),
   })
+
+  /**
+   * 「继续上次」选哪条：优先**已经开始但没走完**的（有进度说明用户在意它），
+   * 否则取第一条还没开始的。已全部通关的不进继续条——那是在催人重刷。
+   */
+  const next = useMemo(() => {
+    const list = tracks.data ?? []
+    const started = list.find(
+      (track) => track.passedCount > 0 && track.passedCount < track.stageCount && track.nextTitle !== null,
+    )
+    if (started !== undefined) {
+      return started
+    }
+    return list.find((track) => track.nextTitle !== null) ?? null
+  }, [tracks.data])
 
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />} wide>
@@ -63,8 +79,32 @@ export function LearnPage() {
         </Alert>
       ) : null}
 
+      {/* 「继续上次」：4 条轨道里真正该先点的只有一条。让用户自己在卡片里找"下一关"
+          等于每进来一次都要重新读一遍全部卡片。 */}
+      {tracks.isSuccess && next !== null ? (
+        <Link
+          to={`/learn/${next.slug}`}
+          data-testid="learn-continue"
+          className="border-primary/30 bg-primary/[0.04] hover:border-primary/60 group mb-6 flex items-center gap-4 rounded-xl border p-4 transition-colors sm:p-5"
+        >
+          <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-lg">
+            <Play className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="text-muted-foreground block text-xs">继续上次</span>
+            <span className="mt-0.5 block truncate text-base font-medium">{next.name}</span>
+            <span className="text-muted-foreground mt-0.5 block truncate text-sm">
+              {next.passedCount === 0
+                ? `从这里开始：${next.nextTitle ?? '—'}`
+                : `已过 ${next.passedCount}/${next.stageCount} 关 · 下一关：${next.nextTitle ?? '—'}`}
+            </span>
+          </span>
+          <ArrowRight className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-colors" />
+        </Link>
+      ) : null}
+
       {tracks.isSuccess && tracks.data.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="learn-tracks">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="learn-tracks">
           {tracks.data.map((track) => {
             const percent = track.stageCount === 0
               ? 0

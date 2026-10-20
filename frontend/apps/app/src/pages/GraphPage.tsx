@@ -76,12 +76,27 @@ export function GraphPage() {
       ) : null}
 
       {data !== undefined && data.concepts.length === 0 ? (
-        <Alert data-testid="graph-empty">
-          <AlertTitle>还没有建立知识概念</AlertTitle>
-          <AlertDescription>
-            概念由管理员在管理端「概念」页建立，再把条目挂上去。建立之后，这里会自动显示你的掌握情况。
-          </AlertDescription>
-        </Alert>
+        <div data-testid="graph-empty">
+          <Alert>
+            <AlertTitle>还没有建立知识概念</AlertTitle>
+            <AlertDescription>
+              概念由管理员在管理端「概念」页建立，再把条目挂上去。建立之后，这里会自动显示你的掌握情况。
+            </AlertDescription>
+          </Alert>
+          {/* 空状态不能只是一句解释：一段"这里将来会有什么"比一个死胡同有用得多 */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {[
+              { title: '看出断层', body: '哪些知识点你读过，但它们之间的前置你还没碰过。' },
+              { title: '知道该复习谁', body: '标记过「还不懂」或小测没过的，会在这里被标成待复习。' },
+              { title: '连回学习线', body: '点一个节点，直接跳到承载它的那一课。' },
+            ].map((item) => (
+              <div key={item.title} className="border-border bg-card rounded-xl border p-4">
+                <p className="text-sm font-medium">{item.title}</p>
+                <p className="text-muted-foreground mt-1 text-sm leading-6">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {data !== undefined && data.concepts.length > 0 ? (
@@ -112,7 +127,7 @@ export function GraphPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="bg-card relative h-[32rem] overflow-hidden rounded-xl border">
+            <div className="bg-card relative h-[32rem] overflow-hidden rounded-xl border lg:h-[calc(100vh-18rem)] lg:min-h-[32rem]">
               {mode === '2d' ? (
                 <GraphCanvas2D
                   key={`2d-${key}-${layoutEpoch}`}

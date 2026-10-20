@@ -47,7 +47,21 @@ export function loadPositions(key: string): Record<number, Point> | null {
         positions[Number(id)] = point
       }
     }
-    return Object.keys(positions).length === 0 ? null : positions
+    if (Object.keys(positions).length === 0) {
+      return null
+    }
+    // 全部重合的存档等于没有存档：旧版本在节点初值全为 (0,0) 时会存下一整片零坐标，
+    // 而 sigma 面对零尺寸的图会把整块画布缩成一个大圆。当作没存过，重算一次即可。
+    // **只在两个以上节点时判**：单个节点本来就只有一个坐标，重合是正常的。
+    if (Object.keys(positions).length > 1) {
+      const distinct = new Set(
+        Object.values(positions).map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`),
+      )
+      if (distinct.size === 1) {
+        return null
+      }
+    }
+    return positions
   } catch {
     // 坏存档当作没有：重算一次即可，不值得让整页失败
     return null
