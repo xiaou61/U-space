@@ -117,9 +117,21 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // 指标端点（WORK-028）：只允许**本机来源**读。8081 是公网端口，
+                        // /actuator/prometheus 会暴露 JVM 内部结构与业务维度标签，不能像 health
+                        // 那样整体放行。**触发重评**：一旦本进程前面挂了反向代理，远端地址会
+                        // 变成 127.0.0.1，这条白名单即失效——那时必须改为独立回环管理端口。
+                        .requestMatchers("/actuator/metrics/**", "/actuator/prometheus")
+                        .access(LocalOnlyAuthorizationManager.INSTANCE)
                         .requestMatchers("/error").permitAll()
                         // 见类注释的前缀纪律：这个前缀下只放凭据交换类端点
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // 运维面板（WORK-028）。两条都**必须排在 anyRequest() 之前**：
+                        //   ① 摘要接口与其它管理端接口同权；
+                        //   ② Grafana 反代是面板的唯一入口，它内部开匿名 Viewer——
+                        //      这条规则一旦静默失效，等于把 Grafana 直接公开给任何登录用户。
+                        .requestMatchers("/api/v1/ops/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/ops/grafana/**").hasRole("ADMIN")
                         // 知识库的管理端写接口。**必须排在下面的 anyRequest() 之前**：
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
                         // 且不会有任何报错——只会在某天表现为"任何已登录的学习者都能改知识库"。

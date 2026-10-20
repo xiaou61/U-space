@@ -31,7 +31,10 @@ public class ApiResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
             Class<? extends HttpMessageConverter<?>> selectedConverterType,
             ServerHttpRequest request, ServerHttpResponse response) {
-        if (isActuator(request) || body instanceof String || !isJson(selectedContentType)) {
+        // byte[] 一律原样返回：它要么是文件下载（Content-Type 非 JSON，已在上一条被跳过），
+        // 要么是**反代另一个服务**的原始响应体（WORK-028 的 Grafana 转发）。
+        // 后者即使 Content-Type 是 JSON 也不能包装——它属于 Grafana，不属于本项目的 ApiResponse。
+        if (isActuator(request) || body instanceof String || body instanceof byte[] || !isJson(selectedContentType)) {
             return body;
         }
         String traceId = traceIdOf(request);

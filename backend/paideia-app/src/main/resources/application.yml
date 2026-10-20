@@ -71,10 +71,17 @@ paideia:
     pids-limit: 64
 
 management:
+  # 运维监控（WORK-028）：多暴露一个 prometheus 端点给本机 Prometheus 抓取。
+  # **为什么不另开管理端口**：实测依赖 8081 上 /actuator/health 的地方有六处
+  # （管理端健康徽标、两端 e2e、两个 vite 代理、release.ps1），搬端口会一次性打断它们，
+  # 收益（多一层网络隔离）远小于代价。改为在 SecurityConfiguration 里按来源 IP 放行：
+  # 只有 127.0.0.1 能读 /actuator/**，health 仍公开（徽标与 e2e 要用）。
+  # **触发重评**：一旦在本进程前面挂反向代理（nginx 等），远端地址会变成 127.0.0.1，
+  # 这条白名单就失效——那时必须改回独立回环端口。
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: never
