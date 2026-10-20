@@ -84,7 +84,10 @@ const PANEL_URL = '/api/v1/ops/grafana/d/paideia-ops?kiosk'
 export function OpsPage() {
   const summary = useQuery({
     queryKey: ['admin-ops-summary'],
-    queryFn: () => api.request<Summary>('/api/v1/ops/admin/summary'),
+    // requestEnvelope 取的是统一结构的 data 字段；request 返回整包（含 code/message/traceId）。
+    // 用错它会在渲染时抛 "Cannot read properties of undefined (reading 'length')"——
+    // 实测踩过：页面只显示 "Unexpected Application Error!"，接口本身是 200。
+    queryFn: () => api.requestEnvelope<Summary>('/api/v1/ops/admin/summary'),
     // 面板本身 30 秒刷新一次；卡片跟同一个节奏，免得两处数字对不上
     refetchInterval: 30_000,
   })
