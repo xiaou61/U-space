@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Activity, Database, HardDrive, RefreshCw, Server, ShieldAlert, Timer } from 'lucide-react'
 
 import { api } from '../api'
+import { auth } from '../auth'
 
 /**
  * 运维面板（WORK-028）。
@@ -78,10 +79,22 @@ const STATUS_STYLE: Record<
   UNKNOWN: { label: '未知', variant: 'outline' },
 }
 
-/** 面板地址即反代前缀本身；Grafana 的 `serve_from_sub_path` 已把它当作根。 */
-const PANEL_URL = '/api/v1/ops/grafana/d/paideia-ops?kiosk'
+/**
+ * 面板地址。
+ *
+ * `?kiosk` 去掉 Grafana 自己的外壳（侧栏与顶栏），只留面板内容。
+ * `?ticket=` 是必须的：**浏览器对 iframe 的导航请求不附加 `Authorization` 头**，
+ * 没有它 iframe 里的文档请求会被安全链挡成 401（实测一片空白）。
+ * 后端只在这一条前缀上接受查询串里的令牌（见 `OpsTicketBearerResolver`）。
+ */
+function panelUrl(ticket: string): string {
+  return `/api/v1/ops/grafana/d/paideia-ops?kiosk&ticket=${encodeURIComponent(ticket)}`
+}
 
 export function OpsPage() {
+  // access token 只在内存里（不落 localStorage），换页不丢、刷新页面要重新登录。
+  // 面板 iframe 靠它作 ticket，所以拿不到时不渲染 iframe 而不是渲染一个注定 401 的框。
+  const accessToken = auth.tokens.access()
   const summary = useQuery({
     queryKey: ['admin-ops-summary'],
     // requestEnvelope 取的是统一结构的 data 字段；request 返回整包（含 code/message/traceId）。
@@ -175,11 +188,17 @@ export function OpsPage() {
       )}
 
       <Card className="overflow-hidden py-0">
-        <iframe
-          title="Paideia 运维面板"
-          src={PANEL_URL}
-          className="h-[calc(100dvh-15rem)] min-h-[480px] w-full border-0"
-        />
+        {accessToken === null ? (
+          <div className="text-muted-foreground flex items-center gap-2 p-6 text-sm">
+            <Spinner /> 需要登录会话才能加载面板（令牌只存在内存里，刷新页面后请重新登录）。
+          </div>
+        ) : (
+          <iframe
+            title="Paideia 运维面板"
+            src={panelUrl(accessToken)}
+            className="h-[calc(100dvh-15rem)] min-h-[480px] w-full border-0"
+          />
+        )}
       </Card>
     </>
   )

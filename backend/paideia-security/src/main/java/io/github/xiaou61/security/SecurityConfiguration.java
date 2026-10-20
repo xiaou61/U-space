@@ -191,6 +191,10 @@ public class SecurityConfiguration {
                         .permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
+                        // Grafana 面板的 iframe 拿不到 Authorization 头（浏览器对导航请求不附加），
+                        // 所以反代前缀额外接受 ?ticket=<access token>。**只在该前缀上**：
+                        // 别处仍只认头，否则令牌会散落在各种日志里。
+                        .bearerTokenResolver(OpsTicketBearerResolver.INSTANCE)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
         return http.build();
     }
