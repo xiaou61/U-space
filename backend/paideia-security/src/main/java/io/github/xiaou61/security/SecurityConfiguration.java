@@ -137,6 +137,12 @@ public class SecurityConfiguration {
                         //   ② Grafana 反代是面板的唯一入口，它内部开匿名 Viewer——
                         //      这条规则一旦静默失效，等于把 Grafana 直接公开给任何登录用户。
                         .requestMatchers("/api/v1/ops/admin/**").hasRole("ADMIN")
+                        // Grafana 的静态资源（JS/CSS/字体/图标）**免鉴权**：iframe 内的子资源请求
+                        // 既不继承 Authorization 头、也拿不到查询串里的 ticket，要求鉴权就永远是 401，
+                        // 面板显示 "Grafana has failed to load its application files"（实测）。
+                        // 与既有 `/assets/**` 放行同一性质：**只是 Grafana 自己的前端产物，不含任何平台数据**。
+                        // 真正的数据在 /api/v1/ops/grafana/api/** 与 dashboard 页，那些仍然要 ADMIN。
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ops/grafana/public/**").permitAll()
                         .requestMatchers("/api/v1/ops/grafana/**").hasRole("ADMIN")
                         // 知识库的管理端写接口。**必须排在下面的 anyRequest() 之前**：
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
