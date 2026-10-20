@@ -1,10 +1,10 @@
 ---
-title: 15 · Stream：把循环压成一条链
-category: java-from-zero
-order: 15
-chapter: 进阶
-minutes: 30
+title: 20 · Stream：把循环压成一条链
+order: 20
+chapter: 泛型与函数式
 prerequisite: 日期时间：LocalDate、Instant 与跨时区
+category: java-from-zero
+minutes: 30
 status: published
 ---
 
