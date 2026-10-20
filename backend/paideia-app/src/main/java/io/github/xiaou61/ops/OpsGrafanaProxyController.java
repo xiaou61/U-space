@@ -118,10 +118,21 @@ class OpsGrafanaProxyController {
         return location.substring(index);
     }
 
-    /** 去掉前缀、保留查询串。单独提出来是为了能逐条断言拼接结果。 */
+    /**
+     * 拼出下游地址。
+     *
+     * <p><b>前缀必须保留</b>：Grafana 开了 `serve_from_sub_path`，它期望收到的路径**带着**
+     * 自己配置的 sub path（`/api/v1/ops/grafana/...`）。把前缀剥掉再转发，Grafana 会认为
+     * "你没走子路径"，回一个 301 让你去带前缀的地址——于是代理与 Grafana 互相重定向，
+     * 浏览器最后停在空白页。实测：带前缀直打是 200，不带是 301。
+     *
+     * <p>只剥掉的是**应用自己的前缀**（同一条路径），所以对下游来说路径没有任何变化。
+     *
+     * <p>单独提出来是为了能逐条断言拼接结果。
+     */
     static String targetUri(String baseUrl, String requestUri, String queryString) {
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        String path = requestUri.length() > PREFIX.length() ? requestUri.substring(PREFIX.length()) : "/";
+        String path = requestUri.isBlank() ? "/" : requestUri;
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
