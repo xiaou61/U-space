@@ -88,7 +88,10 @@ const STATUS_STYLE: Record<
  * 后端只在这一条前缀上接受查询串里的令牌（见 `OpsTicketBearerResolver`）。
  */
 function panelUrl(ticket: string): string {
-  return `/api/v1/ops/grafana/d/paideia-ops?kiosk&ticket=${encodeURIComponent(ticket)}`
+  // **末尾斜杠是必要的**：Grafana 页面里的静态资源写成相对路径（`public/build/...`），
+  // 浏览器按文档 URL 的目录部分解析。没有斜杠时基准变成 `/d/`，资源全 404，
+  // 页面显示 "Grafana has failed to load its application files"。
+  return `/api/v1/ops/grafana/d/paideia-ops/?kiosk&ticket=${encodeURIComponent(ticket)}`
 }
 
 export function OpsPage() {
