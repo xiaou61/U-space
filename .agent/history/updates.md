@@ -4063,3 +4063,77 @@ schema_version: 1
 - 验证：全量后端 504/0/5；前端 256 条全绿（播放器 6 条）；线上学习者端 61 passed/21 skipped/0 failed；管理端 22 passed
 - 本地提交：a7d3ec3
 - 远端推送：已推送 master
+
+## 2026-10-20 · WORK-025 · 需求首次起草：八股文专区（未实施）
+
+- 类型：requirements
+- 变更：新建 `.agent/changes/WORK-025-八股文专区/requirements.md`（draft）；四件工件只此一件，未写代码、未建迁移
+- 决策：用户四项决定（独立专区 / 每日抓牛客 Java 八股文 / AI 详细解析 / 本期只做 Java）已记入 D-01..D-04；另记 5 条实现选择，其中「正文由 AI 重写释义不逐字转载」与「抓取收在可替换端口后」两条待用户点头
+- 编号：状态脚本 `next_work_id` 报 `WORK-024`，但工作区在飞的「学习轨道」已把该号写进 `V22__create_learning_tracks.sql` 注释且尚未登记工件；本项取 `WORK-025` 以避免撞号
+- 依据：实抓 `nowcoder.com/robots.txt`（未禁止题库/讨论路径）、本机 curl（`/exam/interview` 200、`/discuss/experience` 301）；全仓 grep 确认**后端无任何第三方网页抓取代码**
+- 验证：`project-lifecycle.ps1 validate` 通过（0 错误，仅既有历史警告）
+- 本地提交：未提交
+- 远端推送：未推送
+
+### 2026-10-20 追加 · WORK-025 · 牛客可抓性实测（改写了原假设）
+
+- 类型：research
+- 变更：`requirements.md` 的事实表补 4 行实测；「假设」中被推翻的那条就地标注；新增「方案取舍（Q0 的三条出路）」一节
+- 决策：**原假设「存在每天有新增的 Java 八股文流」被实测削弱**，不据此继续推进；新增 Q0 为阻断项
+- 依据：实抓解析 `discuss/experience?tagId=639` 的 `window.__INITIAL_STATE__.app.165.ssrInitList`（20 条，含「最近一个月面试总结」「北京小厂Java一面」等信息帖）；实抓 `/discuss/2928416` 得 `contentData={"showMessage":{"message":"内容不存在!"}}`，正文需前端渲染；猜的两个 API 端点分别返回首页 HTML 与 404
+- 验证：本机 curl，探针文件已删除、未进版本库
+- 本地提交：未提交
+- 远端推送：未推送
+
+### 2026-10-20 追加 · WORK-025 · 用户裁定 A/B/C 全要并分两个分类
+
+- 类型：requirements
+- 变更：`requirements.md` 记 D-05；新增「两个分类的划分」一节；重写实现选择（I-02 改为"只取题目清单、解析全自己写"，I-05 去重改单键，I-06/I-07 新增）；REQ-001..007、AC-001..006 重写；待确认问题收敛为 Q1/Q3-Q7，并新增「已答复的问题」留痕
+- 决策：A（题库）+ C（半自动）合并为「面经真题」（标来源链接），B（平台自生成）单列为「平台精讲」（不标来源）。A 与 C 不单开第三个分类，因为两者拿到的都是"只有标题、没有别人答案"
+- 依据：第二轮实测。`/exam/interview` 服务端渲染出集合列表（「Java基础-牛客面经八股」paperId=61536918 / 25 题、「Spring-牛客面经八股」61536922 / 15 题，带结构化字段）；`/exam/paper/61536918` 是 404 骨架只给 1 题；`/questionTerminal/89adb20f44cd433f902cc114155b17aa` 服务端渲染出标题、题型、收藏/浏览数，`answer-brief` 仅摘要（样例一个词 `redo`）⇒ **题面即标题，别人的答案本来也拿不到，正合"解析自己写"**
+- 验证：`project-lifecycle.ps1 validate` 通过，WORK-025 无错误；探针文件已清理未入库
+- 本地提交：未提交
+- 远端推送：未推送
+
+### 2026-10-20 追加 · WORK-025 · 抓取通路全量实测（四条路，核心通路打通）
+
+- 类型：research
+- 变更：`requirements.md` 事实表重写为「抓取通路实测」12 行；结论行改为"A/B/C 全可行但路径与设想不同"；I-02 与 I-05 按实测改写，新增 I-08/I-09；REQ-001/002/008 重写，质量要求加抓取频率与失败处理；AC-003/007 调整；假设两条从"未验证"升级为"已实测"；待确认问题删 Q1（已解决）、新增 Q8
+- 决策：**A 档改走面经列表 API 而非合集题目清单**。原判断「只能拿到标题」被推翻——列表接口直接带完整正文
+- 依据（全部实测，探针文件已清理未入库）：
+  - **核心通路**：`POST gw-c.nowcoder.com/api/sparta/job-experience/experience/job/list`，body `{"page":1,"pageSize":20,"jobId":639}`；返回 total=2000 / totalPage=100
+  - **列表直接带正文**：`momentData.content` 是完整正文（样例 1136 字）、`momentData.createdAt` 毫秒时间戳；**无需逐条抓详情**
+  - **pageSize 上限 20**（50/100/200 一律 `系统未知错误`）；**不限流**（6 次连发全 200）；**无需登录态**
+  - **日增量 3–7 条**（page1 覆盖 10-19~10-17、page2 10-17~10-15、page3 10-15~10-13）；剔除 contentType=250 后约 3-5 条/天
+  - **技术密度混合**：同日 14 条里技术词≥8 的仅 5 条，其余是纯信息帖
+  - **生产可达**：`codenest-online` 上 POST 返回 200 / 0.375s
+  - **不通的路**：合集题目清单枚举不到（`/exam/paper/<id>` 404 骨架、`/exam/test/<id>/detail` 调 `test/summary?paperId=0` 返回空、卡片点击不跳转、JS 包无 API 字符串）；`/exam/intelligent` 是算法练习不是八股
+  - **兜底通路**：`/feed/main/detail/<uuid>` SEO 版服务端完整渲染（样例 5599 字）；`sitemap1.txt` 有 12732 条该形态 URL
+  - 用的工具：curl + Playwright 抓包（复用 frontend 已装的 playwright@1.64.0）
+- 验证：`project-lifecycle.ps1 validate` 通过，WORK-025 无错误；探针文件全部清理，`git status` 无残留
+- 本地提交：未提交
+- 远端推送：未推送
+
+### 2026-10-20 追加 · WORK-025 · Q3/Q8 裁决落定 + 实测细节搬进 research.md
+
+- 类型：requirements
+- 变更：
+  - `requirements.md`：记 D-06（只解析技术词密度高的）、D-07（不按技术栈细分，全算 Java 八股）；新增 I-10（密度判定规则）、REQ-009/REQ-010、AC-008/AC-009；待确认问题从 6 条收敛为 4 条（Q4/Q5/Q6/Q7）
+  - 新建 `research.md`：把 17 行抓取实测细节、六步弯路、面试帖样例、未测事项搬过去；`requirements.md` 只留 9 行结论表（20795 → 18889 bytes，消除 20000 bytes 警告）
+- 决策：
+  - **D-06 密度阈值规则**：按**去重后的不同技术词种类数** ≥ 3 判定（不是按出现次数），阈值放配置。理由：按词频判会被"一条帖子反复提 Java 十几次但其实没讲题"骗过；阈值没跑过真实数据，默认 3 是待调起点
+  - **D-07 分类到此为止**：Java 基础/JVM/Spring/Redis/MySQL 全落「面经真题」一个分类。理由：专区用法是刷题，靠检索和标题找，不靠浏览分类树；将来真题量大了再拆，那时只改 `category_id`
+- 依据：用户 2026-10-20 答复「Q3 成本 只解析技术词密度高的，Q8 这都算Java八股」
+- 验证：`project-lifecycle.ps1 validate` 通过，WORK-025 无错误、无体积警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-20 09:49:15 +0800 · WORK-024 · 从零开始独立成学习轨道：关卡地图 + Java 24 关
+
+- 类型：implementation
+- 变更：V22 两张表（learning_tracks / learning_track_stages）；/api/v1/learn/tracks 与 /tracks/{slug}；TrackMapPage 关卡地图；课程分类从知识库浏览排除；导入脚本登记轨道；Java 课程从 13 关扩到 24 关
+- 决策：推翻 WORK-020 的「学习线=分类标记」：轨道独立成表才有顺序、章节与前置依赖；锁只看直接前置不递归；连线用 CSS 不引图库；关卡正文仍用 knowledge_entries 复用渲染与进度
+- 依据：用户：从0开始不要是知识库，要闯关/图谱那种、线一个一个关联；内容太少、要非常详细至少每篇1000字
+- 验证：verify_course.py 37 文件通过（示例真执行逐字比对）；新增 11 关每篇 5400-7900 字；线上 24 关 7 章节、导入成功；e2e 5 passed（轨道→地图→关卡→正文 + 360px 不溢出）；学习者端全套 62 passed/21 skipped/0 failed，管理端 22 passed
+- 本地提交：af21345、0c1aa68
+- 远端推送：已推送 master
