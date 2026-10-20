@@ -4147,3 +4147,28 @@ schema_version: 1
 - 验证：线上分布 5 入门/11 进阶/8 深入；e2e 6 passed（新增难度徽章与筛选）；踩坑：改已应用的 V22 导致 Flyway 校验失败、线上服务起不来，改为新增 V23
 - 本地提交：bb4c858
 - 远端推送：已推送 master
+
+## 2026-10-20 · WORK-028 运维监控面板 · 实施、首轮上线与四件工件
+
+- 类型：implementation
+- 变更：
+  - 应用：`/actuator/prometheus`（版本由 Boot BOM 管）、`/api/v1/ops/admin/summary`（七类摘要、四态判定）、`/api/v1/ops/grafana/**`（Grafana 反代）、`ScheduledTaskRecorder` 端口 + 两个定时任务埋点、`ScheduledTaskMetrics`
+  - 服务器：prometheus / grafana / node / mysqld / redis / blackbox 六个 exporter 型单元 + `ops-textfile.timer` + `paideia-backup.timer`，全部只绑 127.0.0.1；`deploy/ops/` 一次装齐（安装脚本幂等）
+  - 管理端：「运维」页（七张四态卡片 + iframe 完整面板）
+- 决策：
+  - **不另开管理端口**：六处依赖 8081 的 `/actuator/health`，改在 Security 里按来源 IP 白名单（`LocalOnlyAuthorizationManager`）放行 `/actuator/metrics/**` 与 `/actuator/prometheus`
+  - **不建 MySQL 时序表**：历史交给 Prometheus TSDB（15s 抓取、保留 3 天），本项零迁移
+  - **不装 cAdvisor**：容器与 systemd 由 60 秒一次的 textfile 脚本采集，少一个吃数百 MB 的常驻进程
+  - **面板鉴权落在 Grafana 自己的会话**：实测三条路（应用 ADMIN / 查询串 ticket / 只放行 public）都被 iframe 子请求打穿；根因是项目无 Cookie 纯 Bearer 而 Grafana 是 SPA
+- 实测暴露并修掉的七个缺陷：告警不发信（缺 `notification_settings.receiver` → `empty` 收件人）、四条规则三条 `nodata`（比较表达式需 `bool` 修饰符）、运维页白屏（`api.request` vs `requestEnvelope`）、iframe 被 `X-Frame-Options: DENY` 拒、反代剥前缀导致 301 死循环、iframe 全 401、服务组把"没设上限"显示成"未知"
+- 验证：
+  - 后端 `mvn -B test` 216 运行，3 失败——**两处均为本分支起点 4a071f4 既有红**（`ApiWalkthroughTest` 缺 40+ 端点覆盖、`MigrationChecksumTest` V22/V23 未登记），已在独立 worktree 复现
+  - 运维相关：`OpsStatusTest` 3、`ScheduledTaskMetricsTest` 4、`OpsGrafanaProxyTargetTest` 5、`OpsSummaryIntegrationTest` 5、`ApiContractTest` 9、`ApiSurfaceTest` 6、`AuthorizationIsolationTest` 9，全 0 失败
+  - 管理端 e2e 打线上：**22 passed**
+  - 恢复演练：表 37/37、`knowledge_entries` 58/58、`users` 2/2、`ai_messages` 51/51
+  - 浏览器实测：七张卡片 + 9 个面板真实渲染
+  - 资源实测：六进程合计 335MB；Prometheus 2 小时 7.7MB（推 3 天约 280MB）
+- 依据：见 `.agent/changes/WORK-028-运维监控面板/testing/report.md`（AC-001..013 逐条证据表）
+- 本地提交：9 笔（`151958d` `970c8d9` `27b58e6` `c1a41ee` `25bebf8` 及其后续）
+- 远端推送：未推送
+- **仍未做**：管理端运维页的 e2e 用例；AC-005 的真实并发压满；慢查询日志开启；异地备份

@@ -159,9 +159,11 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 | 系统 | Ubuntu 24.04.4 LTS，4 核 / 16GB 内存 / 79GB 磁盘（约 66GB 可用） |
 | JDK | Temurin **25.0.4**（LTS）位于 `/opt/jdk25`，另有 `/opt/jdk17`。**两者均未注册到 `update-alternatives`，`JAVA_HOME` 未配置，`java` 不在 PATH 上**，使用前需接线 |
 | MySQL | **8.0.46**（Ubuntu 包），运行中；2026-10-16 起监听 `0.0.0.0:3306`（对公网开放，仅 `paideia_test@'%'` 可连且只授权测试库），X 协议 33060 仍只监听 127.0.0.1 |
-| Redis | 7.0.15，运行中，只监听本机，当前为空 |
-| 缺失 | 没有 Docker / Docker Compose，没有 RabbitMQ，没有 Nginx；80/443 未监听 |
-| 运行方式 | 目前没有 systemd 单元可用；Paideia 的服务应建立自己的 systemd 单元 |
+| Redis | 7.0.15，运行中，只监听本机，**当前为空且后端零引用**——没被任何一条业务路径用到（运维页如实标注「未被应用使用」） |
+| 缺失 | 没有 RabbitMQ、没有 Nginx；80/443 未监听（Docker 已于 2026-10-15 装上，见 Firecrawl） |
+| 运行方式 | paideia / laya / rustfs / mysql / redis-server / mihomo 各一个 systemd 单元 |
+| **监控（WORK-028）** | prometheus / grafana / node-exporter / mysqld-exporter / redis-exporter / blackbox-exporter / ops-textfile.timer / paideia-backup.timer，**全部只监听 127.0.0.1**，公网仍只有 8081；六个常驻进程合计约 335MB。管理端「运维」页 = 七张四态卡片（`/api/v1/ops/admin/summary`，ADMIN）+ Grafana 面板（反代，Grafana 自己的会话） |
+| **备份（WORK-028）** | `paideia-backup.timer` 每日 03:15（`Persistent=true`，错过补跑）→ `/opt/paideia-backup/`，保留 7 天。**本机同盘，救不了整机损坏** |
 
 **项目隔离要求（用户 2026-10-09 决定）**：Paideia 与 Code-Nest 彻底分离。Paideia 使用独立目录（`/opt/paideia-app`）、独立数据库与独立数据库账号；不复用、不修改其他项目的服务与数据。Code-Nest 的应用与 SQL 转储已按用户指示从该服务器删除。**库里只有两个（2026-10-10 用户要求统一，不再增加）**：`paideia`（开发与部署共用）与 `paideia_test`（测试沙箱）。
 
@@ -177,6 +179,14 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 - 曾经的坑要记住：`paideia` 的历史里一度带着 `V950`，说明**有运行时误连过 dev 库**（正是 `playwright.config.ts` 警告过的那个）；已修（删掉那条历史记录与两个种子账号），现在历史是干净的 V1→V3。
 - **部署实例不加载种子**：`db/devdata` 不在默认迁移目录，因此部署库里没有 `seed-admin`／`seed-learner`（那两个口令公开写在仓库里，放到公网可达的实例上等于开放管理权限）。管理员账号用**一次性 SQL** 单独建，口令不落任何被跟踪文件。
 - **同源部署必须放行静态资源**：`SecurityConfiguration` 里加了 `GET /`、`/index.html`、`/assets/**`、`/admin/**`、`/favicon.ico` 的放行——不放行时连登录页都返回 401（实测）。**放行静态文件不等于放行数据**：授权仍只由 `/api/**` 上的规则决定。
+
+**监控与备份（WORK-028，2026-10-20）**：
+
+- **`release.ps1` 只重启 `paideia`**，不碰监控单元——监控是独立 systemd 单元，部署不影响它们，也不该重启它们（重启会丢掉 Grafana 的会话与 Prometheus 的内存缓冲）。
+- 首次安装或改动监控配置：`ssh codenest-online 'cd /opt/paideia-ops/staging && PAIDEIA_DB_PASSWORD=… GRAFANA_SMTP_PASSWORD=… GRAFANA_ADMIN_PASSWORD=… bash install-ops.sh'`。**必须带 `http_proxy=http://127.0.0.1:7890`**（直连 Docker Hub 与 grafana apt 源均失败，不带时表现为「下载卡住、无报错」）。
+- **Grafana 面板需要它自己的口令**（`/etc/grafana/grafana.env`，600）。iframe 的子请求带不上平台令牌（项目无 Cookie、纯 Bearer），所以鉴权落在 Grafana 自己的会话上；应用对 `/api/v1/ops/grafana/**` 是放行的。摘要卡片仍走 `hasRole("ADMIN")`。
+- **四条告警必须各自写 `notification_settings.receiver`**：不写时 Grafana 13 会路由到 `empty` 收件人，告警照常 firing、日志正常、**一封邮件都不发**。
+- **告警表达式必须用 PromQL 的 `bool` 修饰符**：`x > 阈值` 在条件不成立时返回空结果，Grafana 判 NoData——「一切正常」与「采不到数」会长得一模一样。
 
 **两个操作陷阱（都实测踩过，别再踩）**：
 
@@ -203,6 +213,6 @@ Paideia 是「千人千面的 AI 个性化学习平台」。目标不是把同�
 | 桌面壳与交付时机 | D-12 | 已定：Electron，与 Web 同期交付（原 Tauri，2026-10-09 因缺 Rust/MSVC 改为 Electron） |
 | 前端数据层 | D-13 | 服务端状态已定 TanStack Query；客户端临时状态暂缓 |
 | 消息与异步 | D-14 | 已定：RabbitMQ（配合 outbox 中继） |
-| 其余基础设施 | D-15 | 暂缓：缓存、可观测性、国际化、测试栈（**对象存储已于 2026-10-15 接入，见 WORK-007**） |
+| 其余基础设施 | D-15 | 暂缓：缓存、国际化、测试栈（**对象存储 2026-10-15 接入见 WORK-007**；**可观测性 2026-10-20 已定 Prometheus + Grafana，见 WORK-028**） |
 | 部署形态 | — | 自托管在自有服务器；细节本期不考虑 |
 | 数据与隐私 | — | 暂缓：角色模型、留存期限、删除权、未成年人合规、AI 对话数据处理 |
