@@ -82,7 +82,18 @@ class OpsGrafanaProxyController {
                     : HttpRequest.BodyPublishers.ofByteArray(body));
         }
 
-        HttpResponse<byte[]> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        HttpResponse<byte[]> response;
+        try {
+            response = http.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException e) {
+            // Grafana 不在（未启动、端口被占、刚重启）时**必须是 502 而不是 500**：
+            // 500 会被读成"应用自己坏了"，而这明明是上游不可达。摘要卡片不依赖 Grafana，
+            // 所以这一块失败时页面的其余部分照常可用。
+            String message = "Grafana 不可达（" + properties.getGrafanaUrl() + "）：" + e.getMessage();
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(message.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
         HttpHeaders headers = new HttpHeaders();
         String contentType = response.headers().firstValue(HttpHeaders.CONTENT_TYPE).orElse(null);
         if (contentType != null) {

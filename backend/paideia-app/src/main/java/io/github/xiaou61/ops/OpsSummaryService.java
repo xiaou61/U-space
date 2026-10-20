@@ -75,7 +75,9 @@ class OpsSummaryService {
         for (String unit : UNITS) {
             Double used = valueFor(memory, "unit", unit);
             Double max = valueFor(maximum, "unit", unit);
-            // 上限为 0 表示该单元没设 MemoryMax，不参与占比判定（否则除零成 Infinity）
+            // 上限为 0 表示该单元没设 MemoryMax。此时不判占比压力（除零会得到 Infinity），
+            // 但**仍然要显示它占了多少**——只有 laya 设了上限，其余四个没有，
+            // 把"没有上限"显示成"未知"等于把四个真实的读数丢掉。
             Double ratio = max == null || max <= 0 ? null : ratio(used, max);
             OpsStatus status = ratio == null
                     ? (used == null ? OpsStatus.UNKNOWN : OpsStatus.OK)
@@ -84,9 +86,15 @@ class OpsSummaryService {
             if (!reason.isEmpty()) {
                 reason.append("；");
             }
-            reason.append(unit).append(' ').append(percent(ratio));
+            if (used == null) {
+                reason.append(unit).append(" 未知");
+            } else if (ratio == null) {
+                reason.append(unit).append(' ').append(gigabyte(used)).append("（未设上限）");
+            } else {
+                reason.append(unit).append(' ').append(percent(ratio));
+            }
         }
-        return new OpsSummary.Group("services", "服务", worst, "内存占上限：" + reason,
+        return new OpsSummary.Group("services", "服务", worst, "内存：" + reason,
                 List.of(OpsSummary.Metric.text("units", reason.toString())));
     }
 
@@ -136,11 +144,49 @@ class OpsSummaryService {
         return up >= 1 ? name + " 通" : name + " 不通";
     }
 
+    /**
+     * 定时任务（REQ-016/018）。
+     *
+     * <p>三种情形必须能区分开：「从未运行」「跑了但上次失败」「最近一次成功」——
+     * 它们都表现为"没有新内容"，但处置完全不同。判据是 `last_run_epoch_seconds`：
+     * 0 表示从未跑过，非 0 才看 success。
+     */
     private OpsSummary.Group scheduledGroup() {
-        Double failed = prometheus.scalar("paideia_scheduled_last_success");
-        return new OpsSummary.Group("scheduled", "定时任务", OpsStatus.of(failed, 1.0, 1.0),
-                failed == null ? "尚未采集" : "上次结果 " + (failed >= 1 ? "成功" : "失败"),
-                List.of(OpsSummary.Metric.number("lastSuccess", failed, "count")));
+        List<PrometheusClient.Sample> runs =
+                prometheus.query("paideia_scheduled_last_run_epoch_seconds");
+        List<PrometheusClient.Sample> success =
+                prometheus.query("paideia_scheduled_last_success");
+        if (runs.isEmpty()) {
+            return new OpsSummary.Group("scheduled", "定时任务", OpsStatus.UNKNOWN,
+                    "尚未采集到任何任务的执行记录", List.of());
+        }
+
+        OpsStatus worst = OpsStatus.OK;
+        StringBuilder reason = new StringBuilder();
+        for (PrometheusClient.Sample sample : runs) {
+            String task = sample.labels().getOrDefault("task", "?");
+            Double lastRun = sample.value();
+            Double ok = valueFor(success, "task", task);
+            OpsStatus status;
+            String text;
+            if (lastRun == null || lastRun <= 0) {
+                status = OpsStatus.UNKNOWN;
+                text = task + " 从未运行";
+            } else if (ok != null && ok < 1) {
+                status = OpsStatus.ERROR;
+                text = task + " 上次失败";
+            } else {
+                status = OpsStatus.OK;
+                text = task + " 上次成功";
+            }
+            worst = OpsStatus.worst(worst, status);
+            if (!reason.isEmpty()) {
+                reason.append('；');
+            }
+            reason.append(text);
+        }
+        return new OpsSummary.Group("scheduled", "定时任务", worst, reason.toString(),
+                List.of(OpsSummary.Metric.text("tasks", reason.toString())));
     }
 
     private OpsSummary.Group backupGroup(OpsProperties.Thresholds thresholds) {

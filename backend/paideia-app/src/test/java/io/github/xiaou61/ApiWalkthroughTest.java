@@ -522,6 +522,12 @@ class ApiWalkthroughTest {
         bestEffort("DELETE", "/api/v1/knowledge/admin/entries/" + entryId, adminToken());
         bestEffort("DELETE", "/api/v1/knowledge/admin/categories/" + categoryId, adminToken());
 
+        // ---- 运维摘要（WORK-028）：只读；Prometheus 不可达时全 UNKNOWN 是设计行为 ----
+        call("运维摘要", "GET", "/api/v1/ops/admin/summary", adminToken(), null);
+        // 反代路径只在 Grafana 活着时才 200，所以用 bestEffort 打一下让"全接口自查"覆盖到它。
+        // 目标不可达时本接口返回 502（这是设计），不算失败。
+        bestEffort("GET", "/api/v1/ops/grafana/api/health", adminToken());
+
         } catch (RuntimeException | AssertionError failure) {
             // 单步异常不中断整轮：把这一条记下来，最后连同其余失败一起报
             steps.add(new Step("中断于：" + failure.getClass().getSimpleName(), "-", "-", 0, false,

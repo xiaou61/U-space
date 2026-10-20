@@ -134,3 +134,13 @@ for unit in prometheus grafana node-exporter mysqld-exporter redis-exporter blac
 done
 echo '--- 监听端口（应全部是 127.0.0.1）---'
 ss -ltn | grep -E ':(9090|9100|9104|9121|9115|3000)\s' || echo "（没有监控端口监听——异常）"
+
+# **每条告警规则必须显式指定收件人**（实测踩过）：Grafana 13 的 provisioned 规则
+# 不指定 notification_settings 时，`__grafana_receiver__` 落到 `empty` 收件人——
+# 告警照样 firing、照样进历史，但**一封邮件都不发**，日志里只有
+# "Sending alerts to local notifier"，看起来一切正常。
+missed=$(grep -cE '^\s+- uid: paideia-' /etc/grafana/provisioning/alerting/paideia-rules.yaml || true)
+with_receiver=$(grep -c 'receiver: paideia-mail' /etc/grafana/provisioning/alerting/paideia-rules.yaml || true)
+if [ "$missed" != "$with_receiver" ]; then
+    echo "⚠ 告警规则数（$missed）与指定收件人的规则数（$with_receiver）不一致：有规则不会发信"
+fi

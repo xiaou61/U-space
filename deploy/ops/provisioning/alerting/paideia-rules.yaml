@@ -3,7 +3,13 @@
 # 为什么用 Grafana 而不是 Alertmanager：后者要多一个常驻进程与一套分组/抑制/静默配置，
 # 而这里只需要"红了就发一封邮件"。升级触发条件：需要按标签分组去重、抑制、多接收端。
 #
-# 阈值与 application.yml 的 paideia.ops.thresholds 保持一致——两处都改，别只改一处。
+# **每条表达式都必须始终返回一个数值**（用 PromQL 的 `bool` 修饰符）：
+# `x > 0.9` 在条件不成立时返回**空结果**，Grafana 会把它当成 NoData，
+# 于是"一切正常"和"采集不到数据"在告警状态里长得一模一样——实测踩过：
+# 四条规则里三条显示 nodata、剩下那条被我自己设成 NoData→Alerting 后平白 firing。
+# `x > bool 0.9` 则始终返回 0 或 1，条件不成立就是 0，语义干净。
+#
+# 阈值与 application.yml 的 paideia.ops.thresholds 是两处，改一处要同步另一处。
 apiVersion: 1
 
 groups:
@@ -24,9 +30,20 @@ groups:
             model:
               refId: A
               instant: true
-              expr: min(up) == 0 or min(probe_success) == 0
+              intervalMs: 1000
+              maxDataPoints: 1
+              # 两侧用 `or vector(0)` 兜底：`up` 与 `probe_success` 的标签集不同，
+              # 直接 `or` 在任一侧为空时不会互相补位，会让某些目标"看不见"。
+              expr: >-
+                (min(up) < bool 1) or (min(probe_success) < bool 1) or vector(0)
         noDataState: NoData
         execErrState: Error
+        # **必须显式指定收件人**：Grafana 13 的 provisioned 规则不指定时，
+        # `__grafana_receiver__` 会落到 `empty` 收件人——告警照样 firing、照样进历史，
+        # 但**一封邮件都不发**。实测踩过：规则全部 ok、日志有 "Sending alerts to local
+        # notifier"，却没有任何投递记录。
+        notification_settings:
+          receiver: paideia-mail
         annotations:
           summary: 有采集目标或外部依赖下线
           description: 打开运维面板看「采集目标与外部依赖」表，up=0 的那一项就是它。
@@ -43,15 +60,24 @@ groups:
             model:
               refId: A
               instant: true
+              intervalMs: 1000
+              maxDataPoints: 1
               expr: >-
-                node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.15
+                (node_filesystem_avail_bytes{mountpoint="/"}
+                 / node_filesystem_size_bytes{mountpoint="/"}) < bool 0.15
         noDataState: NoData
         execErrState: Error
+        # **必须显式指定收件人**：Grafana 13 的 provisioned 规则不指定时，
+        # `__grafana_receiver__` 会落到 `empty` 收件人——告警照样 firing、照样进历史，
+        # 但**一封邮件都不发**。实测踩过：规则全部 ok、日志有 "Sending alerts to local
+        # notifier"，却没有任何投递记录。
+        notification_settings:
+          receiver: paideia-mail
         annotations:
           summary: 磁盘可用不足 15%
-          description: 现在最可能的吃掉磁盘的是 Docker 镜像（8.35G 中 6.18G 可回收）。
+          description: 现在最可能吃掉磁盘的是 Docker 镜像（8.35G 中 6.18G 可回收）。
 
-      # 备份超过 36 小时没成功
+      # 备份超过 36 小时没成功，或最近一次就是失败
       - uid: paideia-backup-stale
         title: 备份超过 36 小时未成功
         condition: A
@@ -63,9 +89,20 @@ groups:
             model:
               refId: A
               instant: true
-              expr: paideia_backup_age_seconds > 36 * 3600 or paideia_backup_success == 0
-        noDataState: Alerting
+              intervalMs: 1000
+              maxDataPoints: 1
+              # 两个条件取并集：太陈旧 或 上次失败。两者都用 bool，保证恒有值。
+              expr: >-
+                (paideia_backup_age_seconds > bool (36 * 3600))
+                or (paideia_backup_success < bool 1)
+        noDataState: NoData
         execErrState: Error
+        # **必须显式指定收件人**：Grafana 13 的 provisioned 规则不指定时，
+        # `__grafana_receiver__` 会落到 `empty` 收件人——告警照样 firing、照样进历史，
+        # 但**一封邮件都不发**。实测踩过：规则全部 ok、日志有 "Sending alerts to local
+        # notifier"，却没有任何投递记录。
+        notification_settings:
+          receiver: paideia-mail
         annotations:
           summary: 数据库备份已过期或失败
           description: 看 journalctl -u paideia-backup。没有备份时，一次误删就是全部内容没了。
@@ -82,10 +119,19 @@ groups:
             model:
               refId: A
               instant: true
+              intervalMs: 1000
+              maxDataPoints: 1
               expr: >-
-                paideia_unit_memory_bytes{unit="laya"} / paideia_unit_memory_max_bytes{unit="laya"} > 0.9
+                (paideia_unit_memory_bytes{unit="laya"}
+                 / paideia_unit_memory_max_bytes{unit="laya"}) > bool 0.9
         noDataState: NoData
         execErrState: Error
+        # **必须显式指定收件人**：Grafana 13 的 provisioned 规则不指定时，
+        # `__grafana_receiver__` 会落到 `empty` 收件人——告警照样 firing、照样进历史，
+        # 但**一封邮件都不发**。实测踩过：规则全部 ok、日志有 "Sending alerts to local
+        # notifier"，却没有任何投递记录。
+        notification_settings:
+          receiver: paideia-mail
         annotations:
           summary: Laya 内存贴近上限
           description: 2026-10-20 常态 85%。超过 90% 后 OOM 会静默降级成规则判断，功能还在但决策模型不在了。
