@@ -38,6 +38,7 @@ export {
   loadPositions,
   resetPositions,
   savePositions,
+  spreadApart,
   type Point,
 } from './concept-graph-layout'
 export { createEntryProgressPort, recentReading, type RecentReading } from './source-reading-progress'

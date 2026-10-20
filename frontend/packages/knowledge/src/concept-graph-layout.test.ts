@@ -4,6 +4,7 @@ import {
   circularLayout,
   layoutKey,
   loadPositions,
+  spreadApart,
   resetPositions,
   savePositions,
 } from './concept-graph-layout'
@@ -13,7 +14,7 @@ import {
  *
  * <p>第三条尤其重要：图谱页不该因为一段坏 JSON 就整页打不开。
  */
-const KEY = 'paideia:concept-graph:v1:'
+const KEY = 'paideia:concept-graph:v3:'
 
 let store: Map<string, string>
 
@@ -100,5 +101,50 @@ describe('circularLayout', () => {
 
   it('只有一个节点时也给出坐标', () => {
     expect(circularLayout([{ id: 7 }])).toEqual({ 7: { x: 100, y: 0 } })
+  })
+})
+
+describe('spreadApart', () => {
+  /** 任意两点之间的最小距离——标签重叠的判据就是这个。 */
+  function minPairDistance(positions: Record<number, { x: number; y: number }>): number {
+    const points = Object.values(positions)
+    let best = Number.POSITIVE_INFINITY
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        best = Math.min(best, Math.hypot(points[j].x - points[i].x, points[j].y - points[i].y))
+      }
+    }
+    return best
+  }
+
+  it('把挤在一起的点推到最小间距之外', () => {
+    // 力导向实测的形态：14 个点全挤在几个单位里
+    const cramped: Record<number, { x: number; y: number }> = {}
+    for (let i = 0; i < 14; i++) {
+      cramped[i] = { x: (i % 4) * 3, y: Math.floor(i / 4) * 3 }
+    }
+    const spread = spreadApart(cramped)
+
+    const span = 9 // 原布局跨度
+    // 推开会撑大跨度，所以实际最小间距约为**新跨度**的 12%；这里只要求明显大于原始拥挤状态
+    expect(minPairDistance(spread)).toBeGreaterThan(span * 0.1)
+  })
+
+  it('完全重合的点也能分开，且不产生 NaN', () => {
+    const spread = spreadApart({ 1: { x: 0, y: 0 }, 2: { x: 0, y: 0 }, 3: { x: 0, y: 0 } })
+    for (const point of Object.values(spread)) {
+      expect(Number.isFinite(point.x)).toBe(true)
+      expect(Number.isFinite(point.y)).toBe(true)
+    }
+    expect(minPairDistance(spread)).toBeGreaterThan(0)
+  })
+
+  it('已经足够分散时不动它（空间记忆不该被无谓地打乱）', () => {
+    const wide = { 1: { x: 0, y: 0 }, 2: { x: 500, y: 500 } }
+    expect(spreadApart(wide)).toEqual(wide)
+  })
+
+  it('单个节点原样返回', () => {
+    expect(spreadApart({ 1: { x: 3, y: 4 } })).toEqual({ 1: { x: 3, y: 4 } })
   })
 })

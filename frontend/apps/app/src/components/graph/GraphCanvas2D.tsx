@@ -1,4 +1,12 @@
-import { circularLayout, loadPositions, savePositions, type ConceptEdge, type ConceptNode, type Point } from '@paideia/knowledge'
+import {
+  circularLayout,
+  loadPositions,
+  savePositions,
+  spreadApart,
+  type ConceptEdge,
+  type ConceptNode,
+  type Point,
+} from '@paideia/knowledge'
 import { useEffect, useRef, useState } from 'react'
 
 import { resolveVar, tierColor } from './tier-style'
@@ -64,6 +72,20 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
             y: point.y,
           })
         })
+        /**
+         * 让所有标签都画出来。
+         *
+         * <p>sigma 默认按网格抽样决定画哪些标签，公式是**每格 `ceil(labelDensity / ratio²)` 个**。
+         * `ratio` 大于 1（视图缩小）时无论怎么调 `labelDensity` 都只剩 1 个，同格其余节点就没有标签
+         * ——这就是"图上有一堆没名字的点"，也是怎么调 density 都没用的原因。
+         *
+         * <p>强制渲染读的是 `labelVisibility === 'visible'`。**必须走 nodeReducer**：
+         * 直接写在 `addNode` 的属性里没用——没有样式声明时 sigma 只从属性取 x/y/size/color/label，
+         * 其余字段一律回到默认值（`labelVisibility` 的默认是 `auto`），属性会被静默覆盖。
+         *
+         * <p>只在节点数不多时强制：几千个节点全标会糊成一片，那时抽样才是对的。
+         */
+        const forceLabels = nodes.length <= 40
         // 同一对概念可以同时有 prerequisite 与 related 两条记录（后端唯一键含 relation_type），
         // 而 graphology 在 multi:false 下对同一对 source/target 只会保留一条、第二条直接抛。
         // 按无向对去重：保留先出现的那条（后端按关系类型排序，前置优先）。
@@ -87,7 +109,9 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
         })
 
         const saved = loadPositions(layoutKeyValue)
-        const positions = saved ?? computeLayout(graph, forceAtlas2, nodes)
+        // 标签重叠的根因是节点挤在一起，不是标签密度：sigma 不做碰撞检测，
+        // 只按网格限制"每格画几个标签"，画出来的照样叠。先推开，再归一化。
+        const positions = spreadApart(saved ?? computeLayout(graph, forceAtlas2, nodes))
         if (saved === null) {
           savePositions(layoutKeyValue, positions)
         }
@@ -106,11 +130,15 @@ export function GraphCanvas2D({ nodes, edges, layoutKeyValue, selectedId, onSele
         // 这三个选项在 sigma 4 的运行期设置里存在，但没进导出的类型声明；
         // 断言一次比把默认值改成手写渲染层便宜得多。
         const renderer = new Sigma(graph, container.current, {
-          labelDensity: 0.6,
-          labelGridCellSize: 90,
+          labelDensity: 2,
           // 节点半径最小 6（未接触档），阈值取 6 会把它们全部隐去标签——
           // 而"有哪些还没碰过"恰恰是图谱最该回答的问题。
           labelRenderedSizeThreshold: 0,
+          // 必须放这里：写在 addNode 的属性里会被 sigma 的默认值覆盖（见上面那段说明）
+          ...(forceLabels
+            ? { nodeReducer: (_node: string, data: Record<string, unknown>) =>
+                ({ ...data, labelVisibility: 'visible' }) }
+            : {}),
         } as ConstructorParameters<typeof Sigma>[2])
 
         renderer.on('clickNode', ({ node }) => onSelect(Number(node)))
