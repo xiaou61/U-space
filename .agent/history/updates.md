@@ -4448,3 +4448,51 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-20 · 修复 /learn 与知识图谱，并给线上补齐真实数据
+
+- 类型：fix + data
+- 变更：
+  - `scripts/import-course.mjs`：更新已有条目时**按 frontmatter 的 status 写回**，并删掉"先草稿、后统一发布"的两段式。原逻辑在更新路径上一律写 `draft`，而补发循环只发布"本次新建"的条目，于是改一次内容就让那一关从学习者端消失
+  - `content/courses/python/*.md`：补 `chapter` / `level` / `line_summary`（新增 `scripts/add-python-chapters.py`）；重新导入后 Python 与两条阅读线登记成学习轨道
+  - `GraphCanvas2D`：节点初值改用 `circularLayout` 散开（力导向在所有点重合时不推位置，只是把 (0,0) 原样留下）；布局缩放到固定跨度 1000（sigma 按包围盒自动适配，布局越紧凑屏幕上越放大，一颗节点能铺满画布）；`labelRenderedSizeThreshold` 0 → 6（未接触档半径为 6，阈值 6 会把它们全部隐去标签）
+  - `loadPositions`：全部重合的旧存档当作没有存档（否则修好算法后仍会读到坏的零坐标）
+  - `InterviewPage`：接上 `GET /api/v1/ai/interviews/evaluations`（接口从 WORK-010 就在，前端方法也有，一直没有页面调用）
+  - `LearnPage`：加「继续上次」条；卡片网格 `md:2 / xl:3`
+  - `HomePage`：hero 左栏补三格进度数字（待复习 / 学到一半 / 还不懂），数据全部来自已有接口
+  - `GraphPage`：空状态补三张卡说明"这里将来会有什么"；画布高度 `lg:h-[calc(100vh-18rem)]`
+  - 新增 `scripts/seed-demo-data.py`：概念 14 个、关系 12 条、自评 13 条、学习进度 15 条、笔记 3 条
+- 决策：轨道集合以 `learning_tracks` 表为准而非 `/learning/lines`（后者是 WORK-020 的分类标记，两条数据源分叉正是 bug 的表现）；不用 `release.ps1` 发版，改为**只替换 `/opt/paideia-app/web`**——工作区里有别的会话在飞的改动（WORK-026/028、essay 采集、V24），`release.ps1` 从工作区构建 jar 会把它们一起带上线
+- 实测数据：`/learn` 现在 4 条轨道（Python 13 关 / Java 24 关 / 源码解读 1 关 / 计算机网络 2 关）；图谱 14 概念 / 12 边 / 接触 8 / 掌握 3；课程条目草稿从 10 条降到 0（剩余 5 条草稿属于面经采集，与本项无关）
+- 验证：`pnpm --filter @paideia/knowledge test` 44/0；`tsc -p tsconfig.json` 通过；学习者端 e2e 打线上 **61 passed / 2 failed / 21 skipped**——两条失败与本项无关：① `home.spec「每个请求都带上追踪标识」` 请求 `/actuator/health`，服务器上的 `application.yml` 缺 `management.endpoints.web.exposure.include` 故返回 404（环境配置差异）；② `assistant.spec「记忆面板」` 断言"还没有任何记忆"，而线上 admin 已有记忆（写死种子数据的旧问题）
+- 本地提交：39064e2
+- 远端推送：未推送
+- 未处理：`/graph` 节点标签在密集区域仍会互相压住（`labelDensity` 调优属视觉细节）；Python 课程只有 2 关有进度记录，因为脚本里的进度是按标题手写的
+
+### 2026-10-20 追加 · WORK-025 · 部署上线 + 实测定出「按标题去重」这个设计缺陷
+
+- 类型：implementation
+- 变更：
+  - 提交 `7cf1ec7`（八股文专区主体）与 `554a87f`（去重修复），部署到 codenest-online
+  - 线上 `/opt/paideia-app/application.yml` 加 `paideia.ai.essay` 段并 `enabled: true`（备份 `application.yml.bak-*`）
+  - **去重从「按题目标题」改为「按来源帖子 externalId」**：`fingerprint(title)` → `fingerprintOfPost(post)`
+- 决策：
+  - **原设计是错的，线上才暴露**：按标题算指纹，理由是"同一道题会在不同面经里反复出现"。但模型每次复述措辞会变：
+    第一次「线程池中如何可靠地传递 ThreadLocal 上下文？」、第二次「在线程池中如何可靠地把父线程的 ThreadLocal 上下文传给子线程？」——意思相同、文本不同 ⇒ 每次运行都新增。**模型复述的措辞不该被当身份标识**
+  - 改为按 `externalId`（上游给定、不漂移）+ 来源前缀（`nowcoder:`）。代价是同一题出现在两篇面经里会存两份，当前一篇只抽一道题、量小，可接受
+- 实测（全部在线上 codenest-online）：
+  - V24 迁移成功应用（`flyway_schema_history` v24 success=1）；`source_url`/`fingerprint` 两列已加；`essay-java` 分类 id=20
+  - 第一次运行 15:57：抓 7 篇 / 跳过非技术 3 / 抽出 4 / 新建 4 / 失败 0
+  - 第二次运行 16:13（重启触发）：**新建 4、重复 0 ⇒ 库里 4 变 8，暴露缺陷**
+  - 修复部署后 16:25：抓 8 / 跳过 3 / 抽出 5 / 新建 5
+  - 修复后第二次 16:32：**新建 0 / 重复 5 ⇒ 库里稳定 5 条**，去重生效
+  - 内容抽查（id=10076 Redis 哨兵）：结论先行 + 机理 + 处理建议，**无公司名/薪资**，带来源链接
+  - 全文检索可命中（`MATCH ... AGAINST('ThreadLocal')`）
+  - Paideia 健康 200、`/` 与 `/admin/` 均 200
+- 踩到的坑：
+  - **`@SpringBootTest` 嵌套类会各建一个上下文并重复跑迁移**（V951 seed 失败），所以抓取任务的装配验证没做成自动化测试，改为线上日志比对
+  - `EssaySchedulingWiringTest` 因 `EssayCollectionJob` 是包私有类而无法跨模块引用，已删除该测试
+  - 线上 e2e 需要 `E2E_LEARNER_PASSWORD`，仓库里没有（刻意设计），因此**未跑线上 e2e**
+- 验证：单测 18 条（指纹 4 + 解析 8 + 过滤 6）全过；`project-lifecycle.ps1 validate` 中 WORK-025 无错误（报错来自 WORK-027，别人的项）
+- 本地提交：`7cf1ec7`、`554a87f`
+- 远端推送：**未推送**
