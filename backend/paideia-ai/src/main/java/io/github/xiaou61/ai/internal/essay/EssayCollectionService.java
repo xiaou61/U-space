@@ -9,9 +9,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,15 +37,6 @@ import org.springframework.stereotype.Service;
 public class EssayCollectionService {
 
     private static final Logger log = LoggerFactory.getLogger(EssayCollectionService.class);
-
-    /** 规范化题目时要去掉的噪音：序号、标点、空白、大小写。 */
-    private static final Pattern NUMBERING = Pattern.compile("^\\s*[\\d一二三四五六七八九十]+\\s*[、.．)）]\\s*");
-    /**
-     * 标点与空白。**中文引号用 \\u 转义写**：直接把 “ ” ‘ ’ 放进字符串字面量里，
-     * 编译器会把它们当成 ASCII 引号的同义字符，导致字符串提前结束（实测踩过）。
-     */
-    private static final Pattern PUNCTUATION =
-            Pattern.compile("[\\p{Punct}\\s，。？！、；：\\u201C\\u201D\\u2018\\u2019（）【】《》…—]+");
 
     private final EssayProperties properties;
     private final EssaySource source;
@@ -141,7 +130,7 @@ public class EssayCollectionService {
                                     render(question, post),
                                     categoryId,
                                     properties.isPublishDirectly() ? "published" : "draft",
-                                    fingerprint(question.title()),
+                                    fingerprintOfPost(post),
                                     post.url()));
                     if (outcome.created()) {
                         created++;
@@ -182,25 +171,39 @@ public class EssayCollectionService {
     }
 
     /**
-     * 题目指纹：去掉序号、标点与大小写后的 SHA-256。
+     * 去重指纹：**按来源帖子**的稳定 id，不是按 AI 生成出来的题目标题。
      *
-     * <p>**按题目去重而不是按帖子**：同一道题（"HashMap 为什么线程不安全"）会在不同面经里
-     * 反复出现，按帖子去重等于每天新增一条重复内容。
+     * <p><b>这条是 2026-10-20 在线上改的，原设计是错的。</b>原本按题目文本算指纹，
+     * 理由是"同一道题会在不同面经里反复出现"。但实测第二次运行（重启触发）时，
+     * 同一篇帖子抽出来的题目标题措辞变了：
+     * <ul>
+     *   <li>第一次：线程池中如何可靠地传递 ThreadLocal 上下文？</li>
+     *   <li>第二次：在线程池中如何可靠地把父线程的 ThreadLocal 上下文传给子线程？</li>
+     * </ul>
+     * 意思相同、文本不同 ⇒ 指纹不同 ⇒ **每次运行都新增一条**。日志显示"重复 0 条"、
+     * 库里 4 条变 8 条，就是这么来的。
+     *
+     * <p>模型每次复述的措辞本来就不该被当成身份标识。改成按 `externalId`（帖子 id）去重：
+     * 那一列由上游给定，不会漂移。代价是"同一道题出现在两篇不同面经里"会存两份——
+     * 那是可以接受的（当前一篇只抽一道题，量很小），而"每天都重复入库"不可接受。
      */
-    static String fingerprint(String title) {
-        String normalized = PUNCTUATION.matcher(NUMBERING.matcher(title).replaceFirst("")).replaceAll("")
-                .toLowerCase(Locale.ROOT);
+    static String fingerprintOfPost(FetchedPost post) {
+        // 前缀区分来源：将来接第二个站时，不同站的同名 id 不会撞。
+        return sha256("nowcoder:" + post.externalId());
+    }
+
+    private static String sha256(String value) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(normalized.getBytes(StandardCharsets.UTF_8));
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder(digest.length * 2);
             for (byte b : digest) {
                 hex.append(String.format("%02x", b));
             }
             return hex.toString();
         } catch (Exception exception) {
-            // SHA-256 必然存在；走到这里说明运行环境坏了，退回原文保证不丢内容
-            return normalized;
+            // SHA-256 必然存在；走到这里说明运行环境坏了，退回原值保证不丢内容
+            return value;
         }
     }
 
