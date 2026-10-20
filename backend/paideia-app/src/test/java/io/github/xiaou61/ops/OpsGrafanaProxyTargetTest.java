@@ -35,6 +35,19 @@ class OpsGrafanaProxyTargetTest {
     }
 
     @Test
+    @DisplayName("重定向地址被改写为站内相对路径")
+    void rewritesAbsoluteRedirectToRelative() {
+        OpsGrafanaProxyController controller = new OpsGrafanaProxyController(new OpsProperties());
+        // Grafana 按 root_url 生成绝对地址，浏览器连不到回环——必须改写成站内路径。
+        // 实测表现为面板 301 到一个不可达地址、页面一片空白。
+        assertThat(controller.rewriteLocation("http://127.0.0.1:3000/api/v1/ops/grafana/d/paideia-ops?kiosk"))
+                .isEqualTo("/api/v1/ops/grafana/d/paideia-ops?kiosk");
+        // 与本代理无关的地址原样保留
+        assertThat(controller.rewriteLocation("https://example.com/other"))
+                .isEqualTo("https://example.com/other");
+    }
+
+    @Test
     @DisplayName("编码字符原样透传，不二次编码")
     void preservesEncodedCharacters() {
         assertThat(OpsGrafanaProxyController.targetUri(

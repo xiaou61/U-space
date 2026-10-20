@@ -114,6 +114,12 @@ public class SecurityConfiguration {
                 // 表现为"浏览器直接调通、跨域调用全挂"。规则本身来自 paideia-web 的 WebMvcConfigurer。
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                // iframe 嵌入（WORK-028）：运维面板由 Grafana 渲染、被管理端同源 iframe 嵌入，
+                // 而 Spring Security 默认发 `X-Frame-Options: DENY`——实测浏览器直接拒绝显示面板。
+                // 改成 SAMEORIGIN：仍然禁止**任何第三方站点**嵌入本服务（这才是点击劫持的威胁），
+                // 只是允许我们自己同源嵌入。DENY 额外多挡的"本站自嵌"没有防护价值——
+                // 能控制本站页面的人已经不需要靠 iframe 来做事了。
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()

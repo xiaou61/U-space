@@ -99,7 +99,23 @@ class OpsGrafanaProxyController {
         if (contentType != null) {
             headers.setContentType(MediaType.parseMediaType(contentType));
         }
+        // **重定向必须改写成站内相对路径**：Grafana 按 `root_url` 生成绝对地址，
+        // 那是 http://127.0.0.1:3000/api/v1/ops/grafana/...，浏览器根本连不到回环。
+        // 实测表现为面板 301 到一个不可达地址、页面一片空白。
+        String location = response.headers().firstValue(HttpHeaders.LOCATION).orElse(null);
+        if (location != null) {
+            headers.set(HttpHeaders.LOCATION, rewriteLocation(location));
+        }
         return new ResponseEntity<>(response.body(), headers, HttpStatus.valueOf(response.statusCode()));
+    }
+
+    /** 把指向回环 Grafana 的绝对地址换成站内相对路径；其它地址原样保留。 */
+    String rewriteLocation(String location) {
+        int index = location.indexOf(PREFIX);
+        if (index < 0) {
+            return location;
+        }
+        return location.substring(index);
     }
 
     /** 去掉前缀、保留查询串。单独提出来是为了能逐条断言拼接结果。 */
