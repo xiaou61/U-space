@@ -22,6 +22,13 @@ public class Entry {
     private Integer sortOrder;
     private String title;
     private String body;
+    /** 原始来源链接（WORK-025）。「面经真题」展示"回到原帖"；平台自产内容为 null。 */
+    private String sourceUrl;
+    /**
+     * 题目指纹（WORK-025）。自动采集按它去重——同一道题会在不同面经里反复出现。
+     * 管理端手抄与课程导入的条目为 null。
+     */
+    private String fingerprint;
     /** **只有列表查询填充**（`LEFT(body, 200)`）；详情查询不填，为 null。 */
     private String excerpt;
     /** draft | published */
@@ -68,6 +75,22 @@ public class Entry {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+    public void setFingerprint(String fingerprint) {
+        this.fingerprint = fingerprint;
     }
 
     public String getExcerpt() {

@@ -80,7 +80,8 @@ public interface EntryMapper {
                         @Param("likePattern") String likePattern);
 
     @Select("""
-            SELECT id, category_id, sort_order, title, body, status, published_at, created_at, updated_at
+            SELECT id, category_id, sort_order, title, body, source_url, fingerprint, status,
+                   published_at, created_at, updated_at
             FROM knowledge_entries WHERE id = #{id} AND status = 'published'
             """)
     Optional<Entry> findPublishedById(@Param("id") Long id);
@@ -170,7 +171,8 @@ public interface EntryMapper {
 
     /** 管理端详情：**不过滤状态**，草稿预览靠它。 */
     @Select("""
-            SELECT id, category_id, sort_order, title, body, status, published_at, created_at, updated_at
+            SELECT id, category_id, sort_order, title, body, source_url, fingerprint, status,
+                   published_at, created_at, updated_at
             FROM knowledge_entries WHERE id = #{id}
             """)
     Optional<Entry> findByIdIncludingDraft(@Param("id") Long id);
@@ -204,11 +206,26 @@ public interface EntryMapper {
     List<Entry> findPublishedTitlesByIds(@Param("ids") List<Long> ids);
 
     @Insert("""
-            INSERT INTO knowledge_entries (category_id, sort_order, title, body, status, published_at)
-            VALUES (#{categoryId}, #{sortOrder}, #{title}, #{body}, #{status}, #{publishedAt})
+            INSERT INTO knowledge_entries (category_id, sort_order, title, body, source_url, fingerprint,
+                                           status, published_at)
+            VALUES (#{categoryId}, #{sortOrder}, #{title}, #{body}, #{sourceUrl}, #{fingerprint},
+                    #{status}, #{publishedAt})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Entry entry);
+
+    /**
+     * 按指纹查同一分类下是否已有（WORK-025）。
+     *
+     * <p>**限定分类**：同一道题出现在不同分类里是有意义的，跨分类判重会把它们合并掉。
+     * 返回 id 而不是计数，是为了让调用方能把"已存在"的 id 回报出去。
+     */
+    @Select("""
+            SELECT id FROM knowledge_entries
+            WHERE category_id = #{categoryId} AND fingerprint = #{fingerprint}
+            LIMIT 1
+            """)
+    Long findIdByFingerprint(@Param("categoryId") Long categoryId, @Param("fingerprint") String fingerprint);
 
     @Update("""
             UPDATE knowledge_entries

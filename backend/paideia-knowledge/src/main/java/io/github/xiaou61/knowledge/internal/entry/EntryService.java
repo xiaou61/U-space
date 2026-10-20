@@ -64,6 +64,10 @@ public class EntryService {
             String body,
             Long categoryId,
             String categoryName,
+            /**
+             * 原始来源链接（WORK-025）。自动采集的「面经真题」非空，平台自产内容与存量条目为 null。
+             */
+            String sourceUrl,
             Instant publishedAt,
             /** 同分类内的上一篇（更早发布）。没有分类或没有相邻条目时为 null。 */
             EntryRef previous,
@@ -156,6 +160,7 @@ public class EntryService {
                 entry.getBody(),
                 entry.getCategoryId(),
                 nameOf(categoriesById, entry.getCategoryId()),
+                entry.getSourceUrl(),
                 entry.getPublishedAt(),
                 previous,
                 next,

@@ -38,7 +38,7 @@ class KnowledgeToolsTest {
 
         @Override
         public List<CategoryNode> listCategories() {
-            return List.of(new CategoryNode(10L, "架构", null), new CategoryNode(11L, "数据库", 10L));
+            return List.of(new CategoryNode(10L, "架构", "arch", null), new CategoryNode(11L, "数据库", "db", 10L));
         }
 
         @Override

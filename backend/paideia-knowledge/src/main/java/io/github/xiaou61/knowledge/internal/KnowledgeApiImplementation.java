@@ -11,6 +11,7 @@ import io.github.xiaou61.knowledge.internal.entry.EntryService;
 import io.github.xiaou61.knowledge.internal.learning.LearningProgressService;
 import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
@@ -78,6 +79,27 @@ class KnowledgeApiImplementation implements KnowledgeApi {
     }
 
     @Override
+    public CreateOutcome createCollected(CollectedEntry input) {
+        // 先查后插：同一道题会在不同面经里反复出现，重复插入等于每天制造重复内容。
+        // 并发下理论上仍可能双写（两个任务同时抓到同一题），但抓取是单实例定时任务，
+        // 不为此加唯一约束——那会让"指纹为空"的存量条目行为变得微妙。
+        Long existing = entryMapper.findIdByFingerprint(input.categoryId(), input.fingerprint());
+        if (existing != null) {
+            return new CreateOutcome(existing, false);
+        }
+        Entry entry = new Entry();
+        entry.setTitle(input.title());
+        entry.setBody(input.body() == null ? "" : input.body());
+        entry.setCategoryId(input.categoryId());
+        entry.setStatus(input.status());
+        entry.setSourceUrl(input.sourceUrl());
+        entry.setFingerprint(input.fingerprint());
+        entry.setPublishedAt("published".equals(input.status()) ? Instant.now() : null);
+        entryMapper.insert(entry);
+        return new CreateOutcome(entry.getId(), true);
+    }
+
+    @Override
     public List<MarkedEntry> findMarks(long userId, int limit) {
         // level 传 null = 懂／还不懂两类都要；条数截断在这一层（内部服务按 level 过滤，不按条数）
         return selfAssessments.listMine(userId, null).stream()
@@ -137,6 +159,6 @@ class KnowledgeApiImplementation implements KnowledgeApi {
     }
 
     private static CategoryNode toNode(Category category) {
-        return new CategoryNode(category.getId(), category.getName(), category.getParentId());
+        return new CategoryNode(category.getId(), category.getName(), category.getSlug(), category.getParentId());
     }
 }

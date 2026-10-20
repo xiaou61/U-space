@@ -1,0 +1,215 @@
+package io.github.xiaou61.ai.internal.essay;
+
+import io.github.xiaou61.ai.ModelAccess;
+import io.github.xiaou61.ai.internal.credential.CredentialService;
+import io.github.xiaou61.ai.internal.decision.TechEssayFilter;
+import io.github.xiaou61.knowledge.KnowledgeApi;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+/**
+ * 每日抓取面经 → 过滤 → 抽题 → 入库的编排（WORK-025）。
+ *
+ * <p>四个阶段，每一步都有明确的"跳过"语义：
+ * <ol>
+ *   <li><b>抓</b>：从 {@link EssaySource} 拿最近的帖子。失败 → 整次任务放弃并记日志。</li>
+ *   <li><b>过滤</b>：{@link TechEssayFilter} 判断是不是技术帖。**非技术帖不消耗任何 AI 额度**——
+ *       实测同一天 14 条里只有 5 条真在讲题，不过滤就是为每条都花一次解析。</li>
+ *   <li><b>抽题</b>：{@link EssayExtractor} 让模型从正文里挑出技术题并写解析。空结果是合法的。</li>
+ *   <li><b>入库</b>：按题目指纹去重后写进知识库。重复的跳过，不报错。</li>
+ * </ol>
+ *
+ * <p><b>不扣用户积分</b>：抓取解析是平台行为，没有用户归属。{@code CreditService} 按 userId 记账，
+ * 这里没有可用的 userId——强行塞一个系统账号会让积分账目出现"凭空扣费"。代价是这部分成本
+ * 只能从部署侧的用量统计看，不在产品内的积分面板里。这是已知取舍。
+ *
+ * <p>三个上限防止一次跑飞：帖子数（{@code maxPostsPerRun}）、题数（{@code maxQuestionsPerRun}）、
+ * 翻页数（{@code maxPages}）。
+ */
+@Service
+public class EssayCollectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(EssayCollectionService.class);
+
+    /** 规范化题目时要去掉的噪音：序号、标点、空白、大小写。 */
+    private static final Pattern NUMBERING = Pattern.compile("^\\s*[\\d一二三四五六七八九十]+\\s*[、.．)）]\\s*");
+    /**
+     * 标点与空白。**中文引号用 \\u 转义写**：直接把 “ ” ‘ ’ 放进字符串字面量里，
+     * 编译器会把它们当成 ASCII 引号的同义字符，导致字符串提前结束（实测踩过）。
+     */
+    private static final Pattern PUNCTUATION =
+            Pattern.compile("[\\p{Punct}\\s，。？！、；：\\u201C\\u201D\\u2018\\u2019（）【】《》…—]+");
+
+    private final EssayProperties properties;
+    private final EssaySource source;
+    private final TechEssayFilter filter;
+    private final EssayExtractor extractor;
+    private final KnowledgeApi knowledge;
+    private final CredentialService credentials;
+
+    EssayCollectionService(EssayProperties properties,
+                           EssaySource source,
+                           TechEssayFilter filter,
+                           EssayExtractor extractor,
+                           KnowledgeApi knowledge,
+                           CredentialService credentials) {
+        this.properties = properties;
+        this.source = source;
+        this.filter = filter;
+        this.extractor = extractor;
+        this.knowledge = knowledge;
+        this.credentials = credentials;
+    }
+
+    /** 一次运行的统计，供日志与测试断言。 */
+    public record RunResult(int fetched, int skippedNonTechnical, int extracted, int created,
+                            int duplicated, int failed, String skipReason) {
+
+        static RunResult skipped(String reason) {
+            return new RunResult(0, 0, 0, 0, 0, 0, reason);
+        }
+    }
+
+    /**
+     * 跑一次完整流程。
+     *
+     * <p>**任何阶段失败都不抛给调用方**：定时任务里抛异常只会让下一轮更难排查。
+     * 失败写进返回值与日志。
+     */
+    public RunResult runOnce() {
+        if (!properties.isEnabled()) {
+            return RunResult.skipped("未启用");
+        }
+        Long categoryId = resolveCategoryId();
+        if (categoryId == null) {
+            return RunResult.skipped("分类不存在：" + properties.getCategorySlug());
+        }
+        Optional<ModelAccess> access = credentials.access(0);
+        if (access.isEmpty()) {
+            return RunResult.skipped("平台未配置 AI 凭据");
+        }
+
+        long since = Instant.now().minus(Duration.ofDays(properties.getLookbackDays())).toEpochMilli();
+        List<FetchedPost> posts;
+        try {
+            posts = source.fetchSince(since, properties.getMaxPages());
+        } catch (RuntimeException exception) {
+            log.warn("面经抓取失败，本次跳过：{}", exception.getMessage());
+            return RunResult.skipped("抓取失败");
+        }
+        if (posts.isEmpty()) {
+            return new RunResult(0, 0, 0, 0, 0, 0, "本次没有新帖");
+        }
+
+        int skipped = 0;
+        int extracted = 0;
+        int created = 0;
+        int duplicated = 0;
+        int failed = 0;
+        int handled = 0;
+
+        for (FetchedPost post : posts) {
+            if (handled >= properties.getMaxPostsPerRun() || created >= properties.getMaxQuestionsPerRun()) {
+                break;
+            }
+            handled++;
+
+            if (!filter.isTechnical(post.body())) {
+                skipped++;
+                continue;
+            }
+            try {
+                EssayExtractionPrompt.Extraction result =
+                        extractor.extract(post, access.get(), properties.getTimeoutSeconds());
+                for (EssayExtractionPrompt.ExtractedQuestion question : result.questions()) {
+                    if (created >= properties.getMaxQuestionsPerRun()) {
+                        break;
+                    }
+                    extracted++;
+                    KnowledgeApi.CreateOutcome outcome = knowledge.createCollected(
+                            new KnowledgeApi.CollectedEntry(
+                                    question.title(),
+                                    render(question, post),
+                                    categoryId,
+                                    properties.isPublishDirectly() ? "published" : "draft",
+                                    fingerprint(question.title()),
+                                    post.url()));
+                    if (outcome.created()) {
+                        created++;
+                    } else {
+                        duplicated++;
+                    }
+                }
+            } catch (RuntimeException exception) {
+                // 单篇失败不影响其它帖子：一天十篇里坏一篇，其余照收。
+                failed++;
+                log.warn("面经抽题失败（{}）：{}", post.externalId(), exception.getMessage());
+            }
+        }
+
+        log.info("八股文抓取完成：抓 {} 篇，跳过非技术 {} 篇，抽出 {} 题，新建 {} 条，重复 {} 条，失败 {} 篇",
+                posts.size(), skipped, extracted, created, duplicated, failed);
+        return new RunResult(posts.size(), skipped, extracted, created, duplicated, failed, null);
+    }
+
+    /**
+     * 组装入库正文：题目 + 我们的解析 + 来源链接。
+     *
+     * <p>**不放帖子原文**：面经正文里有公司名、薪资、个人经历，逐字入库既是转载也不适合做学习内容。
+     */
+    private static String render(EssayExtractionPrompt.ExtractedQuestion question, FetchedPost post) {
+        return "## " + question.title() + "\n\n"
+                + question.answer() + "\n\n"
+                + "---\n\n"
+                + "> 题目来源：[" + safeTitle(post.title()) + "](" + post.url() + ")\n";
+    }
+
+    private static String safeTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return "原帖";
+        }
+        // 标题里若有方括号会把 markdown 链接语法弄坏
+        return title.replace("[", "(").replace("]", ")");
+    }
+
+    /**
+     * 题目指纹：去掉序号、标点与大小写后的 SHA-256。
+     *
+     * <p>**按题目去重而不是按帖子**：同一道题（"HashMap 为什么线程不安全"）会在不同面经里
+     * 反复出现，按帖子去重等于每天新增一条重复内容。
+     */
+    static String fingerprint(String title) {
+        String normalized = PUNCTUATION.matcher(NUMBERING.matcher(title).replaceFirst("")).replaceAll("")
+                .toLowerCase(Locale.ROOT);
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(normalized.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception exception) {
+            // SHA-256 必然存在；走到这里说明运行环境坏了，退回原文保证不丢内容
+            return normalized;
+        }
+    }
+
+    /** 按 slug 找分类 id；找不到返回 null（**不自动建分类**——建分类是人的决定）。 */
+    private Long resolveCategoryId() {
+        return knowledge.listCategories().stream()
+                .filter(node -> properties.getCategorySlug().equals(node.slug()))
+                .map(KnowledgeApi.CategoryNode::id)
+                .findFirst()
+                .orElse(null);
+    }
+}

@@ -28,6 +28,38 @@ spring:
 
 paideia:
   ai:
+    essay:
+      # 八股文专区（WORK-025）。**默认关闭**：它要访问外部站点并消耗 AI 额度。
+      enabled: false
+      # 抓哪个面经合集：639 = Java 工程师（实测每天 3~7 条新帖）。
+      job-id: 639
+      # 回溯几天。默认 2 天 = 覆盖"昨天"并留一天容错，定时任务漏跑一次不会丢内容。
+      lookback-days: 2
+      # 每次最多翻几页（上游 pageSize 硬上限 20 条/页）。
+      max-pages: 3
+      # 抓来的内容进哪个分类。**不自动建分类**：不存在时任务跳过并记录。
+      category-slug: essay-java
+      # 抓来直接发布还是先进草稿。默认草稿——无人值守的自动入库，先让人过一眼更稳。
+      publish-directly: false
+      # 成本闸：单次最多解析多少题、最多处理多少帖。
+      max-questions-per-run: 40
+      max-posts-per-run: 10
+    decision:
+      # 决策模型（Laya，WORK-026）。**默认关闭**：它要连一个外部 Python 进程，
+      # 那个进程不在就每次判定都要等超时。关掉时分类器直接返回"没判断出来"，
+      # 调用方（面经技术内容过滤）自动退回规则判断，功能不受影响。
+      enabled: false
+      # laya-serve 地址。只应指向回环或内网——该服务除 api-key 外没有鉴权。
+      base-url: http://127.0.0.1:8091
+      # 与 laya-serve 的 LAYA_API_KEY 一致；留空表示对方没开鉴权。**值不进仓库**，部署时注入。
+      api-key: ""
+      # 热态单条 147~260ms；并发 16 时 p95 约 2965ms（实测）。给 5 秒留余量。
+      # 首次加载模型要 16~22 秒，那时的请求会超时降级——这是对的语义。
+      timeout-ms: 5000
+      # 低于此值当作"模型没把握"，退回规则。配的是三分类的 softmax 概率
+      # （实测技术面经能到 0.98）；**不是准确率**——中文未做温度拟合，官方自测 ECE 0.219。
+      min-confidence: 0.7
+      max-text-chars: 4000
     telemetry:
       # AI 调用统计（WORK-022）。**关掉不删历史数据**：只停止产生新记录，
       # 业务行为完全不变（采集端口换成空实现，埋点代码一字不改）。
@@ -71,10 +103,18 @@ paideia:
     pids-limit: 64
 
 management:
+  # 运维监控（WORK-028）：actuator 挪到独立端口并只绑回环。
+  # 为什么不是继续挂在 8081：8081 是公网端口，/actuator/prometheus 会暴露 JVM 内部结构与
+  # 业务维度标签；绑回环是唯一不必在 Security 里再造一套鉴权的做法。
+  # **代价**：actuator 整体搬家，健康检查地址变成 8082/actuator/health——
+  # scripts/release.ps1 已同步改，别再改回单端口。
+  server:
+    port: 8082
+    address: 127.0.0.1
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: never

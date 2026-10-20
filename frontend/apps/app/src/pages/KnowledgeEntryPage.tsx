@@ -196,6 +196,26 @@ export function KnowledgeEntryPage() {
             />
 
             {/*
+              来源链接（WORK-025）：抓来的面经帖标出原帖，让读者能回原处核对。
+              平台自产内容与存量条目的 sourceUrl 是 null，这里整个不渲染。
+              `rel="noreferrer noopener"`：外站链接不带 referrer，也不给它操作 window.opener 的机会。
+            */}
+            {entry.data.sourceUrl ? (
+              <p className="text-muted-foreground mb-6 text-sm">
+                题目来源：
+                <a
+                  className="text-primary underline-offset-4 hover:underline"
+                  data-testid="entry-source-link"
+                  href={entry.data.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  原帖
+                </a>
+              </p>
+            ) : null}
+
+            {/*
               窄屏的目录（WORK-016）：原来 `<lg` 直接不渲染，等于长文在手机上完全没有"我在哪"。
               改成折叠面板放进正文列里 —— 默认收起不占地方，要跳章节时展开即可。
               `EntryToc` 自带"少于两个标题就不渲染"，所以这里不需要再判一次。

@@ -49,6 +49,8 @@ export interface EntryDetail {
   body: string
   categoryId: number | null
   categoryName: string | null
+  /** 原始来源链接（WORK-025）。自动采集的「面经真题」有值，平台自产内容与存量条目为 null。 */
+  sourceUrl?: string | null
   publishedAt: string | null
   previous: EntryRef | null
   next: EntryRef | null

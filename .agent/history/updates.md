@@ -4147,3 +4147,304 @@ schema_version: 1
 - 验证：线上分布 5 入门/11 进阶/8 深入；e2e 6 passed（新增难度徽章与筛选）；踩坑：改已应用的 V22 导致 Flyway 校验失败、线上服务起不来，改为新增 V23
 - 本地提交：bb4c858
 - 远端推送：已推送 master
+
+## 2026-10-20 10:33:38 +0800 · 设计流程规则：先原型再设计，写进 AGENTS.md
+
+- 类型：docs
+- 变更：`AGENTS.md` 新增「设计流程：先原型，再设计」一节（插在「节奏」之后）；`docs/design/` 新增 FigCraft 可编辑原型母版 `paideia-prototype.figcraft`（10 页：组件库 + 01~09，835 图层、8 个组件）与九张单页 PNG
+- 决策：界面类改动强制两段——原型（真实图层、不追像素级、未点头不写实现）→ 设计（字距/行高/间距/状态/深浅主题）；设计令牌唯一来源定为 `frontend/packages/ui/src/styles/globals.css`；`.figcraft` 母版是否入库留给用户决定
+- 依据：用户「先出原型然后再出设计」「弄成真实的组件，因为后面我要根据这个调整东西」
+- 验证：`figcraft-cli info` 读回母版为 10 页 / 835 节点 / 8 组件；九张 PNG 已导出
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-20 · WORK-026 · 决策模型 Laya 接入（代码已落地，工件仅 requirements）
+
+- 类型：implementation
+- 变更：新增 `ai` 模块 `ContentClassifier`/`ContentClassification` 端口与 `internal/decision/`（`LayaContentClassifier`、`TechEssayFilter`、`DecisionProperties`、`DecisionConfiguration`）；`application.yml` 加 `paideia.ai.decision.*`（**默认关闭**）；新增 2 个测试类（6 条单测 + 2 条真连测试，后者默认跳过）
+- 决策：
+  - **只接一个用途**：面经帖技术内容过滤（服务 WORK-025）。内容审核/提示注入防护不接——官方 `docs/guardrail-limitations.md` 自己承认在文档型输入上失效
+  - **规则在前、模型在后**：规则零延迟零成本，只在边界地带（命中 1~4 种技术词）才花 200ms 问模型
+  - **判定用 `choice` 不用 `noul`**（实测倒逼的修正）：同一段面经用 noul，结尾多三个字「有哪些」概率从 0.243 → 0.675 → 0.644，漂移让阈值不可用；换三分类 choice 后 7 条判对 6 条，P(tech) 稳定 0.95~0.98
+  - **端口失败返回 empty 不抛异常**：判定是"可以没有"的能力，判不了就退回规则，不该丢内容
+  - **默认关闭**：与沙箱同纪律，外部进程不在时不该让每次判定等超时
+  - **服务只绑 127.0.0.1**：除 api-key 外无鉴权
+- 依据：
+  - 官方数据核实：基础检查点 typed-decisions **0.362** vs 随机 0.318 vs **多数类 0.461**——官方原话"a fast base to specialize, not a zero-shot decision engine"；流传的 **0.766 是微调后**且在自己训练集上
+  - 中文 ECE：multilingual 0.219（概率偏乐观）
+  - 服务器实测：4核16G 无 GPU，内存 1.7G、冷启 16~22s、热态 147~260ms、模型 647MB、torch-cpu 903MB
+  - 端到端 7 条中文样例（复刻 Java 类请求体）：技术面经 P(tech)=0.957~0.980 全中；纯求职帖落到 career 侧（0.002/0.231）；**已知 1 条判错**「如何提高工程能力」被判 technical(0.953)，但规则层命中 0 种技术词、不会走到模型，实际不会误收
+- 踩到的坑（部署侧，记下来避免重走）：① `pip install laya` 默认拉 CUDA 版 torch（553MB cudnn + 2.5G 依赖），纯 CPU 机器必须先装 `--index-url https://download.pytorch.org/whl/cpu torch`；② HF 的 Xet 传输被墙（`401 cas-server.xethub.hf.co`），要 `HF_HUB_DISABLE_XET=1`；③ 清华 PyPI 镜像没有 laya 包；④ Python 客户端下模型仅 20MB/分钟，curl 直连 hf-mirror 可达 5.6MB/s，然后 `Router(models={"multilingual":"/本地路径"})` 指过去；⑤ `pkill -f 'pip install'` 会杀掉自己的 SSH 命令（命令行含同样字符串），要用 `[p]ip` 括号技巧
+- 验证：`mvn -pl paideia-ai -am test -Dtest=TechEssayFilterTest` **6 条运行 / 0 失败 / 0 跳过**；真连测试按 `@EnabledIfSystemProperty` 默认跳过；端到端 7 条样例命中 6/7；`project-lifecycle.ps1 validate` 通过
+- 本地提交：未提交
+- 远端推送：未推送
+- **未完成**：① 只有 requirements 一件工件，proposal/design/tasks 缺失（严格模式要求）；② 没有 systemd / 开机自启，重启后服务消失；③ 未接入 WORK-022 遥测
+
+## 2026-10-20 11:31:21 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-026-决策模型接入Laya/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-026-决策模型接入Laya/requirements.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 11:31:28 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-026-决策模型接入Laya/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-026-决策模型接入Laya/proposal.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 11:31:33 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-026-决策模型接入Laya/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-026-决策模型接入Laya/design.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 11:31:38 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-026-决策模型接入Laya/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-026-决策模型接入Laya/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+### 2026-10-20 追加 · WORK-026 · 补齐四件工件 + systemd 开机自启 + 全模块回归
+
+- 类型：implementation
+- 变更：
+  - 新增 `proposal.md`（三种部署路线对比、五个交付切片、六条风险与缓解）、`design.md`（数据流、规则优先的理由、choice vs noul 的实测依据、失败降级矩阵、安全边界、资源实测、已知缺口）、`tasks.md`（9 个任务 + 5 条评审焦点 + 未包含清单）、`testing/report.md`（八行五列证据表）
+  - 四件工件经 `approve` 由 xiaou61（CTO）签署
+  - **systemd**：`/etc/systemd/system/laya.service` + `/etc/laya/laya.env`（600，含 40 位随机 API key），`enable --now`
+  - 修掉一个自己写的编译错误：测试方法名 `knownMisc judgementIsAbsorbedByTheRuleLayer` 里有空格，之前只跑 `-Dtest=TechEssayFilterTest` 没编译到该类所以没暴露
+- 决策：
+  - **运行参数全走 `EnvironmentFile`**：`Environment=` 会吃掉 JSON 里的引号，而 `LAYA_EXTRA_MODELS` 是 JSON（指向本地权重），写进 Environment 会导致解析失败
+  - **`MemoryMax=3G`**：模型常驻 1.5~1.7G，超限宁可被杀重启也不拖垮同机的 MySQL 与沙箱
+  - **`LAYA_THREADS=2`**：官方基准实测 intra-op 超过物理核数反而变慢（4 核机 10 线程 p50 9396ms → 8 线程 783ms），SMT 兄弟线程争抢
+  - **`HF_HUB_OFFLINE=1`**：权重已落地，禁止启动时联网
+- 依据：官方 `docs/docker.md`（CPU 需 8G 内存 / 10G 磁盘）、`BENCHMARKS.md`（线程数与延迟关系）
+- 验证：
+  - 全模块回归 `mvn -pl paideia-ai -am test`：**136 运行 / 0 失败 / 3 跳过**，跳过的正是 `LayaContentClassifierLiveTest`（`@EnabledIfSystemProperty` 未满足，符合设计）
+  - `systemctl is-enabled laya` = **enabled**、`is-active` = **active**；`Memory: 1.5G (max 3.0G)`
+  - `GET /health` → `{"status":"ok"}`；无 key POST → **401**；带 key POST → `choice=technical P=0.933`
+  - `project-lifecycle.ps1 validate` → WORK-026 无错误
+- 本地提交：未提交
+- 远端推送：未推送
+- **仍未做**：① 未接 WORK-022 遥测；② 未做温度拟合；③ 阈值 0.7 只基于 7 条样例
+
+### 2026-10-20 追加 · WORK-026 · 实测：崩溃自愈 / 重启 / 并发 / 整机重启
+
+- 类型：verification
+- 变更：
+  - `testing/report.md` 补 9 行证据（崩溃自愈、服务重启、整机重启、并发 1/2/4/8/16）；新增「并发实测」「整机重启实测」两节；缺口表加 2 条
+  - **`timeout-ms` 从 3000 调到 5000**（`DecisionProperties` 与 `application.yml` 同步）
+- 决策：**调超时的依据是实测**——并发 16 时 p95 2965ms，原定 3000ms 刚好卡在 p95 上，偶发超时会白白降级
+- 实测数据：
+  - **崩溃自愈**：`kill -9` 主进程后 **6 秒**自动拉起（PID 3445081 → 3600546）
+  - **服务重启**：`systemctl restart laya` 后 **18 秒** `/health` 就绪
+  - **整机重启**：SSH **15 秒**恢复；laya/paideia/mysql/rustfs/docker **全部自动 active**；laya 1 分钟内加载完模型（内存峰值 2.6G）；功能复测通过（技术面经 P=0.935、求职帖 P=0.115、无 key 仍 401）；Paideia health UP、`/` 与 `/admin/` 均 200
+  - **并发**：1→547ms、2→644ms、4→1042ms、8→1219ms(p95 1633)、16→1853ms(p95 **2965**)，全程 0 错误、P(tech) 稳定在 0.944~0.978。延迟近似线性增长 ⇒ `LAYA_THREADS=2` 是瓶颈
+  - 结论：实际场景是每日抓取的**串行过滤**（并发 1~2），p50 547~644ms，余量充足
+- **重启暴露的既有问题（非本项范围）**：Firecrawl 7 个容器里只有 searxng 是 `unless-stopped`，其余 6 个 `restart: "no"` ⇒ 整机重启后全停。已手动 `docker compose up -d` 恢复，真实 scrape 返回 200；**下次整机重启会再发生**。建议给 `/opt/firecrawl` 的 compose 加 `restart: unless-stopped`，未改
+- 验证：`mvn -pl paideia-ai -am test -Dtest=TechEssayFilterTest` 6/0/0；`project-lifecycle.ps1 validate` 无错误
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-20 · 撤销「先原型再设计」规范并移除 figcraft MCP
+
+- 类型：docs
+- 变更：`AGENTS.md` 删除「设计流程：先原型，再设计」整节（原 25–35 行，含 FigCraft 母版路径、两段流程、令牌来源四条附注）；`~/.zcode/cli/config.json` 的 `mcp.servers.figcraft` 整条移除
+- 决策：用户不再使用 FigCraft，界面改动恢复为直接实现；`docs/design/` 下已有的 `.figcraft` 母版与九张 PNG 未删除（未被 Git 跟踪），是否保留由用户决定
+- 依据：用户「现做设计，后实现，这个我们去掉这个规范吧，我不用那个mcp了，顺便给我把那个mcp给删掉」
+- 验证：`node -e "require('./config.json')"` 解析通过，剩余 MCP 服务 8 个（codegraph/context7/drawio/bep-mcp-prod/firecrawl/paideia/github/deepseek-search），figcraft 已不在其中
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-20 · WORK-027 每日技术速递 · 建项与数据源实测
+
+- 类型：requirements
+- 变更：新建 `.agent/changes/WORK-027-每日技术速递/`，含 `requirements.md`（draft，10 REQ / 9 AC / 6 待确认问题 / 8 条扩展点候选）与 `research.md`（AIHOT 形态核对 + 18 个候选源实测）
+- 决策：
+  - 形态**参考** AIHOT 的六步流水线，但**不套壳它的接口**（其 terms 明确对外商业用途需授权，且用户要的是自己做一个）
+  - 不学它的「两次独立打分」与「跨源聚簇」——一天一次 AI 调用是硬约束，那两步会让成本翻倍
+  - 学它的日报成刊与「同一来源只算一次」的热度纪律
+  - 存储**不进 `knowledge_entries`**：新闻是会过期的流，塞进去会让全文检索被每日新闻淹没
+  - 放进 `paideia-ai/internal/digest`，不新建 Maven 模块——WORK-025 已在同模块跑通「抓取 + 定时 + AI + 写库」全套
+- 实测结论（本机 + codenest-online 双端）：
+  - **可用**：HN Algolia（字段全）、arXiv API（200/9476B 双端）、量子位 RSS（10 条但无正文）、IT 之家 RSS（60 条）、InfoQ（20 条带正文）、掘金、开源中国、OpenRouter models（470 个含 pricing）
+  - **可用但不稳**：`github.com/trending` 本机三次连接被拒、生产 200/593KB 且 12 行可解析 ⇒ **必须有 Search API 兜底**
+  - **不可用**：HF daily_papers（双端超时）、arXiv RSS（892B 空壳）、机器之心（302 到数据页）、Solidot（403）、LMArena（超时）、Product Hunt（TLS 吊销检查失败）
+  - GitHub 匿名限额实测：search 10/分、core 60/时
+  - 热榜解析陷阱：`href="/([^"]+)"` 会先撞赞助商链接，**必须先定位 `<h2>` 块**
+- 成本估算：三组源约 40–60 条候选，**单日一次调用约 1.2 万 token**；照面经「每条一次」的形态会贵约 30 倍
+- 验证：`project-lifecycle.ps1 validate` → WORK-027 无错误、无警告
+- 本地提交：未提交
+- 远端推送：未推送
+- **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-01..Q-06 与扩展点取舍待用户裁
+
+## 2026-10-20 追加 · WORK-027 · 用户裁决四项 + GitHub token
+
+- 类型：requirements
+- 变更：`requirements.md` 从「6 个待确认问题」收敛为「2 个仍待确认」；新增 D-05..D-11、I-12..I-14、REQ-011、AC-010/011；扩展点表移入 `research.md` 第六节（工件超 20000 字节软阈值的分诊）
+- 用户裁决：
+  - **D-05 首批三组源**（「可以对」）：前沿新闻（量子位 + IT 之家 + InfoQ）+ GitHub 每日热榜 + HN 前 10；arXiv 与 OpenRouter 二期
+  - **D-06 入口放导航栏**（「入口可以新增导航栏」）
+  - **D-07 内容直出**（「内容直出吧」）⇒ 配套新增 I-12 + REQ-011 + AC-010：**管理端按日期查看并删除单条**，否则一条脏数据只能进数据库删
+  - **D-08 硬依赖 WORK-025**（「肯定是 要等 25 做完的对吧」）⇒ frontmatter 由 `related_to` 改为 `depends_on: [WORK-025]`
+  - **D-09 要配 GitHub token**（「其实可以配置我的啊，你看看 gh 是有的，你给我放进去就可以了吧」）
+  - D-10 不做今日综述、D-11 历史永久保留：用户未反对默认值
+- 决策：
+  - **GitHub token 是可选增强，不是硬依赖**（I-13/AC-011）：未配置时退回匿名（60/时），功能不降级
+  - **有 token 时主通路改为 Search API，页面解析降为兜底**（I-14）：限额 5000/时后没必要依赖会随改版坏掉的解析器
+- 已核实并告知用户的事实（`gh auth status` + `gh api rate_limit` + 匿名对照）：
+  - 本机 `gh` token 类型 **`gho_`**，scopes = `gist, read:org, repo, user, workflow` ⇒ **对名下全部仓库有写权限**
+  - 限额对比：带 token **core 5000/时、search 30/分**；匿名 **core 60/时、search 10/分**
+  - 已建议改用 fine-grained token（Public repositories read-only、权限全空），**限额完全相同**，差别只在泄露后的影响面；用户尚未回复这一条（Q-07）
+- 验证：`project-lifecycle.ps1 validate` → WORK-027 只剩一条**预期内的硬依赖门**（WORK-025 未完成），无其它错误与警告；`requirements.md` 从 22677 → **19934 字节**
+- 本地提交：未提交
+- 远端推送：未推送
+- **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-02（扩展点取舍）与 Q-07（token 形态）待用户答；WORK-025 前端入口未补，本项不得开工
+
+## 2026-10-20 · WORK-028 运维监控面板 · 建项
+
+- 类型：requirements
+- 变更：新建 `.agent/changes/WORK-028-运维监控面板/requirements.md`（draft，21 REQ / 8 AC / 13 条扩展点候选 / 8 个待确认问题）
+- 决策：
+  - 落点是**管理端一页**，不是独立监控站；C 方案（Prometheus+Grafana）与 B 方案（Spring Boot Admin）各自覆盖不到用户点名的 MySQL/Redis/Laya/Docker/systemd，推荐 A（自建只读采集 + 一页）
+  - **只读是硬约束**：不提供任何重启/停止/清理动作。明文 HTTP 下后台口令是唯一门槛，一个误点就是全站宕机
+  - 取不到数据必须显示「未知」，不许画成 0 或「正常」；每项异常给一句人话原因
+  - 不重做 WORK-022 的 AI 统计，运维页只放跳转
+- 线上只读实测（codenest-online，2026-10-20）：
+  - 六个 systemd 单元 + 七个 Docker 容器全部 active；`paideia` 以 **root** 运行（unit 无 `User=`），JVM RSS 435MB
+  - **Laya 内存 2.55G / 上限 3G（85%）**，离 OOM 只剩 0.45G，OOM 后静默降级成规则判断
+  - **Redis 装着、开着、`DBSIZE`=0、后端 pom/yml 零引用**——这是个没人用的服务
+  - **MySQL `slow_query_log` = OFF**，慢查询今天无法观测
+  - Docker 镜像 8.346GB / **6.176GB（74%）可回收**，无人可见
+  - **零备份**：`crontab -l` 为空、`/etc/cron.d/` 无备份任务、`scripts/` 无备份脚本，库仅 2.2MB
+  - `/actuator/health` 200 UP；`/actuator/metrics` 401（metrics 已 include 但被 Security 挡住）
+  - 库总大小 2.2MB，最大表 `refresh_tokens` 0.3MB/731 行 ⇒ 加一张每分钟采样的时序表压力可忽略
+- 依据：用户「我想在我的后台加一个运维的功能，你感觉可以吗，你可以新开一个 work 然后这个运维 就是各种服务监控指标，然后包括说我们中间件的，比如说 mysql redis 然后还有我们部署的那个 laya 是不是也需要呢。，还有什么呢可以想想」
+- 验证：`project-lifecycle.ps1 validate .` → WORK-028 无错误、无警告（同次运行里 WORK-027 → WORK-025 的硬依赖错误为既有问题，非本项引入）
+- 本地提交：未提交
+- 远端推送：未推送
+- **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-01（技术路线）、Q-02（是否存时序）、Q-05（备份是否单独立项）待用户裁
+
+## 2026-10-20 追加 · WORK-027 · 四条扩展点入一期 + 四件工件齐备
+
+- 类型：design
+- 用户裁决（本轮）：
+  - **X-04 社区热帖 / X-05 周报 / X-06 按身份筛源 / X-08 转笔记 四项全加**（原话「这几个加上呗」）⇒ D-12..D-15、REQ-012..REQ-015、AC-012..016
+  - **Q-07 token 形态选 A**（原话「A. 用现在 gh 里那个，我从 gh 取出来，写进服务器的 application-local.yml」）⇒ D-16
+- 变更：
+  - `requirements.md` 重写：11 REQ → **15 REQ**、9 AC → **16 AC**；`mode_reason` 补「两张新表」；决策表扩到 D-16；实现选择扩到 I-16
+  - `research.md` 新增第五节「决策痕迹」（九个问题的答复原文 + Q-07 选 A 的风险留档）、第六节改为「扩展点裁决结果」（8 条逐条标已选/未选 + 四条落地要点）
+  - **新起草 `proposal.md` / `design.md` / `tasks.md`**（均 `status: draft`）
+- 设计要点（新增四项的落地方式）：
+  - **X-05 周报必须单独建表** `digest_weeklies`（I-03）：周报是不可从条目行推导的一段叙述；与「日报不建表」不矛盾
+  - **X-06 放前端**（I-15）：加 `identity` 配置项 `digestGroups`；后端不感知身份。**AC-014 明确写「数据一条不少地存在于库中，只是展示不同」**，防止将来被误实现成服务端过滤
+  - **X-08 纯前端**（I-16）：带参跳到 `/notes/new` 预填，不需要新后端接口，本项不依赖笔记模块
+  - **X-04 独立成第四组**，不与门户新闻合并：两者调性与量级不同
+  - 数据模型定为两张表；`digest_items.fingerprint` 建**全局唯一**（新闻的重复是跨源而非同分类）
+  - 一次 AI 调用改**按指纹回填**而非顺序对齐——模型可能少返回条目，顺序对齐会静默错位
+- 风险留档：Q-07 选 A 后，带 `repo` 写权限的 `gho_` token 将落到 codenest-online 的 `application-local.yml`。已在 research.md 写明「用户已明确选择，不再重复询问」，并记下「若进日志/提交立即轮换」
+- 验证：`project-lifecycle.ps1 validate` → WORK-027 报两条**预期内**的门：① 硬依赖 WORK-025 未完成 ② 需求未签署但已存在下游工件（proposal/design/tasks 均为 draft）
+- 本地提交：见本轮 commit
+- 远端推送：未推送
+- **仍未做**：四件工件全部未签署（签署只能由 `approve` 命令写入，Agent 不得代签）；WORK-025 前端入口未补，本项不得开工
+
+## 2026-10-20 15:35:39 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-025-八股文专区/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-025-八股文专区/requirements.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 · WORK-025 · 八股文专区实施（抓取→过滤→抽题→入库全链路）
+
+- 类型：implementation
+- 变更：
+  - **迁移 V24**：`knowledge_entries` 加 `source_url` / `fingerprint` 两列 + `(category_id, fingerprint)` 索引；幂等插入 `essay-java` 分类
+  - **knowledge 模块**：`Entry` 加两字段；`EntryMapper.insert` 带新列、新增 `findIdByFingerprint`；`KnowledgeApi.createCollected`（default 实现抛 UnsupportedOperationException）；`CategoryNode` 加 `slug`（供按稳定标识定位分类）；`EntryDetail` 加 `sourceUrl`
+  - **ai 模块 `internal/essay/`**：`EssaySource` 端口 + `NowcoderEssaySource`（实测通路）、`EssayExtractionPrompt`、`EssayQuestionParser`、`EssayExtractor`、`EssayCollectionService`（编排）、`EssayCollectionJob`（`@Scheduled` fixedDelay 24h）、`EssayProperties`、`EssayConfiguration`（条件装配）
+  - **前端**：`EntryDetail.sourceUrl` 可选字段；条目详情页加「题目来源：原帖」外链（`rel="noreferrer noopener"`）
+  - **测试**：`EssayQuestionParserTest`(8) + `EssayFingerprintTest`(4) + `EssayCollectionIntegrationTest`(3)
+- 决策：
+  - **编排放 `ai` 模块而不是 `knowledge`**：依赖方向是 `ai → knowledge`，反过来会成环。写入走 `KnowledgeApi.createCollected`，等价于"knowledge 提供写入能力、ai 负责编排"
+  - **Q4 先进草稿**（`publish-directly: false`）：无人值守自动入库，先让人过一眼更稳
+  - **Q5 挂知识库分类**而非独立 `/essays` 入口：零成本复用全部渲染与自检
+  - **Q6 不额外接掌握度**：`learning_progress` 按 entry_id 记，抓来的条目天然可自评
+  - **Q7 不建「平台精讲」分类**：没有内容来源，空分类出现在导航里比没有更糟
+  - **不扣用户积分**：抓取解析是平台行为、无 userId 归属，走 `CredentialService.access()` 直接调用。代价是这部分成本不在产品积分面板里可见
+  - **按题目指纹去重而非按帖子**：同一道题会在不同面经反复出现
+- **实测倒逼的关键修正（提示词与 token 预算）**：
+  - 原提示词"抽出所有题目、每篇解析 200~600 字"→ **4096 tokens 输出被截断**（`Unterminated string`），提到 8192 **同样被吃满**
+  - 根因：deepseek-flash 默认思考，思考 token 与正文共用 `max_tokens`
+  - 修法：**提示词压到"只挑 1 道题、解析 150~300 字"** + `MAX_TOKENS=16384` 留余量
+  - 修正后实测：**4.1s / 输出 665 tokens / finish=stop / 抽出 1 题 / 解析 466 字**，JSON 合法
+- 端到端实测（codenest-online）：
+  - 牛客接口重启后仍通（200 / 0.54s / total 2000），当日有 4 条新帖
+  - 抓 14 篇 → 规则直判技术帖 2 篇（得物长沙后端一面 hits=8、拼多多服务端 hits=5）
+  - 决策模型对首条 P(tech)=0.829（technical）
+  - AI 抽题成功并产出可发布内容
+- 验证：
+  - `mvn -pl paideia-ai,paideia-knowledge -am test`：**148 运行 / 0 失败 / 3 跳过**（跳过的是 `LayaContentClassifierLiveTest`）
+  - `EssayCollectionIntegrationTest` **3/3 通过**（V24 两列可写、指纹去重生效、分类 slug 可定位）
+  - `@paideia/knowledge` 类型检查通过
+  - **注意**：`@paideia/app` 的 typecheck 因 `HomePage.tsx` 报语法错而失败——那是**别的会话在飞的改动**（`M` 状态），与本次无关
+- 本地提交：未提交
+- 远端推送：未推送
+- **仍未做**：① 定时任务未在生产启用（`enabled: false`）；② 未做 e2e 覆盖「从专区点进去看到条目」；③ 「平台精讲」未建
+
+## 2026-10-20 15:36:46 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-025-八股文专区/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-025-八股文专区/proposal.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 15:36:51 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-025-八股文专区/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-025-八股文专区/design.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 15:36:57 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-025-八股文专区/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-025-八股文专区/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-20 15:42:28 +0800 · WORK-028 · 签署 .agent/changes/WORK-028-运维监控面板/requirements.md、.agent/changes/WORK-028-运维监控面板/proposal.md、.agent/changes/WORK-028-运维监控面板/design.md、.agent/changes/WORK-028-运维监控面板/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-028-运维监控面板/requirements.md、.agent/changes/WORK-028-运维监控面板/proposal.md、.agent/changes/WORK-028-运维监控面板/design.md、.agent/changes/WORK-028-运维监控面板/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-028-运维监控面板/requirements.md、.agent/changes/WORK-028-运维监控面板/proposal.md、.agent/changes/WORK-028-运维监控面板/design.md、.agent/changes/WORK-028-运维监控面板/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

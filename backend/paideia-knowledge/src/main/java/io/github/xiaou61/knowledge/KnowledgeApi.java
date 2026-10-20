@@ -59,12 +59,50 @@ public interface KnowledgeApi {
         return "";
     }
 
+    /**
+     * 写入一条**自动采集**的条目（WORK-025）。
+     *
+     * <p>与 {@link #findPublishedContent} 方向相反：那条只读、只给已发布；这条只写、只服务抓取任务。
+     * 做成独立方法而不是复用管理端写用例，是因为自动采集有两个管理端没有的约束：
+     * <ol>
+     *   <li><b>按指纹去重</b>：同一道题会在不同面经里反复出现，重复插入等于每天制造重复内容。
+     *       指纹命中时返回 {@code created=false}，不写库。</li>
+     *   <li><b>状态由调用方定</b>：抓来的内容先进草稿还是直接发布是产品决定，不在这里写死。</li>
+     * </ol>
+     *
+     * <p>**不做鉴权**：这是模块间调用，不是 HTTP 入口。
+     *
+     * <p>默认实现抛 {@link UnsupportedOperationException}：与 {@link #learningSummary} 同为
+     * "可选能力"——只在真有抓取任务的部署里被调用。给默认实现是为了不让测试桩与其它实现
+     * 被迫写一个它们不关心的空方法；真被调用到说明装配错了，应当立刻炸而不是静默成功。
+     */
+    default CreateOutcome createCollected(CollectedEntry input) {
+        throw new UnsupportedOperationException("本实现不支持自动采集写入");
+    }
+
+    /** 一条自动采集条目的写入输入。 */
+    record CollectedEntry(
+            String title,
+            String body,
+            long categoryId,
+            /** draft | published */
+            String status,
+            /** 题目指纹：规范化后的题目文本，用于跨帖跨天去重 */
+            String fingerprint,
+            /** 原始来源链接（原帖地址）；平台自产内容为 null */
+            String sourceUrl) {
+    }
+
+    /** 写入结果：新建了还是已存在（已存在时给出原 id）。 */
+    record CreateOutcome(long entryId, boolean created) {
+    }
+
     /** 检索结果行：只要 id 与标题；正文由 {@link #findPublishedContent} 另取。 */
     record EntryBrief(long id, String title) {
     }
 
-    /** 分类节点。 */
-    record CategoryNode(long id, String name, Long parentId) {
+    /** 分类节点。`slug` 供按稳定标识查找（WORK-025 的抓取要按 slug 定位分类）。 */
+    record CategoryNode(long id, String name, String slug, Long parentId) {
     }
 
     /** 「我标记过的条目」。`level` 懂／还不懂的取值透传，语义不在这里定义。 */
