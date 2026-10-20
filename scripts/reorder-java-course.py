@@ -1,8 +1,12 @@
-"""重排 Java 课程编号与前置链（WORK-024）。
+"""重排 Java 课程编号、章节与前置链（WORK-024）。
 
-一次性脚本：把新增关卡插到正确位置，并把 order / prerequisite / title 一起改掉。
+**为什么要有这个脚本**：关卡顺序是"内容决策"（哪个知识点先讲），而文件名前缀、
+frontmatter 的 order、title 里的编号、prerequisite 的课名四者必须同步改。
+手动改四遍必然漏一处，漏了的表现是地图顺序错乱或前置指向不存在的课。
 
-用法：python scripts/reorder-java-course.py
+用法：
+    1. 改下面的 ORDER（按真实讲课顺序列文件名，不带编号前缀也行）
+    2. python scripts/reorder-java-course.py
 """
 
 import glob
@@ -12,26 +16,34 @@ import re
 
 BASE = 'content/courses/java'
 
-# 新顺序（文件名前缀决定顺序，order 与 title 里的编号跟着改）
+# 讲课顺序。第二列是章节分组。
+# 新增内容时插到正确位置即可，编号、title、prerequisite 全部自动重算。
 ORDER = [
-    ('00-总览.md', '入门'),
-    ('01-编译运行与变量.md', '基础语法'),
-    ('02-运算符与条件.md', '基础语法'),
-    ('03-循环与方法.md', '基础语法'),
-    ('04-数组与字符串.md', '基础语法'),
-    ('05-类与对象.md', '面向对象'),
-    ('06-static与值传递.md', '面向对象'),
-    ('07-继承多态与接口.md', '面向对象'),
-    ('08-集合与泛型.md', '进阶'),
-    ('09-字符串深入.md', '进阶'),
-    ('10-异常.md', '进阶'),
-    ('11-文件IO.md', '进阶'),
-    ('12-测试与构建.md', '工程实践'),
-    ('13-小项目与并发入门.md', '工程实践'),
+    ('总览', '入门'),
+    ('编译运行与变量', '基础语法'),
+    ('运算符与条件', '基础语法'),
+    ('循环与方法', '基础语法'),
+    ('数组与字符串', '基础语法'),
+    ('类与对象', '面向对象'),
+    ('static与值传递', '面向对象'),
+    ('继承多态与接口', '面向对象'),
+    ('集合与泛型', '进阶'),
+    ('字符串深入', '进阶'),
+    ('包装类与装箱', '进阶'),
+    ('equals与hashCode', '进阶'),
+    ('异常', '进阶'),
+    ('文件IO', '进阶'),
+    ('测试与构建', '工程实践'),
+    ('小项目与并发入门', '工程实践'),
 ]
 
 
-def parse(path):
+def strip_number(name):
+    """去掉 `NN-` 前缀，留下说明部分（不含 .md）。"""
+    return re.sub(r'^\d+-', '', name)[:-3]
+
+
+def read_parts(path):
     text = io.open(path, encoding='utf-8').read()
     lines = text.split('\n')
     end = lines.index('---', 1)
@@ -39,66 +51,59 @@ def parse(path):
 
 
 def main():
-    # 先把文件名归位（当前状态可能已被人手动动过）
-    existing = {os.path.basename(p) for p in glob.glob(f'{BASE}/*.md')}
-    for target, _ in ORDER:
-        if target in existing:
+    # ── 1) 文件名归位：按 ORDER 顺序逐个找"去掉编号后同名"的文件，改成目标前缀 ──
+    files = [os.path.basename(p) for p in glob.glob(f'{BASE}/*.md')]
+    for index, (stem, _) in enumerate(ORDER):
+        target = f'{index:02d}-{stem}.md'
+        if target in files:
             continue
-        # 找"去掉编号后同名"的文件，改成目标名
-        stem = re.sub(r'^\d+-', '', target)
-        for name in list(existing):
-            if re.sub(r'^\d+-', '', name) == stem:
-                os.rename(f'{BASE}/{name}', f'{BASE}/{target}')
-                existing.discard(name)
-                existing.add(target)
-                print('rename', name, '->', target)
-                break
+        match = next((f for f in files if strip_number(f) == stem), None)
+        if match is None:
+            print(f'! 找不到与「{stem}」对应的文件')
+            continue
+        os.rename(f'{BASE}/{match}', f'{BASE}/{target}')
+        files.remove(match)
+        files.append(target)
 
-    titles = {}
-    for index, (name, chapter) in enumerate(ORDER):
-        path = f'{BASE}/{name}'
+    # ── 2) 先把每课的标题主体算出来（不含编号），后面互相引用要用 ──
+    body_titles = {}
+    for index, (stem, _) in enumerate(ORDER):
+        path = f'{BASE}/{index:02d}-{stem}.md'
         if not os.path.exists(path):
-            print('missing', name)
             continue
-        fm, rest, _ = parse(path)
-        lines = []
-        for line in fm:
-            if line.startswith('order:'):
-                lines.append(f'order: {index}')
-            elif line.startswith('chapter:'):
-                lines.append(f'chapter: {chapter}')
-            else:
-                lines.append(line)
-        # 前面几课没有 chapter 行，补上
-        if not any(l.startswith('chapter:') for l in lines):
-            pos = next(i for i, l in enumerate(lines) if l.startswith('order:'))
-            lines.insert(pos + 1, f'chapter: {chapter}')
-        io.open(path, 'w', encoding='utf-8').write('\n'.join(['---'] + lines + rest))
-        titles[index] = next(l.split('title: ', 1)[1] for l in lines if l.startswith('title: '
-                          .strip()) or l.startswith('title:'))
-
-    # 第二遍：title 里的编号与 prerequisite 一起改（要等所有 title 都定下来）
-    for index, (name, _) in enumerate(ORDER):
-        path = f'{BASE}/{name}'
-        fm, rest, _ = parse(path)
-        new_title = None
+        fm, _, _ = read_parts(path)
         for line in fm:
             if line.startswith('title:'):
                 raw = line.split('title:', 1)[1].strip()
-                stripped = re.sub(r'^\d+\s*·\s*', '', raw)
-                new_title = f'title: {index:02d} · {stripped}'
-        lines = []
+                body_titles[index] = re.sub(r'^\d+\s*·\s*', '', raw)
+
+    # ── 3) 改写 order / chapter / title / prerequisite ──
+    for index, (stem, chapter) in enumerate(ORDER):
+        path = f'{BASE}/{index:02d}-{stem}.md'
+        if not os.path.exists(path):
+            continue
+        fm, rest, _ = read_parts(path)
+        out = []
+        seen = set()
         for line in fm:
-            if line.startswith('title:') and new_title:
-                lines.append(new_title)
-            elif line.startswith('prerequisite:'):
-                if index == 0:
-                    continue
-                lines.append(f'prerequisite: {titles.get(index - 1, "").split("· ", 1)[-1]}')
-            else:
-                lines.append(line)
-        io.open(path, 'w', encoding='utf-8').write('\n'.join(['---'] + lines + rest))
-        print(f'{index:02d}', name)
+            key = line.split(':', 1)[0]
+            if key in ('order', 'chapter', 'prerequisite'):
+                continue          # 稍后按位置重建
+            if key == 'title':
+                out.append(f'title: {index:02d} · {body_titles[index]}')
+                out.append(f'order: {index}')
+                out.append(f'chapter: {chapter}')
+                if index > 0:
+                    out.append(f'prerequisite: {body_titles[index - 1]}')
+                seen.update(('title', 'order', 'chapter', 'prerequisite'))
+                continue
+            out.append(line)
+        missing = {'title', 'order', 'chapter'} - seen
+        if missing:
+            print(f'! {stem} 缺少 {missing}')
+            continue
+        io.open(path, 'w', encoding='utf-8').write('\n'.join(['---'] + out + rest))
+        print(f'{index:02d} {stem}（{chapter}）')
 
 
 main()

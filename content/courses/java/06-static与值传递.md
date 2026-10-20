@@ -1,10 +1,10 @@
 ---
 title: 06 · static 与值传递
-category: java-from-zero
 order: 6
 chapter: 面向对象
-minutes: 26
 prerequisite: 类与对象
+category: java-from-zero
+minutes: 26
 status: published
 ---
 
