@@ -1,0 +1,79 @@
+package io.github.xiaou61.knowledge.internal.track;
+
+import java.time.Instant;
+import java.util.List;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+/**
+ * 学习轨道的读写（WORK-024）。
+ *
+ * <p>**只读**：轨道与关卡由内容导入脚本（`scripts/import-course.mjs`）写入，
+ * 学习者端不需要写它们。管理端维护是以后的事，本项不做——见 tasks 的非目标。
+ */
+@Mapper
+public interface TrackMapper {
+
+    @Select("""
+            SELECT id, slug, name, summary, kind, sort_order
+            FROM learning_tracks
+            ORDER BY sort_order, id
+            """)
+    List<Track> findAll();
+
+    @Select("""
+            SELECT id, slug, name, summary, kind, sort_order
+            FROM learning_tracks WHERE slug = #{slug}
+            """)
+    Track findBySlug(@Param("slug") String slug);
+
+    /**
+     * 一条轨道的全部关卡，按 seq。
+     *
+     * <p>连条目一起取（标题要显示在地图上），**不取正文**：地图页不需要正文，
+     * 一次拉几十篇正文会白占带宽；正文在进关卡时单独取。
+     */
+    @Select("""
+            SELECT s.id, s.track_id, s.entry_id, s.seq, s.chapter, s.requires_entry_id,
+                   e.title
+            FROM learning_track_stages s
+            JOIN knowledge_entries e ON e.id = s.entry_id
+            WHERE s.track_id = #{trackId}
+            ORDER BY s.seq
+            """)
+    List<Stage> findStages(@Param("trackId") long trackId);
+
+    @Insert("""
+            INSERT INTO learning_tracks (slug, name, summary, kind, sort_order, created_at, updated_at)
+            VALUES (#{slug}, #{name}, #{summary}, #{kind}, #{sortOrder}, #{now}, #{now})
+            ON DUPLICATE KEY UPDATE
+                name = VALUES(name), summary = VALUES(summary), kind = VALUES(kind),
+                sort_order = VALUES(sort_order), updated_at = VALUES(updated_at)
+            """)
+    int upsertTrack(@Param("slug") String slug, @Param("name") String name,
+                    @Param("summary") String summary, @Param("kind") String kind,
+                    @Param("sortOrder") int sortOrder, @Param("now") Instant now);
+
+    @Insert("""
+            INSERT INTO learning_track_stages
+                (track_id, entry_id, seq, chapter, requires_entry_id, created_at)
+            VALUES (#{trackId}, #{entryId}, #{seq}, #{chapter}, #{requiresEntryId}, #{now})
+            ON DUPLICATE KEY UPDATE
+                seq = VALUES(seq), chapter = VALUES(chapter),
+                requires_entry_id = VALUES(requires_entry_id)
+            """)
+    int upsertStage(@Param("trackId") long trackId, @Param("entryId") long entryId,
+                    @Param("seq") int seq, @Param("chapter") String chapter,
+                    @Param("requiresEntryId") Long requiresEntryId, @Param("now") Instant now);
+
+    /** 一条轨道：路径标识、名字、一句话介绍。 */
+    record Track(long id, String slug, String name, String summary, String kind, int sortOrder) {
+    }
+
+    /** 一个关卡：地图上的一格。 */
+    record Stage(long id, long trackId, long entryId, int seq, String chapter, Long requiresEntryId,
+                 String title) {
+    }
+}

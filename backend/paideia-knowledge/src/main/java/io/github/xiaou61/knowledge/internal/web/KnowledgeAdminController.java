@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,22 +46,66 @@ class KnowledgeAdminController {
     private final EntryAdminService entryAdminService;
     private final RelationAdminService relationAdminService;
     private final ConceptAdminService conceptAdminService;
+    private final io.github.xiaou61.knowledge.internal.track.TrackMapper trackMapper;
 
     KnowledgeAdminController(CategoryService categoryService,
                              CategoryAdminService categoryAdminService,
                              EntryAdminService entryAdminService,
                              RelationAdminService relationAdminService,
-                             ConceptAdminService conceptAdminService) {
+                             ConceptAdminService conceptAdminService,
+                          io.github.xiaou61.knowledge.internal.track.TrackMapper trackMapper) {
         this.categoryService = categoryService;
         this.categoryAdminService = categoryAdminService;
         this.entryAdminService = entryAdminService;
         this.relationAdminService = relationAdminService;
         this.conceptAdminService = conceptAdminService;
+        this.trackMapper = trackMapper;
+    }
+
+    /**
+     * 导入脚本写轨道与关卡用（WORK-024）。
+     *
+     * <p>**只有这一个写入口**，而且它只做 upsert：轨道与关卡是内容的一部分，
+     * 随 markdown 一起进版本库，不由人在管理端手点。管理端维护界面本项不做。
+     */
+    @PostMapping("/tracks")
+    ApiResponse<Void> upsertTrack(@Valid @RequestBody TrackRequest body) {
+        Instant now = Instant.now();
+        trackMapper.upsertTrack(body.slug(), body.name(), body.summary(), body.kind(),
+                body.sortOrder() == null ? 100 : body.sortOrder(), now);
+        io.github.xiaou61.knowledge.internal.track.TrackMapper.Track track =
+                trackMapper.findBySlug(body.slug());
+        if (track == null) {
+            return ApiResponse.ok(null);
+        }
+        if (body.stages() != null) {
+            for (StageRequest stage : body.stages()) {
+                trackMapper.upsertStage(track.id(), stage.entryId(), stage.seq(),
+                        stage.chapter() == null ? "" : stage.chapter(),
+                        stage.requiresEntryId(), now);
+            }
+        }
+        return ApiResponse.ok(null);
+    }
+
+    record TrackRequest(
+            @NotBlank @Size(max = 64) String slug,
+            @NotBlank @Size(max = 128) String name,
+            @Size(max = 500) String summary,
+            /** course / reading */
+            @Size(max = 16) String kind,
+            Integer sortOrder,
+            List<StageRequest> stages) {
+    }
+
+    record StageRequest(long entryId, int seq, @Size(max = 64) String chapter,
+                        Long requiresEntryId) {
     }
 
     @GetMapping("/categories")
     ApiResponse<List<CategoryTree.Node>> categories() {
-        return ApiResponse.ok(categoryService.tree());
+        // 管理端看**全部**：学习轨道下的分类也要能维护（WORK-024）
+        return ApiResponse.ok(categoryService.fullTree());
     }
 
     @PostMapping("/categories")

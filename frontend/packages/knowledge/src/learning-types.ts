@@ -102,3 +102,46 @@ export interface ConceptGraph {
   edges: ConceptEdge[]
   stats: ConceptGraphStats
 }
+
+/**
+ * 学习轨道（WORK-024）。
+ *
+ * <p>与 `LearningLine` 的区别：轨道是**独立实体**，关卡有自己的顺序、章节分组与前置依赖；
+ * 线只是知识库分类的一个标记。用户要求"从零开始不要是知识库"，所以轨道另起一套类型。
+ */
+export interface TrackSummary {
+  id: number
+  slug: string
+  name: string
+  summary: string | null
+  kind: string
+  stageCount: number
+  passedCount: number
+  nextEntryId: number | null
+  nextTitle: string | null
+}
+
+/** 地图上的一格。`locked` 表示前置关卡还没通过。 */
+export interface TrackStage {
+  entryId: number
+  seq: number
+  title: string
+  status: 'done' | 'current' | 'locked'
+  /** 前置关卡的 entryId；前端据此画连线。 */
+  requiresEntryId: number | null
+}
+
+export interface TrackChapter {
+  chapter: string
+  stages: TrackStage[]
+}
+
+export interface TrackMap {
+  id: number
+  slug: string
+  name: string
+  summary: string | null
+  chapters: TrackChapter[]
+  stageCount: number
+  passedCount: number
+}

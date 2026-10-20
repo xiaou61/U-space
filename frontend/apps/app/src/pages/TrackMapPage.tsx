@@ -1,0 +1,169 @@
+import { createLearningApi, type TrackStage } from '@paideia/knowledge'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  AppShell,
+  Card,
+  CardContent,
+  PageHeader,
+  Spinner,
+} from '@paideia/ui'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Check, Lock, Play } from 'lucide-react'
+import { Link, useParams } from 'react-router'
+
+import { api } from '../api'
+import { LearnerHeader } from '../components/LearnerHeader'
+
+const learning = createLearningApi(api)
+
+/**
+ * 一条轨道的关卡地图（WORK-024）。
+ *
+ * <p><b>形态是关卡，不是列表</b>：每一关是一格，格与格之间用连线表达先后；三种状态
+ * 一眼可辨——已通关（实心 + 对勾）、当前可进（高亮 + 播放）、被前置锁住（灰 + 锁）。
+ * 用户要的就是"闯关/图谱"这种感觉，而不是又一张文章列表。
+ *
+ * <p>**连线用 CSS 画，不引图库**：依赖图只有"上一关 → 这一关"这一种形状（轨道是有序的），
+ * 为它引入 sigma/graphology 是几十 KB 换个直上直下的竖线。
+ *
+ * <p>章节按服务端给的分组显示；没有章节名的（空串）不显示标题。
+ */
+export function TrackMapPage() {
+  const { slug = '' } = useParams<{ slug: string }>()
+  const map = useQuery({
+    queryKey: ['learning-track', slug],
+    queryFn: () => learning.trackMap(slug),
+    enabled: slug !== '',
+  })
+
+  return (
+    <AppShell title="Paideia" actions={<LearnerHeader />}>
+      <div className="mb-4">
+        <Link
+          to="/learn"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+          data-testid="back-to-tracks"
+        >
+          <ArrowLeft className="size-4" />
+          全部轨道
+        </Link>
+      </div>
+
+      {map.isPending ? (
+        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+          <Spinner />
+          加载关卡…
+        </p>
+      ) : null}
+
+      {map.isError ? (
+        <Alert variant="destructive">
+          <AlertTitle>这条轨道打不开</AlertTitle>
+          <AlertDescription>{(map.error as Error).message}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {map.isSuccess ? (
+        <>
+          <PageHeader
+            eyebrow={`${map.data.stageCount} 关 · 已通关 ${map.data.passedCount}`}
+            title={map.data.name}
+            description={map.data.summary ?? '沿着下面的关卡一关一关往下走。'}
+          />
+
+          <div className="space-y-6" data-testid="track-map">
+            {map.data.chapters.map((chapter, chapterIndex) => (
+              <section key={`${chapter.chapter}-${chapterIndex}`}>
+                {chapter.chapter === '' ? null : (
+                  <h2 className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
+                    {chapter.chapter}
+                  </h2>
+                )}
+                <ol className="space-y-0">
+                  {chapter.stages.map((stage, index) => (
+                    <li key={stage.entryId} className="relative">
+                      {/* 连线：从上一格底部到这一格顶部。第一格不画。 */}
+                      {index > 0 ? (
+                        <span
+                          aria-hidden
+                          className="bg-border absolute top-0 left-[19px] h-6 w-px -translate-y-full"
+                        />
+                      ) : null}
+                      <StageCell stage={stage} slug={slug} />
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </AppShell>
+  )
+}
+
+/** 一格关卡。三种状态各有不同的图标、颜色与可点性。 */
+function StageCell({ stage, slug }: { stage: TrackStage; slug: string }) {
+  const done = stage.status === 'done'
+  const locked = stage.status === 'locked'
+
+  const icon = done ? (
+    <Check className="size-4" />
+  ) : locked ? (
+    <Lock className="size-4" />
+  ) : (
+    <Play className="size-4" />
+  )
+
+  const circle = done
+    ? 'bg-success text-success-foreground'
+    : locked
+      ? 'bg-muted text-muted-foreground border-border border'
+      : 'bg-primary text-primary-foreground'
+
+  const body = (
+    <>
+      <span
+        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${circle}`}
+        data-testid={`stage-state-${stage.seq}`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block text-sm ${locked ? 'text-muted-foreground' : 'font-medium'}`}>
+          {stage.seq}. {stage.title}
+        </span>
+        <span className="text-muted-foreground mt-0.5 block text-xs">
+          {done ? '已通关' : locked ? '通过上一关后解锁' : '可以开始'}
+        </span>
+      </span>
+    </>
+  )
+
+  const className =
+    'flex items-center gap-3 rounded-lg border px-3 py-3 transition-colors ' +
+    (locked
+      ? 'border-border bg-card/50 cursor-not-allowed'
+      : 'border-border bg-card hover:border-primary/40')
+
+  // 锁住的关卡不给链接：点了也不该有反应，改成不可点的 div 更诚实
+  if (locked) {
+    return (
+      <div className={className} data-testid={`stage-${stage.seq}`} data-status="locked" aria-disabled>
+        {body}
+      </div>
+    )
+  }
+  return (
+    <Link
+      to={`/knowledge/entries/${stage.entryId}`}
+      className={className}
+      data-testid={`stage-${stage.seq}`}
+      data-status={stage.status}
+    >
+      {body}
+    </Link>
+  )
+}

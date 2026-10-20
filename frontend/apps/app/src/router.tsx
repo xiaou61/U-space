@@ -7,6 +7,7 @@ import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
 import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LearnPage } from './pages/LearnPage'
+import { TrackMapPage } from './pages/TrackMapPage'
 import { LoginPage } from './pages/LoginPage'
 import { InterviewPage } from './pages/InterviewPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -54,12 +55,20 @@ export const router = createHashRouter([
       </RequireAuth>
     ),
   },
-  // 学习线首页（WORK-020）：卡片由服务端返回的线清单渲染，加一门语言不改这里。
+  // 从零开始（WORK-024）：轨道列表 → 关卡地图。**与知识库无关的独立入口**。
   {
     path: '/learn',
     element: (
       <RequireAuth>
         <LearnPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/learn/:slug',
+    element: (
+      <RequireAuth>
+        <TrackMapPage />
       </RequireAuth>
     ),
   },

@@ -1,6 +1,6 @@
 import type { ApiClient } from '@paideia/core'
 
-import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport } from './learning-types'
+import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport, TrackMap, TrackSummary } from './learning-types'
 
 /**
  * 学习线 / 学习记录的客户端（WORK-020）。
@@ -33,6 +33,13 @@ export function createLearningApi(client: ApiClient) {
 
     /** 我的知识图谱（WORK-021）。掌握度是服务端现算的，前端不缓存也不推导。 */
     graph: () => client.requestEnvelope<ConceptGraph>('/api/v1/learning/graph'),
+
+    /** 学习轨道（WORK-024）。与知识库无关的独立入口。 */
+    tracks: () => client.requestEnvelope<TrackSummary[]>('/api/v1/learn/tracks'),
+
+    /** 一条轨道的关卡地图：按章节分组，每格带 done/current/locked。 */
+    trackMap: (slug: string) =>
+      client.requestEnvelope<TrackMap>(`/api/v1/learn/tracks/${encodeURIComponent(slug)}`),
   }
 }
 

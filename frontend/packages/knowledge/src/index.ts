@@ -58,6 +58,10 @@ export type {
   LineKind,
   MasteryTier,
   ProgressReport,
+  TrackChapter,
+  TrackMap,
+  TrackStage,
+  TrackSummary,
 } from './learning-types'
 export { plainText } from './plain-text'
 export { SelfAssessmentButtons } from './self-assessment'

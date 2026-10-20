@@ -44,6 +44,8 @@ function lineSpecOf(language, lessons) {
   return {
     slug,
     name: meta.line_name ?? overview?.meta.title ?? slug,
+    // 轨道列表卡片上的一句话介绍（WORK-024）
+    summary: meta.line_summary ?? null,
     kind: meta.line_kind ?? 'course',
     sortOrder: Number(meta.line_sort ?? 100),
   }
@@ -213,6 +215,8 @@ async function existingEntries(client) {
 }
 
 async function importLanguage(client, language, lessons, options, allEntries) {
+  // 轨道声明与分类声明同一份来源（课程文件的 frontmatter），这里重算一次而不是传给两层
+  const spec = lineSpecOf(language, lessons)
   const category = await ensureCategory(client, language, lessons, options)
   if (category.id < 0) {
     // dry-run 且分类不存在：把计划打出来就够
@@ -315,7 +319,38 @@ async function importLanguage(client, language, lessons, options, allEntries) {
     }
   }
 
-  return { created: created.length, updated: updates, relations }
+  // 学习轨道（WORK-024）：把这条线登记成一条**轨道 + 关卡序列**。
+  //
+  // 与 WORK-020 的区别：那时线只是分类标记；现在要有自己的顺序、章节与前置依赖，
+  // 才能画成关卡地图。前置默认取"上一关"——轨道是有序的，不需要作者逐关手写 requires。
+  const stageTargets = lessons.map((lesson) => {
+    const match = byTitle.get(lesson.meta.title)
+    const id = match?.id ?? created.find((item) => item.title === lesson.meta.title)?.id
+    return { lesson, entryId: id }
+  }).filter((item) => item.entryId !== undefined)
+
+  const stages = stageTargets.map((item, index) => ({
+    entryId: item.entryId,
+    seq: Number(item.lesson.meta.order ?? index),
+    chapter: item.lesson.meta.chapter ?? '',
+    requiresEntryId: index === 0 ? null : stageTargets[index - 1].entryId,
+  }))
+
+  if (options.dryRun) {
+    console.log(`  [dry-run] 将登记轨道 ${spec.slug}（${stages.length} 关）`)
+  } else if (options.track !== false) {
+    await client.post('/api/v1/knowledge/admin/tracks', {
+      slug: spec.slug,
+      name: spec.name,
+      summary: spec.summary,
+      kind: spec.kind,
+      sortOrder: spec.sortOrder,
+      stages,
+    })
+    console.log(`  ~ 轨道 ${spec.slug}（${stages.length} 关）`)
+  }
+
+  return { created: created.length, updated: updates, relations, stages: stages.length }
 }
 
 async function main() {
@@ -328,7 +363,7 @@ async function main() {
 
   const client = options.dryRun && !process.env.PAIDEIA_ADMIN_USER ? null : await login(options.baseUrl)
   const entries = client ? await existingEntries(client) : []
-  const totals = { created: 0, updated: 0, relations: 0 }
+  const totals = { created: 0, updated: 0, relations: 0, stages: 0 }
 
   for (const [language, lessons] of languages) {
     console.log(`${language}：${lessons.length} 课`)
@@ -342,6 +377,7 @@ async function main() {
     totals.created += result.created
     totals.updated += result.updated
     totals.relations += result.relations
+    totals.stages += result.stages ?? 0
   }
 
   console.log(
