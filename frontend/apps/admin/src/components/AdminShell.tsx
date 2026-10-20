@@ -15,6 +15,7 @@ import {
   Receipt,
   Wallet,
   Activity,
+  Cpu,
   ListOrdered,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -69,6 +70,8 @@ const MENU: MenuItem[] = [
       { to: '/ai-runs/list', label: '调用明细', icon: ListOrdered },
     ],
   },
+  // 运维（WORK-028）：只有一页（摘要卡片 + 完整面板），所以是叶子菜单项而不是父项分组。
+  { to: '/ops/panel', label: '运维', icon: Cpu },
 ]
 
 /** 面包屑：按菜单层级写死的路径（首页固定在最前，不再逐级可点）。 */
@@ -82,6 +85,7 @@ const CRUMBS: Record<string, string[]> = {
   '/ai-credits/audit': ['AI 积分', '用量审计'],
   '/ai-runs/overview': ['AI 调用', '调用概览'],
   '/ai-runs/list': ['AI 调用', '调用明细'],
+  '/ops/panel': ['运维'],
 }
 
 /**

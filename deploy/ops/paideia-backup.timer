@@ -1,0 +1,11 @@
+[Unit]
+Description=每日 03:15 跑一次 Paideia 数据库备份
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+# 机器在 03:15 关机或休眠时，开机后补跑一次——漏一天的备份不该等第二天
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

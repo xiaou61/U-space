@@ -1,0 +1,23 @@
+[Unit]
+Description=mysqld_exporter（MySQL 指标）
+After=network-online.target mysql.service
+
+[Service]
+Type=simple
+User=mysqld_exporter
+Group=mysqld_exporter
+# 凭据从 600 的 my.cnf 读：口令不进命令行、不进 journal。
+# **不要加 EnvironmentFile**：my.cnf 不是 key=value 环境文件，systemd 会因
+# "Failed to load environment files" 直接拒绝启动（这里踩过一次）。
+ExecStart=/usr/local/bin/mysqld_exporter \
+    --config.my-cnf=/etc/paideia-backup/exporter.cnf \
+    --web.listen-address=127.0.0.1:9104
+Restart=on-failure
+RestartSec=5
+MemoryMax=128M
+NoNewPrivileges=true
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

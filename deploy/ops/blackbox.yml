@@ -1,0 +1,20 @@
+# blackbox_exporter 探活模块（WORK-028）。
+#
+# 两个模块各有自己的"什么算通"：
+#   http_2xx —— laya /health、rustfs 健康端点：200 就是通（实测两者都返回 200）
+#   http_401 —— firecrawl 反代：带 token 的 nginx 对匿名请求返回 401。
+#                401 说明「代理活着且能解析到 api 容器」；502 才是 api 挂了
+#                （2026-10-15 真的发生过一次，当时整段 502，只有用户发现抓不到内容才暴露）。
+modules:
+  http_2xx:
+    prober: http
+    timeout: 2s
+    http:
+      preferred_ip_protocol: ip4
+
+  http_401:
+    prober: http
+    timeout: 2s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [401]

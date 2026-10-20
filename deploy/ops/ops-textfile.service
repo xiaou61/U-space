@@ -1,0 +1,10 @@
+[Unit]
+Description=采集 systemd / Docker / 备份状态为 Prometheus textfile
+After=node-exporter.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/paideia-ops/ops-textfile.sh
+# 脚本里要跑 systemctl 与 docker，两者都不重；上限只是防止意外挂死
+MemoryMax=64M
+Nice=15

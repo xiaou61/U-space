@@ -1,0 +1,9 @@
+[Unit]
+Description=每分钟刷新一次运维 textfile 指标
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+
+[Install]
+WantedBy=timers.target

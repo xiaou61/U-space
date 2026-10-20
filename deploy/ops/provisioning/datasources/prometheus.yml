@@ -1,0 +1,17 @@
+# Grafana 数据源（provisioned）。
+#
+# 只读、指向本机 Prometheus。uid 固定，dashboard JSON 靠它引用——
+# 让 Grafana 自己生成 uid 的话，重装后面板就找不到数据源了。
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: paideia-prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      httpMethod: POST

@@ -1,0 +1,24 @@
+[Unit]
+Description=Grafana（Paideia 运维面板）
+After=network-online.target prometheus.service
+
+[Service]
+Type=simple
+User=grafana
+Group=grafana
+# 主配置走 /etc/grafana/grafana.ini；口令等敏感项走 600 的环境文件
+EnvironmentFile=/etc/grafana/grafana.env
+ExecStart=/usr/share/grafana/bin/grafana server \
+    --homepath=/usr/share/grafana \
+    --config=/etc/grafana/grafana.ini
+Restart=on-failure
+RestartSec=5
+MemoryMax=512M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/grafana /var/log/grafana
+
+[Install]
+WantedBy=multi-user.target

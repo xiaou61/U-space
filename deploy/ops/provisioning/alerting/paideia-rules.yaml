@@ -1,0 +1,91 @@
+# 四条告警（WORK-028 REQ-031..033）。
+#
+# 为什么用 Grafana 而不是 Alertmanager：后者要多一个常驻进程与一套分组/抑制/静默配置，
+# 而这里只需要"红了就发一封邮件"。升级触发条件：需要按标签分组去重、抑制、多接收端。
+#
+# 阈值与 application.yml 的 paideia.ops.thresholds 保持一致——两处都改，别只改一处。
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: paideia-ops
+    folder: Paideia
+    interval: 1m
+    rules:
+      # 任何采集目标或探活目标掉线（含 laya / rustfs / firecrawl）
+      - uid: paideia-target-down
+        title: 采集目标下线
+        condition: A
+        for: 2m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: paideia-prometheus
+            model:
+              refId: A
+              instant: true
+              expr: min(up) == 0 or min(probe_success) == 0
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: 有采集目标或外部依赖下线
+          description: 打开运维面板看「采集目标与外部依赖」表，up=0 的那一项就是它。
+
+      # 磁盘可用低于 15%
+      - uid: paideia-disk-low
+        title: 磁盘可用低于 15%
+        condition: A
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: paideia-prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.15
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: 磁盘可用不足 15%
+          description: 现在最可能的吃掉磁盘的是 Docker 镜像（8.35G 中 6.18G 可回收）。
+
+      # 备份超过 36 小时没成功
+      - uid: paideia-backup-stale
+        title: 备份超过 36 小时未成功
+        condition: A
+        for: 10m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: paideia-prometheus
+            model:
+              refId: A
+              instant: true
+              expr: paideia_backup_age_seconds > 36 * 3600 or paideia_backup_success == 0
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: 数据库备份已过期或失败
+          description: 看 journalctl -u paideia-backup。没有备份时，一次误删就是全部内容没了。
+
+      # Laya 内存超过上限 90%（OOM 后静默降级成规则判断）
+      - uid: paideia-laya-memory
+        title: Laya 内存超过上限 90%
+        condition: A
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: paideia-prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                paideia_unit_memory_bytes{unit="laya"} / paideia_unit_memory_max_bytes{unit="laya"} > 0.9
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: Laya 内存贴近上限
+          description: 2026-10-20 常态 85%。超过 90% 后 OOM 会静默降级成规则判断，功能还在但决策模型不在了。

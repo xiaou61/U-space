@@ -1,0 +1,16 @@
+# 让 Grafana 启动时从目录加载 dashboard（WORK-028 I-11）。
+#
+# **为什么是文件而不是在 UI 里点**：点出来的面板只活在 Grafana 的 sqlite 里，
+# 重装或换机就没了，也没法 code review。放成文件之后，面板与阈值改动都进 Git。
+apiVersion: 1
+
+providers:
+  - name: paideia-ops
+    orgId: 1
+    folder: Paideia
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards

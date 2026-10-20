@@ -1,0 +1,34 @@
+# systemd 单元（WORK-028）。安装到 /etc/systemd/system/，脚本与配置到 /opt/paideia-ops/。
+#
+# 三条共同的约束：
+#   * **全部只绑回环**：公网仍只有 8081。运维面不开新端口。
+#   * **各自有 MemoryMax**：这是一台 4 核机，Laya 已经吃到 2.55G/3G，监控不许成为新的 OOM 源。
+#   * **各自的 Restart 独立**：监控崩了不能影响 paideia，反之亦然。
+#
+# exporter 用二进制而非 Docker：这台机器的 Docker 里已经跑了 7 个 firecrawl 容器，
+# 再加四个容器只会让 `docker system df` 更难看；而 exporter 就是单个静态二进制。
+
+[Unit]
+Description=Prometheus（Paideia 运维监控）
+After=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/prometheus \
+    --config.file=/etc/prometheus/prometheus.yml \
+    --storage.tsdb.path=/var/lib/prometheus \
+    --storage.tsdb.retention.time=3d \
+    --web.listen-address=127.0.0.1:9090
+Restart=on-failure
+RestartSec=5
+MemoryMax=512M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/prometheus
+
+[Install]
+WantedBy=multi-user.target

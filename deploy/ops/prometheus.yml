@@ -1,0 +1,77 @@
+# Prometheus 抓取配置（WORK-028）。
+#
+# **全部目标都在回环**：Prometheus 自己、四个 exporter、应用的管理端点。公网仍只有 8081。
+#
+# blackbox 拆成三个 job 而不是一个：每个目标的"什么算通"不一样，而 module 是 job 级参数
+# （单 job 里按目标切 module 要靠两层 relabel，读起来比拆开更难）。实测：laya 200、
+# rustfs 200、firecrawl 反代 401（带 token 的 nginx 对匿名请求返回 401 才算通）。
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 30s
+
+scrape_configs:
+  # 应用自身（Micrometer → Prometheus 文本格式）。
+  # 与管理端点同端口，由 SecurityConfiguration 的「仅本机来源」规则保护。
+  - job_name: paideia-app
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['127.0.0.1:8081']
+
+  - job_name: node
+    static_configs:
+      - targets: ['127.0.0.1:9100']
+
+  - job_name: mysql
+    static_configs:
+      - targets: ['127.0.0.1:9104']
+
+  - job_name: redis
+    static_configs:
+      - targets: ['127.0.0.1:9121']
+
+  # ── 外部依赖探活 ─────────────────────────────────────────────────────────
+  # 三个 job 共用一个 blackbox 实例；instance 标签被钉成短名（laya/rustfs/firecrawl），
+  # 摘要接口按它取值。**不要**把 instance 改成目标 URL，那会让摘要里的名字变成一串地址。
+  - job_name: blackbox-laya
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://127.0.0.1:8091/health']
+        labels:
+          instance: laya
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+
+  - job_name: blackbox-rustfs
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://127.0.0.1:9000/minio/health/live']
+        labels:
+          instance: rustfs
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+
+  - job_name: blackbox-firecrawl
+    metrics_path: /probe
+    params:
+      module: [http_401]
+    static_configs:
+      # 401 = 代理活着且能解析到 api 容器；502 = api 挂了（2026-10-15 真发生过）
+      - targets: ['http://127.0.0.1:3003/']
+        labels:
+          instance: firecrawl
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
