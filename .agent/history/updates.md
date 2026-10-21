@@ -5274,3 +5274,13 @@ schema_version: 1
 - 验证：后端全量 690/0/18（跳过 18 条逐条核过均需外部服务）；管理端 e2e 25 passed；权限规则反向验证按预期红（学习者拿到 200）；调积分/改角色/删号/不可自伤/口令不泄露五条各有集成用例；tsc 与构建通过
 - 本地提交：365859d 后端，df73133 前端
 - 远端推送：未推送
+
+## 2026-10-21 18:20:13 +0800 · WORK-030 · 阶段 B 完成：调用明细可见完整请求与响应，全量 700/0/18
+
+- 类型：implementation
+- 变更：RunRecorder.StepScope 加 payload/ttftMs；PayloadJson 白名单序列化；AiRunPayloadMapper + PayloadRecord；中间件采集；MysqlRunSink 写载荷；Purger 独立清理；AiUserDeletionListener 加载荷表；AiRunAdminService 返回 payloads；前端 StepRow 展开三块；requirements 阶段 B 十条 AC 生效；report 补 11 行证据
+- 决策：阶段 B 交付：新建 ai_run_payloads 表存完整请求响应；步骤级 ttft 与工具入参返回；保留期 30 天独立；开关可关；注销级联含载荷
+- 依据：用户：可以的继续做吧
+- 验证：全量 700/0/18；AiRunPayloadIntegrationTest 6 条（含凭据不入库的反向断言）；管理端 e2e 25 passed；api-shape 仅一个端点形状变化；migration-checksums 仅加一行
+- 本地提交：4353f2f 后端，6b09e86 前端
+- 远端推送：未推送
