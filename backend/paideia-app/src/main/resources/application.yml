@@ -44,7 +44,7 @@ paideia:
       # 单次 HTTP 抓取超时（秒）。
       timeout-seconds: 20
       # 一次 AI 压缩的超时（秒）。要处理几十条，给足。
-      ai-timeout-seconds: 180
+      ai-timeout-seconds: 120
       # 内容直出（用户裁决 D-07）。
       publish-directly: true
       # 源清单在配置里而不是代码里：加一个 RSS 源不该改代码。

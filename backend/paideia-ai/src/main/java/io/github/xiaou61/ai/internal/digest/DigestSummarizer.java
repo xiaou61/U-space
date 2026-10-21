@@ -41,8 +41,28 @@ class DigestSummarizer {
 
     private static final Logger log = LoggerFactory.getLogger(DigestSummarizer.class);
 
-    /** 一次要给几十条写标题与摘要，给足。 */
-    private static final int MAX_TOKENS = 8192;
+    /**
+     * 一次调用的 token 上限。
+     *
+     * <p>**2026-10-21 线上实测：8192 在 60 条候选时不够**——上游把 maxTokens 吃在思考上并
+     * 静默返回空，日志只有一行「速递 AI 返回空内容（思考 token 可能吃满）」，60 条全部降级。
+     * 5 条时 2320 token 够用，12 条时也够，**问题只在满批 60 条**。
+     *
+     * <p>deepseek-flash **默认思考且关不掉**（项目已知限制，见 `EssayExtractor` 同一段注释），
+     * 思考 token 与正文共用这个预算。给 16384 与面经抽题同量级。
+     *
+     * <p>**另一道保险是分批**：{@link #BATCH_SIZE} 把大候选池拆成几次调用，
+     * 既降低单次超限风险，也让"某批失败"只影响那一批（其余批仍能拿到摘要）。
+     */
+    private static final int MAX_TOKENS = 16384;
+
+    /**
+     * 单次调用最多处理多少条。
+     *
+     * <p>60 条一次性喂进去时，即使 16384 也可能被思考吃满。拆成 24 条一批，
+     * 单批输出量可控；代价是多几次调用（但总 token 相近，且失败时损失面更小）。
+     */
+    private static final int BATCH_SIZE = 24;
 
     /** 编辑类任务，要稳。 */
     private static final double TEMPERATURE = 0.3;
@@ -68,27 +88,49 @@ class DigestSummarizer {
     }
 
     /**
-     * 调一次模型，返回 fingerprint → 改写结果。
+     * 给一批候选写标题与摘要（**内部分批调用**）。
      *
      * <p>**只接受输入集合内的指纹**：模型返回集合外的键直接丢弃，不写垃圾行。
      * 某个指纹没返回就等于"这条降级"，由调用方处理。
      *
-     * <p>**不抛异常**：调用失败返回空 map + null 用量，由编排层把全部条目标 degraded
-     * （AC-005）。
+     * <p>**不抛异常**：批失败只影响那一批，其余批照常返回（AC-005）。
+     * 全部失败时返回空 map + null 用量，由编排层把全部条目标 degraded。
      */
     Outcome summarize(List<FetchedItem> items, List<String> fingerprints,
                       ModelAccess access, int timeoutSeconds) {
         if (items.isEmpty()) {
             return new Outcome(Map.of(), null);
         }
-        try {
-            CallResult result = call(items, fingerprints, access, timeoutSeconds);
-            return new Outcome(parse(result.text(), fingerprints), result.usage());
-        } catch (RuntimeException exception) {
-            // 整批降级，不中断（AC-005 的单元级证据）
-            log.warn("速递 AI 压缩失败，全部按降级入库：{}", exception.getMessage());
-            return new Outcome(Map.of(), null);
+        Map<String, Rewritten> merged = new LinkedHashMap<>();
+        int totalInput = 0;
+        int totalOutput = 0;
+        boolean anyUsage = false;
+
+        for (int start = 0; start < items.size(); start += BATCH_SIZE) {
+            int end = Math.min(start + BATCH_SIZE, items.size());
+            List<FetchedItem> batch = items.subList(start, end);
+            List<String> batchFingerprints = fingerprints.subList(start, end);
+            try {
+                CallResult result = call(batch, batchFingerprints, access, timeoutSeconds);
+                merged.putAll(parse(result.text(), batchFingerprints));
+                if (result.usage() != null) {
+                    anyUsage = true;
+                    totalInput += result.usage().inputTokens();
+                    totalOutput += result.usage().outputTokens();
+                }
+                if (merged.size() < end && start + BATCH_SIZE < items.size()) {
+                    log.info("速递第 {}-{} 条只写回部分摘要，继续下一批", start + 1, end);
+                }
+            } catch (RuntimeException exception) {
+                // 单批失败不影响其它批：AC-005
+                log.warn("速递第 {}-{} 条 AI 压缩失败，这 {} 条按降级处理：{}",
+                        start + 1, end, end - start, exception.getMessage());
+            }
         }
+        io.github.xiaou61.ai.TokenUsage usage = anyUsage
+                ? new io.github.xiaou61.ai.TokenUsage(totalInput, totalOutput, totalInput + totalOutput)
+                : null;
+        return new Outcome(merged, usage);
     }
 
     /** 一次上游调用的原始产物。 */

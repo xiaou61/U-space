@@ -39,7 +39,14 @@ public class DigestProperties {
     private int timeoutSeconds = 20;
 
     /** AI 调用超时（秒）。一次调用要处理几十条，给足。 */
-    private int aiTimeoutSeconds = 180;
+    /**
+     * **每一批** AI 调用的超时（秒）。
+     *
+     * <p>**2026-10-21 线上实测**：原先是"整轮 180 秒"，但 60 条会拆成 3 批串行，
+     * 第 1 批用完预算后第 2、3 批直接 `InterruptedException`——分批的意义就没了。
+     * 改成按批计：每批独立 120 秒，三批互不影响。
+     */
+    private int aiTimeoutSeconds = 120;
 
     /** 抓来的内容直出（不设草稿）。用户裁决 D-07。 */
     private boolean publishDirectly = true;
