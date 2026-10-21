@@ -5077,4 +5077,22 @@ schema_version: 1
   - 学习者端 e2e（digest.spec.ts）：4 passed / 1 skipped / 0 failed
 - 仍未做：**未部署**（`application.yml` 默认 `enabled: false`，上线需配 GitHub token 并打开开关）
 - 本地提交：`feat/work-027-digest` 分支 5 笔
+## 2026-10-21 15:18:02 +0800 · WORK-031 · 第一步完成：升 2.0.4 与缓存 token 修复，全量 545/0/4
+
+- 类型：verification
+- 变更：backend/pom.xml 与 paideia-ai/pom.xml 版本；TokenUsage 加 cacheReadTokens 并保留三参构造；toUsage 与 10 处 step/run.tokens 传真实缓存量；api-shape 快照新增一个字段；新增 TokenUsageTest；testing/plan.md 与 report.md
+- 决策：第一步完成并验证通过；第二三步未实现
+- 依据：用户裁决 WORK-031 先做，且本次只批准第一步
+- 验证：编译 0；dependency:tree 确认 agentscope-core 2.0.4 带 mcp 0.17.2；内环 150/0/3；全量 12 模块 545/0/4；反向验证按预期红 expected 0 but was 120；ApiWalkthroughTest 首跑红并指出新增字段，快照 diff 仅一处新增；Skipped 4 条均为既有设计
+- 本地提交：a1af6ce 版本，c001d4d 缓存修复
+- 远端推送：未推送
+
+## 2026-10-21 16:19:04 +0800 · WORK-031 · 第二三步完成：工具循环改由 ReActAgent 驱动，全量 554/0/10
+
+- 类型：implementation
+- 变更：AgentScopeConversation 重写；AgentToolBridge 加 callable()；新增 AgentTurnBehaviorTest（7 条，假模型走真实 ReActAgent）与 AgentLiveConversationTest（真连 DeepSeek + 真工具循环，默认跳过）；requirements 补 AC-007..016；tasks TASK-005/006 done；report 补 13 行证据
+- 决策：第二三步一次做完：手写 for(round) 循环退休，改由 ReActAgent + MiddlewareBase 驱动；三条实测约束落到代码（每次请求新建 Agent、提示词合成一条 sysPrompt、工具一次注册齐 + 可见性逐轮收窄）
+- 依据：用户：然后继续 第二步第三步开始吧，你就一直开始就行了
+- 验证：全量 554/0/10（基线 543，新增 11 条）；跳过 10 条逐条核过均为需外部服务（FileStorage 1、AgentLive 2、Laya 3、AssistantLiveUpstream 4）；真连 DeepSeek 两条 live 测试通过，工具循环答案含工具返回内容；反向验证：去掉 schema 收窄后 find_tools 用例按预期红；迁移中暴露并修掉两步序号并发撞号与用量累加丢更新
+- 本地提交：5c1d5f8
 - 远端推送：未推送

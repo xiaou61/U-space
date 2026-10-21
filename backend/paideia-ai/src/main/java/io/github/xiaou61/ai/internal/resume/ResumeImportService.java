@@ -91,7 +91,8 @@ public class ResumeImportService {
             int charged = credits.settleResume(userId, reserved, access.get().model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), null);
-            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(),
+                    usage == null ? 0 : usage.cacheReadTokens());
             run.addCredits(charged);
             run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.parsed userId={} chars={} dropped={} truncatedFields={}",
