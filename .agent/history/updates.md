@@ -5314,3 +5314,30 @@ schema_version: 1
 - 验证：全量 700/0/18；AiRunPayloadIntegrationTest 6 条（含凭据不入库的反向断言）；管理端 e2e 25 passed；api-shape 仅一个端点形状变化；migration-checksums 仅加一行
 - 本地提交：4353f2f 后端，6b09e86 前端
 - 远端推送：未推送
+
+## 2026-10-21 · WORK-030 阶段 B 部署上线（首次失败，已修复）
+
+- 类型：implementation
+- 变更：部署 jar（含新迁移 V20261021181500 建 ai_run_payloads）+ 重建前端
+- 决策：生产库 flyway_schema_history 里把 20261021134700 的版本号对齐为 20261021161000
+- 依据：用户「给我推送部署一下吧」
+- 验证：health 200、学习者端与管理端各 200、线上 e2e 21 条全过
+  （users 3 + admin 6 + ai-runs + layout.mobile 12）；新表 9 列已建；
+  真实调 /api/v1/account/admin/users 返回 2 个账号、九列齐全、无 password_hash
+- 本地提交：ed35cc6
+- 远端推送：已推送 origin/master
+
+**事故经过**：部署后服务起不来，health 000，整站不可用约 3 分钟。
+根因是 Flyway 校验失败：「Detected applied migration not resolved locally: 20261021134700」——
+另一个会话把 digest 迁移从 V20261021134700 改名成 V20261021161000，但那次改名从未部署，
+生产库里登记的仍是旧版本号。
+
+**为什么可以安全地改版本号**：两个文件的校验和完全一致（2043838451），
+只是文件名变了、SQL 内容一个字节没动。所以 UPDATE flyway_schema_history 只对齐元数据，
+不碰任何表结构。**如果校验和不同就不能这么做**——那意味着内容真的变了，
+必须走 repair 或新增迁移。
+
+**教训**：release.ps1 的健康检查只等 60 秒，而这次失败是**启动即崩**
+（Flyway 校验在建表前就抛），不是慢。60 秒等待掩盖了"服务根本没起来"这件事——
+日志里 status=exited code=1 与 systemd 反复重启才是判据。以后部署失败要先看
+systemctl is-active 与 journalctl 尾部，不要只看超时。
