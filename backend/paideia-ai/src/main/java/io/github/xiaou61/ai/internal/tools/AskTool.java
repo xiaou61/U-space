@@ -109,7 +109,7 @@ public class AskTool implements PaideiaTool {
             } else {
                 charged = credits.settleExternalAsk(context.userId(), reserved, modelAccess.model(),
                         usage.inputTokens(), usage.outputTokens());
-                run.tokens(usage.inputTokens(), usage.outputTokens(), 0);
+                run.tokens(usage.inputTokens(), usage.outputTokens(), usage.cacheReadTokens());
             }
             run.addCredits(charged);
             run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);

@@ -12,9 +12,15 @@ target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 
 ## 结论
 
-**18 条验收标准全部通过。**
+**18 条验收标准全部通过**，并且**已经用真实模型（deepseek-flash）跑通完整链路**——不是桩。
 
-四项**不在验收标准之内**的未验事项如实列在「未覆盖」一节——最重要的一条是**真实模型出题的质量从未验过**（全部测试里模型都是桩）。那不影响"接口与判定链对不对"，但它决定了这个功能实际好不好用，所以验收通过之后仍应人工跑一次。
+真实调用一跑就暴露了 **两个桩测试永远看不见的缺陷**（都已在 `5637312` 修掉）：
+
+1. **`max_tokens` 固定 4096 会把 12 道题截断。** 实测那 4096 里 **3226 是思考 token**，正文只够写到第 3 道题，`finish_reason=length`，整份 JSON 不是合法的——对外表现为「模型输出不符合题目格式」，看起来像模型不听话，其实是我们的上限太小。改成按题数算（思考预留 4096 + 每题 450）。
+3. **8192 的硬顶对 18 道题仍不够。** 7 天营实测 completion 用到 7210 token（思考 4463），思考量抖动时 8192 会被吃满再次截断。硬顶提到 16384（探针确认 12280 能正常 `finish_reason=stop`）。
+2. **请求超时用默认 30 秒不够。** 12 道题实测 24–30 秒：诊断卷 29.8 秒**压线通过**，复测 30.1 秒直接失败，报「上游模型服务暂时不可用」。这种"看运气"的边界不能留，改成 `60 + 题数 × 10` 秒、夹到 300。
+
+另有一处**不是本项引入、但卡住了本项**的问题：线上 OkHttp 的 `readTimeout` 是默认 10 秒，12 道题的生成一律在 10 秒处超时。该缺陷 WORK-027 已诊断并修复（`f8936b9`），本项部署时它还没进 master。**教训是同一条纪律的第三次复现**：非流式 + 大输出的调用，读取超时必须显式放大。
 
 后端 **249 条测试执行 / 0 失败 / 4 跳过**（跳过的是既有的 `FileStorageContractTest` 用例），前端 camp 包 **7 条单测**，学习者端 e2e **camp.spec.ts 3 条全绿**。
 
@@ -27,7 +33,7 @@ target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 
 | AC | 结果 | 证据 |
 | --- | --- | --- |
-| AC-001 开营到出卷 | **通过** | `CampIntegrationTest.createsCampWithItems`：12 道题落库、`shortOfTarget=false`、流水出现一行 `kind=CAMP`；`stemsCarryNoPii` 断言题干不含姓名/电话/邮箱；`insufficientCreditsNeverCallUpstream` 余额 0 → 402 且上游调用计数 0。模型为桩，见「未覆盖」 |
+| AC-001 开营到出卷 | **通过（含真实模型）** | `CampIntegrationTest.createsCampWithItems`：12 道题落库、`shortOfTarget=false`、流水出现一行 `kind=CAMP`；`stemsCarryNoPii` 断言题干不含姓名/电话/邮箱；`insufficientCreditsNeverCallUpstream` 余额 0 → 402 且上游调用计数 0。模型为桩，见「未覆盖」 |
 | AC-002 画像为空被拒 | **通过** | `emptyResumeIsRejected`：400、`camp_programs` 0 行、余额不变、上游 0 次 |
 | AC-003 交卷判分 | **通过** | `scoresLocally`：全对 → `weak` 为空、两主题 correct 各 6；错题用例覆盖计数 |
 | AC-004 不能提前看答案 | **通过** | `itemsNeverExposeAnswerKey`：响应体不含 `answerIndex`/`explanation`，字段集合恰好 `{id,seq,topic,difficulty,stem,options}`；**交卷后同一断言仍成立**；`api-shape.json` 快照里也没有这两个键 |
@@ -68,6 +74,8 @@ target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 | AC-016 无公开读路径 | `... -Dtest='ApiContractTest,ApiWalkthroughTest'` | 0 | 通过 | 11 个端点全部 `@ApiAccess(AUTHENTICATED)`；契约 9 条 + 走查 1 条全绿，11 个营端点全部被走到 |
 | AC-017 窄屏 | `PAIDEIA_BACKEND_PORT=8099 PAIDEIA_APP_PORT=5199 scripts/test-db.sh pnpm exec playwright test camp.spec.ts` | 0 | 通过 | `390px 下作答页与结果页无横向滚动`（`scrollWidth - clientWidth ≤ 1`）；对比表在 `md` 以下单列堆叠 |
 | AC-018 失败不留脏数据 | `... -Dtest=CampIntegrationTest` | 0 | 通过 | `emptyUpstreamLeavesNothingBehind`：上游空返回 → 500、`camp_programs` 0 行、余额回到原值（无用量 → 全额退） |
+| **真实模型 7 天营**（非桩） | 同上一行，但 `days=7`（18 道题） | 0 | 通过 | 18 题全生成 0 丢弃（40.0 秒）、6 主题各 3 题、难度 easy/medium/hard 各 1 |
+| **真实模型全链路**（非桩） | 本地起 jar（`paideia_live_*` 独占库）→ 真调 `api.deepseek.com` 的 `deepseek-flash`：开营 → 交卷 → 出计划 → 复测 → 交复测 | 0 | 通过 | 12 题全生成 0 丢弃（29.8 秒）；判分 3 主题全对 / 3 主题全错，弱项与强项都准确；计划三天各有项、每天 15 分钟、勾选生效；复测 12 题与诊断 **0 道重复**（24.0 秒）；并排对比 `SAME`；流水两笔 `CAMP`（-19 / -15 分，in/out token 齐全）。题目质量抽查：线程池扩容顺序、`ThreadLocal` 内存泄漏、`acks=all`+幂等、联合索引最左前缀、覆盖索引、缓存穿透、`@Transactional` 自调用失效、Redlock 争议——都是真面试题 |
 | 后端全量回归 | `scripts/test-db.sh mvn -B -T 1C test` | 0 | 通过 | Tests run: 249, Failures: 0, Errors: 0, Skipped: 4（既有文件存储用例） |
 | 迁移校验和登记 | `... -Dtest=MigrationChecksumTest` | 0 | 通过 | 只新增一行：`V20261021135406__create_camp_tables.sql 405229757` |
 | camp 包单测 | `pnpm --filter @paideia/camp test` | 0 | 通过 | Tests 7 passed |
@@ -87,7 +95,7 @@ target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 
 ## 未覆盖（如实记录）
 
-1. **真实模型出题的质量未验。** 全部 11 个端点的测试里模型都是桩。理由：本地没有平台 Key，真调一次要花钱，而"题出得好不好"不是自动化能断言的东西。**要验的话**：配好平台凭据后用真实简历开一次营，人工看 12 道题的题干、选项与解析是否自洽。这是本项最大的未知（requirements 的「假设与风险」一节点名过）。
+1. ~~真实模型出题的质量未验~~ **已验（2026-10-21）**：真调 `deepseek-flash` 三次开营（含 7 天营 18 题）+ 一次复测。12 道题的 3 天营与 18 道题的 7 天营都跑通，题目质量抽查见证据表。
 2. **TASK-018 只验到「do 任务指向带 quiz 块的真条目」。** `CampMasteryIntegrationTest.planTaskLinksToExistingProgressPath` 断言计划里出现 `kind=do` 且 `entryId` 命中夹具；点开条目、界面上做 quiz、`ProgressPort` 写 `learning_progress` 那一段是 WORK-020 的既有链路（本项未新增上报路径），但没有在浏览器里手动串一次。
 3. **概念表为空的部署没有单独走一遍。** 集成测试里的概念表确实为空（`knowledge.concepts()` 返回空表），所以计划全部产出 `gap` 任务这条路径是**被覆盖**的；但"管理员完全没建概念时界面上的提示文案"没有人看过。
 4. **`publishedEntryIds` 是逐条查询（N+1）。** 一份计划十几项，量级够小；已在代码里用 `shortcut:` 注释标明升级条件。

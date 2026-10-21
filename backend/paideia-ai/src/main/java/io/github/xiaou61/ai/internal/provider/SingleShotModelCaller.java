@@ -51,12 +51,30 @@ public abstract class SingleShotModelCaller {
     }
 
     /**
-     * 发一次非流式调用。
+     * 发一次非流式调用（用默认上限）。
      *
      * @param system 系统提示词
      * @param user   用户消息（已把简历/JD 用分隔标记包好）
      */
     protected ModelReply call(String system, String user, ModelAccess access) {
+        return call(system, user, access, maxTokens(), properties.getRequestTimeoutSeconds());
+    }
+
+    /**
+     * 发一次非流式调用，**显式给输出上限与超时**。
+     *
+     * <p>为什么需要这个重载：训练营一次要出 12–18 道带解析的题，输出长度与耗时都随题数变化。
+     * 两个都要按调用方本次的规模给：
+     * <ul>
+     *   <li>固定 {@value #MAX_TOKENS} 会在第 3 道题处截断（实测 {@code finish_reason=length}）；</li>
+     *   <li>默认 30 秒的超时会把整份生成判成"上游不可用"——实测 12 道题耗时 25–30 秒，
+     *       诊断卷 29.8 秒**压线通过**、复测 30.1 秒就失败。这种"看运气"的边界不能留。</li>
+     * </ul>
+     * 两个值都由调用方算，不放在子类字段里——这些调用点都在 singleton bean 上，
+     * 字段会被并发请求串味。
+     */
+    protected ModelReply call(String system, String user, ModelAccess access, int maxTokens,
+                              int timeoutSeconds) {
         if (access == null) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "平台尚未配置 AI 服务，请联系管理员");
         }
@@ -64,7 +82,7 @@ public abstract class SingleShotModelCaller {
                 .modelName(access.model())
                 .stream(false)
                 .temperature(properties.getTemperature())
-                .maxTokens(maxTokens())
+                .maxTokens(maxTokens)
                 .build();
         OpenAIChatModel model = OpenAIChatModel.builder()
                 .apiKey(access.apiKey())
@@ -86,7 +104,7 @@ public abstract class SingleShotModelCaller {
         ChatResponse response;
         try {
             response = model.stream(messages, List.of(), options)
-                    .blockLast(Duration.ofSeconds(properties.getRequestTimeoutSeconds()));
+                    .blockLast(Duration.ofSeconds(timeoutSeconds));
         } catch (HttpTransportException exception) {
             throw toUpstreamFailure(exception);
         } catch (RuntimeException exception) {
