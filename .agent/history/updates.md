@@ -4599,3 +4599,38 @@ schema_version: 1
 - 本地提交：`a512ee1`、`5a6f322`
 - 远端推送：未推送（WORK-027 批准记录 + 本次改动）
 - **仍未做**：5 条草稿未发布（等你过目）；WORK-027 proposal/design/tasks 仍是 draft，等签署
+
+## 2026-10-21 10:01:43 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/proposal.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-027-每日技术速递/proposal.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-027-每日技术速递/proposal.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-21 · 迁移版本号改时间戳（多会话撞号）
+
+- 类型：decision
+- 变更：
+  - 新增 `MigrationVersionFormatTest`：新迁移必须是 `V<14位时间戳>__描述.sql`；历史 `V1..V24` 白名单冻结；同秒重复也挡
+  - `AGENTS.md` / `always.md` / `dev-workflow.md` 记下规则、实测数据与它治不了的两类情形
+  - `always.md` 的 D-08 二次复核结论：**维持 Flyway**
+- 决策（用户选「时间戳 + 守卫」）：
+  - **不换工具**。用户提出"多 agent 并行时版本号必然重复，Flyway 太容易出问题，能不能换"。用项目自己的 **Flyway 13.10 在独占探针库上做了四个实测**：
+    | 场景 | 结果 |
+    | --- | --- |
+    | 两分支都写 `V25` | `Found more than one migration with version 25`，**应用整体起不来** |
+    | 时间戳 `V20261021103045` 接在 `V24` 后 | 正常应用、幂等、可继续追加 |
+    | 已用时间戳后又有人写 `V25`（生产配置） | `Validate failed: Detected resolved migration not applied: 25` |
+    | 两个文件同一秒 | 与第一条同样的 `Found more than one migration` |
+  - 结论：**时间戳治「必然撞」（A），不治「同一秒」（D）**；Liquibase / MyBatis Migrations 同样要唯一起名与校验和，等于换个名字的同一问题；**jOOQ DDL 差分是唯一真正消灭命名空间争抢的方案**，但代价是引依赖 + 学习成本 + MySQL DDL 解析边界，用户选择不付这个代价
+  - **明确记录它治不了什么**：两个会话改同一张表的不同列、版本号不冲突的语义冲突，任何迁移工具都查不出来，只能合并前协调（`git log --all --oneline -- <迁移目录>`）
+- 验证：
+  - `MigrationVersionFormatTest` 3 条通过
+  - **反向验证**：造 `V25__probe_numeric.sql` 与两个 `V20261021120000__probe_*.sql`，守卫分别精确点名；随后删除探针
+  - 后端全量（`mvn clean test`）：**226 运行 / 1 失败 / 4 跳过**（新增 3 条守卫）；唯一失败仍是 `ApiWalkthroughTest` 的端点覆盖欠账
+- **过程中我自己踩了记录在案的老坑**：删掉探针 SQL 后没清 `target/classes`，Flyway 仍扫到它们 → 201 个错误。`always.md` 早有这条（"删掉资源文件后必须 `mvn clean`"），这次由我本人复现了一遍
+- 本地提交：`e4cd5bd`
+- 远端推送：未推送
