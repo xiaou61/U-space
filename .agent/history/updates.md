@@ -3069,7 +3069,6 @@ schema_version: 1
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
 
-
 ## 2026-10-18 00:36:00 +0800 · WORK-014 · 撤回一次误记的业务验收
 
 - 类型：maintenance
@@ -5341,3 +5340,132 @@ schema_version: 1
 （Flyway 校验在建表前就抛），不是慢。60 秒等待掩盖了"服务根本没起来"这件事——
 日志里 status=exited code=1 与 systemd 反复重启才是判据。以后部署失败要先看
 systemctl is-active 与 journalctl 尾部，不要只看超时。
+
+## 2026-10-21 · WORK-032 TASK-001~004 实施（判题口径 + SQL 执行能力）
+
+- 类型：implementation
+- 变更：
+  - TASK-001：`backend/paideia-sandbox/images/mysql/{Dockerfile,build.sh}`，构建期 `--initialize-insecure`，
+    datadir 180MB 打进镜像并 `chmod -R a-w`；镜像 digest `sha256:e2eafb6e…` 写进 `application.yml`
+  - TASK-002：`SandboxProperties` 加 sqlImage/sqlMemory/sqlCpus/sqlPidsLimit/sqlTimeoutMs/sqlDailyLimit
+    与按语言取值的方法；`languages()` 改为**按镜像是否配置过筛**（空值 = 该语言不出现）
+  - `DockerCommand.SQL_SCRIPT`：拷 datadir 到 tmpfs + chmod u+w、建库 practice、灌数据集、
+    `mysql practice --xml` 执行用户 SQL
+  - TASK-003：`SqlResultCodec`（XML 解析，xsi:nil → NULL 标记）+ `CodeRun.Table` + `Status.OVER_LIMIT`
+  - TASK-004：`tests/sql-judge/corpus.json`（24 条）+ TS `sql-judge.ts` + Python `sql_judge.py`
+    + `check_sql_judge_parity.py` 两侧对照
+- 决策：
+  - **SQL 输出用 `--xml` 而不是 `--batch --raw`**。原设计是插标记查询切结果集，实测证明不可行：
+    标记行是"单列表头 m + 一行标记值"，与真实数据行无法区分，`--raw` 又不能转义。
+    两条测试当场抓到切错。`--xml` 自带 `<resultset>` 边界、`xsi:nil`、DECIMAL 尾零
+  - **删掉 `SqlStatementSplitter` 与标记注入**：XML 给了边界就不需要自己切语句，
+    少一个只处理教学 SQL 的分词器（它的 shortcut 是"不认存储过程"）
+- 验证：
+  - `mvn -B -pl paideia-sandbox test` → 17 通过（DockerCommandTest 10 / SqlResultCodecTest 7）
+  - `python scripts/sql_judge.py --self-check` → 24 条 0 失败
+  - `python scripts/check_sql_judge_parity.py` → 两侧 24 条 0 不一致
+  - `vitest sql-judge.test.ts` → 39 passed
+  - **反向验证**：改坏 Python 的尾零归一 → 6 条红；改坏 TS 的负号归一 → 3 条红。
+    第一次改负号时**没有红**，因为语料缺负数用例——补了两条负整数用例后才红
+  - **服务器真跑**：镜像启动到可查询 3267 ms；容器内灌数据集 + 两条语句 → 两个结果集正确切开；
+    `BEGIN; UPDATE 999; SELECT; ROLLBACK; SELECT` → 999.00 变回 100.00（事务语义真实生效）
+- 实施中踩到并修掉的三个真缺陷：
+  1. 镜像里 datadir 是 `a-w`，`cp -a` 保留只读权限 → mysqld 报 `ibdata1 must be writable`
+  2. `secure_file_priv` 指向不存在的路径 → mysqld 直接 Aborting（所以脚本里先 mkdir）
+  3. 未建库/未指定库 → `ERROR 1046 No database selected`（脚本里 `CREATE DATABASE practice` + `--database`）
+- 本地提交：见下一笔
+- 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-005/007 题目质量门禁与先行 3 题
+
+- 类型：implementation
+- 变更：
+  - `scripts/sql_cases.py`：题目门禁。四条断言 —— reference 能跑、alternatives 全部与它相同、
+    antiPatterns 至少在一处不同、至少 2 个数据集；外加 goal/trap 非空且 trap 必须能在本课
+    「常见误区」里找到（防超纲）
+  - `content/courses/mysql/datasets/`：`orders-public`（3 客户/3 单/4 明细）与 `orders-hidden-a`
+    （4 客户/4 单/6 明细，含非整除小数与不同行数）
+  - `content/courses/mysql/cases/pilot.json`：3 道先行题（01 填空、03 排序写查询、05 LEFT JOIN 修错）
+  - `--write-hashes` 回写 `expectHash`；默认只校验不写盘
+- 决策：
+  - 期望结果**由参考解真跑得出**，不手写。手写必然与数据集脱节且无人发现
+  - trap 比对时去掉反引号与空白：要求作者在两处敲出一样的反引号只会制造无意义报错
+- 验证（全部真跑）：
+  - `python scripts/sql_cases.py --check` → 3 道通过；`--write-hashes` 回写后二次运行仍通过（幂等）
+  - **反向验证四条**（每条都是故意注入坏数据，确认门禁真的会红）：
+    ① antiPattern 换成 reference 本身 → 报"没有区分度，任何写法都能过"
+    ② alternatives 换成错写法 → 报"判题口径太窄，会误杀正确写法"（两个数据集各一条）
+    ③ 硬编码 `487.50` 当等价写法 → 被隐藏集判不同
+    ④ 只留一个数据集 → 报"否则硬编码答案也能过"
+- 已知缺口：
+  - 没有数据库凭据时门禁**跳过执行校验并明确打印"未验证"**，不当作通过
+  - 自动断言挡得住"坏题"，挡不住"平庸的题"——TASK-008 之后仍需一次人工题目评审
+- 本地提交：见下一笔
+- 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-006 能力探测与分档配额接线
+
+- 类型：implementation
+- 变更：
+  - `SqlDatasets`：数据集白名单，内容放 `paideia-sandbox/src/main/resources/sandbox/datasets/`。
+    **客户端只传 key，不传数据**——否则隐藏数据集必然随题面下发，"硬编码答案"就防不住
+  - `SandboxController`：`/status` 返回 `sqlDailyLimit` / `sqlUsedToday` / `datasets`（分开给，
+    不合成一个"剩余次数"）；`/run` 对 sql 用数据集 key 解析 stdin、未知 key 400；
+    配额改调 `requireQuota(userId, language)`
+  - `RunView` 加 `tables`（`statementIndex` + 列名 + 行值），`RunRequest` 加 `dataset`
+- 验证：
+  - `mvn -pl paideia-sandbox test` → 17 通过
+  - `mvn -pl paideia-app -Dtest=SandboxIntegrationTest test` → **8 通过**
+    （含新增断言：`sqlDailyLimit=20`、`datasets` 含两个 key）
+  - 首次跑集成测试时报 `PathNotFound: sqlDailyLimit`——原因是 `paideia-app` 从 ~/.m2 取
+    **旧的 sandbox jar**，不是代码错误。`mvn -pl paideia-sandbox install` 后通过
+- 本地提交：见下一笔
+- 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-010（部分）SQL 题型渲染与前端契约
+
+- 类型：implementation
+- 变更：
+  - `schema.ts`：新增 `SqlChallenge`（`sql-write` / `sql-fix`），解析 `starter` / `dataset` /
+    `normalize` / `expectHash`；类型只允许 string/int/decimal/datetime——**float 被明确拒绝**
+  - `sql-judge.ts`：修 `noUncheckedIndexedAccess` 下的索引类型（补 `typeOf()`，去掉悬空引用）
+  - `context.tsx`：`RunOutput.tables`、`SandboxPort.run` 的 `dataset` 参数
+  - `sql-challenge.tsx`：编辑器 + 运行 + 多结果集表格 + 逐数据集判定；期望值比 **SHA-256 规范串**，
+    题面不含答案
+  - `code-challenge.tsx`：接入两种新题型
+- 验证：
+  - `tsc --noEmit`（ui 包）→ 无错误
+  - `vitest src/markdown/renderers/` → **96 passed / 4 files**
+  - `vitest` 全量 → 191 passed / **2 failed**，两条都是既有失败、与本次无关：
+    ① `AdminUsersPage.tsx` 出现 `bg-black/40`（WORK-030 的改动）
+    ② `packages/camp/src` 未在 `globals.css` 的 `@source` 登记（camp 包的改动）
+    已核对：这两个文件都不在本次改动里
+- 本地提交：见下一笔
+- 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-008 十二关题目与课时接入
+
+- 类型：content
+- 变更：
+  - `cases/lessons.json`：新增 9 道题，12 关各 1 道（01 填空 + 11 道可执行）
+  - 每题都带 `goal`（考什么认知）与 `trap`（对应本课哪条误区），门禁强制核对
+  - 题目插入各课正文的「## 动手」节；**题面只带 expectHash，不带 reference/alternatives/antiPatterns**
+  - 数据集加 `customers.note` 可空列：公开集 3 行分别是 `'VIP'` / `''` / `NULL`。
+    **原数据集里根本没有 NULL，第 02 课讲 NULL 却考不出区别**——这条是被门禁逼出来的
+  - 删掉各课原有的「找 bug」动手题（每关 1 道精做题的裁决），并把「## 动手」移回
+    「## 检查一下」之前（课程固定七节顺序）
+- 决策：
+  - 门禁遇到反模式报错时**不崩**，把"跑不通"也算作"与参考解不同"——`SELECT city FROM orders`
+    这种写法根本执行不了，正是那题要抓的东西
+- 验证：
+  - `python scripts/verify_course.py --dir content/courses` → 50 个文件含代码执行全通过
+  - `python scripts/sql_cases.py --check` → 12 道题通过
+  - `python scripts/check_sql_judge_parity.py` → 24 条两侧无差异
+  - 题面与源文件 `expectHash` 逐题比对一致，且**无一处泄漏 reference/antiPatterns**
+- 门禁抓出的三个真实题目设计问题（都已修）：
+  1. 第 02 课的反模式 `= NULL` 与参考解结果相同 → 说明数据集里没有 NULL，题目无区分度
+  2. 第 10 课的 alternatives 按订单粒度分组，与按客户汇总的参考解**本来就不是同一个查询**
+     （我写错了，不是判题口径问题）
+  3. 第 12 课的 alternatives 用标量子查询会把无订单客户带成 NULL 行，与 INNER JOIN 语义不同
+- 本地提交：见下一笔
+- 远端推送：未执行

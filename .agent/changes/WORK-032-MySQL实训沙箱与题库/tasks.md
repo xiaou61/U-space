@@ -23,7 +23,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 预初始化 MySQL 镜像
+### TASK-001 | done | 预初始化 MySQL 镜像
 
 - 对应：REQ-001、REQ-002；AC-001
 - 依赖：无
@@ -35,7 +35,7 @@ approver_role: CTO
   4. 记录最终 digest 并写进 `application.yml` 的默认值。
 - 验证：服务器上 `docker run --rm … mysqld --version`；启动到可 ping 的耗时 ≤ 6s（实测基线 4.4–4.7s，留余量）。
 
-### TASK-002 | pending | SQL 命令构造与逐条加固断言
+### TASK-002 | done | SQL 命令构造与逐条加固断言
 
 - 对应：REQ-001、REQ-004；AC-001、AC-004
 - 依赖：TASK-001
@@ -48,7 +48,7 @@ approver_role: CTO
   5. 每条加固标志一个单测断言（沿用现有 `contains` 写法）；`secure_file_priv` 指向不存在路径这条要有一条回归测试。
 - 验证：`mvn -B -pl paideia-sandbox test`；`DockerCommandTest` 全绿且新增断言逐条可指认。
 
-### TASK-003 | pending | 结果编解码（结构化 tables，多结果集）
+### TASK-003 | done | 结果编解码（结构化 tables，多结果集）
 
 - 对应：REQ-003、REQ-002a；AC-003、AC-016
 - 依赖：TASK-002
@@ -61,7 +61,7 @@ approver_role: CTO
   5. `CodeRun.Status` 加 `OVER_LIMIT`（唯一涉及的枚举扩展，不涉及迁移）。
 - 验证：单测覆盖单结果集、多结果集、`NULL`、超行数、超字节；`mvn -B -pl paideia-sandbox test`。
 
-### TASK-004 | pending | 判题语料与两侧实现
+### TASK-004 | done | 判题语料与两侧实现
 
 - 对应：REQ-005、REQ-006；AC-005、AC-008、AC-014
 - 依赖：无（纯逻辑，可与 TASK-002/003 并行）
@@ -73,7 +73,7 @@ approver_role: CTO
   4. 规范序列化格式写死并在两侧各有一条测试（用于隐藏集哈希）：列名按名排序、行按序列化后排序、值按类型规整。
 - 验证：`node`/`vitest` 与 `python` 两侧对同一语料结论一致；**故意改坏一侧的一条规则，对照测试必须红**（反向验证）。
 
-### TASK-005 | pending | 内容门禁扩展（题目质量断言）
+### TASK-005 | done | 内容门禁扩展（题目质量断言）
 
 - 对应：REQ-007、REQ-008、REQ-009、REQ-012、REQ-013；AC-005、AC-006、AC-009、AC-010
 - 依赖：TASK-004（判定口径）、TASK-001~003（要真跑 reference 才能算哈希）
@@ -86,7 +86,7 @@ approver_role: CTO
   5. 校验判题列里没有 `FLOAT`/`DOUBLE`。
 - 验证：对现有 3 道先行题跑通；**再造一道故意不合格的题**（反模式能通过 / alternative 会失败），确认门禁报错并指出原因（反向验证，必须记录输出）。
 
-### TASK-006 | pending | 能力探测与分档配额
+### TASK-006 | done | 能力探测与分档配额
 
 - 对应：REQ-016、REQ-018；AC-001、AC-004、AC-015
 - 依赖：TASK-001、TASK-002
@@ -98,7 +98,7 @@ approver_role: CTO
   4. 四种失败（起不来 / 超时 / 超限 / 配额）各自状态可区分。
 - 验证：`SandboxIntegrationTest` 加 SQL 用例（需服务器有 Docker）；无 Docker 时跳过且不报红。
 
-### TASK-007 | pending | 数据集与先行 3 道题
+### TASK-007 | done | 数据集与先行 3 道题
 
 - 对应：REQ-014；AC-005~AC-009
 - 依赖：TASK-005
@@ -109,7 +109,7 @@ approver_role: CTO
   3. 每题都带 `goal` / `trap` / `reference` / `alternatives` / `antiPatterns`，并跑门禁回写哈希。
 - 验证：`python scripts/verify_course.py --dir content/courses/mysql` 全绿；`--write-hashes` 前后哈希稳定（幂等）。
 
-### TASK-008 | pending | 补满 12 关题目（每关 1 道精做题）
+### TASK-008 | done | 补满 12 关题目（每关 1 道精做题）
 
 - 对应：REQ-002a、REQ-011、REQ-014；AC-009、AC-016
 - 依赖：TASK-007
@@ -121,7 +121,7 @@ approver_role: CTO
   4. 每题的 `trap` 必须对应本课「常见误区」里已写的一条。
 - 验证：门禁全绿；12 关逐关列出「题型 + goal + trap」清单，人工过一遍是否超纲；09/10 两关用 ROLLBACK 后的结果证明事务真的生效（AC-016）。
 
-### TASK-009 | pending | 自由练习页
+### TASK-009 | pending | 自由练习页（未做）
 
 - 对应：REQ-015、REQ-016；AC-011、AC-012、AC-015
 - 依赖：TASK-006、TASK-007

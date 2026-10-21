@@ -84,12 +84,71 @@ class DockerCommandTest {
     }
 
     @Test
-    void 语言白名单只有java与python() {
+    void 语言白名单按镜像可用性给出_未配置sql时只有两种() {
         SandboxProperties properties = props();
         assertThat(properties.languages()).containsExactlyInAnyOrder("java", "python");
         assertThat(properties.isSupported("java")).isTrue();
         assertThat(properties.isSupported("PHP")).isFalse();
         assertThat(properties.imageFor("ruby")).isNull();
+    }
+
+    @Test
+    void 配置了sql镜像才出现sql() {
+        SandboxProperties properties = props();
+        properties.setSqlImage("paideia-sandbox-mysql@sha256:abc");
+        assertThat(properties.languages()).contains("sql");
+        assertThat(properties.imageFor("sql")).isEqualTo("paideia-sandbox-mysql@sha256:abc");
+    }
+
+    /**
+     * SQL 的隔离参数（WORK-032 AC-001 / AC-004）。
+     *
+     * <p>与 Java/Python **共用同一套加固**，只有资源上限按语言取值：
+     * mysqld 常驻约 348 MB，用 256m 会被 OOM 杀掉；tmpfs 要装下 180 MB 的 datadir 副本。
+     * 这两条差异如果被"顺手统一"回去，SQL 会稳定失败，而 Java/Python 的测试仍然全绿。
+     */
+    @Test
+    void sql命令同样加固但资源上限单独一档() {
+        SandboxProperties properties = props();
+        properties.setSqlImage("paideia-sandbox-mysql@sha256:abc");
+        List<String> command = DockerCommand.of("sql", properties, "/tmp/x.cid");
+
+        assertThat(command).contains("--rm", "--network=none", "--read-only",
+                "--cap-drop=ALL", "--security-opt=no-new-privileges", "--stop-timeout=0");
+        assertThat(command).contains("--memory=512m", "--memory-swap=512m", "--cpus=1", "--pids-limit=128");
+        assertThat(command).contains("/tmp:rw,size=768m,exec");
+        assertThat(command).contains("--user", "999:999");
+        assertThat(command)
+                .as("不能把宿主目录挂进 SQL 容器")
+                .noneMatch(item -> item.equals("-v") || item.startsWith("--volume") || item.startsWith("--mount"));
+        assertThat(command).contains(DockerCommand.scriptFor("sql"));
+    }
+
+    /**
+     * 脚本里必须显式收紧两个危险开关（WORK-032）。
+     *
+     * <p>`secure_file_priv` 默认是 NULL（不限路径）；指向**不存在的目录**会让 mysqld
+     * 直接 Aborting（实测）。所以脚本里既要有这个参数，也要先 mkdir。
+     */
+    @Test
+    void sql脚本显式收紧文件读写开关() {
+        String script = DockerCommand.scriptFor("sql");
+        assertThat(script).contains("--secure-file-priv=");
+        assertThat(script).as("必须指向已存在的目录，否则 mysqld 起不来").contains("mkdir -p /tmp/nofiles");
+        assertThat(script).contains("--local-infile=0");
+        assertThat(script).contains("--skip-log-bin");
+        assertThat(script).as("必须用 socket 而不是 TCP").contains("--skip-networking");
+        assertThat(script).as("datadir 拷贝后必须恢复可写，否则报 ibdata1 must be writable")
+                .contains("chmod -R u+w");
+        assertThat(script).as("用 --xml 才有结果集边界与显式 NULL").contains("--xml");
+    }
+
+    @Test
+    void 未配置sql镜像时构造命令被拒绝() {
+        SandboxProperties properties = props();
+        assertThatThrownBy(() -> DockerCommand.of("sql", properties, "/tmp/x.cid"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不支持的语言");
     }
 
     @Test

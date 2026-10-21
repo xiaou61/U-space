@@ -9,20 +9,7 @@ import { configFor, createIdentityApi } from '@paideia/identity'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowRight,
-  BookOpen,
-  FileQuestion,
-  GraduationCap,
-  Layers,
-  MessagesSquare,
-  Network,
-  Newspaper,
-  NotebookPen,
-  Search,
-  Sparkles,
-  Target,
-} from 'lucide-react'
+import { ArrowRight, BookOpen, Database, FileQuestion, GraduationCap, Layers, MessagesSquare, Network, Newspaper, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 
@@ -56,6 +43,16 @@ const QUICK_LINKS: {
     icon: GraduationCap,
     title: '从零开始',
     description: 'Python / Java 两条线，一课二十分钟，边学边练。',
+  },
+  {
+    // 自由练习（WORK-032）：key 为 null —— 它不属于任何身份，永远排在最后。
+    // 放在这里是因为它正是「关卡里的 SQL 题之外，随手练一段」的入口。
+    key: null,
+    to: '/practice/sql',
+    testId: 'home-entry-sql-practice',
+    icon: Database,
+    title: 'SQL 自由练习',
+    description: '写一段 SQL，在干净的数据库里立刻看到结果，不计分。',
   },
   {
     key: 'digest' as const,

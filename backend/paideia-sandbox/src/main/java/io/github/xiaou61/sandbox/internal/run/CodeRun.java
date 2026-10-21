@@ -1,5 +1,7 @@
 package io.github.xiaou61.sandbox.internal.run;
 
+import java.util.List;
+
 /**
  * 执行一次运行请求 / 结果（WORK-015）。
  *
@@ -42,7 +44,29 @@ public final class CodeRun {
             long durationMs,
             boolean timedOut,
             boolean outOfMemory,
-            boolean truncated) {
+            boolean truncated,
+            List<Table> tables) {
+
+        /**
+         * 没有结构化结果时的形态（Java/Python）。保留这个重载，老调用点不必改动：
+         * 只有 SQL 会产出 {@code tables}，其它语言的 stdout 就是全部。
+         */
+        public Result(String stdout, String stderr, int exitCode, long durationMs,
+                      boolean timedOut, boolean outOfMemory, boolean truncated) {
+            this(stdout, stderr, exitCode, durationMs, timedOut, outOfMemory, truncated, List.of());
+        }
+    }
+
+    /**
+     * 一个结果集（WORK-032）。
+     *
+     * <p>**值一律是字符串**：类型信息来自题目声明，归一化在判题侧做。JSON 数字在两侧各转一次
+     * 就会丢精度——`DECIMAL` 的 92.50 一旦变成浮点，那个尾零再也还不出。
+     *
+     * <p>{@code statementIndex} 是 SQL 里第几条语句（从 0 数）。`BEGIN`/`COMMIT` 这类不产生
+     * 结果集的语句不占位，所以它不连续。
+     */
+    public record Table(int statementIndex, List<String> columns, List<List<String>> rows) {
     }
 
     /** 审计用的状态分类。值是存进库的，**改名等于改数据**。 */
@@ -52,6 +76,8 @@ public final class CodeRun {
         RUNTIME_ERROR,
         TIMEOUT,
         OUT_OF_MEMORY,
+        /** 结果集超过行数或字节上限（WORK-032）。与超时不同：查询跑完了，只是结果太大。 */
+        OVER_LIMIT,
         REJECTED,
         DISABLED
     }

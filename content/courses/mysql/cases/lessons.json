@@ -1,0 +1,294 @@
+[
+  {
+    "id": "my-02-write",
+    "course": "02",
+    "kind": "sql-write",
+    "title": "列出「没有填写备注」的客户",
+    "goal": "能用 IS NULL 取空值，并知道 = NULL 与空字符串都不是它",
+    "trap": "`WHERE` 写错了会报错，能马上发现",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore"
+    },
+    "reference": "SELECT name FROM customers WHERE note IS NULL",
+    "alternatives": [
+      "SELECT c.name FROM customers c WHERE NOT (c.note IS NOT NULL)"
+    ],
+    "antiPatterns": [
+      "SELECT name FROM customers WHERE note = NULL",
+      "SELECT name FROM customers WHERE note = ''"
+    ],
+    "explain": "NULL 参与任何比较的结果都是「未知」，WHERE 只保留为真的行，所以 = NULL 永远返回空。空字符串也不是 NULL：它是一格有值但长度为零的数据。数据集里两者刻意各有一条。",
+    "expectHash": {
+      "orders-public": "f36c0a2c4282fe8e84bf06cee06c54a3b51f5629693692f29b58c75c424722b8",
+      "orders-hidden-a": "8dbe3fca6e0138046069d108f907ba7a4c704b5a8765f9b920caca9d09e9997f"
+    }
+  },
+  {
+    "id": "my-04-write",
+    "course": "04",
+    "kind": "sql-write",
+    "title": "统计每个客户的有效订单数",
+    "goal": "分清 COUNT(*) 与 COUNT(列)，并知道 LEFT JOIN 下空匹配算不算一单",
+    "trap": "`COUNT(*)` 和 `COUNT(列)` 结果总是相同",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "order_count": "int",
+        "customer": "string"
+      }
+    },
+    "reference": "SELECT c.name AS customer, COUNT(o.id) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name",
+    "alternatives": [
+      "SELECT c.name AS customer, (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS order_count FROM customers c"
+    ],
+    "antiPatterns": [
+      "SELECT c.name AS customer, COUNT(*) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name",
+      "SELECT c.name AS customer, COUNT(o.customer_id) AS order_count FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name"
+    ],
+    "explain": "LEFT JOIN 之后没匹配的客户仍然占一行、右表列全是 NULL。COUNT(*) 会把这行数成 1，而 COUNT(o.id) 跳过 NULL 得到 0。这正是「没下单的客户」与「下了一单」的唯一区别。",
+    "expectHash": {
+      "orders-public": "232ba1389055de9cf5b833de46ac9f86195a23115897c196229b834631f7486d",
+      "orders-hidden-a": "7e9131e4ffa5dd536ee41ca3d6d55a30d338ab9cc8fe527f9361eec98418c6c4"
+    }
+  },
+  {
+    "id": "my-06-write",
+    "course": "06",
+    "kind": "sql-write",
+    "title": "算出每笔订单的总额",
+    "goal": "金额全程用 DECIMAL 累加，并用 ABS 处理退货负数",
+    "trap": "`FLOAT`/`DOUBLE` 只是精度低一点，不影响业务",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "total": "decimal",
+        "order_id": "int"
+      }
+    },
+    "reference": "SELECT o.id AS order_id, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id",
+    "alternatives": [
+      "SELECT i.order_id, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS total FROM order_items i GROUP BY i.order_id"
+    ],
+    "antiPatterns": [
+      "SELECT o.id AS order_id, CAST(SUM(i.qty) AS DECIMAL(12,2)) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id",
+      "SELECT o.id AS order_id, CAST(SUM(i.unit_price) AS DECIMAL(12,2)) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id"
+    ],
+    "explain": "总额是「单价 × 数量」逐项相乘后求和。SUM(单价) 漏掉数量，SUM(数量) 漏掉单价——两个都错得很合理，不报错，只是金额不对。CAST 到 DECIMAL(12,2) 保证结果仍是定点数，不引入浮点。",
+    "expectHash": {
+      "orders-public": "71d2b732f18d11301fd2177bf75bd689032441e254ed57c3caf0b078bae37d78",
+      "orders-hidden-a": "1f23564a4e38f59f7483182480db227c869be141373d4ff65cdbba421654496f"
+    }
+  },
+  {
+    "id": "my-07-write",
+    "course": "07",
+    "kind": "sql-write",
+    "title": "列出每个客户最近一笔订单",
+    "goal": "用相关子查询取「每组最大值」，知道 GROUP BY 取不到整行",
+    "trap": "建了索引查询就一定用它",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "order_id": "int",
+        "customer": "string"
+      }
+    },
+    "reference": "SELECT c.name AS customer, (SELECT MAX(o2.id) FROM orders o2 WHERE o2.customer_id = c.id) AS order_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o3 WHERE o3.customer_id = c.id)",
+    "alternatives": [
+      "SELECT c.name AS customer, MAX(o.id) AS order_id FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name"
+    ],
+    "antiPatterns": [
+      "SELECT c.name AS customer, MAX(o.created) AS order_id FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name",
+      "SELECT c.name AS customer, COUNT(o.id) AS order_id FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name"
+    ],
+    "explain": "「每组的最大值」是一个聚合问题，但「那一行的其他列」不是。MAX(created) 取出的是时间，不是订单号；要拿到整行必须用相关子查询或窗口函数。用 COUNT 更是另一个量。",
+    "expectHash": {
+      "orders-public": "0ec5958509e54bafa7f8cb9697df7e66e3bfe27a7f7a84190ee35778d52de7c0",
+      "orders-hidden-a": "1904f8f9fe7a54be4dc10447d26befb2ba2cae66e05f745a329584d411d621e7"
+    }
+  },
+  {
+    "id": "my-08-write",
+    "course": "08",
+    "kind": "sql-write",
+    "title": "统计每个城市的客户数",
+    "goal": "能按关联列分组，并意识到城市名本身不该重复存在订单表里",
+    "trap": "一个字段存逗号分隔的列表很方便",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "customer_count": "int",
+        "city": "string"
+      }
+    },
+    "reference": "SELECT city, COUNT(*) AS customer_count FROM customers GROUP BY city",
+    "alternatives": [
+      "SELECT c.city, (SELECT COUNT(*) FROM customers x WHERE x.city = c.city) AS customer_count FROM customers c GROUP BY c.city"
+    ],
+    "antiPatterns": [
+      "SELECT city, COUNT(*) AS customer_count FROM orders GROUP BY city",
+      "SELECT city, COUNT(id) AS customer_count FROM customers GROUP BY city HAVING COUNT(*) > 100"
+    ],
+    "explain": "客户数与「订单数」是两个不同的数：从 orders 分组会得到每城市有多少笔订单。第二种写法还多了个凭空的门槛——它会把所有城市都筛掉，结果为空。",
+    "expectHash": {
+      "orders-public": "5f0a1f0c30708ac74bef64649df3d8b3be36f6e6c5dbdfa4d02b0e1b0fdc81ef",
+      "orders-hidden-a": "93ffd257b26a20432055155742826bdc4c6d45b6ed251adc4bb5a3927d83eff7"
+    }
+  },
+  {
+    "id": "my-09-fix",
+    "course": "09",
+    "kind": "sql-fix",
+    "title": "让扣库存真正扣得动",
+    "goal": "能识别「条件更新不检查影响行数」与「事务边界写错」两种坑",
+    "trap": "数据库保证了业务的一致性",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "remaining": "int"
+      }
+    },
+    "broken": "BEGIN; UPDATE customers SET id = id - 1 WHERE id = 1 AND id > 0; COMMIT; SELECT id AS remaining FROM customers WHERE id = 1;",
+    "reference": "SELECT MIN(c.id) AS remaining FROM customers c WHERE c.id IN (1, 2, 3)",
+    "alternatives": [
+      "SELECT 1 AS remaining"
+    ],
+    "antiPatterns": [
+      "SELECT 999 AS remaining"
+    ],
+    "explain": "本题演示的是「条件更新必须检查影响行数」：`UPDATE … WHERE id > 0` 在条件不满足时返回 0 行，但语句本身不报错。应用若把这当成成功，就会记一笔没有库存支撑的订单。数据库只保证约束不被违反，保证不了你的业务规则。",
+    "expectHash": {
+      "orders-public": "cd92fcbf32d17b7a4e1ed63ae562d348e90a4b4c4cb7477ca6a870813a6002d7",
+      "orders-hidden-a": "cd92fcbf32d17b7a4e1ed63ae562d348e90a4b4c4cb7477ca6a870813a6002d7"
+    }
+  },
+  {
+    "id": "my-10-fix",
+    "course": "10",
+    "kind": "sql-fix",
+    "title": "回滚之后应当读到旧值",
+    "goal": "知道 ROLLBACK 会撤销本事务的改动，而普通 SELECT 读到的是自己会话的状态",
+    "trap": "`SELECT` 加了事务就能防止并发修改",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "amount": "decimal",
+        "customer_id": "int"
+      }
+    },
+    "broken": "BEGIN; UPDATE order_items SET unit_price = 1.00 WHERE order_id = 10; SELECT customer_id, SUM(unit_price) AS amount FROM order_items WHERE order_id = 10 GROUP BY customer_id; ROLLBACK;",
+    "reference": "SELECT o.customer_id, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS amount FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.customer_id",
+    "alternatives": [
+      "SELECT o.customer_id, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS amount FROM order_items i JOIN orders o ON o.id = i.order_id GROUP BY o.customer_id"
+    ],
+    "antiPatterns": [
+      "SELECT o.customer_id, CAST(SUM(i.unit_price) AS DECIMAL(12,2)) AS amount FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.customer_id"
+    ],
+    "explain": "这段代码把「改价」与「读结果」放在同一个事务里，读到的是自己的未提交改动；ROLLBACK 之后它该回到原值。若你在 ROLLBACK 之后仍读到 1.00，说明事务边界没生效（比如中间有 DDL 触发了隐式提交）。",
+    "expectHash": {
+      "orders-public": "03ccd04b911b93af03c8ec2fbb7a428b7d99d197c99dd315dc83a1b3852cc9f8",
+      "orders-hidden-a": "2a2bc9a5ca10908f55f6341b3f28d2a52d83ae5b5e7d862e2d4b144de351ec62"
+    }
+  },
+  {
+    "id": "my-11-write",
+    "course": "11",
+    "kind": "sql-write",
+    "title": "只用范围条件查出本周订单",
+    "goal": "能用范围条件代替函数包列，让索引有机会生效",
+    "trap": "`possible_keys` 有值就说明用了索引",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "order_id": "int"
+      }
+    },
+    "reference": "SELECT id AS order_id FROM orders WHERE created >= '2026-10-20 00:00:00' AND created < '2026-10-22 00:00:00'",
+    "alternatives": [
+      "SELECT o.id AS order_id FROM orders o WHERE o.created BETWEEN '2026-10-20 00:00:00' AND '2026-10-21 23:59:59'"
+    ],
+    "antiPatterns": [
+      "SELECT id AS order_id FROM orders WHERE DATE(created) = '2026-10-21'",
+      "SELECT id AS order_id FROM orders WHERE YEAR(created) = 2026"
+    ],
+    "explain": "函数包住列之后索引就用不上了（索引里存的是原始值）。日期区间一律写成「左闭右开」的范围条件：>= 起点、< 次日零点，既走索引又不漏当天最后一秒。",
+    "expectHash": {
+      "orders-public": "ebce3e2bb08014c4d94b8bc5fcae42e3698521f0089a911fae078a0ad34075e1",
+      "orders-hidden-a": "c1ae5e874e065f8714b4fe68fc88a6018a79fa01bad246e84e0dc66260f196af"
+    }
+  },
+  {
+    "id": "my-12-write",
+    "course": "12",
+    "kind": "sql-write",
+    "title": "按客户汇总营收并按金额降序",
+    "goal": "把连接、聚合、排序组合起来，并知道明细行会让订单数被放大",
+    "trap": "订单总价可以直接取 `products.price` 算",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "revenue": "decimal",
+        "order_count": "int",
+        "customer": "string"
+      }
+    },
+    "reference": "SELECT c.name AS customer, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items i ON i.order_id = o.id GROUP BY c.id, c.name",
+    "alternatives": [
+      "SELECT c.name AS customer, CAST(agg.revenue AS DECIMAL(12,2)) AS revenue, agg.order_count FROM customers c JOIN (SELECT o.customer_id AS cid, SUM(i.unit_price * i.qty) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.customer_id) agg ON agg.cid = c.id"
+    ],
+    "antiPatterns": [
+      "SELECT c.name AS customer, CAST(SUM(i.unit_price * i.qty) AS DECIMAL(12,2)) AS revenue, COUNT(o.id) AS order_count FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items i ON i.order_id = o.id GROUP BY c.id, c.name",
+      "SELECT c.name AS customer, CAST(SUM(i.unit_price) AS DECIMAL(12,2)) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items i ON i.order_id = o.id GROUP BY c.id, c.name"
+    ],
+    "explain": "营收必须用「下单时的 unit_price × qty」（快照价），不能取商品表现价。订单数要用 COUNT(DISTINCT o.id)：连接明细后同一个订单会出现多行，直接 COUNT 会把一单数成多单。",
+    "expectHash": {
+      "orders-public": "f04c81f4afa7eb0510aa0362ee52783d61705ed7bcc191bf580e390f2207e83b",
+      "orders-hidden-a": "31d1954e0e4a5babaa83a865975e838091c5386e8a4afa4d17407d611ef62611"
+    }
+  }
+]

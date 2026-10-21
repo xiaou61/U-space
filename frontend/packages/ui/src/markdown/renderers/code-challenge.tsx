@@ -4,6 +4,7 @@ import type { CustomRendererProps } from 'streamdown'
 import { Button } from '../../components/button'
 import { BlockFallback, BlockFrame, Pill } from './blocks'
 import { RunBody } from './run-challenge'
+import { SqlBody } from './sql-challenge'
 import { useSourceReading } from './context'
 import {
   blankCount,
@@ -54,13 +55,17 @@ function ChallengeView({
     <BlockFrame
       title={challenge.title}
       testId="challenge"
-      actions={<Pill>{{ fill: '填空', order: '排序', bug: '找 bug', run: '写代码' }[challenge.kind]}</Pill>}
+      actions={<Pill>{{ fill: '填空', order: '排序', bug: '找 bug', run: '写代码',
+        'sql-write': '写 SQL', 'sql-fix': '改 SQL' }[challenge.kind]}</Pill>}
     >
       <div className="space-y-4 p-4">
         {challenge.kind === 'fill' ? <FillBody challenge={challenge} onGraded={onGraded} /> : null}
         {challenge.kind === 'order' ? <OrderBody challenge={challenge} onGraded={onGraded} /> : null}
         {challenge.kind === 'bug' ? <BugBody challenge={challenge} onGraded={onGraded} /> : null}
         {challenge.kind === 'run' ? <RunBody challenge={challenge} onGraded={onGraded} /> : null}
+        {challenge.kind === 'sql-write' || challenge.kind === 'sql-fix'
+          ? <SqlBody challenge={challenge} onGraded={onGraded} />
+          : null}
       </div>
     </BlockFrame>
   )

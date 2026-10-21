@@ -1,0 +1,88 @@
+[
+  {
+    "id": "my-01-readonly",
+    "course": "01",
+    "kind": "fill",
+    "title": "建表时该给金额用什么类型",
+    "goal": "能选对存金额的类型：知道浮点存不准、DECIMAL 才精确",
+    "trap": "NULL 和 0、空字符串是一回事",
+    "options": [
+      [
+        "DECIMAL",
+        "FLOAT",
+        "DOUBLE"
+      ]
+    ],
+    "answers": [
+      0
+    ],
+    "explain": "DECIMAL 按十进制精确存储；FLOAT/DOUBLE 是二进制浮点，0.1 这种值存的是近似值，累加后会与预期差出小数。",
+    "language": "sql",
+    "template": "CREATE TABLE prices (id INT PRIMARY KEY, amount {{0}}(10,2));"
+  },
+  {
+    "id": "my-03-write",
+    "course": "03",
+    "kind": "sql-write",
+    "title": "按总额降序列出每笔订单",
+    "goal": "把「多表连接 + 聚合 + 排序」组合成一次查询，并且排得「稳定」",
+    "trap": "同样的查询两次结果顺序一定一样",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "strict",
+      "columnOrder": "ignore",
+      "types": {
+        "total": "decimal",
+        "order_id": "int"
+      }
+    },
+    "reference": "SELECT o.id AS order_id, SUM(i.unit_price * i.qty) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id ORDER BY total DESC, o.id ASC",
+    "alternatives": [
+      "SELECT o.id AS order_id, (SELECT SUM(i.unit_price * i.qty) FROM order_items i WHERE i.order_id = o.id) AS total FROM orders o ORDER BY 2 DESC, 1 ASC"
+    ],
+    "antiPatterns": [
+      "SELECT o.id AS order_id, SUM(i.qty) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id ORDER BY total DESC, o.id ASC",
+      "SELECT o.id AS order_id, SUM(i.unit_price * i.qty) AS total FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.id ORDER BY total ASC, o.id ASC"
+    ],
+    "explain": "总额是「单价 × 数量」再求和。SUM(i.qty) 算的是件数；升序则把最该看的订单排到了最后。",
+    "expectHash": {
+      "orders-public": "fe0fd648e4973bb34c4b8d751c816f627ef642a1ad83eda054d0882dbd24c68a",
+      "orders-hidden-a": "f21efbfebda2d67db5acddd0bee80c895f82f3368759b5ab12a44ccb00e1fb14"
+    }
+  },
+  {
+    "id": "my-05-fix",
+    "course": "05",
+    "kind": "sql-fix",
+    "title": "让没有订单的客户也出现在结果里",
+    "goal": "能识别 LEFT JOIN 被 WHERE 退化成 INNER JOIN，并知道条件该写在 ON 里",
+    "trap": "ON 里的条件和 WHERE 里的条件是等价的",
+    "dataset": [
+      "orders-public",
+      "orders-hidden-a"
+    ],
+    "normalize": {
+      "rowOrder": "ignore",
+      "columnOrder": "ignore",
+      "types": {
+        "order_count": "int"
+      }
+    },
+    "broken": "SELECT c.name AS customer, COUNT(o.id) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NOT NULL GROUP BY c.id, c.name",
+    "reference": "SELECT c.name AS customer, COUNT(o.id) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name",
+    "alternatives": [
+      "SELECT c.name AS customer, (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS order_count FROM customers c"
+    ],
+    "antiPatterns": [
+      "SELECT c.name AS customer, COUNT(*) AS order_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name"
+    ],
+    "explain": "LEFT JOIN 之后右表没匹配的行会填 NULL，用 COUNT(o.id) 能正确数出 0；WHERE o.id IS NOT NULL 会把这些行整行筛掉，等于退回 INNER JOIN。用 COUNT(*) 则会把空匹配当成 1 单。",
+    "expectHash": {
+      "orders-public": "232ba1389055de9cf5b833de46ac9f86195a23115897c196229b834631f7486d",
+      "orders-hidden-a": "7e9131e4ffa5dd536ee41ca3d6d55a30d338ab9cc8fe527f9361eec98418c6c4"
+    }
+  }
+]

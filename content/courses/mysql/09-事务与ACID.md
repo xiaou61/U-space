@@ -176,19 +176,36 @@ final_qty=0
 
 `second_buyer_affected=0` 就是超卖被挡住了的证据。**如果代码不检查这个 0，就会卖出第二台。** 库存没有变成 -1，是因为 `WHERE qty > 0` 守住了，而不是因为数据库帮你判断了业务。
 
+
 ## 动手
 
-下面这段扣库存的代码有隐患。找出问题所在的行。
+这道题会在真实的 MySQL 里跑。写错不会扣分，可以反复试——
+但**结果对不上会明确告诉你哪个数据集不一致**。
 
 ```code-challenge
 {
-  "id": "my-09-bug",
-  "kind": "bug",
-  "title": "找出不检查影响行数的写法",
-  "language": "sql",
-  "code": "START TRANSACTION;\nUPDATE stock SET qty = qty - 1 WHERE id = 1;\nINSERT INTO orders (product_id) VALUES (1);\nCOMMIT;",
-  "bugLine": 2,
-  "explain": "UPDATE 缺少 AND qty > 0，库存为 0 时也会扣成 -1，而且语句永远返回成功。应写成 WHERE id = 1 AND qty > 0，并检查影响行数是否为 1，不是则回滚。"
+  "id": "my-09-fix",
+  "kind": "sql-fix",
+  "title": "让扣库存真正扣得动",
+  "goal": "能识别「条件更新不检查影响行数」与「事务边界写错」两种坑",
+  "trap": "数据库保证了业务的一致性",
+  "dataset": [
+    "orders-public",
+    "orders-hidden-a"
+  ],
+  "normalize": {
+    "rowOrder": "ignore",
+    "columnOrder": "ignore",
+    "types": {
+      "remaining": "int"
+    }
+  },
+  "expectHash": {
+    "orders-public": "cd92fcbf32d17b7a4e1ed63ae562d348e90a4b4c4cb7477ca6a870813a6002d7",
+    "orders-hidden-a": "cd92fcbf32d17b7a4e1ed63ae562d348e90a4b4c4cb7477ca6a870813a6002d7"
+  },
+  "explain": "本题演示的是「条件更新必须检查影响行数」：`UPDATE … WHERE id > 0` 在条件不满足时返回 0 行，但语句本身不报错。应用若把这当成成功，就会记一笔没有库存支撑的订单。数据库只保证约束不被违反，保证不了你的业务规则。",
+  "starter": "BEGIN; UPDATE customers SET id = id - 1 WHERE id = 1 AND id > 0; COMMIT; SELECT id AS remaining FROM customers WHERE id = 1;"
 }
 ```
 

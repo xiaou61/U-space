@@ -145,6 +145,20 @@ paideia:
     memory: 256m
     cpus: "0.5"
     pids-limit: 64
+    # ── SQL 实训（WORK-032 TASK-001）─────────────────────────────────────────
+    # 镜像由 `backend/paideia-sandbox/images/mysql/build.sh` 构建，**datadir 在构建期已初始化**。
+    # 实测：初始化 17.9 s（所以不能运行时初始化）/ 启动到可查询 3.3 s / 常驻 348 MB。
+    # 留空 = 该语言不可用：`/sandbox/status` 不返回 sql，前端也就不渲染运行按钮。
+    sql-image: paideia-sandbox-mysql@sha256:e2eafb6ea161ddda420bde0f8d5ec3b0b03115811ea9507a23710034ef6d0a4f
+    # SQL 的上限比 Java/Python 宽一档：mysqld 自身就要 350 MB 上下，256m 会被 OOM 杀掉。
+    sql-memory: 512m
+    sql-cpus: "1"
+    # mysqld 是多线程的，64 不够（实测启动期就要几十个线程）。
+    sql-pids-limit: 128
+    # 20 s = 启动实测 3.3 s 的 6 倍余量（冷缓存、宿主机负载波动）。
+    sql-timeout-ms: 20000
+    # 一次 SQL 运行起一个容器，成本是其它语言的数倍，所以单独一档（用户裁决 U-09）。
+    sql-daily-limit: 20
 
 management:
   # 运维监控（WORK-028）：多暴露一个 prometheus 端点给本机 Prometheus 抓取。

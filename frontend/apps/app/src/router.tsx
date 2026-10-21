@@ -11,6 +11,7 @@ import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { DigestPage } from './pages/DigestPage'
 import { LearnPage } from './pages/LearnPage'
 import { TrackMapPage } from './pages/TrackMapPage'
+import { SqlPracticePage } from './pages/SqlPracticePage'
 import { LoginPage } from './pages/LoginPage'
 import { InterviewPage } from './pages/InterviewPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -72,6 +73,17 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <TrackMapPage />
+      </RequireAuth>
+    ),
+  },
+
+  // SQL 自由练习（WORK-032）：不计分、不写进度，与 /learn 并列。
+  // 需要登录（执行用户写的 SQL 要能追溯），所以同样包在 RequireAuth 里。
+  {
+    path: '/practice/sql',
+    element: (
+      <RequireAuth>
+        <SqlPracticePage />
       </RequireAuth>
     ),
   },

@@ -143,19 +143,33 @@ right_way=3
 
 最后两行是这一关最重要的一段：同样想找"没有备注"的商品，`= NULL` 得到 0 行，`IS NULL` 得到 3 行。**语句不报错，只是结果不对。**
 
+
 ## 动手
 
-下面这段想查"库存为 0 或者有促销备注"的商品，但结果会把所有促销商品都带出来。找出问题所在的行。
+这道题会在真实的 MySQL 里跑。写错不会扣分，可以反复试——
+但**结果对不上会明确告诉你哪个数据集不一致**。
 
 ```code-challenge
 {
-  "id": "my-02-bug",
-  "kind": "bug",
-  "title": "找出逻辑优先级写错的那一行",
-  "language": "sql",
-  "code": "SELECT name, stock, note\nFROM products\nWHERE stock = 0 OR price > 1000 AND note = '\u4fc3\u9500\u4e2d';",
-  "bugLine": 3,
-  "explain": "AND 优先级高于 OR，这句实际是 stock = 0 OR (price > 1000 AND note = '促销中')。要的是 (stock = 0 OR price > 1000) AND note = '促销中'，必须加括号。"
+  "id": "my-02-write",
+  "kind": "sql-write",
+  "title": "列出「没有填写备注」的客户",
+  "goal": "能用 IS NULL 取空值，并知道 = NULL 与空字符串都不是它",
+  "trap": "`WHERE` 写错了会报错，能马上发现",
+  "dataset": [
+    "orders-public",
+    "orders-hidden-a"
+  ],
+  "normalize": {
+    "rowOrder": "ignore",
+    "columnOrder": "ignore"
+  },
+  "expectHash": {
+    "orders-public": "f36c0a2c4282fe8e84bf06cee06c54a3b51f5629693692f29b58c75c424722b8",
+    "orders-hidden-a": "8dbe3fca6e0138046069d108f907ba7a4c704b5a8765f9b920caca9d09e9997f"
+  },
+  "explain": "NULL 参与任何比较的结果都是「未知」，WHERE 只保留为真的行，所以 = NULL 永远返回空。空字符串也不是 NULL：它是一格有值但长度为零的数据。数据集里两者刻意各有一条。",
+  "starter": "SELECT\n  \nFROM ;"
 }
 ```
 
