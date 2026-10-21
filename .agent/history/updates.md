@@ -5041,3 +5041,15 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 15:40:00 +0800 · 基础设施 · 架构存档补全到四张结构图，并更正部署图里的 RabbitMQ
+
+- 类型：feature
+- 变更：`docs/architecture/` 增加 `04-frontend-packages.md`（14 包 / 27 依赖）、`05-database-tables.md`（36 表 / 13 外键）、`06-api-surface.md`（112 端点 / 31 控制器）；`scripts/gen-arch-diagram.mjs` 扩展为一次生成四张结构图；`03-deployment.md` 删掉 RabbitMQ 节点并加正文说明；README 新增「这份存档不包含什么」；`AGENTS.md` 同步为四张图
+- 决策：结构图按「能不能从代码抽取」分四类覆盖——模块（pom）、前端包（package.json）、表（迁移）、端点（Controller 注解）；接口字段契约、前端路由、C4 组件层、状态机**明确不做**并写进 README，因为引入 springdoc 会改变公开接口面，而其余几类在当前规模下维护成本高于价值
+- 依据：用户：现在这个是全的吗？
+- 验证：`gen-arch-diagram.mjs --check` 四张全一致；`check-diagrams.mjs` 9/9 图块通过；112 端点与 grep 独立统计吻合；反向验证 --check 能拦下手改并返回退出码 1
+- 更正：上一版部署图里画了 RabbitMQ，实测**全仓无 amqp 依赖、无 outbox 表**，D-14 只是裁决未实现——已删节点并在正文点明「已裁决 ≠ 已实现」
+- 踩坑：端点生成器初版遍历整个 `backend/`，把测试里的 FixtureItemController 与 ProbeController 计入（虚高 6 个端点），已限定 `src/main`
+- 本地提交：已提交
+- 远端推送：未推送
