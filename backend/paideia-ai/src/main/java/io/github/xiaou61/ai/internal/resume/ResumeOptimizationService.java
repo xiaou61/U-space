@@ -172,7 +172,8 @@ public class ResumeOptimizationService {
             int charged = credits.settleResume(userId, reserved, access.model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), versionId);
-            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(),
+                    usage == null ? 0 : usage.cacheReadTokens());
             run.addCredits(charged);
             run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.analyzed userId={} versionId={} keywords={} gaps={}",
@@ -237,7 +238,8 @@ public class ResumeOptimizationService {
             int charged = credits.settleResume(userId, reserved, access.model(),
                     usage == null ? null : usage.inputTokens(),
                     usage == null ? null : usage.outputTokens(), versionId);
-            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(), 0);
+            run.tokens(usage == null ? 0 : usage.inputTokens(), usage == null ? 0 : usage.outputTokens(),
+                    usage == null ? 0 : usage.cacheReadTokens());
             run.addCredits(charged);
             run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
             log.info("ai.resume.proposed userId={} versionId={} proposals={} dropped={}",

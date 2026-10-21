@@ -254,7 +254,8 @@ class AssistantConversationController {
                             long messageId = conversations.complete(userId, conversationId, text, usage);
                             int charged = settleOnce(settled, userId, turn, usage, messageId);
                             run.tokens(usage == null ? 0 : usage.inputTokens(),
-                                    usage == null ? 0 : usage.outputTokens(), 0);
+                                    usage == null ? 0 : usage.outputTokens(),
+                                    usage == null ? 0 : usage.cacheReadTokens());
                             run.addCredits(charged);
                             run.attribute("respChars", text.length());
                             run.finish(RunOutcome.OK, null);

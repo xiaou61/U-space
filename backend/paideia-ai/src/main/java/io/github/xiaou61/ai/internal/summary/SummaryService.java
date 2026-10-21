@@ -123,7 +123,7 @@ public class SummaryService {
             } else {
                 charged = credits.settle(userId, reserved, access.model(),
                         usage.inputTokens(), usage.outputTokens(), null);
-                run.tokens(usage.inputTokens(), usage.outputTokens(), 0);
+                run.tokens(usage.inputTokens(), usage.outputTokens(), usage.cacheReadTokens());
             }
             run.addCredits(charged);
             run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);

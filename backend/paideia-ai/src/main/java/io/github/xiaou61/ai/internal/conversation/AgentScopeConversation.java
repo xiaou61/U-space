@@ -116,7 +116,8 @@ class AgentScopeConversation implements AssistantConversation {
                     } else {
                         TokenUsage usage = roundResult.usage();
                         if (usage != null) {
-                            step.tokens(usage.inputTokens(), usage.outputTokens(), 0);
+                            step.tokens(usage.inputTokens(), usage.outputTokens(),
+                                    usage.cacheReadTokens());
                         }
                         step.succeeded();
                     }
@@ -211,7 +212,8 @@ class AgentScopeConversation implements AssistantConversation {
         }
         return new TokenUsage(left.inputTokens() + right.inputTokens(),
                 left.outputTokens() + right.outputTokens(),
-                left.totalTokens() + right.totalTokens());
+                left.totalTokens() + right.totalTokens(),
+                left.cacheReadTokens() + right.cacheReadTokens());
     }
 
     /**
@@ -357,7 +359,8 @@ class AgentScopeConversation implements AssistantConversation {
     private static TokenUsage toUsage(ChatUsage usage) {
         return usage == null
                 ? null
-                : new TokenUsage(usage.getInputTokens(), usage.getOutputTokens(), usage.getTotalTokens());
+                : new TokenUsage(usage.getInputTokens(), usage.getOutputTokens(),
+                        usage.getTotalTokens(), usage.getCachedTokens());
     }
 
     /** 与精简那份同一套分类：只按"谁的问题"给说法，**不复述上游报文**（可能回显 Authorization）。 */
