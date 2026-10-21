@@ -5305,3 +5305,38 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-001~004 实施（判题口径 + SQL 执行能力）
+
+- 类型：implementation
+- 变更：
+  - TASK-001：`backend/paideia-sandbox/images/mysql/{Dockerfile,build.sh}`，构建期 `--initialize-insecure`，
+    datadir 180MB 打进镜像并 `chmod -R a-w`；镜像 digest `sha256:e2eafb6e…` 写进 `application.yml`
+  - TASK-002：`SandboxProperties` 加 sqlImage/sqlMemory/sqlCpus/sqlPidsLimit/sqlTimeoutMs/sqlDailyLimit
+    与按语言取值的方法；`languages()` 改为**按镜像是否配置过筛**（空值 = 该语言不出现）
+  - `DockerCommand.SQL_SCRIPT`：拷 datadir 到 tmpfs + chmod u+w、建库 practice、灌数据集、
+    `mysql practice --xml` 执行用户 SQL
+  - TASK-003：`SqlResultCodec`（XML 解析，xsi:nil → NULL 标记）+ `CodeRun.Table` + `Status.OVER_LIMIT`
+  - TASK-004：`tests/sql-judge/corpus.json`（24 条）+ TS `sql-judge.ts` + Python `sql_judge.py`
+    + `check_sql_judge_parity.py` 两侧对照
+- 决策：
+  - **SQL 输出用 `--xml` 而不是 `--batch --raw`**。原设计是插标记查询切结果集，实测证明不可行：
+    标记行是"单列表头 m + 一行标记值"，与真实数据行无法区分，`--raw` 又不能转义。
+    两条测试当场抓到切错。`--xml` 自带 `<resultset>` 边界、`xsi:nil`、DECIMAL 尾零
+  - **删掉 `SqlStatementSplitter` 与标记注入**：XML 给了边界就不需要自己切语句，
+    少一个只处理教学 SQL 的分词器（它的 shortcut 是"不认存储过程"）
+- 验证：
+  - `mvn -B -pl paideia-sandbox test` → 17 通过（DockerCommandTest 10 / SqlResultCodecTest 7）
+  - `python scripts/sql_judge.py --self-check` → 24 条 0 失败
+  - `python scripts/check_sql_judge_parity.py` → 两侧 24 条 0 不一致
+  - `vitest sql-judge.test.ts` → 39 passed
+  - **反向验证**：改坏 Python 的尾零归一 → 6 条红；改坏 TS 的负号归一 → 3 条红。
+    第一次改负号时**没有红**，因为语料缺负数用例——补了两条负整数用例后才红
+  - **服务器真跑**：镜像启动到可查询 3267 ms；容器内灌数据集 + 两条语句 → 两个结果集正确切开；
+    `BEGIN; UPDATE 999; SELECT; ROLLBACK; SELECT` → 999.00 变回 100.00（事务语义真实生效）
+- 实施中踩到并修掉的三个真缺陷：
+  1. 镜像里 datadir 是 `a-w`，`cp -a` 保留只读权限 → mysqld 报 `ibdata1 must be writable`
+  2. `secure_file_priv` 指向不存在的路径 → mysqld 直接 Aborting（所以脚本里先 mkdir）
+  3. 未建库/未指定库 → `ERROR 1046 No database selected`（脚本里 `CREATE DATABASE practice` + `--database`）
+- 本地提交：见下一笔
+- 远端推送：未执行

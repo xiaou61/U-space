@@ -23,7 +23,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 预初始化 MySQL 镜像
+### TASK-001 | done | 预初始化 MySQL 镜像
 
 - 对应：REQ-001、REQ-002；AC-001
 - 依赖：无
@@ -35,7 +35,7 @@ approver_role: CTO
   4. 记录最终 digest 并写进 `application.yml` 的默认值。
 - 验证：服务器上 `docker run --rm … mysqld --version`；启动到可 ping 的耗时 ≤ 6s（实测基线 4.4–4.7s，留余量）。
 
-### TASK-002 | pending | SQL 命令构造与逐条加固断言
+### TASK-002 | done | SQL 命令构造与逐条加固断言
 
 - 对应：REQ-001、REQ-004；AC-001、AC-004
 - 依赖：TASK-001
@@ -48,7 +48,7 @@ approver_role: CTO
   5. 每条加固标志一个单测断言（沿用现有 `contains` 写法）；`secure_file_priv` 指向不存在路径这条要有一条回归测试。
 - 验证：`mvn -B -pl paideia-sandbox test`；`DockerCommandTest` 全绿且新增断言逐条可指认。
 
-### TASK-003 | pending | 结果编解码（结构化 tables，多结果集）
+### TASK-003 | done | 结果编解码（结构化 tables，多结果集）
 
 - 对应：REQ-003、REQ-002a；AC-003、AC-016
 - 依赖：TASK-002
@@ -61,7 +61,7 @@ approver_role: CTO
   5. `CodeRun.Status` 加 `OVER_LIMIT`（唯一涉及的枚举扩展，不涉及迁移）。
 - 验证：单测覆盖单结果集、多结果集、`NULL`、超行数、超字节；`mvn -B -pl paideia-sandbox test`。
 
-### TASK-004 | pending | 判题语料与两侧实现
+### TASK-004 | done | 判题语料与两侧实现
 
 - 对应：REQ-005、REQ-006；AC-005、AC-008、AC-014
 - 依赖：无（纯逻辑，可与 TASK-002/003 并行）

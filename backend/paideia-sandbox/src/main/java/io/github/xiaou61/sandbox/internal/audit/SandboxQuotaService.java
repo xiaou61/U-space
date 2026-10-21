@@ -33,13 +33,29 @@ public class SandboxQuotaService {
         this.properties = properties;
     }
 
-    /** 今天还剩几次。 */
+    /** 今天还剩几次（不分语言，Java/Python 那一档）。 */
     public int remaining(long userId) {
         return Math.max(0, properties.getDailyLimit() - usedToday(userId));
     }
 
+    /** 今天某语言还剩几次（SQL 有单独一档，WORK-032）。 */
+    public int remaining(long userId, String language) {
+        if (!isSql(language)) {
+            return remaining(userId);
+        }
+        return Math.max(0, properties.getSqlDailyLimit() - usedToday(userId, language));
+    }
+
     public int usedToday(long userId) {
         return mapper.countSince(userId, startOfUtcDay());
+    }
+
+    /** 今天某语言用了多少次。 */
+    public int usedToday(long userId, String language) {
+        if (!isSql(language)) {
+            return usedToday(userId);
+        }
+        return mapper.countSinceForLanguage(userId, startOfUtcDay(), "sql");
     }
 
     /** 超了抛 429。**在真正执行之前调用**，避免先跑再拒绝。 */
@@ -48,6 +64,27 @@ public class SandboxQuotaService {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS,
                     "今天的运行次数已用完（每天 " + properties.getDailyLimit() + " 次），明天再来");
         }
+    }
+
+    /**
+     * 按语言检查配额（WORK-032）。SQL 走自己的 20 次/天，与其它语言互不影响。
+     *
+     * <p>**顺序很重要**：调用方必须在启动容器之前调这个。
+     */
+    public void requireQuota(long userId, String language) {
+        if (!isSql(language)) {
+            requireQuota(userId);
+            return;
+        }
+        int used = usedToday(userId, language);
+        if (used >= properties.getSqlDailyLimit()) {
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS,
+                    "今天的 SQL 运行次数已用完（每天 " + properties.getSqlDailyLimit() + " 次），明天再来");
+        }
+    }
+
+    private static boolean isSql(String language) {
+        return language != null && "sql".equalsIgnoreCase(language.trim());
     }
 
     /** 写一条审计。`status` 用 {@link CodeRun.Status} 的名字，存进去就是稳定值。 */

@@ -56,11 +56,69 @@ final class DockerCommand {
             dd bs=1 count="$size" of=/tmp/user_main.py 2>/dev/null
             cd /tmp && python /opt/trace.py""";
 
+    /**
+     * SQL 脚本（WORK-032）。
+     *
+     * <p>**为什么 stdout 就是结果**：这里没有"用户程序自己 print"这一层——用户写的就是查询，
+     * 查询的输出就是结果。所以不需要像 Python 录制那样借 fd 3：数据集导入的输出全部丢弃，
+     * stdout 上只剩查询结果。错误走 stderr，与其它语言一致。
+     *
+     * <p>分帧：先读数据集长度（来自请求的 `stdin`）、再读用户 SQL 长度。数据集是**受信任内容**，
+     * 由服务端按白名单取，不来自请求。
+     *
+     * <p>三条硬约束写死在脚本里，不依赖配置默认值：
+     * <ol>
+     *   <li>`--secure-file-priv` 指向**已创建**的空目录——实测指向不存在的路径会让 mysqld
+     *       直接 Aborting，而且报错在容器启动之后，排查起来像"镜像坏了"；</li>
+     *   <li>`--local-infile=0`：默认已关，仍写死，防将来换镜像时默认值变了；</li>
+     *   <li>`--skip-log-bin`：不写 binlog，省磁盘也少一条能读文件内容的路径。</li>
+     * </ol>
+     *
+     * <p>输出用 `--xml` 而不是 `--batch`：`--batch` 下多个结果集顺序拼在一起、**没有任何边界**，
+     * 只能靠插标记查询硬切，而标记行与真实数据行长得一样（`--raw` 下无法区分），实测确实会切错。
+     * `--xml` 每个结果集自带 `<resultset statement="...">` 起止、`xsi:nil` 显式表达 NULL、
+     * `DECIMAL` 保留尾零，三件事一次解决。
+     *
+     * <p>datadir 从镜像里拷进 tmpfs 再 `chmod u+w`：镜像里的基准 datadir 是只读的（防误写），
+     * `cp -a` 会把只读权限一起带过来，于是 mysqld 报 `ibdata1 must be writable`（实测踩过）。
+     *
+     * <p>**必须先建库并 `--database`**：mysqld 启动后没有"当前库"这个概念，直接执行
+     * `CREATE TABLE t` 会报 `ERROR 1046 No database selected`（实测踩过）。库名写死在脚本里，
+     * 用户的 SQL 里不需要也不应该自己写 `USE`。
+     */
+    private static final String SQL_SCRIPT = """
+            read -r dlen
+            dd bs=1 count="$dlen" of=/tmp/dataset.sql 2>/dev/null
+            read -r clen
+            dd bs=1 count="$clen" of=/tmp/user.sql 2>/dev/null
+            mkdir -p /tmp/nofiles && chown mysql:mysql /tmp/nofiles
+            cp -a /opt/datadir-base /tmp/data && chmod -R u+w /tmp/data \
+              && chown -R mysql:mysql /tmp/data
+            mysqld --skip-networking --socket=/tmp/m.sock --datadir=/tmp/data --user=mysql \
+              --secure-file-priv=/tmp/nofiles --local-infile=0 --skip-log-bin \
+              >/tmp/mysqld.log 2>&1 &
+            for i in $(seq 1 900); do
+              mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 && break
+              sleep 0.02
+            done
+            mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 || exit 8
+            mysql --socket=/tmp/m.sock -uroot -e "CREATE DATABASE practice"
+            mysql --socket=/tmp/m.sock -uroot practice < /tmp/dataset.sql >/dev/null 2>/tmp/ds.err || {
+              cat /tmp/ds.err >&2; exit 9; }
+            mysql --socket=/tmp/m.sock -uroot practice --xml \
+              --max-allowed-packet=16m < /tmp/user.sql""";
+
+    /** mysqld 起不来时的退出码（与用户 SQL 自身失败区分）。 */
+    static final int SQL_BOOT_FAILED = 8;
+
+    /** 数据集导入失败时的退出码。 */
+    static final int SQL_DATASET_FAILED = 9;
+
     private DockerCommand() {
     }
 
     /**
-     * @param language 已校验过的语言标识（java / python）
+     * @param language 已校验过的语言标识（java / python / sql）
      * @param props    资源与运行时配置
      * @param cidFile  容器 id 落到哪个文件（超时兜底删容器用）
      */
@@ -70,6 +128,7 @@ final class DockerCommand {
             throw new IllegalArgumentException("不支持的语言：" + language);
         }
         String normalized = language.trim().toLowerCase(Locale.ROOT);
+        boolean sql = "sql".equals(normalized);
 
         List<String> command = new ArrayList<>(List.of(
                 "docker", "run",
@@ -79,18 +138,21 @@ final class DockerCommand {
                 "--network=none",
                 // ── 文件系统：根只读，唯一的可写处是一个有上限的 tmpfs ──
                 "--read-only",
-                "--tmpfs", "/tmp:rw,size=64m,exec",
+                // SQL 的 datadir 副本要装下 180MB 基准 + 系统库写入，64m 远远不够；
+                // 768m 给了 4 倍余量，且仍是硬上限。
+                "--tmpfs", sql ? "/tmp:rw,size=768m,exec" : "/tmp:rw,size=64m,exec",
                 // ── 身份与权限：非 root、cap 全丢、禁止提权 ──
-                "--user", "65534:65534",
+                // mysqld 必须以 mysql 用户跑（镜像里是 uid 999），其它语言用 nobody。
+                "--user", sql ? "999:999" : "65534:65534",
                 "--cap-drop=ALL",
                 "--security-opt=no-new-privileges",
-                // ── 资源上限 ──
-                "--memory=" + props.getMemory(),
-                "--memory-swap=" + props.getMemory(),
-                "--cpus=" + props.getCpus(),
-                "--pids-limit=" + props.getPidsLimit(),
-                "--ulimit", "nofile=64",
-                "--ulimit", "nproc=64",
+                // ── 资源上限（按语言取值：mysqld 常驻约 348MB，256m 会被 OOM 杀掉）──
+                "--memory=" + props.memoryFor(normalized),
+                "--memory-swap=" + props.memoryFor(normalized),
+                "--cpus=" + props.cpusFor(normalized),
+                "--pids-limit=" + props.pidsLimitFor(normalized),
+                "--ulimit", sql ? "nofile=1024" : "nofile=64",
+                "--ulimit", sql ? "nproc=128" : "nproc=64",
                 // 停止超时 0：超时后立即 SIGKILL，不给程序自己收尾的机会
                 "--stop-timeout=0",
                 // 记录容器 id：宿主上的 docker CLI 被强杀后容器仍归 daemon 管，
@@ -109,7 +171,7 @@ final class DockerCommand {
 
         command.add(image);
         command.add("-c");
-        command.add("java".equals(normalized) ? JAVA_SCRIPT : PYTHON_SCRIPT);
+        command.add(scriptFor(normalized));
         return List.copyOf(command);
     }
 
@@ -155,8 +217,15 @@ final class DockerCommand {
         return List.copyOf(command);
     }
 
-    /** 容器内的脚本常量（测试与文档共用，避免两处各写一份）。 */
+    /**
+     * 容器内的脚本常量（测试与文档共用，避免两处各写一份）。
+     */
     static String scriptFor(String language) {
-        return "java".equals(language.trim().toLowerCase(Locale.ROOT)) ? JAVA_SCRIPT : PYTHON_SCRIPT;
+        String normalized = language.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "java" -> JAVA_SCRIPT;
+            case "sql" -> SQL_SCRIPT;
+            default -> PYTHON_SCRIPT;
+        };
     }
 }

@@ -34,6 +34,20 @@ public class SandboxProperties {
     private String javaImage = "eclipse-temurin:21-jdk-alpine";
     private String pythonImage = "python:3.12-alpine";
 
+    /**
+     * MySQL 实训镜像（WORK-032）。**datadir 在构建期已初始化**——实测运行时初始化要 17.9 秒，
+     * 而一次练习的 SQL 本身只跑几十毫秒。留空表示该语言不可用。
+     */
+    private String sqlImage = "";
+
+    /** SQL 专用上限：mysqld 常驻约 348 MB，用 Java/Python 的 256m 会被 OOM 杀掉。 */
+    private String sqlMemory = "512m";
+    private String sqlCpus = "1";
+    private int sqlPidsLimit = 128;
+    private long sqlTimeoutMs = 20_000;
+    /** SQL 的日配额单独一档：一次运行起一个容器，成本是其它语言的数倍。 */
+    private int sqlDailyLimit = 20;
+
     /** 墙钟上限（毫秒）。超时即 `destroyForcibly`。 */
     private long timeoutMs = 10_000;
 
@@ -55,9 +69,25 @@ public class SandboxProperties {
     private String cpus = "0.5";
     private int pidsLimit = 64;
 
-    /** 支持的围栏语言标识。 */
+    /**
+     * 支持的围栏语言标识。
+     *
+     * <p>**按镜像是否配置过筛**：`sql-image` 留空时 sql 不出现，前端就不渲染运行按钮。
+     * 渲染一个必然失败的按钮比不渲染更糟——用户会以为是自己点错了（与 `run-challenge.tsx`
+     * 的降级口径一致）。
+     */
     public Set<String> languages() {
-        return Set.of("java", "python");
+        Set<String> available = new java.util.LinkedHashSet<>();
+        if (javaImage != null && !javaImage.isBlank()) {
+            available.add("java");
+        }
+        if (pythonImage != null && !pythonImage.isBlank()) {
+            available.add("python");
+        }
+        if (sqlImage != null && !sqlImage.isBlank()) {
+            available.add("sql");
+        }
+        return Set.copyOf(available);
     }
 
     /** 语言 → 镜像。未知语言返回 null（调用方负责拒绝）。 */
@@ -66,10 +96,44 @@ public class SandboxProperties {
             return null;
         }
         return switch (language.trim().toLowerCase(Locale.ROOT)) {
-            case "java" -> javaImage;
-            case "python" -> pythonImage;
+            case "java" -> blankToNull(javaImage);
+            case "python" -> blankToNull(pythonImage);
+            case "sql" -> blankToNull(sqlImage);
             default -> null;
         };
+    }
+
+    /** 该语言的墙钟上限。SQL 单独一档：启动 mysqld 本身就要 3 秒上下。 */
+    public long timeoutMsFor(String language) {
+        return isSql(language) ? sqlTimeoutMs : timeoutMs;
+    }
+
+    /** 该语言的内存上限。 */
+    public String memoryFor(String language) {
+        return isSql(language) ? sqlMemory : memory;
+    }
+
+    /** 该语言的 CPU 上限。 */
+    public String cpusFor(String language) {
+        return isSql(language) ? sqlCpus : cpus;
+    }
+
+    /** 该语言的进程数上限。 */
+    public int pidsLimitFor(String language) {
+        return isSql(language) ? sqlPidsLimit : pidsLimit;
+    }
+
+    /** 该语言的每日运行次数。 */
+    public int dailyLimitFor(String language) {
+        return isSql(language) ? sqlDailyLimit : dailyLimit;
+    }
+
+    private static boolean isSql(String language) {
+        return language != null && "sql".equalsIgnoreCase(language.trim());
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     public boolean isSupported(String language) {
@@ -180,8 +244,66 @@ public class SandboxProperties {
         this.pidsLimit = pidsLimit;
     }
 
-    /** 供状态端点展示：每种语言的镜像。 */
+    public String getSqlImage() {
+        return sqlImage;
+    }
+
+    public void setSqlImage(String sqlImage) {
+        this.sqlImage = sqlImage;
+    }
+
+    public String getSqlMemory() {
+        return sqlMemory;
+    }
+
+    public void setSqlMemory(String sqlMemory) {
+        this.sqlMemory = sqlMemory;
+    }
+
+    public String getSqlCpus() {
+        return sqlCpus;
+    }
+
+    public void setSqlCpus(String sqlCpus) {
+        this.sqlCpus = sqlCpus;
+    }
+
+    public int getSqlPidsLimit() {
+        return sqlPidsLimit;
+    }
+
+    public void setSqlPidsLimit(int sqlPidsLimit) {
+        this.sqlPidsLimit = sqlPidsLimit;
+    }
+
+    public long getSqlTimeoutMs() {
+        return sqlTimeoutMs;
+    }
+
+    public void setSqlTimeoutMs(long sqlTimeoutMs) {
+        this.sqlTimeoutMs = sqlTimeoutMs;
+    }
+
+    public int getSqlDailyLimit() {
+        return sqlDailyLimit;
+    }
+
+    public void setSqlDailyLimit(int sqlDailyLimit) {
+        this.sqlDailyLimit = sqlDailyLimit;
+    }
+
+    /** 供状态端点展示：每种语言的镜像（**只列配置了的**，空串不出现）。 */
     public List<String> images() {
-        return List.of(javaImage, pythonImage);
+        List<String> configured = new java.util.ArrayList<>();
+        if (!javaImage.isBlank()) {
+            configured.add(javaImage);
+        }
+        if (!pythonImage.isBlank()) {
+            configured.add(pythonImage);
+        }
+        if (sqlImage != null && !sqlImage.isBlank()) {
+            configured.add(sqlImage);
+        }
+        return List.copyOf(configured);
     }
 }

@@ -51,6 +51,23 @@ public interface CodeRunMapper {
             """)
     int countSince(@Param("userId") long userId, @Param("since") Instant since);
 
+    /**
+     * 当天某语言的已用次数（WORK-032）。
+     *
+     * <p>SQL 的日配额单独一档（20 次），与 Java/Python 的 50 次分开算：一次 SQL 运行要起
+     * 一个容器，成本是其它语言的数倍。`language` 列本来就有，不需要迁移。
+     */
+    @Select("""
+            SELECT COUNT(*) FROM code_runs
+            WHERE user_id = #{userId}
+              AND created_at >= #{since}
+              AND status <> 'rejected'
+              AND status <> 'disabled'
+              AND language = #{language}
+            """)
+    int countSinceForLanguage(@Param("userId") long userId, @Param("since") Instant since,
+                              @Param("language") String language);
+
     /** 注销级联用。 */
     @org.apache.ibatis.annotations.Delete("DELETE FROM code_runs WHERE user_id = #{userId}")
     int deleteByUser(@Param("userId") long userId);

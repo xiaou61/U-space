@@ -172,11 +172,23 @@ class DockerCodeRunner implements CodeRunner {
 
         // 分帧写入：第一行是源码字节数，容器先用 dd 精确取走源码，剩下的才是程序的标准输入。
         // 直接顺序写会让 `cat` 把 stdin 也吞进源码文件（见 DockerCommand 的说明）。
+        //
+        // SQL 是**两段帧**：先数据集长度、再用户工程长度。数据集来自服务端的白名单内容
+        // （请求里的 `stdin` 字段承载），用户写的是 `code`。
+        //
+        // SQL 还要把多条语句交给**同一个 mysql 进程**顺序执行：事务题的 BEGIN/ROLLBACK
+        // 只有在同一会话里才是真的。结果集边界由 `--xml` 自己给出（见 SqlResultCodec）。
         try (OutputStream stdin = process.getOutputStream()) {
+            boolean sql = isSql(request.language());
             byte[] code = request.code().getBytes(StandardCharsets.UTF_8);
+            if (sql) {
+                byte[] dataset = (request.stdin() == null ? "" : request.stdin()).getBytes(StandardCharsets.UTF_8);
+                stdin.write((dataset.length + "\n").getBytes(StandardCharsets.UTF_8));
+                stdin.write(dataset);
+            }
             stdin.write((code.length + "\n").getBytes(StandardCharsets.UTF_8));
             stdin.write(code);
-            if (request.stdin() != null && !request.stdin().isEmpty()) {
+            if (!sql && request.stdin() != null && !request.stdin().isEmpty()) {
                 stdin.write(request.stdin().getBytes(StandardCharsets.UTF_8));
             }
             stdin.flush();
@@ -193,7 +205,7 @@ class DockerCodeRunner implements CodeRunner {
 
         boolean finished;
         try {
-            finished = process.waitFor(properties.getTimeoutMs(), TimeUnit.MILLISECONDS);
+            finished = process.waitFor(properties.timeoutMsFor(request.language()), TimeUnit.MILLISECONDS);
         } catch (InterruptedException cause) {
             Thread.currentThread().interrupt();
             process.destroyForcibly();
@@ -215,6 +227,9 @@ class DockerCodeRunner implements CodeRunner {
         String out = stdout.text();
         String err = stderr.text();
         boolean oom = !finished && looksLikeOom(exitCode, err, out);
+        SqlResultCodec.Parsed parsed = isSql(request.language()) && exitCode == 0
+                ? SqlResultCodec.parse(out, properties.getMaxOutputBytes() / 8)
+                : new SqlResultCodec.Parsed(java.util.List.of(), false);
         log.info("sandbox run language={} finished={} exit={} durationMs={} outBytes={}",
                 request.language(), finished, exitCode, durationMs,
                 out.getBytes(StandardCharsets.UTF_8).length);
@@ -226,7 +241,12 @@ class DockerCodeRunner implements CodeRunner {
                 durationMs,
                 !finished,
                 oom || exitCode == 137 && err.contains("Killed"),
-                stdout.truncated() || stderr.truncated());
+                stdout.truncated() || stderr.truncated() || parsed.overLimit(),
+                parsed.tables());
+    }
+
+    private static boolean isSql(String language) {
+        return language != null && "sql".equalsIgnoreCase(language.trim());
     }
 
     /**
