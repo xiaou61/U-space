@@ -31,6 +31,7 @@
 - **迁移与种子的分工**：生产迁移只建结构（可以插配置类常量行，但**插业务数据时要显式写 id 且 ≥ 900**）；测试/开发数据一律放 `db/devdata`，绝不放 `db/migration`。`MigrationSeedOverlapTest` 会把"生产迁移往种子表插行却不给 id"变成构建失败——这类 bug 只在零数据新库上出现，生产库和开发库永远看不出来。
 - **迁移文件名用 14 位时间戳**：`V20261021103045__描述.sql`，不要用 `V25__` 这种递增号。多个会话并行时递增号是**被争抢的共享命名空间**：实测两个分支都写 `V25` 会让应用直接起不来（`Found more than one migration with version 25`），不是某个迁移失败而是整个上下文中止。时间戳把这个概率降到"同一秒"，`MigrationVersionFormatTest` 会同时挡住纯数字号与同秒重复。**它治不了**"两个会话改同一张表的不同列、版本号不冲突但语义冲突"——那只能靠合并前协调：**动 schema 前先 `git log --all --oneline -- <迁移目录>` 看有没有人在改同一张表**。
 - **部署**：一条命令 `powershell -File scripts/release.ps1`（纯后端改动约 75 秒）。前端**按需重建**：`frontend/` 自上次发版以来没改动就自动跳过那 80 秒，要强制重建用 `-WithWeb`、强制只发后端用 `-SkipWeb`。部署形态、端口与服务器约定见 `.agent/rules/always.md` 的「部署」，耗时的实测拆解见 `.agent/notes/dev-workflow.md` 的「发版耗时」。本项目没有"发布"这个节点，改完随手部署即可，不需要攒批次。
+- **架构图存 `docs/architecture/`，一律 mermaid**：判据是**能不能从代码抽取**——能（模块依赖、表关系）写脚本生成、不许手画，因为模型凭印象复述一定会漏会错且错得很像真的；不能（请求链路、时序、状态机）才由 AI 写。改了模块边界、外部依赖、表结构或部署拓扑的，**在同一个提交里改对应的图**。改完跑 `node scripts/check-diagrams.mjs`（语法校验，6 秒扫全仓）与 `node scripts/gen-arch-diagram.mjs --check`（结构图与 pom 是否漂移）。规则与已知限制见该目录的 `README.md`。
 
 ## 保密规则（公开仓库，最重要）
 
