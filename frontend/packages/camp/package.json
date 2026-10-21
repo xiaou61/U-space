@@ -1,0 +1,31 @@
+{
+  "name": "@paideia/camp",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AI 训练营：类型、API 客户端、薄弱点与每日计划组件（WORK-029）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  },
+  "dependencies": {
+    "@paideia/core": "workspace:*",
+    "@paideia/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "happy-dom": "^21.0.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vitest": "5.0.3",
+    "@vitejs/plugin-react": "6.1.2",
+    "@tailwindcss/vite": "4.3.3"
+  }
+}

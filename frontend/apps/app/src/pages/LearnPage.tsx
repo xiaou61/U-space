@@ -10,7 +10,7 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpenCheck, Map, Play } from 'lucide-react'
+import { ArrowRight, BookOpenCheck, Map, Play, Target } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 
@@ -158,6 +158,25 @@ export function LearnPage() {
           })}
         </div>
       ) : null}
+
+      {/* 训练营（WORK-029）：它是"还没有任何学习记录的人"的入口，
+          所以和轨道并列出现在这一页，而不是只藏在简历页里。 */}
+      <Link
+        to="/camp"
+        data-testid="learn-camp-entry"
+        className="border-border bg-card hover:border-primary/40 mt-6 flex items-center gap-4 rounded-xl border p-5 transition-colors"
+      >
+        <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+          <Target className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-medium">用简历开一个 AI 训练营</span>
+          <span className="text-muted-foreground mt-0.5 block text-sm">
+            先做诊断题，按薄弱点排每天学什么；走完再复测一次，两次并排看变化。
+          </span>
+        </span>
+        <ArrowRight className="text-muted-foreground size-4 shrink-0" />
+      </Link>
 
       <Card className="mt-6">
         <CardContent className="flex items-start gap-3 py-4">

@@ -4,6 +4,8 @@ import { createHashRouter } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { GraphPage } from './pages/GraphPage'
 import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
+import { CampDetailPage } from './pages/CampDetailPage'
+import { CampListPage } from './pages/CampListPage'
 import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { LearnPage } from './pages/LearnPage'
@@ -129,6 +131,24 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <NoteNewPage />
+      </RequireAuth>
+    ),
+  },
+  // AI 训练营（WORK-029）：简历 → 出卷 → 判分 → 计划 → 复测。
+  // 「还没有学习记录的人」的入口，所以与 /learn 并列，不塞进知识库。
+  {
+    path: '/camp',
+    element: (
+      <RequireAuth>
+        <CampListPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/camp/:id',
+    element: (
+      <RequireAuth>
+        <CampDetailPage />
       </RequireAuth>
     ),
   },

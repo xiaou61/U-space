@@ -194,6 +194,15 @@ export function ResumeListPage() {
                   <Button size="sm" variant="outline" onClick={() => navigate(`/resume/${item.id}/optimize`)}>
                     按岗位优化
                   </Button>
+                  {/* 训练营（WORK-029）：带上简历 id 直接开营，用户不用再去列表里找一遍 */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(`/camp?resume=${item.id}`)}
+                    data-testid={`resume-to-camp-${item.id}`}
+                  >
+                    用它开训练营
+                  </Button>
                   {!item.isDefault && (
                     <Button
                       size="sm"

@@ -60,6 +60,9 @@ const NAV = [
   // 验收失去观察点（2026-10-18 实测：identity.spec 里首链接断言因此变红）。
   // 它也不进 preferredNav —— 排序只覆盖那四个入口，简历固定排在它们之后。
   { key: 'resume' as const, to: '/resume', label: '我的简历', testId: 'learner-nav-resume' },
+  // 训练营（WORK-029）：它是"还没有学习记录的人"的入口，与简历并列。
+  // 同样不进 preferredNav —— 身份排序只管那四个老入口，新入口固定排在后面。
+  { key: 'camp' as const, to: '/camp', label: '训练营', testId: 'learner-nav-camp' },
   { key: 'interview' as const, to: '/interview', label: '模拟面试', testId: 'learner-nav-interview' },
 ]
 
