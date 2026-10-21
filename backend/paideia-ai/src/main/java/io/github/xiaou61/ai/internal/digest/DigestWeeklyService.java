@@ -41,13 +41,16 @@ public class DigestWeeklyService {
     private final DigestMapper mapper;
     private final CredentialService credentials;
     private final GuardedHttpTransport transport;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     DigestWeeklyService(DigestProperties properties, DigestMapper mapper,
-                        CredentialService credentials, GuardedHttpTransport transport) {
+                        CredentialService credentials, GuardedHttpTransport transport,
+                        io.github.xiaou61.ai.RunRecorder recorder) {
         this.properties = properties;
         this.mapper = mapper;
         this.credentials = credentials;
         this.transport = transport;
+        this.recorder = recorder;
     }
 
     /** 一次周报运行的结果。 */
@@ -90,7 +93,22 @@ public class DigestWeeklyService {
             return WeeklyResult.skipped(weekStart, "平台未配置 AI 凭据");
         }
 
-        String body = callModel(titles, access.get());
+        // 周报单独一条 ai_runs 记录，便于与日报分开看成本（AC-008 的延伸）。
+        // userId=0 表示平台行为（速递没有用户归属）。
+        var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                .of(io.github.xiaou61.ai.RunKind.DIGEST_WEEKLY, 0L)
+                .withModel(access.get().model()));
+        String body;
+        try {
+            body = callModel(titles, access.get());
+            if (body != null && !body.isBlank()) {
+                run.finish(io.github.xiaou61.ai.RunOutcome.OK, null);
+            } else {
+                run.finish(io.github.xiaou61.ai.RunOutcome.FAILED, "empty_response");
+            }
+        } finally {
+            run.close();
+        }
         if (body == null || body.isBlank()) {
             return WeeklyResult.skipped(weekStart, "模型没有返回内容");
         }

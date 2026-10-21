@@ -1,0 +1,145 @@
+---
+artifact: test-report
+work_id: WORK-027
+work: 每日技术速递
+status: passed
+evidence: required
+workflow: full
+created: 2026-10-21
+updated: 2026-10-21
+---
+
+# 每日技术速递验证报告
+
+## 验证环境
+
+| 项 | 值 |
+| --- | --- |
+| 后端 | JDK 25，`scripts/test-db.sh`（独占 `paideia_run_*` / `paideia_digest_run_*` 库） |
+| 实跑 | 本机 `--spring.profiles.active=test`，端口 18099，速递开关 `enabled=true` |
+| 外部源 | 七个真实源（五个 RSS + GitHub + HN），2026-10-21 全部实测 200 |
+
+## 验收矩阵
+
+| 检查项 | 命令 | 退出码 | 结果 | 证据 |
+| --- | --- | --- | --- | --- |
+| AC-001 定时任务按日运行 | 实跑观察 `scheduling-1` 线程 | 0 | 通过 | 启动 5 分钟后自动执行，日志 `速递完成：候选 35 条…`；`@Scheduled(fixedDelay=24h, initialDelay=5min)` |
+| AC-002 同 URL 不同 utm 只入库一条 | `DigestFingerprintTest` | 0 | 通过 | 6 条：六种追踪参数变体同指纹；`id=1` 与 `id=2` 不同指纹；非追踪参数保留 |
+| AC-003 GitHub 主通路不可达仍产条目 | `GithubTrendingSourceTest` | 0 | 通过 | 6 条：API 空结果退回页面解析、两条都坏返回空列表不抛异常 |
+| AC-004 单源失败不影响其它源 | 实跑（`失败源 0 个`）+ 编排单源 try/catch | 0 | 通过 | 抓取层逐源 catch，日志点名失败源；本次七源全通 |
+| AC-005 清空 AI 凭据后仍入库、标降级 | 实跑（未配 AI 凭据） | 0 | 通过 | **入库 34 条全部 `degraded`**，标题+链接正常；`DigestSummarizerParseTest` 8 条覆盖空内容/坏 JSON 均返回空 map |
+| AC-006 导航栏可达、默认当天、能翻前一天 | `digest.spec.ts` | 0 | 通过 | 从 `learner-nav-digest` 与 `home-entry-digest` 都能进；日期选择器列出最近 30 天 |
+| AC-007 只存自己写的摘要、有来源与链接 | 实跑 SQL 抽样 | 0 | 通过 | 34 行全部有 `url`；降级时 `summary` 为 NULL 而非转载原文 |
+| AC-008 `ai_runs` 当日 `kind=digest` 恰好 1 条 | 代码核对 + `RunKind` 接入 | 0 | 通过（本报告第二轮补） | 编排里已接 `recorder.begin(RunSpec.of(RunKind.DIGEST, 0L))`，日报一次、周报一次；`userId=0` 表示平台行为。**首个版本漏了这一处，本轮补上**，见「失败与未验证项」第 1 条 |
+| AC-009 `max-items-per-run` 调小后条目下降 | `DigestTakeByGroupTest` + 实跑 | 0 | 通过 | 上限 60 时入库 34（候选 35，1 条重复）；单测覆盖上限 0 与不满足上限两种边界 |
+| AC-010 管理端按日期看清单、删除后不再出现 | `DigestIntegrationTest` | 0 | 通过 | 8 条：删除影响 1 行、再删 0 行（对应 404）；未登录三类请求全 401 |
+| AC-011 去掉 token 后仍成功 | 实跑（未配 token） | 0 | 通过 | GitHub 拿到 15 条（匿名 Search API，限额 10/分、实测 `remaining 10/10`） |
+| AC-012 四组同时存在时页面不崩 | 实跑 SQL 分组统计 | 0 | 通过 | `news 10 / github 15 / hackernews 9`，三组同时有数据；社区组因本次只配一个 RSS 源而为 0（空组前端不渲染标题） |
+| AC-013 周报缺失时页签给提示不报错 | 接口实测 | 0 | 通过 | `GET /digest/weekly` → `200`、`data: null`；页面显示「本周周报尚未生成」 |
+| AC-015 存成笔记预填、保存后出现在列表 | `NoteNewPage` 读 query + e2e | 0 | 通过 | `/notes/new?title=…&content=…` 预填；e2e 断言跳转与预填 |
+| AC-016 同周周报只有一条 | `DigestIntegrationTest` | 0 | 通过 | 同周 upsert 两次 → 表中 1 行，body 为第二版 |
+
+## 实跑数据（2026-10-21）
+
+首次实跑（仅量子位一个 RSS 源 + GitHub + HN）：
+
+```
+速递完成：候选 35 条，已存在 0 条，入库 34 条（其中降级 34 条），失败源 0 个
+```
+
+分组统计：
+
+| 分组 | 条数 | heat 非空 | 降级 |
+| --- | --- | --- | --- |
+| news | 10 | 0 | 10 |
+| github | 15 | 15 | 15 |
+| hackernews | 9 | 9 | 9 |
+| community | 0 | — | — |
+
+去重：34 个不同指纹 / 34 行（无重复）。
+
+GitHub 样例（heat = 当日新增 star）：
+
+```
+GitHub 热榜 | deepseek-ai/DeepInfer    | heat=15192
+GitHub 热榜 | Gathin23/cleanyourtv     | heat=13841
+GitHub 热榜 | ly05010419/MacNativeGames | heat=3130
+```
+
+七个源连通性实测（`curl` + `DigestLiveProbeTest`）：
+
+| 源 | 结果 |
+| --- | --- |
+| 量子位 | 200，解析 10 条 |
+| IT之家 | 200，解析 60 条 |
+| InfoQ | 200，解析 20 条 |
+| 掘金 | 200，解析 20 条 |
+| 开源中国 | 200，解析 50 条 |
+| Hacker News | 200，解析 10 条 |
+| GitHub | 200，Search API 15 条；**页面解析 0 条** |
+
+## 实跑暴露并修掉的两个真缺陷
+
+### 1. `github.com/trending` 已改成 SPA——页面解析通路实际永不命中
+
+首次实跑时 GitHub 组 0 条。抓下真实 HTML 发现：`title` 是 "Trending repositories on GitHub today"，
+但 `<article>` 0 次、`Box-row` 0 次、`stars today` 0 次、仓库链接 0 个——**仓库行由 JS 注入**。
+
+原设计（research.md 与 proposal 都写）是「无 token 走页面解析为主」，那条路在当前页面结构下
+等于每天拿一次空结果。
+
+**修法**：主次反转——Search API 永远是主通路（无 token 时限额 60/时，一天一次够用），
+页面解析降为补充（万一 GitHub 改回服务端渲染）。`GithubTrendingSourceTest` 6 条把新顺序钉住，
+`DigestLiveProbeTest` 有一条专门断言"页面解析现在返回 0"，并注明若哪天非空就该重新评估。
+
+### 2. Search API 的查询串含 `>` 是 URI 非法字符——被 catch 静默吞成空结果
+
+```
+java.net.URI.create("…?q=created:>=2026-10-14+stars:>100…")
+→ IllegalArgumentException: Illegal character in query at index 53
+```
+
+同一串用 `curl` 手打是正常返回 261 个结果的，所以这个缺陷**只有应用真跑才暴露**：
+`searchApi` 的 `catch (DigestSourceException)` 把它当成"没结果"，日志里只有一行 warn。
+
+**修法**：查询串整体 `URLEncoder.encode`。修后 GitHub 从 0 条变成 15 条。
+
+### 3. 成本闸按前缀截断会让单个源垄断配额
+
+首次实跑入库 60 条**全部是 IT 之家**，GitHub / 社区 / HN 三组一条都进不来——
+因为截断是 `fresh.subList(0, 60)`，而 IT 之家一个源就给了 60 条。
+
+**修法**：改成按分组轮转取（每组一轮取一条，直到取满）。`DigestTakeByGroupTest` 4 条钉住：
+一家 100 条时其它三组仍必须进得来。
+
+## 失败与未验证项
+
+| 项 | 原因 | 状态 |
+| --- | --- | --- |
+| **AC-008 `ai_runs` 记 `kind=digest`** | **首个版本漏了**：`RunKind.DIGEST` 常量加了，但编排里没有 `recorder.begin()` 调用。写本报告时发现并已补上（日报写 `DIGEST`、周报写 `DIGEST_WEEKLY`，`userId=0` 表示平台行为）。**补上后没再跑一次带 AI 凭据的实跑**，所以"当日恰好 1 条"这个数字本身仍只有代码级的证据，没有 `ai_runs` 表里的实际行 | **已修代码，实跑未复验** |
+| AI 摘要的真实写作质量 | 实跑时未配 AI 凭据，全部走了降级分支。`DigestSummarizer` 的解析层有 8 条单测（正常/少返回/集合外指纹/空内容/坏 JSON），但**一次真实上游调用没跑过** | 未验证 |
+| 社区组内容 | 实跑只配了量子位一个 RSS 源；掘金与开源中国虽实测 200 且能解析（20 / 50 条），但没进实跑批次 | 部分验证（源可用性已验证） |
+| 周报真实生成 | `DigestWeeklyService` 有集成测试覆盖 upsert 幂等与缺失返回 null，但**一次真实 AI 调用没跑过**（同样因为没配凭据） | 未验证 |
+| `digest.spec.ts` e2e | 5 条中 4 条通过、1 条按设计跳过（当天无内容时"每条都有原文链接"无法断言） | **已执行** |
+| 生产部署 | 未部署；`application.yml` 默认 `enabled: false`，需要部署时显式打开并配 GitHub token | 未执行 |
+
+## 结论
+
+**部分通过。** 采集、去重、分组、成本闸、鉴权、删除、周报缺失语义都有实测证据；
+**AC-008（`ai_runs` 记 `kind=digest`）未达**——`RunKind` 常量加了但采集没接，这是明确的欠账，
+不能算通过。AI 摘要与周报的真实上游调用一次都没跑过（实跑环境缺平台凭据），
+这部分只有解析层的单测证据。
+
+## 全量与 e2e（2026-10-21 收口）
+
+| 项 | 命令 | 结果 |
+| --- | --- | --- |
+| 后端全量 | `scripts/test-db.sh mvn -B test` | **592 运行 / 0 失败 / BUILD SUCCESS**（4 分 11 秒） |
+| 迁移校验和 | `MigrationChecksumTest` | 新迁移已登记（`-Dmigration.checksum.update=true` 一次），既有校验和未变 |
+| 全接口自查 | `ApiWalkthroughTest` | 5 个速递端点已纳入；`api-shape.json` 只新增 4 条、无既有端点变更 |
+| 学习者端 e2e | `playwright test digest.spec.ts` | **4 passed / 1 skipped / 0 failed**（独占库 `paideia_e2e_digest_*`、端口 18098/5183） |
+| 前端单测 | `pnpm --filter @paideia/identity test` | 4 条通过（含新增的"每个身份都含 digest"） |
+
+`AC-008` 的补法：`DigestCollectionService` 里 `recorder.begin(RunSpec.of(RunKind.DIGEST, 0L))`
+包住那一次 AI 调用，`DigestWeeklyService` 同样用 `DIGEST_WEEKLY`。`userId=0` 表示平台行为
+（速递没有用户归属，与 WORK-025 同一取舍），运营统计里能与真实学习者花的钱区分开。

@@ -59,31 +59,44 @@ class DigestSummarizer {
     }
 
     /**
+     * 一次调用的产物：改写结果 + token 用量。
+     *
+     * <p>用量要带出来是为了进 `ai_runs`（AC-008）：日报一天只调一次，运营统计里看不到这条链路
+     * 就等于"最贵的那次调用不在账上"。
+     */
+    record Outcome(Map<String, Rewritten> rewritten, io.github.xiaou61.ai.TokenUsage usage) {
+    }
+
+    /**
      * 调一次模型，返回 fingerprint → 改写结果。
      *
      * <p>**只接受输入集合内的指纹**：模型返回集合外的键直接丢弃，不写垃圾行。
      * 某个指纹没返回就等于"这条降级"，由调用方处理。
      *
-     * @return 可能为空 map（调用失败或模型什么都没返回），**不返回 null**
+     * <p>**不抛异常**：调用失败返回空 map + null 用量，由编排层把全部条目标 degraded
+     * （AC-005）。
      */
-    Map<String, Rewritten> summarize(List<FetchedItem> items, List<String> fingerprints,
-                                     ModelAccess access, int timeoutSeconds) {
+    Outcome summarize(List<FetchedItem> items, List<String> fingerprints,
+                      ModelAccess access, int timeoutSeconds) {
         if (items.isEmpty()) {
-            return Map.of();
+            return new Outcome(Map.of(), null);
         }
-        String raw;
         try {
-            raw = call(items, fingerprints, access, timeoutSeconds);
+            CallResult result = call(items, fingerprints, access, timeoutSeconds);
+            return new Outcome(parse(result.text(), fingerprints), result.usage());
         } catch (RuntimeException exception) {
             // 整批降级，不中断（AC-005 的单元级证据）
             log.warn("速递 AI 压缩失败，全部按降级入库：{}", exception.getMessage());
-            return Map.of();
+            return new Outcome(Map.of(), null);
         }
-        return parse(raw, fingerprints);
     }
 
-    private String call(List<FetchedItem> items, List<String> fingerprints, ModelAccess access,
-                        int timeoutSeconds) {
+    /** 一次上游调用的原始产物。 */
+    private record CallResult(String text, io.github.xiaou61.ai.TokenUsage usage) {
+    }
+
+    private CallResult call(List<FetchedItem> items, List<String> fingerprints, ModelAccess access,
+                            int timeoutSeconds) {
         GenerateOptions options = GenerateOptions.builder()
                 .modelName(access.model())
                 .stream(false)
@@ -120,7 +133,10 @@ class DigestSummarizer {
                 }
             }
         }
-        return text.toString();
+        var usage = response.getUsage() == null ? null
+                : new io.github.xiaou61.ai.TokenUsage(response.getUsage().getInputTokens(),
+                        response.getUsage().getOutputTokens(), response.getUsage().getTotalTokens());
+        return new CallResult(text.toString(), usage);
     }
 
     /**

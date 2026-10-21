@@ -58,11 +58,13 @@ public class DigestCollectionService {
     private final DigestSummarizer summarizer;
     private final DigestMapper mapper;
     private final CredentialService credentials;
+    private final io.github.xiaou61.ai.RunRecorder recorder;
 
     DigestCollectionService(DigestProperties properties, RssDigestSource rssSource,
                             GithubTrendingSource githubSource, HackerNewsSource hackerNewsSource,
                             DigestSummarizer summarizer, DigestMapper mapper,
-                            CredentialService credentials) {
+                            CredentialService credentials,
+                            io.github.xiaou61.ai.RunRecorder recorder) {
         this.properties = properties;
         this.rssSource = rssSource;
         this.githubSource = githubSource;
@@ -70,6 +72,7 @@ public class DigestCollectionService {
         this.summarizer = summarizer;
         this.mapper = mapper;
         this.credentials = credentials;
+        this.recorder = recorder;
     }
 
     /** 一次运行的统计，供日志与测试断言。 */
@@ -141,20 +144,41 @@ public class DigestCollectionService {
             return new RunResult(fetched.size(), candidates.size(), 0, 0, sourcesFailed, "没有新内容");
         }
 
-        // 5. 截断（成本闸）
-        List<String> selected = fresh.size() > properties.getMaxItemsPerRun()
-                ? fresh.subList(0, properties.getMaxItemsPerRun())
-                : fresh;
+        // 5. 截断（成本闸）——**按分组轮转取，不能直接切前缀**
+        //
+        // 2026-10-21 实跑踩到：IT 之家一家就 60 条，直接取前 60 会把配额全占掉，
+        // GitHub / 社区 / HN 三组一条都进不来，页面永远只有一个分组。
+        // 轮转后每组都有份，条数由各组自己的产出量决定。
+        List<String> selected = takeByGroup(fresh, byFingerprint, properties.getMaxItemsPerRun());
         List<FetchedItem> items = selected.stream().map(byFingerprint::get).toList();
 
         // 6. 一次 AI 调用
         Optional<ModelAccess> access = credentials.access(0);
-        Map<String, DigestSummarizer.Rewritten> rewritten = access.isEmpty()
-                ? Map.of()
-                : summarizer.summarize(items, selected, access.get(), properties.getAiTimeoutSeconds());
+        DigestSummarizer.Outcome outcome;
         if (access.isEmpty()) {
             log.warn("平台未配置 AI 凭据，速递全部按降级入库");
+            outcome = new DigestSummarizer.Outcome(Map.of(), null);
+        } else {
+            // 采集行为记在 ai_runs 里（AC-008）。**userId=0 表示平台行为**：
+            // 速递没有用户归属，与 WORK-025 同一取舍；0 在 jdk 里不对应任何真实账号，
+            // 运营统计里能一眼认出这是系统调用而不是某个学习者花的钱。
+            var run = recorder.begin(io.github.xiaou61.ai.RunSpec
+                    .of(io.github.xiaou61.ai.RunKind.DIGEST, 0L)
+                    .withModel(access.get().model()));
+            try {
+                outcome = summarizer.summarize(items, selected, access.get(),
+                        properties.getAiTimeoutSeconds());
+                if (outcome.usage() != null) {
+                    run.tokens(outcome.usage().inputTokens(), outcome.usage().outputTokens(), 0);
+                }
+                run.finish(outcome.usage() == null
+                        ? io.github.xiaou61.ai.RunOutcome.FAILED
+                        : io.github.xiaou61.ai.RunOutcome.OK, null);
+            } finally {
+                run.close();
+            }
         }
+        Map<String, DigestSummarizer.Rewritten> rewritten = outcome.rewritten();
 
         // 7. 逐条入库
         Instant now = Instant.now();
@@ -188,6 +212,42 @@ public class DigestCollectionService {
                 fetched.size(), candidates.size() - fresh.size(), created, degraded, sourcesFailed);
         return new RunResult(fetched.size(), candidates.size() - fresh.size(), created, degraded,
                 sourcesFailed, null);
+    }
+
+    /**
+     * 按分组轮转取最多 {@code limit} 条。
+     *
+     * <p><b>为什么不能直接切前缀</b>：一个源一次能给 60 条（IT 之家实测），直接截断会让
+     * 排在配置前面的那几个源把配额全吃掉，后面三组（GitHub / 社区 / HN）一条都进不来——
+     * 2026-10-21 实跑就是这样：入库 60 条全是 IT 之家，其它三组为 0。
+     *
+     * <p>轮转保留各组的相对顺序（组内仍按原顺序，热度高的在前由查询层排序），
+     * 但不会被单个源垄断。空组跳过。
+     */
+    static List<String> takeByGroup(List<String> fresh, Map<String, FetchedItem> byFingerprint,
+                                    int limit) {
+        Map<String, java.util.ArrayDeque<String>> byGroup = new LinkedHashMap<>();
+        for (String fingerprint : fresh) {
+            String group = byFingerprint.get(fingerprint).groupKey();
+            byGroup.computeIfAbsent(group, key -> new java.util.ArrayDeque<>()).add(fingerprint);
+        }
+        List<String> selected = new ArrayList<>();
+        boolean added = true;
+        // 一轮一轮地每组取一条，直到取满或全部组都空
+        while (selected.size() < limit && added) {
+            added = false;
+            for (java.util.ArrayDeque<String> queue : byGroup.values()) {
+                if (selected.size() >= limit) {
+                    break;
+                }
+                String next = queue.poll();
+                if (next != null) {
+                    selected.add(next);
+                    added = true;
+                }
+            }
+        }
+        return selected;
     }
 
     /** 某天的条目，按 {@link #GROUP_ORDER} 分组。给读接口用。 */
