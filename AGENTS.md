@@ -20,6 +20,8 @@
 - **测试**：内环只跑受影响的用例，外环只跑**改动那一端**的 e2e，按端跑（`pnpm --filter @paideia/app test:e2e`、`--filter @paideia/admin test:e2e`、`--filter @paideia/ui-kit test:e2e`）。三端全量 `pnpm test:e2e:all` 只在改动跨端（动了共享包）时跑；桌面产物只在要更新桌面安装包时打。**不要用 `pnpm -r build`**——它连桌面壳一起打，近 20 分钟。
 - **测试库是唯一入口**：任何碰数据库的验证都走 `scripts/test-db.sh`（或它包的 e2e），**不要直接 `mvn -B test` / `pnpm test:e2e` 连共用的 `paideia_test`**。这台机器上可能有别的会话同时在跑，共用库会让两轮测试互相删数据——单类跑全绿、全量跑红那种红**不是产品缺陷**，也不能当证据。脚本每次分配独占的 `paideia_run_<时间>_<pid>` 库，成功后自动删；失败时保留库名并打印出来。
 - **并发会话各占一个工作区**：多个会话同时改这个仓库时，除主树 `F:\Paideia` 外，每个会话用 `git worktree add .worktrees/<名字> -b <分支>` 开自己的树（目录已忽略），互不踩 `target/`、`node_modules` 与工作区状态。主树保持在 `master`，只用于 review、落库和部署。并行 e2e 还要各挑一组端口：`PAIDEIA_BACKEND_PORT` / `PAIDEIA_APP_PORT` / `PAIDEIA_ADMIN_PORT` 都可覆写，否则 `reuseExistingServer` 会静默复用别人的服务、打到别人的库上。
+- **工作树合并后必须删**，没有任何机制会自动回收：`git worktree remove .worktrees/<名字>` + `git branch -d <分支>`（合并后 `-d` 安全，未合并会拒删）。**实测占用**：只 checkout 约 5MB（`.git` 是共享的，不复制历史）；跑过后端测试 +100MB；跑过 `pnpm install` +814MB——一个真正用起来的工作树接近 1GB。不是"内存"是磁盘。
+- **迁移与种子的分工**：生产迁移只建结构（可以插配置类常量行，但**插业务数据时要显式写 id 且 ≥ 900**）；测试/开发数据一律放 `db/devdata`，绝不放 `db/migration`。`MigrationSeedOverlapTest` 会把"生产迁移往种子表插行却不给 id"变成构建失败——这类 bug 只在零数据新库上出现，生产库和开发库永远看不出来。
 - **部署**：一条命令 `powershell -File scripts/release.ps1`（纯后端改动约 75 秒）。前端**按需重建**：`frontend/` 自上次发版以来没改动就自动跳过那 80 秒，要强制重建用 `-WithWeb`、强制只发后端用 `-SkipWeb`。部署形态、端口与服务器约定见 `.agent/rules/always.md` 的「部署」，耗时的实测拆解见 `.agent/notes/dev-workflow.md` 的「发版耗时」。本项目没有"发布"这个节点，改完随手部署即可，不需要攒批次。
 
 ## 保密规则（公开仓库，最重要）
