@@ -530,12 +530,22 @@ class CampIntegrationTest {
                 INSERT INTO knowledge_entry_concepts (entry_id, concept_id, created_at)
                 VALUES (?, ?, UTC_TIMESTAMP(3))
                 """, entryId, conceptId);
+        // 条目正文要有内容，否则 read 任务时长为下限 5 分钟——不影响这条断言
 
+        // 题目要挂在这个概念上，计划才会去取它的载体条目
         List<Long> ids = itemIds(tokenA, campId, "diagnostic");
+        jdbcTemplate.update("UPDATE camp_items SET concept_id = ? WHERE program_id = ?", conceptId, campId);
         submit(tokenA, campId, "diagnostic", answers(ids, index -> 1));
         MvcResult plan = perform(post("/api/v1/ai/camps/" + campId + "/plan")
                 .header("Authorization", tokenA));
         assertThat(status(plan)).as(text(plan)).isEqualTo(200);
+
+        // **先证明载体真的被用上了**：没有这一步，下面的"下架后消失"会因为计划本来就
+        // 空而假通过（2026-10-21 真的发生过：weakTopics 参数写反，载体永远取不到）
+        assertThat(text(plan))
+                .as("计划里应当出现这个载体条目；拿到的是 " + text(plan))
+                .contains("\"entryId\":" + entryId);
+        assertThat(text(plan)).doesNotContain("这项内容已下架");
 
         jdbcTemplate.update("UPDATE knowledge_entries SET status = 'draft' WHERE id = ?", entryId);
         try {
@@ -543,7 +553,9 @@ class CampIntegrationTest {
                     .header("Authorization", tokenA));
             assertThat(status(afterOffline)).isEqualTo(200);
             String body = text(afterOffline);
-            assertThat(body).doesNotContain("\"entryId\":" + entryId);
+            assertThat(body).as("下架后不能再返回失效 id；拿到的是 " + body)
+                    .doesNotContain("\"entryId\":" + entryId);
+            assertThat(body).contains("这项内容已下架");
         } finally {
             jdbcTemplate.update("DELETE FROM knowledge_entry_concepts WHERE entry_id = ?", entryId);
             jdbcTemplate.update("DELETE FROM knowledge_entries WHERE id = ?", entryId);

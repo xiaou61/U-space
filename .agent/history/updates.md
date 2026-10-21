@@ -4840,3 +4840,31 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 15:12 +0800 · WORK-029 · AI 训练营实现完成（A–I 段）
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261021135406__create_camp_tables.sql`（`camp_programs`/`camp_items`/`camp_attempts`/`camp_plans`/`camp_tasks`）
+  - `backend/paideia-ai/internal/camp/`：9 个纯函数（`SkillDigest`/`TierDistribution`/`CampFingerprint`/`ItemValidator`/`TopicScore`/`WeaknessRules`/`ReadingMinutes`/`PlanBuilder`/`CampComparer`）+ `CampService`/`CampItemGenerator`/`CampItemParser`/`CampPrompts`/`CampMapper`/`CampMasteryEvidence`/`CampGenerationException`
+  - `CampController` 11 个端点（全部 `AUTHENTICATED`）
+  - `ResumeModelCaller` 改名 `SingleShotModelCaller`：消费者已不止简历那三次
+  - `paideia-knowledge`：新端口 `MasteryEvidence`、`KnowledgeApi` 增 `concepts`/`conceptCarriers`/`dueReviews`/`conceptPrerequisites`、`EntryMapper` 增两条查询、`ConceptGraphService` 接第四路证据
+  - 前端新包 `@paideia/camp`（类型/客户端/薄弱点/计划/对比 + 7 条单测）、`/camp` 与 `/camp/:id` 两页、三处入口（简历卡、`/learn`、顶栏）、e2e `camp.spec.ts`
+- 决策（两处订正工件，均已在报告里说明）：
+  1. REQ-016 第一条「答对率 < 0.8」与 AC-007「4 题错 1 题不判弱」矛盾（3/4 = 0.75）。**判弱改用错题数**：错 ≥ 2、或题量 ≤ 3 时错 ≥ 1、或难档全错；0.8 只作强项展示口径。
+  2. AC-010 要求天天有项，弱项少时排不满。**用前一天已排过的真实条目补一条复习**；若前面全是缺口项则重排同一缺口项并写明可以让助手讲，**不编造标题与链接**。
+  - 失败语义：**空返回不重试**（通常是 `max_tokens` 被思考吃满，再问一次只会让用户被扣两次）；坏格式**只修复一轮**；修复本身失败时保留第一轮已合格题；已产生用量按实际结算、没产生才全退。
+- 依据：`.agent/changes/WORK-029-AI训练营/{requirements,proposal,design,tasks}.md`（2026-10-20 由 xiaou61 签署）
+- 验证：
+  - 后端全量 `scripts/test-db.sh mvn -B -T 1C test` → **245 执行 / 0 失败 / 4 跳过**
+  - `CampIntegrationTest` 18 条、camp 包 17 条单测、纯函数 32 条全绿
+  - 契约：`ApiContractTest` + `ApiWalkthroughTest` 走查 11 个端点，`api-shape.json` 增 11 行且不含 `answerIndex`/`explanation`
+  - 注销级联逐表断言；迁移校验和登记一行
+  - 前端 `@paideia/camp` 7 条单测、`tsc` 通过、`camp.spec.ts` 3 条 e2e 全绿（含 390px 无横向滚动）
+  - 学习者端全量 e2e：79 passed / 7 failed / 2 skipped。**7 条与本轮无关**——`learn.spec` 与 `graph.spec` 依赖种子轨道与概念，空的自建测试库没有这些数据；对照实验：撤掉本轮 `LearnPage` 改动后同样红 6 条
+  - 七条反向验证逐条真跑红过：PII 泄露、解析锚定、分档余数、优先级排序、inconclusive 分支、注销级联某表、e2e 交卷门
+  - `project-lifecycle.ps1 validate --strict` 通过
+- 未覆盖（报告里逐条写明）：真实模型出题质量、AC-013 的「全对 > 全错」端到端、TASK-018 的手动串联、空概念部署的界面文案
+- 本地提交：4 笔（5408f06 / af82e64 / e94cd95 / 3f8e904），在 `feat/work-029-camp` 工作树
+- 远端推送：未执行（等用户授权）

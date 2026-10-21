@@ -337,12 +337,13 @@ public class CampService {
                         .toList()));
 
         PlanBuilder.Plan plan = PlanBuilder.build(weak, carriers, due, program.getDays(), budgetOf(program.getDays()));
-        long planId = persistPlan(userId, program, plan, weak);
+        CampMapper.PlanRow planRow = persistPlan(userId, program, plan, weak);
+        long planId = planRow.getId();
         camps.setActivePlan(programId, userId, planId, Instant.now());
         log.info("camp.plan_built userId={} programId={} planId={} weak={} tasks={} unscheduled={}",
                 userId, programId, planId, weak.size(),
                 plan.days().stream().mapToInt(day -> day.tasks().size()).sum(), plan.unscheduled().size());
-        return planView(userId, planId, plan, weak);
+        return planView(userId, planRow);
     }
 
     /**
@@ -360,8 +361,18 @@ public class CampService {
         if (row == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "计划不存在");
         }
-        List<CampMapper.TaskRow> tasks = camps.listTasks(row.getId(), userId);
+        return assemblePlanView(row, camps.listTasks(row.getId(), userId), readWeak(row.getWeakJson()));
+    }
 
+    /**
+     * 把一堆任务行组装成视图，**两处（写完立即返回、之后 GET）共用同一段**。
+     *
+     * <p>曾在这里分成两条路：写入后直接返回的那条把"已发布集合"传成了空集，于是新出的计划里
+     * 每一项都被当成已下架（`2026-10-21` 由 `CampMasteryIntegrationTest` 抓到）。
+     * 合成一处之后这个错只可能犯一次。
+     */
+    private PlanView assemblePlanView(CampMapper.PlanRow row, List<CampMapper.TaskRow> tasks,
+                                      List<String> weak) {
         List<Long> entryIds = tasks.stream()
                 .map(CampMapper.TaskRow::getEntryId)
                 .filter(java.util.Objects::nonNull)
@@ -384,7 +395,7 @@ public class CampService {
                 .map(task -> taskView(task, alive))
                 .toList();
         return new PlanView(row.getId(), row.getDays(), row.getBudgetMinutes(), List.copyOf(days),
-                unscheduled, readWeak(row.getWeakJson()));
+                unscheduled, weak);
     }
 
     /** 勾选/取消一项任务。幂等：重复勾选只是把 done_at 写同一个值。 */
@@ -552,8 +563,8 @@ public class CampService {
         camps.insertItem(row);
     }
 
-    private long persistPlan(long userId, CampMapper.ProgramRow program, PlanBuilder.Plan plan,
-                             List<PlanBuilder.WeakTopic> weak) {
+    private CampMapper.PlanRow persistPlan(long userId, CampMapper.ProgramRow program,
+                                           PlanBuilder.Plan plan, List<PlanBuilder.WeakTopic> weak) {
         Instant now = Instant.now();
         CampMapper.PlanRow row = new CampMapper.PlanRow();
         row.setProgramId(program.getId());
@@ -573,7 +584,7 @@ public class CampService {
         for (PlanBuilder.Task task : plan.unscheduled()) {
             insertTask(userId, row.getId(), program.getId(), 0, task, now);
         }
-        return row.getId();
+        return row;
     }
 
     private void insertTask(long userId, long planId, long programId, int day, PlanBuilder.Task task,
@@ -595,29 +606,10 @@ public class CampService {
         camps.insertTask(row);
     }
 
-    private PlanView planView(long userId, long planId, PlanBuilder.Plan plan,
-                              List<PlanBuilder.WeakTopic> weak) {
-        List<CampMapper.TaskRow> rows = camps.listTasks(planId, userId);
-        Map<Integer, List<CampMapper.TaskRow>> byDay = new LinkedHashMap<>();
-        List<CampMapper.TaskRow> unscheduled = new ArrayList<>();
-        for (CampMapper.TaskRow row : rows) {
-            if (row.getDayNo() <= 0) {
-                unscheduled.add(row);
-            } else {
-                byDay.computeIfAbsent(row.getDayNo(), key -> new ArrayList<>()).add(row);
-            }
-        }
-        List<DayView> days = new ArrayList<>();
-        int dayCount = plan.days().size();
-        for (int day = 1; day <= dayCount; day++) {
-            List<TaskView> tasks = byDay.getOrDefault(day, List.of()).stream()
-                    .map(row -> taskView(row, Set.of()))
-                    .toList();
-            days.add(new DayView(day, tasks));
-        }
-        return new PlanView(planId, dayCount, budgetOf(dayCount), List.copyOf(days),
-                unscheduled.stream().map(row -> taskView(row, Set.of())).toList(),
-                weak.stream().map(PlanBuilder.WeakTopic::topic).toList());
+    /** 写完计划后立即返回的视图。**与 GET 那条走同一个组装**，避免两处行为不一致。 */
+    private PlanView planView(long userId, CampMapper.PlanRow planRow) {
+        return assemblePlanView(planRow, camps.listTasks(planRow.getId(), userId),
+                readWeak(planRow.getWeakJson()));
     }
 
     /** 读计划时的降级：条目不在已发布集合里 → 缺口项。 */
@@ -650,7 +642,15 @@ public class CampService {
         return alive;
     }
 
-    private List<PlanBuilder.WeakTopic> weakTopics(long userId, long programId,
+    /**
+     * 弱项列表。
+     *
+     * <p>参数顺序是 {@code (programId, userId)}——**与调用点必须一致**。曾把两处写反：
+     * 两个参数都是 {@code long}，编译器不报错，于是概念查不到、计划永远全量降级成缺口项，
+     * 而"下架后降级"那条测试因为本来就拿不到载体而**假通过**（2026-10-21 由
+     * {@code CampMasteryIntegrationTest.planTaskLinksToExistingProgressPath} 抓到）。
+     */
+    private List<PlanBuilder.WeakTopic> weakTopics(long programId, long userId,
                                                    Map<String, TopicScore.TopicResult> scores,
                                                    SkillDigest.Digest digest) {
         Map<String, Long> conceptByTopic = topicConcepts(programId, userId, FORM_DIAGNOSTIC);
