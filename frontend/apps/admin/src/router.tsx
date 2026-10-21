@@ -4,10 +4,10 @@ import { AdminHomePage } from './pages/AdminHomePage'
 import { AiCreditsAuditPage } from './pages/AiCreditsAuditPage'
 import { AiRunsListPage } from './pages/AiRunsListPage'
 import { AiRunsOverviewPage } from './pages/AiRunsOverviewPage'
-import { AiCreditsGrantPage } from './pages/AiCreditsGrantPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
+import { AdminUsersPage } from './pages/AdminUsersPage'
 import { NoteReportsPage } from './pages/NoteReportsPage'
 import { OpsPage } from './pages/OpsPage'
 import { RequireAdmin } from './require-admin'
@@ -50,6 +50,15 @@ export const router = createHashRouter([
     ),
   },
   {
+    // 用户管理（WORK-030）：调积分、改角色、删号都在这里，取代了原先的「积分调整」页。
+    path: '/users',
+    element: (
+      <RequireAdmin>
+        <AdminUsersPage />
+      </RequireAdmin>
+    ),
+  },
+  {
     path: '/reports',
     element: (
       <RequireAdmin>
@@ -65,17 +74,10 @@ export const router = createHashRouter([
       </RequireAdmin>
     ),
   },
-  // AI 积分（WORK-009）。`/ai-credits` 留一条转向：父菜单只分组、不指向页面，
-  // 但没有它时手敲这个地址就是一片空白。
-  { path: '/ai-credits', element: <Navigate to="/ai-credits/grant" replace /> },
-  {
-    path: '/ai-credits/grant',
-    element: (
-      <RequireAdmin>
-        <AiCreditsGrantPage />
-      </RequireAdmin>
-    ),
-  },
+  // AI 积分（WORK-009 / WORK-030）。`/ai-credits` 转向审计页：父菜单只分组、不指向页面，
+  // 但没有它时手敲这个地址就是一片空白。**「积分调整」那一页已按用户裁决删除**
+  // （U-04）——调整积分并入用户管理，这里不再有独立入口。
+  { path: '/ai-credits', element: <Navigate to="/ai-credits/audit" replace /> },
   // AI 调用统计（WORK-022）。父项只分组，子项才是页面。
   { path: '/ai-runs', element: <Navigate to="/ai-runs/overview" replace /> },
   {

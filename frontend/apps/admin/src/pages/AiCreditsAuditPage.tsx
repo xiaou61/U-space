@@ -7,7 +7,13 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
+  Input,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Table,
   TableBody,
@@ -17,6 +23,7 @@ import {
   TableRow,
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Receipt } from 'lucide-react'
 
 import { api } from '../api'
@@ -43,7 +50,32 @@ const KIND_LABEL: Record<string, string> = {
   REFUND: '退还',
 }
 
-const list = () => api.requestEnvelope<LedgerRow[]>('/api/v1/ai/admin/credits/audit?limit=200')
+/**
+ * 分页 + 筛选（WORK-030）。原先写死 `limit=200`，既翻不了页也筛不了——
+ * 一次调用在流水里是多行，200 行大概只够看几十次调用。
+ */
+const list = (kind: string, userId: string, page: number) => {
+  const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) })
+  if (kind !== 'all') {
+    params.set('kind', kind)
+  }
+  if (userId.trim() !== '') {
+    params.set('userId', userId.trim())
+  }
+  return api.requestEnvelope<{ total: number; page: number; size: number; items: LedgerRow[] }>(
+    `/api/v1/ai/admin/credits/ledger?${params.toString()}`,
+  )
+}
+
+const PAGE_SIZE = 50
+
+const KIND_FILTERS = [
+  { value: 'all', label: '全部种类' },
+  { value: 'ADJUST', label: '管理员调整' },
+  { value: 'RESERVE', label: '预扣' },
+  { value: 'SETTLE', label: '结算' },
+  { value: 'REFUND', label: '退还' },
+]
 
 /** 时间按本机时区显示；解析不出来就原样显示，不显示 "Invalid Date"。 */
 function when(value: string | null): string {
@@ -67,7 +99,15 @@ function when(value: string | null): string {
  * <p>只读：审计页不做任何写操作，所以这里没有按钮。
  */
 export function AiCreditsAuditPage() {
-  const rows = useQuery({ queryKey: ['ai-credits-audit'], queryFn: list })
+  const [kind, setKind] = useState('all')
+  const [userId, setUserId] = useState('')
+  const [page, setPage] = useState(1)
+  const rows = useQuery({
+    queryKey: ['ai-credits-audit', kind, userId, page],
+    queryFn: () => list(kind, userId, page),
+  })
+  const items = rows.data?.items ?? []
+  const totalPages = Math.max(1, Math.ceil((rows.data?.total ?? 0) / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -82,19 +122,51 @@ export function AiCreditsAuditPage() {
             <div>
               <h2 className="text-sm font-medium">最近的流水</h2>
               <p className="text-muted-foreground mt-0.5 text-xs">
-                最多 200 条，按时间倒序。消耗那一行的 token 数来自上游返回的真实用量。
+                按时间倒序。消耗那一行的 token 数来自上游返回的真实用量。
               </p>
             </div>
-            {rows.isSuccess ? (
-              <span className="text-muted-foreground shrink-0 text-xs" data-testid="credits-audit-total">
-                共 {rows.data.length} 条
-              </span>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                items={KIND_FILTERS}
+                value={kind}
+                onValueChange={(value) => {
+                  setKind(value as string)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger size="sm" className="w-32" data-testid="credits-audit-kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {KIND_FILTERS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                className="h-8 w-28"
+                inputMode="numeric"
+                placeholder="用户 id"
+                value={userId}
+                onChange={(event) => {
+                  setUserId(event.target.value)
+                  setPage(1)
+                }}
+                data-testid="credits-audit-user"
+              />
+              {rows.isSuccess ? (
+                <span className="text-muted-foreground shrink-0 text-xs" data-testid="credits-audit-total">
+                  共 {rows.data.total} 条
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {rows.isLoading ? (
             <Spinner />
-          ) : (rows.data ?? []).length === 0 ? (
+          ) : items.length === 0 ? (
             <Empty data-testid="credits-audit-empty">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
@@ -110,7 +182,7 @@ export function AiCreditsAuditPage() {
             <>
             {/* 窄屏卡片（WORK-016）：八列在 375px 上无法阅读，卡片按"谁 / 何时 / 变了多少"排 */}
             <ul className="divide-border divide-y md:hidden" data-testid="credits-audit-cards">
-              {(rows.data ?? []).map((row) => (
+              {items.map((row) => (
                 <li key={row.id} className="space-y-1.5 px-3 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium tabular-nums">用户 #{row.userId}</span>
@@ -160,7 +232,7 @@ export function AiCreditsAuditPage() {
                 </TableRow>
               </TableHeader>
               <TableBody data-testid="credits-audit-table">
-                {(rows.data ?? []).map((row) => (
+                {items.map((row) => (
                   <TableRow key={row.id} data-testid={`credits-audit-row-${row.id}`}>
                     <TableCell className="text-nowrap text-xs">{when(row.createdAt)}</TableCell>
                     <TableCell className="tabular-nums">{row.userId}</TableCell>
@@ -189,6 +261,30 @@ export function AiCreditsAuditPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
+            <div className="border-border text-muted-foreground flex items-center justify-between gap-4 border-t px-(--card-spacing) py-3 text-xs">
+              <span>共 {rows.data?.total ?? 0} 条</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="border-input rounded-md border px-2 py-1 disabled:opacity-50"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                  data-testid="credits-audit-prev"
+                >
+                  上一页
+                </button>
+                <span className="tabular-nums">{page} / {totalPages}</span>
+                <button
+                  type="button"
+                  className="border-input rounded-md border px-2 py-1 disabled:opacity-50"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                  data-testid="credits-audit-next"
+                >
+                  下一页
+                </button>
+              </div>
             </div>
             </>
           )}

@@ -10,6 +10,11 @@ import {
   EmptyTitle,
   Input,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Table,
   TableBody,
@@ -119,39 +124,54 @@ function when(value: string | null): string {
   return Number.isNaN(at.getTime()) ? value : at.toLocaleString('zh-CN', { hour12: false })
 }
 
-/** 时间窗默认 7 天；与概览页同一口径。 */
-function windowParams(): string {
+/** 时间窗选项（WORK-030）。原先写死 7 天，改不了。 */
+export const WINDOWS = [
+  { value: '1h', label: '近 1 小时', hours: 1 },
+  { value: 'today', label: '今天', hours: 24 },
+  { value: '7d', label: '近 7 天', hours: 24 * 7 },
+  { value: '30d', label: '近 30 天', hours: 24 * 30 },
+] as const
+
+/** 把窗口选项换成查询串。`hour` 传 null 表示用默认（近 7 天）。 */
+function windowParams(hour?: string | null): string {
+  const chosen = WINDOWS.find((option) => option.value === hour) ?? WINDOWS[2]
   const to = new Date()
-  const from = new Date(to.getTime() - 7 * 24 * 3600 * 1000)
+  const from = new Date(to.getTime() - chosen.hours * 3600 * 1000)
   return `from=${from.toISOString()}&to=${to.toISOString()}`
 }
+
+const PAGE_SIZE = 50
 
 export function AiRunsListPage() {
   const [kind, setKind] = useState('')
   const [status, setStatus] = useState('')
   const [userId, setUserId] = useState('')
+  const [hour, setHour] = useState<string>('7d')
+  const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const meta = useQuery({
-    queryKey: ['ai-runs-meta'],
-    queryFn: () => api.requestEnvelope<Meta>(`/api/v1/ai/admin/runs/meta?${windowParams()}`),
+    queryKey: ['ai-runs-meta', hour],
+    queryFn: () => api.requestEnvelope<Meta>(`/api/v1/ai/admin/runs/meta?${windowParams(hour)}`),
   })
 
   const list = useQuery({
-    queryKey: ['ai-runs-list', kind, status, userId],
+    queryKey: ['ai-runs-list', kind, status, userId, hour, page],
     queryFn: () => {
       const params = new URLSearchParams()
       if (kind !== '') params.set('kind', kind)
       if (status !== '') params.set('status', status)
       if (userId.trim() !== '') params.set('userId', userId.trim())
-      params.set('size', '50')
+      params.set('page', String(page))
+      params.set('size', String(PAGE_SIZE))
       return api.requestEnvelope<Page<RunSummary>>(
-        `/api/v1/ai/admin/runs?${windowParams()}&${params.toString()}`,
+        `/api/v1/ai/admin/runs?${windowParams(hour)}&${params.toString()}`,
       )
     },
   })
 
   const rows = list.data?.items ?? []
+  const totalPages = Math.max(1, Math.ceil((list.data?.total ?? 0) / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -163,36 +183,72 @@ export function AiRunsListPage() {
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 py-3">
           <label className="space-y-1 text-xs">
-            <span className="text-muted-foreground block">场景</span>
-            <select
-              className="border-input h-9 rounded-md border bg-transparent px-2 text-sm"
-              data-testid="runs-filter-kind"
-              value={kind}
-              onChange={(event) => { setKind(event.target.value) }}
+            <span className="text-muted-foreground block">时间区间</span>
+            <Select
+              items={WINDOWS.map((option) => ({ value: option.value, label: option.label }))}
+              value={hour}
+              onValueChange={(value) => {
+                setHour(value as string)
+                setPage(1)
+              }}
             >
-              <option value="">全部</option>
-              {(meta.data?.kinds ?? []).map((item) => (
-                <option key={item.name} value={item.name}>
-                  {KIND_LABEL[item.name] ?? item.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger size="sm" className="w-28" data-testid="runs-filter-window">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WINDOWS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="space-y-1 text-xs">
+            <span className="text-muted-foreground block">场景</span>
+            <Select
+              items={[{ value: '', label: '全部' }, ...(meta.data?.kinds ?? []).map((item) => ({
+                value: item.name,
+                label: KIND_LABEL[item.name] ?? item.name,
+              }))]}
+              value={kind}
+              onValueChange={(value) => { setKind(value as string) }}
+            >
+              <SelectTrigger size="sm" className="w-36" data-testid="runs-filter-kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">全部</SelectItem>
+                {(meta.data?.kinds ?? []).map((item) => (
+                  <SelectItem key={item.name} value={item.name}>
+                    {KIND_LABEL[item.name] ?? item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="space-y-1 text-xs">
             <span className="text-muted-foreground block">状态</span>
-            <select
-              className="border-input h-9 rounded-md border bg-transparent px-2 text-sm"
-              data-testid="runs-filter-status"
+            <Select
+              items={[{ value: '', label: '全部' }, ...(meta.data?.statuses ?? []).map((item) => ({
+                value: item.name,
+                label: STATUS_LABEL[item.name] ?? item.name,
+              }))]}
               value={status}
-              onChange={(event) => { setStatus(event.target.value) }}
+              onValueChange={(value) => { setStatus(value as string) }}
             >
-              <option value="">全部</option>
-              {(meta.data?.statuses ?? []).map((item) => (
-                <option key={item.name} value={item.name}>
-                  {STATUS_LABEL[item.name] ?? item.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger size="sm" className="w-28" data-testid="runs-filter-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">全部</SelectItem>
+                {(meta.data?.statuses ?? []).map((item) => (
+                  <SelectItem key={item.name} value={item.name}>
+                    {STATUS_LABEL[item.name] ?? item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="space-y-1 text-xs">
             <span className="text-muted-foreground block">用户 id</span>
@@ -253,6 +309,32 @@ export function AiRunsListPage() {
                 ))}
               </TableBody>
             </Table>
+            <div className="border-border text-muted-foreground flex items-center justify-between gap-4 border-t px-(--card-spacing) py-3 text-xs">
+              <span>共 {list.data?.total ?? 0} 条</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                  data-testid="runs-prev"
+                >
+                  上一页
+                </Button>
+                <span className="tabular-nums">
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                  data-testid="runs-next"
+                >
+                  下一页
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       ) : null}

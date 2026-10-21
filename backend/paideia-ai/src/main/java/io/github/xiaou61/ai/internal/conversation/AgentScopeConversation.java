@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
 
 /**
  * 用 AgentScope 的 {@link ReActAgent} 承载多轮对话（流式）。
@@ -379,29 +378,45 @@ class AgentScopeConversation implements AssistantConversation {
                             usage.set(end.getUsage());
                         }
                     })
-                    .doFinally(signal -> {
+                    // **正文必须在这里推，不能在 doFinally 里推**（2026-10-21 实测）：
+                    // doFinally 由终止信号**之后**异步触发，此时 blockLast() 可能已经返回、
+                    // listener.onCompleted() 也已经调过——用户会看到一条空回答。
+                    // doOnComplete/doOnError 在信号同步传播路径上，早于外部订阅者看到终止。
+                    .doOnComplete(() -> finishRound(step, usage.get(), text.toString(), sawToolCall[0], null))
+                    .doOnError(error -> finishRound(step, usage.get(), text.toString(), sawToolCall[0], error))
+                    .doOnCancel(() -> {
+                        // 主动取消（前端断开）：记成中断，不推正文
                         ChatUsage used = usage.get();
                         if (used != null) {
                             step.tokens(used.getInputTokens(), used.getOutputTokens(), used.getCachedTokens());
                         }
-                        boolean ok = signal == SignalType.ON_COMPLETE;
-                        if (ok && !sawToolCall[0] && text.isEmpty()) {
-                            // 一轮既没工具调用、也没吐任何正文：DeepSeek 思考 token 吃掉 max_tokens
-                            // 时就是这样（"成功但 content 为空"）。旧实现把它判成上游不可用，沿用。
-                            step.failed("upstream_unavailable");
-                            turn.fail(upstreamUnavailable(null));
-                        } else if (ok) {
-                            step.succeeded();
-                            // **最终轮才推正文**：工具轮的旁白会进历史（模型自己看得见），但不该算回答
-                            if (!sawToolCall[0]) {
-                                turn.listener.onContent(text.toString());
-                            }
-                        } else {
-                            step.failed("upstream_error");
-                            turn.fail(upstreamUnavailable(null));
-                        }
+                        step.failed("cancelled");
                         step.close();
                     });
+        }
+
+        /** 一轮收尾：记 tokens、判成败、最终轮推正文。只执行一次。 */
+        private void finishRound(RunRecorder.StepScope step, ChatUsage used, String text,
+                                 boolean sawToolCall, Throwable error) {
+            if (used != null) {
+                step.tokens(used.getInputTokens(), used.getOutputTokens(), used.getCachedTokens());
+            }
+            if (error != null) {
+                step.failed("upstream_error");
+                turn.fail(upstreamUnavailable(error));
+            } else if (!sawToolCall && text.isEmpty()) {
+                // 一轮既没工具调用、也没吐任何正文：DeepSeek 思考 token 吃掉 max_tokens
+                // 时就是这样（"成功但 content 为空"）。旧实现把它判成上游不可用，沿用。
+                step.failed("upstream_unavailable");
+                turn.fail(upstreamUnavailable(null));
+            } else {
+                step.succeeded();
+                // **最终轮才推正文**：工具轮的旁白会进历史（模型自己看得见），但不该算回答
+                if (!sawToolCall) {
+                    turn.listener.onContent(text);
+                }
+            }
+            step.close();
         }
     }
 

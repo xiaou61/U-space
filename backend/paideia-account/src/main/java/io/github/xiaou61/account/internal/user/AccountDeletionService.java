@@ -52,6 +52,26 @@ public class AccountDeletionService {
             // 与"账号不存在"用同一条消息不合适（这里身份是已知的），但也不回显任何账号信息
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码不正确");
         }
+        deleteCascade(userId);
+    }
+
+    /**
+     * 管理员删号（WORK-030）：**不校验对方的密码**。
+     *
+     * <p>为什么要这条路径：自助注销要求密码是对的（不可逆的操作得凭据），而管理员拿不到
+     * 别人的密码。两条路径**共用同一段级联** {@link #deleteCascade(long)}——不许复制一份，
+     * 否则以后加表只会改一处、漏一处。
+     */
+    @Transactional
+    public void deleteByAdmin(long userId) {
+        if (users.findById(userId).isEmpty()) {
+            throw notFound();
+        }
+        deleteCascade(userId);
+    }
+
+    /** 唯一的级联实现。两个删除入口都走它。 */
+    private void deleteCascade(long userId) {
         refreshTokens.deleteByUser(userId);
         // 画像与本模块同库同域（WORK-010）：直接删，不必绕一圈事件。
         // 其它模块的用户数据仍由 UserDeletedEvent 各自删除（方向是单向的）。

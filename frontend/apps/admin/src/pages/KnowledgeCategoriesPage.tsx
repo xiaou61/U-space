@@ -29,7 +29,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 
-import { ConfirmDeleteDialog, Loading, admin, categoryOptions, flatten } from '../knowledge-shared'
+import { ConfirmDeleteDialog, Loading, admin, categoryOptions, flatten, type FlatCategory } from '../knowledge-shared'
 
 /**
  * 分类管理。
@@ -40,9 +40,34 @@ import { ConfirmDeleteDialog, Loading, admin, categoryOptions, flatten } from '.
  * <p>拆开界面不等于拆开数据——新建条目时仍要在这棵树上选，所以两个页面共用
  * `knowledge-shared` 里的展开与下拉逻辑。
  */
+/**
+ * 把命中项及其各级祖先按原顺序保留。
+ *
+ * <p>没有 `parentId` 可用（`FlatCategory` 只带 `depth` 与 `parentName`），而 `flat` 是**先序**的：
+ * 往回找第一个 `depth` 更小的就是祖先，逐层回溯即可。
+ */
+function withAncestors(flat: FlatCategory[], hits: FlatCategory[]): FlatCategory[] {
+  const keep = new Set<number>()
+  for (const hit of hits) {
+    keep.add(hit.id)
+    let index = flat.indexOf(hit)
+    let depth = hit.depth
+    while (depth > 0 && index > 0) {
+      index -= 1
+      const candidate = flat[index]
+      if (candidate !== undefined && candidate.depth < depth) {
+        keep.add(candidate.id)
+        depth = candidate.depth
+      }
+    }
+  }
+  return flat.filter((category) => keep.has(category.id))
+}
+
 export function KnowledgeCategoriesPage() {
   const queryClient = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const [keyword, setKeyword] = useState('')
   const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,6 +76,14 @@ export function KnowledgeCategoriesPage() {
     queryFn: () => admin.categories(),
   })
   const flat = useMemo(() => flatten(categories.data ?? []), [categories.data])
+  const needle = keyword.trim().toLowerCase()
+  // 搜索只过滤显示，不改层级：命中的分类连同它的**各级祖先**一起留下，
+  // 否则"搜到子分类却看不到它挂在谁下面"，比搜不到更难懂。
+  const visible = needle === ''
+    ? flat
+    : withAncestors(flat, flat.filter((category) =>
+        category.name.toLowerCase().includes(needle)
+        || category.slug.toLowerCase().includes(needle)))
 
   const report = (cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))
 
@@ -100,8 +133,16 @@ export function KnowledgeCategoriesPage() {
               <h2 className="text-sm font-medium">分类</h2>
               <p className="text-muted-foreground mt-0.5 text-xs" data-testid="admin-category-total">
                 {categories.isSuccess ? `共 ${flat.length} 个（含各级子分类）` : '加载中…'}
+                {visible.length === flat.length ? '' : ` · 筛出 ${visible.length} 个`}
               </p>
             </div>
+            <Input
+              className="h-9 w-56"
+              placeholder="按名称搜索"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              data-testid="admin-category-search"
+            />
           </div>
 
           {categories.isPending ? <Loading label="加载分类…" /> : null}
@@ -123,7 +164,7 @@ export function KnowledgeCategoriesPage() {
             {flat.length === 0 && !categories.isPending ? (
               <li className="text-muted-foreground py-8 text-center text-sm">还没有分类</li>
             ) : null}
-            {flat.map((category) => (
+            {visible.map((category) => (
               <li key={category.id} className="flex items-start justify-between gap-3 px-3 py-3">
                 <div className="min-w-0">
                   <div
@@ -170,7 +211,7 @@ export function KnowledgeCategoriesPage() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {flat.map((category) => (
+              {visible.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="text-muted-foreground pl-(--card-spacing) tabular-nums">
                     {category.id}

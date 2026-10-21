@@ -3,6 +3,9 @@ package io.github.xiaou61.ai.internal.web;
 import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
+import io.github.xiaou61.platform.PageQuery;
+import io.github.xiaou61.platform.PageResult;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +46,24 @@ class AiCreditAdminController {
     @GetMapping("/audit")
     ApiResponse<List<CreditService.LedgerRow>> audit(@RequestParam(name = "limit", defaultValue = "100") int limit) {
         return ApiResponse.ok(credits.auditRecent(limit));
+    }
+
+    /**
+     * 用量审计的分页视图（WORK-030）：支持按用户、流水种类、时间区间筛选，并分页。
+     *
+     * <p>与上面那个不分页的 `/audit` 并存：前者是"最近 N 条"的简单视图（既有前端在用），
+     * 后者是管理端审计页要的筛选与翻页。两条都留着比改其中一条更安全——改会让既有调用方
+     * 悄悄拿到不同的形状。
+     */
+    @GetMapping("/ledger")
+    ApiResponse<PageResult<CreditService.LedgerRow>> ledger(
+            @RequestParam(name = "userId", required = false) Long userId,
+            @RequestParam(name = "kind", required = false) String kind,
+            @RequestParam(name = "from", required = false) Instant from,
+            @RequestParam(name = "to", required = false) Instant to,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size) {
+        return ApiResponse.ok(credits.auditPage(userId, kind, from, to, PageQuery.of(page, size, null)));
     }
 
     /** 某个用户的余额。 */

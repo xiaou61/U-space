@@ -1,6 +1,8 @@
 package io.github.xiaou61.ai.internal.billing;
 
 import io.github.xiaou61.platform.BizException;
+import io.github.xiaou61.platform.PageQuery;
+import io.github.xiaou61.platform.PageResult;
 import io.github.xiaou61.platform.ErrorCode;
 import java.time.Instant;
 import java.util.List;
@@ -262,6 +264,20 @@ public class CreditService {
     /** 管理端审计：全平台最近的流水。 */
     public List<LedgerRow> auditRecent(int limit) {
         return ledger.listRecent(clamp(limit)).stream().map(LedgerRow::of).toList();
+    }
+
+    /** 管理端审计的分页结果。 */
+    public PageResult<LedgerRow> auditPage(Long userId, String kind,
+                                           java.time.Instant from, java.time.Instant to,
+                                           PageQuery page) {
+        String kindFilter = kind == null || kind.isBlank() ? null : kind.trim();
+        long total = ledger.countAudit(userId, kindFilter, from, to);
+        if (total == 0L) {
+            return PageResult.of(0L, page, List.of());
+        }
+        return PageResult.of(total, page, ledger
+                .pageAudit(userId, kindFilter, from, to, page.limit(), page.offset())
+                .stream().map(LedgerRow::of).toList());
     }
 
     private static int clamp(int limit) {

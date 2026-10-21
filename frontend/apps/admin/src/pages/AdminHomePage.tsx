@@ -1,9 +1,10 @@
 import { type CategoryNode } from '@paideia/knowledge'
 import { Card, CardContent, CardHeader, CardTitle, Empty, EmptyDescription, EmptyHeader, EmptyTitle, PageHeader } from '@paideia/ui'
+import { ChevronRight, FileText, Flag, FolderTree, FilePen, Users } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, FileText, FolderTree, FilePen } from 'lucide-react'
 import { Link } from 'react-router'
 
+import { api } from '../api'
 import { admin } from '../knowledge-shared'
 
 /**
@@ -24,18 +25,32 @@ export function AdminHomePage() {
     queryFn: () => admin.entries(),
   })
 
+  // 运营数字（WORK-030）：原先只有知识库三个数，进后台看不出平台在跑什么。
+  // 账号总数与待处理举报都走已有的管理端接口，不新开计数端点。
+  const users = useQuery({
+    queryKey: ['admin-home-users'],
+    queryFn: () => api.requestEnvelope<{ total: number }>('/api/v1/account/admin/users?size=1'),
+  })
+  const reports = useQuery({
+    queryKey: ['admin-home-reports'],
+    queryFn: () =>
+      api.requestEnvelope<unknown[]>('/api/v1/notes/admin/reports?status=pending'),
+  })
+
   const items = entries.data?.items ?? []
   const stats = [
     { label: '分类', icon: FolderTree, value: categories.data === undefined ? undefined : count(categories.data) },
     { label: '条目', icon: FileText, value: entries.data?.total },
     { label: '其中草稿', icon: FilePen, value: entries.data === undefined ? undefined : items.filter((item) => item.status === 'draft').length },
+    { label: '账号', icon: Users, value: users.data?.total, to: '/users' },
+    { label: '待处理举报', icon: Flag, value: reports.data?.length, to: '/reports' },
   ]
 
   return (
     <>
       <PageHeader title="总览" description="管理端入口与当前内容规模。" />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <Card key={stat.label} className="hover:shadow-card transition-shadow">
             <CardContent className="flex items-center justify-between gap-4">

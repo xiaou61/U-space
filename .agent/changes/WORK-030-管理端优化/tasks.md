@@ -18,7 +18,7 @@ approver_role: CTO
 
 ## 后端
 
-### TASK-001 | pending | 账号模块的管理端能力
+### TASK-001 | done | 账号模块的管理端能力
 
 **做什么**
 
@@ -36,7 +36,7 @@ approver_role: CTO
 - **反向验证**：把级联抽方法的改动去掉，两个入口的测试必须红
 - 新增的 SELECT 结果里 `password_hash` 为 null（用一个字段级断言钉住）
 
-### TASK-002 | 聚合端点
+### TASK-002 | done | 聚合端点
 
 **做什么**
 
@@ -55,7 +55,7 @@ approver_role: CTO
 - 集成测试：响应体不含 `password_hash`
 - `sort=balance|calls` 两个分支各一条用例（证明排序不是摆设）
 
-### TASK-003 | 复用既有查询补齐三个页面
+### TASK-003 | done | 复用既有查询补齐三个页面
 
 **做什么**
 
@@ -70,7 +70,7 @@ approver_role: CTO
 
 ## 前端
 
-### TASK-004 | 用户管理页
+### TASK-004 | done | 用户管理页
 
 **做什么**
 
@@ -82,7 +82,7 @@ approver_role: CTO
 
 - e2e：搜索到人、展开看到余额与流水、加 100 分后余额变化、对自己的写按钮不可用
 
-### TASK-005 | 删除积分调整页
+### TASK-005 | done | 删除积分调整页
 
 **做什么**
 
@@ -96,7 +96,7 @@ approver_role: CTO
 - 全局搜 `ai-credits/grant` 与 `AiCreditsGrantPage` 均为零命中
 - 手敲该地址不渲染空白页
 
-### TASK-006 | 各页筛选与总览
+### TASK-006 | done | 各页筛选与总览
 
 **做什么**
 
@@ -115,7 +115,7 @@ approver_role: CTO
 
 ## 验证
 
-### TASK-007 | 验证与报告
+### TASK-007 | done | 验证与报告
 
 **做什么**
 

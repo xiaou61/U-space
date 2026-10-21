@@ -43,12 +43,17 @@ import { ConfirmDeleteDialog, Loading, admin, categoryOptions, flatten } from '.
 export function KnowledgeConceptsPage() {
   const queryClient = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const [keyword, setKeyword] = useState('')
   const [editing, setEditing] = useState<{ id: number; name: string; summary: string; categoryId: number | null } | null>(null)
   const [linking, setLinking] = useState<{ id: number; name: string } | null>(null)
   const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const concepts = useQuery({ queryKey: ['admin-concepts'], queryFn: () => admin.concepts() })
+  const needle = keyword.trim().toLowerCase()
+  const visible = (concepts.data ?? []).filter(
+    (concept) => needle === '' || concept.name.toLowerCase().includes(needle),
+  )
   const categories = useQuery({ queryKey: ['admin-knowledge-categories'], queryFn: () => admin.categories() })
   const entries = useQuery({ queryKey: ['admin-knowledge-entries'], queryFn: () => admin.entries() })
 
@@ -116,14 +121,36 @@ export function KnowledgeConceptsPage() {
       ) : null}
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="px-0 pt-0">
+          <div className="border-border flex flex-wrap items-center justify-between gap-2 border-b px-(--card-spacing) py-3">
+            <div>
+              <h2 className="text-sm font-medium">概念</h2>
+              <p className="text-muted-foreground mt-0.5 text-xs" data-testid="admin-concept-total">
+                {concepts.isSuccess ? `共 ${concepts.data.length} 个` : '加载中…'}
+                {visible.length === (concepts.data?.length ?? 0) ? '' : ` · 筛出 ${visible.length} 个`}
+              </p>
+            </div>
+            <Input
+              className="h-9 w-56"
+              placeholder="按名称搜索"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              data-testid="admin-concept-search"
+            />
+          </div>
+          <div className="px-(--card-spacing) pt-4">
           {concepts.isPending ? <Loading label="加载概念…" /> : null}
           {concepts.isSuccess && concepts.data.length === 0 ? (
             <p className="text-muted-foreground text-sm" data-testid="concepts-empty">
               还没有概念。点右上角「新建概念」开始——图谱页在概念表为空时只会显示一句提示。
             </p>
           ) : null}
-          {concepts.isSuccess && concepts.data.length > 0 ? (
+          {concepts.isSuccess && visible.length === 0 && concepts.data.length > 0 ? (
+            <p className="text-muted-foreground text-sm" data-testid="concepts-no-match">
+              没有匹配的概念。
+            </p>
+          ) : null}
+          {visible.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -136,7 +163,7 @@ export function KnowledgeConceptsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {concepts.data.map((concept) => (
+                {visible.map((concept) => (
                   <TableRow key={concept.id}>
                     <TableCell className="font-medium">{concept.name}</TableCell>
                     <TableCell className="text-muted-foreground max-w-[22rem] truncate">
@@ -187,6 +214,7 @@ export function KnowledgeConceptsPage() {
               </TableBody>
             </Table>
           ) : null}
+          </div>
         </CardContent>
       </Card>
 
