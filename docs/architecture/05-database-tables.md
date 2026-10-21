@@ -1,7 +1,7 @@
 <!--
   本文件由 scripts/gen-arch-diagram.mjs 生成，**不要手改**。
-  手改会让 `node scripts/gen-arch-diagram.mjs --check` 失败（那是刻意的：这张图必须等于 迁移文件 的事实）。
-  要改图就改依赖声明或改生成脚本，然后重跑生成。
+  手改会让 `node scripts/gen-arch-diagram.mjs --check` 失败（那是刻意的：这张图必须等于迁移文件的事实）。
+  要改图就改迁移文件或改生成脚本，然后重跑生成。
 -->
 
 # 数据库表

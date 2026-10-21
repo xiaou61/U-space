@@ -49,12 +49,12 @@ function moduleDeps(pomPath, self) {
   return [...deps];
 }
 
-const HEADER = (source) =>
+const HEADER = (source, hint = '依赖声明') =>
   [
     '<!--',
     '  本文件由 scripts/gen-arch-diagram.mjs 生成，**不要手改**。',
-    `  手改会让 \`node scripts/gen-arch-diagram.mjs --check\` 失败（那是刻意的：这张图必须等于 ${source} 的事实）。`,
-    '  要改图就改依赖声明或改生成脚本，然后重跑生成。',
+    `  手改会让 \`node scripts/gen-arch-diagram.mjs --check\` 失败（那是刻意的：这张图必须等于${source}的事实）。`,
+    `  要改图就改${hint}或改生成脚本，然后重跑生成。`,
     '-->',
   ].join('\n');
 
@@ -80,7 +80,7 @@ function backendDoc() {
 
   const id = (module) => module.replace(/^paideia-/, '');
   const lines = [];
-  lines.push(HEADER('pom'));
+  lines.push(HEADER(' pom '));
   lines.push('');
   lines.push('# 后端模块依赖');
   lines.push('');
@@ -150,7 +150,7 @@ function frontendDoc() {
 
   const id = (name) => name.replace(/^@paideia\//, '').replace(/[^a-zA-Z0-9]/g, '_');
   const lines = [];
-  lines.push(HEADER('package.json'));
+  lines.push(HEADER(' package.json '));
   lines.push('');
   lines.push('# 前端包依赖');
   lines.push('');
@@ -222,7 +222,7 @@ function databaseDoc() {
 
   const connected = [...byTable.keys()].sort();
   const lines = [];
-  lines.push(HEADER('迁移文件'));
+  lines.push(HEADER('迁移文件', '迁移文件'));
   lines.push('');
   lines.push('# 数据库表');
   lines.push('');
@@ -256,10 +256,86 @@ function databaseDoc() {
   return { output: lines.join('\n'), summary: `${tables.size} 张表 / ${fks.length} 条外键` };
 }
 
+// ── API 端点清单 ────────────────────────────────────────────────────────────
+function apiDoc() {
+  const rows = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      // 只看 src/main：测试里有 FixtureItemController / ProbeController 这类夹具，
+      // 它们不是对外暴露的端点，算进来会让清单虚高。
+      if (entry.isDirectory()) {
+        if (!['target', 'node_modules', 'src'].includes(entry.name)) {
+          walk(full);
+        } else if (entry.name === 'src') {
+          const main = join(full, 'main');
+          if (existsSync(main)) {
+            walk(main);
+          }
+        }
+      } else if (entry.name.endsWith('Controller.java')) {
+        const src = readFileSync(full, 'utf8');
+        const base = src.match(/@RequestMapping\("([^"]*)"\)/)?.[1] ?? '';
+        const verbs = [...src.matchAll(/@(Get|Post|Put|Delete|Patch)Mapping(?:\("([^"]*)"\))?/g)].map((m) => ({
+          verb: m[1].toUpperCase(),
+          path: m[2] ?? '',
+        }));
+        const module = full.replace(/\\/g, '/').split('/backend/')[1]?.split('/')[0] ?? '?';
+        rows.push({ module, base, controller: entry.name.replace('.java', ''), verbs });
+      }
+    }
+  };
+  walk(join(BACKEND));
+
+  rows.sort((a, b) => (a.module === b.module ? a.base.localeCompare(b.base) : a.module.localeCompare(b.module)));
+  const total = rows.reduce((n, r) => n + r.verbs.length, 0);
+  const modules = [...new Set(rows.map((r) => r.module))];
+
+  const byAuth = (base) => {
+    if (base.includes('/admin')) return '仅管理员';
+    if (base.startsWith('/api/v1/auth') || base.includes('/public/')) return '免鉴权';
+    return '登录即可';
+  };
+
+  const lines = [];
+  lines.push(HEADER('控制器', '控制器'));
+  lines.push('');
+  lines.push('# API 端点清单');
+  lines.push('');
+  lines.push(`由后端 ${rows.length} 个 Controller 生成：**${total} 个端点**，分布在 ${modules.length} 个模块。`);
+  lines.push('');
+  lines.push('这是**结构性的清单**，不是手写文档——端点加一个这里就多一行，');
+  lines.push('所以它不会像手写的接口文档那样过期。真正的授权规则在 `SecurityConfiguration`，');
+  lines.push('下表最后一列只是按前缀推出的**粗分类**，碰到具体端点的判定以代码为准。');
+  lines.push('');
+  lines.push('| 模块 | 前缀 | 控制器 | 鉴权（按前缀推测） | 端点数 |');
+  lines.push('| --- | --- | --- | --- | --- |');
+  for (const r of rows) {
+    lines.push(`| \`${r.module}\` | \`${r.base || '(根)'}\` | \`${r.controller}\` | ${byAuth(r.base)} | ${r.verbs.length} |`);
+  }
+  lines.push('');
+  lines.push('## 按 HTTP 方法统计');
+  lines.push('');
+  const byVerb = new Map();
+  for (const r of rows) {
+    for (const v of r.verbs) {
+      byVerb.set(v.verb, (byVerb.get(v.verb) ?? 0) + 1);
+    }
+  }
+  lines.push('| 方法 | 数量 |');
+  lines.push('| --- | --- |');
+  for (const [verb, count] of [...byVerb.entries()].sort((a, b) => b[1] - a[1])) {
+    lines.push(`| \`${verb}\` | ${count} |`);
+  }
+  lines.push('');
+  return { output: lines.join('\n'), summary: `${total} 个端点 / ${rows.length} 个控制器` };
+}
+
 const targets = [
   { file: join(ARCH, '01-module-dependencies.md'), label: '01-module-dependencies.md', build: backendDoc, kind: '后端模块依赖图' },
   { file: join(ARCH, '04-frontend-packages.md'), label: '04-frontend-packages.md', build: frontendDoc, kind: '前端包依赖图' },
   { file: join(ARCH, '05-database-tables.md'), label: '05-database-tables.md', build: databaseDoc, kind: '数据库表清单' },
+  { file: join(ARCH, '06-api-surface.md'), label: '06-api-surface.md', build: apiDoc, kind: 'API 端点清单' },
 ];
 
 const check = process.argv.includes('--check');

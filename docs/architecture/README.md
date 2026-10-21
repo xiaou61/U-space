@@ -28,15 +28,28 @@ mermaid 在 GitHub 上原生渲染，且在 `frontend/` 里已有渲染链路（
 | [`03-deployment.md`](03-deployment.md) | AI 撰写 | 部署形态、信任边界与端口拓扑 |
 | [`04-frontend-packages.md`](04-frontend-packages.md) | 脚本生成 | 前端 14 个 workspace 包的依赖方向 |
 | [`05-database-tables.md`](05-database-tables.md) | 脚本生成 | 36 张表与 13 条真实外键 |
+| [`06-api-surface.md`](06-api-surface.md) | 脚本生成 | 112 个端点 / 31 个控制器的清单 |
+
+## 这份存档**不**包含什么
+
+写出来是为了免得有人以为它完整：
+
+- **没有接口的请求/响应结构**。`06` 只到"哪个前缀下有几个端点"，字段级契约在代码与测试里。要自动生成得引 springdoc + OpenAPI，那会改变公开的接口面，是另一个决定。
+- **没有前端路由表**。路由在 `apps/app/src/router.tsx` 与 `apps/admin/src/router.tsx`，改得不频繁，一页一图的价值低于维护成本。
+- **没有组件级图**。C4 的 component 层在这个规模下只会变成挤成一坨的图。
+- **没有状态机图**。目前没有一处真正的状态机（会话与任务状态都是枚举字段），画出来是假的。
+- **时序图不能自动生成**。`02` 是人工维护的，改链路时要人工改——这是本目录唯一靠自觉的部分。
+
+新增图之前先问：它属于上面哪一类缺失，还是重复已有的一张。**图的成本是它存在之后的每一次改动**，不是画它的那一次。
 
 ## 改图之前先跑这两条
 
 ```bash
 node scripts/check-diagrams.mjs          # 语法校验：全部 .md 里的 mermaid 图块
-node scripts/gen-arch-diagram.mjs --check # 三张结构图（后端/前端/数据库）与声明是否一致
+node scripts/gen-arch-diagram.mjs --check # 四张结构图（后端/前端/数据库/API）与声明是否一致
 ```
 
-第一条是**给 AI 用的**，不是给 CI 用的：它让 AI 写完图能立刻确认语法是对的，不必等到有人打开文档才发现图是坏的。第二条防漂移（三张结构图各查一次）。
+第一条是**给 AI 用的**，不是给 CI 用的：它让 AI 写完图能立刻确认语法是对的，不必等到有人打开文档才发现图是坏的。第二条防漂移（四张结构图各查一次）。
 
 生成结构图用 `node scripts/gen-arch-diagram.mjs`（不加 `--check` 时直接重写文件）。
 
