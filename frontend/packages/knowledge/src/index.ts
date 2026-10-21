@@ -43,6 +43,14 @@ export {
 } from './concept-graph-layout'
 export { createEntryProgressPort, recentReading, type RecentReading } from './source-reading-progress'
 export { createLearningApi, type LearningApi } from './learning-client'
+export { createDigestApi, type DigestApi } from './digest-client'
+export {
+  DIGEST_GROUPS,
+  type DigestByGroup,
+  type DigestGroupKey,
+  type DigestItem,
+  type DigestWeekly,
+} from './digest-types'
 export { createServerProgressPort, mergeProgress, type ServerProgressPort } from './learning-progress'
 export type {
   BlockScore,

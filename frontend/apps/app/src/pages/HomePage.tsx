@@ -17,6 +17,7 @@ import {
   Layers,
   MessagesSquare,
   Network,
+  Newspaper,
   NotebookPen,
   Search,
   Sparkles,
@@ -37,7 +38,7 @@ const learning = createLearningApi(api)
  * <p>只有顺序会变，**集合不变**（面试页是导航里的入口，这里不重复）：首页是"我该从哪开始"，
  * 把身份最相关的那张卡排前面就够了；藏掉入口会让"推荐"变成"限制"。
  */
-type QuickLinkKey = 'learn' | 'knowledge' | 'notes' | 'my-assessments' | 'interview' | 'graph'
+type QuickLinkKey = 'learn' | 'knowledge' | 'notes' | 'my-assessments' | 'interview' | 'graph' | 'digest'
 
 const QUICK_LINKS: {
   /** 参与身份排序的入口才有 key；`null` 表示永远追加在末尾。 */
@@ -55,6 +56,14 @@ const QUICK_LINKS: {
     icon: GraduationCap,
     title: '从零开始',
     description: 'Python / Java 两条线，一课二十分钟，边学边练。',
+  },
+  {
+    key: 'digest' as const,
+    to: '/digest',
+    testId: 'home-entry-digest',
+    icon: Newspaper,
+    title: '每日速递',
+    description: '每天一次，把前沿新闻、GitHub 热榜与 HN 收在一屏。',
   },
   {
     key: 'interview' as const,

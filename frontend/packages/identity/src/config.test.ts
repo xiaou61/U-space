@@ -24,6 +24,13 @@ describe('按身份的推荐配置', () => {
     expect(daily.assistantGreeting).not.toContain('找工作')
   })
 
+  it('每个身份的 preferredNav 都含 digest——漏一处首页排序就取不到那张卡（WORK-027）', () => {
+    const all: Identity[] = ['job_seeker', 'postgrad', 'civil_service', 'daily_learning']
+    for (const identity of all) {
+      expect(configFor(identity).preferredNav).toContain('digest')
+    }
+  })
+
   it('留位的三个身份也各有一份配置，不会拿到空壳', () => {
     const placeholders: Identity[] = ['postgrad', 'civil_service', 'daily_learning']
     for (const identity of placeholders) {

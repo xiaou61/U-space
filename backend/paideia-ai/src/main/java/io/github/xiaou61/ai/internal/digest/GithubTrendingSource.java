@@ -32,7 +32,7 @@ class GithubTrendingSource {
     private static final String TRENDING_URL = "https://github.com/trending?since=daily";
 
     private static final String SEARCH_URL =
-            "https://api.github.com/search/repositories?q=created:>=%s+stars:>100&sort=stars&per_page=15";
+            "https://api.github.com/search/repositories?q=%s&sort=stars&per_page=15";
 
     private static final String USER_AGENT = "PaideiaDigest/1.0";
 
@@ -44,37 +44,51 @@ class GithubTrendingSource {
     /**
      * 抓热榜。
      *
-     * <p>有 token 先走 Search API；失败或没有 token 时走页面解析；页面解析失败再退回 Search API。
-     * **两条都失败返回空列表**（不抛异常）——这一组空掉，其它组照常。
+     * <p><b>主次在 2026-10-21 实跑后反转了</b>：原设计是「有 token 走 Search API，无 token 走页面解析」，
+     * 但实测发现 **`github.com/trending` 已经改成 SPA**——服务端返回的 HTML 里一个仓库链接都没有
+     * （`title` 是 Trending，但 `<article>`/`Box-row`/`stars today` 全为 0 次，仓库行由 JS 注入）。
+     * 也就是说"页面解析"这条路**在当前页面结构下永不命中**，把它放在无 token 时的主通路等于
+     * 每天拿一次空结果。
+     *
+     * <p>所以改为：**Search API 永远是主通路**（有 token 时限额高，无 token 时 60/时，一天一次够用），
+     * 页面解析保留为"万一 GitHub 把服务端渲染改回来"的补充——它先试，命中就多一条更准的数据源。
+     *
+     * <p>**两条都失败返回空列表**（不抛异常）：这一组空掉，其它组照常。
      */
     List<FetchedItem> fetch(DigestProperties properties, DigestHttp http, long nowMillis) {
         String token = properties.getGithubToken();
         boolean hasToken = token != null && !token.isBlank();
 
-        if (hasToken) {
-            List<FetchedItem> viaSearch = searchApi(token, http, nowMillis);
-            if (!viaSearch.isEmpty()) {
-                return viaSearch;
-            }
-            log.info("GitHub Search API 无结果，改走页面解析");
+        // 主通路：Search API
+        List<FetchedItem> viaSearch = searchApi(hasToken ? token : "", http, nowMillis);
+        if (!viaSearch.isEmpty()) {
+            return viaSearch;
         }
 
+        // 补充通路：页面解析（当前是 SPA，正常不会命中；保留以防 GitHub 改回服务端渲染）
         List<FetchedItem> viaPage = trendingPage(http, nowMillis);
         if (!viaPage.isEmpty()) {
+            log.info("GitHub Search API 无结果，页面解析拿到 {} 条", viaPage.size());
             return viaPage;
         }
-        log.info("GitHub 页面解析无结果，{}", hasToken ? "Search API 已试过" : "退回匿名 Search API");
-
-        // 最后一道：页面解析失败，退回 Search API（无 token 时限额 60/时，一天一次够用）
-        return searchApi(hasToken ? token : "", http, nowMillis);
+        log.warn("GitHub 热榜两条通路都没有结果（Search API 与页面解析），这一组本次为空");
+        return List.of();
     }
 
-    /** 走 Search API。任何异常都返回空列表，由上层决定兜底。 */
+    /**
+     * 走 Search API。任何异常都返回空列表，由上层决定兜底。
+     *
+     * <p><b>查询串必须整体 URL 编码</b>：`created:>=2026-10-14 stars:>100` 里的 `>` 是 URI 的
+     * 非法字符，{@code URI.create} 会直接抛 {@code IllegalArgumentException}（2026-10-21 实测：
+     * 这条通路静默返回空，而同一串用 curl 手打是正常的——只有实跑才暴露）。
+     */
     private List<FetchedItem> searchApi(String token, DigestHttp http, long nowMillis) {
         // 7 天前：GitHub 的 search 语法用日期而非时间戳
         String since = java.time.Instant.ofEpochMilli(nowMillis)
                 .atZone(java.time.ZoneOffset.UTC).toLocalDate().minusDays(7).toString();
-        String url = SEARCH_URL.formatted(since);
+        String query = java.net.URLEncoder.encode("created:>=" + since + " stars:>100",
+                java.nio.charset.StandardCharsets.UTF_8);
+        String url = SEARCH_URL.formatted(query);
         try {
             String body = http.getTextWithHeaders(url, USER_AGENT, githubHeaders(token));
             JsonNode items = objectMapper.readTree(body).path("items");

@@ -8,7 +8,13 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** GitHub 热榜的双通路与兜底顺序（WORK-027 TASK-004）。 */
+/**
+ * GitHub 热榜的通路与兜底顺序（WORK-027 TASK-004）。
+ *
+ * <p><b>2026-10-21 实跑后主次反转</b>：`github.com/trending` 已改成 SPA，服务端 HTML 里
+ * 没有仓库数据（实测 `<article>`/`Box-row`/`stars today` 各 0 次）。所以 Search API 是主通路，
+ * 页面解析降为补充。这组用例把新顺序钉住。
+ */
 class GithubTrendingSourceTest {
 
     private final GithubTrendingSource source = new GithubTrendingSource();
@@ -38,7 +44,7 @@ class GithubTrendingSourceTest {
     }
 
     @Test
-    @DisplayName("有 token：先走 Search API，成功就不再碰页面")
+    @DisplayName("有 token：Search API 是主通路，成功就不再碰页面")
     void withTokenPrefersSearchApi() {
         String searchJson = """
                 {"items":[
@@ -58,12 +64,31 @@ class GithubTrendingSourceTest {
         assertThat(items).hasSize(1);
         assertThat(items.get(0).heat()).isEqualTo(1234);
         assertThat(items.get(0).groupKey()).isEqualTo("github");
-        // 只请求了 Search API
         assertThat(http.requested).allMatch(url -> url.contains("api.github.com"));
     }
 
     @Test
-    @DisplayName("有 token 但 Search API 空结果：退回页面解析")
+    @DisplayName("**无 token 时也先走 Search API**（页面已是 SPA，不能当主通路）")
+    void withoutTokenStillUsesSearchApiFirst() {
+        StubHttp http = new StubHttp(url -> {
+            if (url.contains("api.github.com")) {
+                return """
+                        {"items":[{"full_name":"anon/repo","html_url":"https://github.com/anon/repo",
+                                   "stargazers_count":9}]}
+                        """;
+            }
+            throw new DigestSource.DigestSourceException("不该走到页面解析");
+        });
+
+        List<FetchedItem> items = source.fetch(properties(""), http, 1_800_000_000_000L);
+
+        assertThat(items).hasSize(1);
+        assertThat(http.requested).as("只请求了 API").hasSize(1);
+        assertThat(http.requested.get(0)).contains("api.github.com");
+    }
+
+    @Test
+    @DisplayName("Search API 空结果：退回页面解析")
     void searchEmptyFallsBackToPage() {
         String page = """
                 <article class="Box-row">
@@ -86,53 +111,31 @@ class GithubTrendingSourceTest {
         assertThat(items.get(0).title()).isEqualTo("trending-owner/hot-repo");
         assertThat(items.get(0).heat()).as("heat 来自当日新增 star").isEqualTo(3856);
         assertThat(items.get(0).meta()).isEqualTo("Python");
-        // 顺序：先 Search，后页面
         assertThat(http.requested.get(0)).contains("api.github.com");
         assertThat(http.requested.get(1)).contains("github.com/trending");
     }
 
     @Test
-    @DisplayName("无 token：先走页面解析，不请求带 token 的 API")
-    void withoutTokenPrefersPage() {
-        String page = """
-                <article class="Box-row">
-                  <h2><a href="/a/b">a/b</a></h2>
-                  <p class="col-9">desc</p>
-                  <span>10 stars today</span>
-                </article>
+    @DisplayName("**页面是 SPA（没有 article 块）时返回空列表，不抛异常**")
+    void spaPageYieldsEmptyWithoutThrowing() {
+        // 这是 2026-10-21 实测的真实形态：title 是 Trending，但 HTML 里没有任何仓库数据
+        String spa = """
+                <html><head><title>Trending repositories on GitHub today</title></head>
+                <body><nav>Navigation Menu</nav><main></main></body></html>
                 """;
         StubHttp http = new StubHttp(url -> {
             if (url.contains("github.com/trending")) {
-                return page;
+                return spa;
             }
-            throw new DigestSource.DigestSourceException("不该走 API");
+            return "{\"items\":[]}";
         });
 
         List<FetchedItem> items = source.fetch(properties(""), http, 1_800_000_000_000L);
 
-        assertThat(items).hasSize(1);
-        assertThat(http.requested.get(0)).contains("github.com/trending");
-    }
-
-    @Test
-    @DisplayName("**页面改坏（没有 article 块）时返回空列表并走兜底，不抛异常**")
-    void brokenHtmlFallsBackInsteadOfThrowing() {
-        StubHttp http = new StubHttp(url -> {
-            if (url.contains("github.com/trending")) {
-                return "<html><body><div>完全改版了，没有 article</div></body></html>";
-            }
-            return "{\"items\":[{\"full_name\":\"fallback/repo\","
-                    + "\"html_url\":\"https://github.com/fallback/repo\","
-                    + "\"stargazers_count\":5}]}";
-        });
-
-        List<FetchedItem> items = source.fetch(properties(""), http, 1_800_000_000_000L);
-
-        assertThat(items).hasSize(1);
-        assertThat(items.get(0).title()).isEqualTo("fallback/repo");
-        // 页面解析先试过，失败后走了 API
-        assertThat(http.requested).anyMatch(url -> url.contains("github.com/trending"));
+        assertThat(items).isEmpty();
+        // 两条通路都试过了
         assertThat(http.requested).anyMatch(url -> url.contains("api.github.com"));
+        assertThat(http.requested).anyMatch(url -> url.contains("github.com/trending"));
     }
 
     @Test
