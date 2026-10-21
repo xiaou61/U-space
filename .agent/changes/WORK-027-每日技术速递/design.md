@@ -2,7 +2,7 @@
 artifact: design
 work_id: WORK-027
 work: 每日技术速递
-status: approved
+status: stale
 workflow: full
 depends_on: [proposal]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022, WORK-025]
@@ -230,9 +230,15 @@ runWeekly():
 
 「存成笔记」= `<Link to={'/notes/new?title=…&content=…'}>`（I-16）。**需要给 `/notes/new` 加读取 query 参数预填**——这是本项对笔记页唯一的改动。
 
-按身份分组（I-15）：`frontend/packages/identity/src/config.ts` 加一项 `digestGroups: readonly GroupKey[]`，`DigestPage` 按它排序与过滤。`job_seeker` 排「news, github, community, hackernews」；其余身份也一样（一期配置值相同，只是结构就位）。
+**按身份分组已撤销**（2026-10-21，随 requirements 的 D-14 / REQ-013 / AC-014 一起）。
+后端 `Identity.selectable()` **只对 `job_seeker` 返回 true**，界面上另外三个是 `disabled` 的留位，
+"切换身份"这个动作不存在。所以：
 
-**改动点不止"加进类型联合"**（2026-10-21 核对后订正）。`preferredNav` 的类型与取值分散在五处，
+- **不加 `digestGroups`**，`DigestPage` 按固定顺序渲染四组：news → github → community → hackernews。
+- 不做"按身份隐藏分组"。
+- 恢复条件写进 requirements 的非目标：等第二个身份可选时再接 `identity` 配置。
+
+**仍然要改 `preferredNav`**（这是导航顺序，与速递分组无关）。它的类型与取值分散在五处，
 漏一处就会 TypeScript 报错或行为不一致：
 
 | 位置 | 现状 | 要做的 |

@@ -4672,3 +4672,18 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **下一步**：按 tasks.md TASK-001..013 实施（13 个任务，尚未开始）
+
+## 2026-10-21 · WORK-027 撤销「按身份筛源」
+
+- 类型：requirements
+- 变更：
+  - `requirements.md` 退回 `draft`：删除 REQ-013、AC-014；D-14 与 I-15 标为撤销；非目标里补一条撤销说明与恢复条件；约束里删掉「依赖 WORK-010 身份配置结构」
+  - `proposal.md` / `design.md` / `tasks.md` 全部标 `stale`，并把「身份筛源」那节标为撤销（proposal 的第 4 处取舍、design 的「按身份分组」段、tasks 的 TASK-012 改写为「导航入口与转笔记」）
+- 决策（用户）：「算了暂时不切换了，我们暂时不考虑这个，因为我们目前就一个身份，对吧」
+- 核实（前提成立，且比"只有一个身份"更硬）：后端 `Identity.selectable()` **只对 `job_seeker` 返回 true**，`Identity.java` 的注释写明「其余三个是留位，只在枚举里存在，界面上不出现」。前端 `ProfilePage` 渲染四个选项但另外三个 `disabled`。也就是说 **AC-014「切换身份后分组顺序随之变化」原本就无法执行**——已签的需求里躺着一条不可能通过的验收标准
+- 我上一轮的处置是错的：TASK-012 原写「单测：`configFor()` 对不同身份返回不同 `digestGroups`」，我为与 design 对齐把它改成「配置结构齐备」——那是在任务层面自行消化了一个 requirements 与 design 的冲突，正是规程禁止的做法。这次回到最早工件（requirements）撤销，并让三件下游失效
+- 撤销后仍保留：`preferredNav` 加 `'digest'`（那是**导航顺序**，与速递分组无关），四处身份配置 + 类型联合 + `HomePage` 的 `QUICK_LINKS` 共六处
+- 验证：`project-lifecycle.ps1 validate` → WORK-027 只剩「需求尚未形成但存在下游工件」，即**预期的待重签状态**；其余无错误
+- 本地提交：见下一笔
+- 远端推送：未推送
+- **下一步**：需求需重新签署；签完后 proposal/design/tasks 三件 stale 也要一并复核签署（改动集中在身份那一节，其余未变）

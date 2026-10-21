@@ -2,7 +2,7 @@
 artifact: tasks
 work_id: WORK-027
 work: 每日技术速递
-status: approved
+status: stale
 workflow: full
 depends_on: [design]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022, WORK-025]
@@ -113,18 +113,21 @@ approver_role: CTO
 
 **验收**：集成测试——非管理员 403、管理员可删、删后学习者端读不到（AC-010）。
 
-### TASK-012 | pending | 按身份分组与转笔记
+### TASK-012 | pending | 导航入口与转笔记
 
-`identity` 配置加 `digestGroups`；`DigestPage` 按它排序与过滤；`NoteNewPage` 读 query 参数预填标题与正文；卡片加「存成笔记」按钮。
+**按身份分组已撤销**（2026-10-21，随 D-14 / REQ-013 / AC-014 一起）：后端 `Identity.selectable()`
+只对 `job_seeker` 返回 true，另外三个身份是 `disabled` 留位，"切换身份"这个动作不存在。
+所以**不加 `digestGroups`**，`DigestPage` 固定顺序渲染四组（news → github → community → hackernews）。
 
-**`preferredNav` 的改动点有六处，漏一处就报错或行为不一致**（2026-10-21 订正，见 design「前端」节）：
-类型联合、`CONFIGS` 的四个身份（`job_seeker` / `postgrad` / `civil_service` / `daily_learning`）、
-`HomePage` 的 `QUICK_LINKS`。`config.test.ts` 补断言「每个身份的 `preferredNav` 都含 `'digest'`」。
+仍要做三件：
+1. `LearnerHeader.tsx` 的 `NAV` 加 `{ key: 'digest', to: '/digest', label: '每日速递' }`；
+2. `NoteNewPage` 读 query 参数预填标题与正文；卡片加「存成笔记」按钮；
+3. `preferredNav` 的**六处**改动（类型联合、四个身份配置、`HomePage` 的 `QUICK_LINKS`）——
+   漏一处就 TypeScript 报错或首页排序取不到卡片。
 
-**验收**：单测——`configFor()` 对每个身份都返回非空的 `digestGroups`，且每个身份的
-`preferredNav` 都含 `'digest'`（**注意：一期四个身份的 `digestGroups` 取值相同**，
-design 已写明「只是结构就位」，所以断言的是"配置结构齐备"而不是"身份间取值不同"——
-后者一期不成立）。e2e——点「存成笔记」跳到 `/notes/new` 且标题与正文已预填，保存后出现在笔记列表（AC-015）。
+**验收**：单测——`config.test.ts` 断言每个身份的 `preferredNav` 都含 `'digest'`。
+**不断言"身份间 digestGroups 不同"**——该功能已撤销，不要为不存在的东西写测试。
+e2e——点「存成笔记」跳到 `/notes/new` 且标题与正文已预填，保存后出现在笔记列表（AC-015）。
 
 ### TASK-013 | pending | 实跑与收口
 
