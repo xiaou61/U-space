@@ -29,11 +29,20 @@ public class GuardedHttpTransport implements HttpTransport {
      * <p>设计文档与 {@link UpstreamGuard} 都把"禁重定向"列为 SSRF 的缓解手段之一：允许跟随的话，
      * 一个公网地址可以 302 到内网，而第二道闸只看得到**用户填的那个地址**。
      * OkHttp 默认 `followRedirects=true`，所以必须显式关掉。
+     *
+     * <p><b>读取超时必须显式放大</b>：OkHttp 的 `readTimeout` 默认只有 10 秒，而 AgentScope 自己的
+     * `HttpTransportConfig` 默认是 5 分钟。2026-10-21 实测：速递一次压缩 12 条候选跑了约 20 秒，
+     * 在 10 秒处抛 `Failed to read response body: timeout`，整批静默降级——
+     * **这个缺陷只在"非流式 + 大输出"的调用上出现**，单篇抽题（几秒）永远撞不到。
+     * 这里取与 AgentScope 默认一致的 5 分钟，真正的时间上限由调用方的 `blockLast(…)` 决定。
      */
     private final OkHttpTransport delegate = new OkHttpTransport(
             new okhttp3.OkHttpClient.Builder()
                     .followRedirects(false)
                     .followSslRedirects(false)
+                    .readTimeout(java.time.Duration.ofMinutes(5))
+                    .writeTimeout(java.time.Duration.ofMinutes(1))
+                    .callTimeout(java.time.Duration.ofMinutes(6))
                     .build(),
             HttpTransportConfig.defaults());
 
