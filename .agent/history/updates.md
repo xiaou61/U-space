@@ -5469,3 +5469,33 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   3. 第 12 课的 alternatives 用标量子查询会把无订单客户带成 NULL 行，与 INNER JOIN 语义不同
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 部署上线与线上真验
+
+- 类型：deployment
+- 变更：
+  - 线上 `/opt/paideia-app/application.yml` 新增 `sql-image` / `sql-memory` / `sql-cpus` /
+    `sql-pids-limit` / `sql-timeout-ms` / `sql-daily-limit`（备份为 `application.yml.bak-wp032`）
+  - 服务器已构建 `paideia-sandbox-mysql:8.0@sha256:e2eafb6e…`（datadir 构建期初始化）
+  - 部署 3 次：首次（全量）、`--SkipWeb`（只读根修复）、全量（哈希修复）
+- **线上真验（每条都是实测，不是推断）**：
+  - `/api/v1/sandbox/status` → `languages` 含 `sql`、`sqlDailyLimit=20`、`datasets` 两个 key
+  - 跑一条 SQL：**2.8 秒**返回，`NULL` 与空串正确区分（`ann=VIP` / `bob=""` / `cid=NULL`）
+  - 多语句事务：`BEGIN` 内读到 `1.00`，`ROLLBACK` 后回到 `199.00` —— 事务语义真实生效（AC-016）
+  - 判题闭环：参考解两数据集"一致"、等价写法也"一致"、两个反模式都"不同"
+  - 关卡内做题（第 02 关）：正确 SQL → 两个数据集都"通过"并上报进度；
+    反模式 `= NULL` → 两个数据集都"结果与期望不一致"
+  - e2e（打线上）：`sql-practice` + `learn` + `knowledge` → **16 passed / 1 skipped**
+- **部署后才暴露的两个真缺陷（都已修 + 加回归测试）**：
+  1. **SQL 容器在只读根下静默卡死**：mysqld 默认往 `/var/run/mysqld` 写 pid 与 mysqlx socket，
+     `--read-only` 下写不了时它**不报错也不退出**，只是初始化完 InnoDB 就挂住。线上表现是
+     "每次 20 秒超时"，日志只有两行。修法：`--pid-file` / `--log-error` 指到 tmpfs + `--mysqlx=0`。
+     **之前的本地测试全没暴露它，因为那些测试都没加 `--read-only`**
+  2. **`crypto.subtle` 在 http 下不可用**：本项目明确不配 HTTPS，而 `crypto.subtle` 只在安全上下文
+     存在，判题直接抛 `Cannot read properties of undefined (reading 'digest')`。
+     本地测不出来——dev server 跑在 localhost 上，那是安全上下文。
+     修法：换成纯 TS 的 SHA-256，并用 Node `createHash` 逐条对照（13 个样本含多字节与边界长度）
+- 另修：e2e 的 AC-011 从"查进度条数"改为**监视写请求**——纯 Bearer 应用下测试进程拿不到访问令牌，
+  两种取令牌的路都实测 401
+- 本地提交：master 上 5 笔（含两次 merge）
+- 远端推送：**未执行**（需用户授权）
