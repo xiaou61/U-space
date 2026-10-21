@@ -82,7 +82,7 @@ class ApiSurfaceTest {
      */
     static java.util.Comparator<String> bySpecificity() {
         return java.util.Comparator.comparingLong((String pattern) -> pattern.chars()
-                .filter(ch -> ch == '{').count());
+                .filter(ch -> ch == '{' || ch == '*').count());
     }
 
     static List<Endpoint> endpoints(RequestMappingHandlerMapping mapping) {
