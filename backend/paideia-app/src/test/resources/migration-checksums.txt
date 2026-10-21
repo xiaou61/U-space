@@ -18,8 +18,8 @@ src/main/resources/db/migration/V17__add_learning_lines.sql 1833729396
 src/main/resources/db/migration/V18__create_learning_progress.sql -1986278591
 src/main/resources/db/migration/V19__create_concept_and_view_tables.sql -388111039
 src/main/resources/db/migration/V1__create_account_tables.sql 5302915
-src/main/resources/db/migration/V20261021134700__create_digest_tables.sql 2043838451
 src/main/resources/db/migration/V20261021135406__create_camp_tables.sql 405229757
+src/main/resources/db/migration/V20261021161000__create_digest_tables.sql 2043838451
 src/main/resources/db/migration/V20__add_entry_read_indexes.sql -1148086735
 src/main/resources/db/migration/V21__create_ai_telemetry_tables.sql -891669932
 src/main/resources/db/migration/V22__create_learning_tracks.sql -976007377
