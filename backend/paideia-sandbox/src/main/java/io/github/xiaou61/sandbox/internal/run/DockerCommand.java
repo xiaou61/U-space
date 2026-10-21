@@ -82,6 +82,12 @@ final class DockerCommand {
      * <p>datadir 从镜像里拷进 tmpfs 再 `chmod u+w`：镜像里的基准 datadir 是只读的（防误写），
      * `cp -a` 会把只读权限一起带过来，于是 mysqld 报 `ibdata1 must be writable`（实测踩过）。
      *
+     * <p>**`--pid-file` 与 `--log-error` 必须指到 tmpfs**：根文件系统是 `--read-only`，
+     * 而 mysqld 默认往 `/var/run/mysqld/` 写 pid 与 socket 锁。写不了时它**不报错也不退出**，
+     * 只是初始化完 InnoDB 之后静默卡住——线上表现为"每次运行都 20 秒超时"，日志里只有
+     * 两行 System 记录（实测踩过，排查了两轮）。同理 `--mysqlx=0` 关掉 X 协议插件，
+     * 它也要往那个目录写 socket。
+     *
      * <p>**必须先建库并 `--database`**：mysqld 启动后没有"当前库"这个概念，直接执行
      * `CREATE TABLE t` 会报 `ERROR 1046 No database selected`（实测踩过）。库名写死在脚本里，
      * 用户的 SQL 里不需要也不应该自己写 `USE`。
@@ -91,17 +97,17 @@ final class DockerCommand {
             dd bs=1 count="$dlen" of=/tmp/dataset.sql 2>/dev/null
             read -r clen
             dd bs=1 count="$clen" of=/tmp/user.sql 2>/dev/null
-            mkdir -p /tmp/nofiles && chown mysql:mysql /tmp/nofiles
-            cp -a /opt/datadir-base /tmp/data && chmod -R u+w /tmp/data \
-              && chown -R mysql:mysql /tmp/data
+            mkdir -p /tmp/nofiles
+            cp -a /opt/datadir-base /tmp/data && chmod -R u+w /tmp/data
             mysqld --skip-networking --socket=/tmp/m.sock --datadir=/tmp/data --user=mysql \
               --secure-file-priv=/tmp/nofiles --local-infile=0 --skip-log-bin \
-              >/tmp/mysqld.log 2>&1 &
+              --mysqlx=0 --pid-file=/tmp/data/mysqld.pid --log-error=/tmp/mysqld.log &
             for i in $(seq 1 900); do
               mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 && break
               sleep 0.02
             done
-            mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 || exit 8
+            mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 || {
+              tail -5 /tmp/mysqld.log >&2; exit 8; }
             mysql --socket=/tmp/m.sock -uroot -e "CREATE DATABASE practice"
             mysql --socket=/tmp/m.sock -uroot practice < /tmp/dataset.sql >/dev/null 2>/tmp/ds.err || {
               cat /tmp/ds.err >&2; exit 9; }
