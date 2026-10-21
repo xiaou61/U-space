@@ -204,3 +204,60 @@ OkHttp 4.x 的默认值是 **10 秒**，而 AgentScope 自己的 `HttpTransportC
 [Hacker News] eMudhra 中间 CA 遭入侵
   → eMudhra 中间 CA 遭入侵，引发 376 条评论讨论。
 ```
+
+## 生产部署与满批实跑（2026-10-21 16:00–16:55）
+
+### 部署过程撞到迁移版本倒挂（服务挂了约 20 分钟）
+
+`V20261021134700__create_digest_tables.sql`（本项）比 `V20261021135406__create_camp_tables.sql`
+（WORK-029，另一会话）**早 10 分钟生成**，但 camp 先部署到生产。于是生产库最后应用的版本是
+`…135406`，我的 `…134700` 成了"更早但未应用"→ Flyway：
+
+```
+Detected applied migration not resolved locally: 20261021135406.
+Detected resolved migration not applied to database: 20261021134700.
+Validate failed: Migrations have failed validation
+```
+
+**测试一路绿是因为 `application-test.yml` 开了 `out-of-order: true`，生产刻意没开。**
+
+修法：把迁移改名成 `V20261021161000__create_digest_tables.sql`（内容不变、校验和不变），
+顺序追加。过程中还踩到两次：
+- **`mvn package` 不 clean 时旧迁移残留在 `target/classes`**，jar 里同时打两个版本 → 校验和登记了新的、旧文件仍在
+- **从工作树构建会缺对方会话的文件**（工作树是合并前的快照）→ `applied migration not resolved locally`
+
+最终从主树 `mvn clean package` 构建、用 `unzip -l` 确认 jar 里只有两个正确迁移，才部署成功。
+已把这条写进 `.agent/rules/always.md`。
+
+### 满批 60 条：两层缺陷
+
+**第一层**：60 条一次性喂进 DeepSeek，`maxTokens=8192` 被思考 token 吃满 → 上游静默返回空，
+60 条全部降级（日志「速递 AI 返回空内容（思考 token 可能吃满）」）。5 条和 12 条都够用，
+问题只在满批。→ `maxTokens=16384` + 按 24 条分批。
+
+**第二层**：分批后仍失败——超时是按"整轮 180 秒"算的，第 1 批用完预算后第 2、3 批
+直接 `InterruptedException`。→ 改成按批 120 秒。
+
+### 最终线上结果（16:52 那轮）
+
+```
+速递完成：候选 159 条，已存在 0 条，入库 60 条（其中降级 0 条），失败源 0 个
+```
+
+| 分组 | 条数 | 降级 |
+| --- | --- | --- |
+| news | 18 | 0 |
+| community | 18 | 0 |
+| github | 15 | 0 |
+| hackernews | 9 | 0 |
+
+`ai_runs`：`kind=digest userId=0 status=ok input=7493 output=7523`。
+
+线上接口 `GET /api/v1/digest` 返回 60 条、四组齐全、全部有中文摘要。
+学习者端 e2e 打线上：**4 passed / 1 skipped / 0 failed**。
+
+### 仍未做
+
+- **周报没在生产触发过**：`DigestWeeklyJob` 是 `initialDelay=10min` + `fixedDelay=7d`，
+  部署后第一次要等 10 分钟，本轮窗口内没等到；它的提示词已在本机真连验证过（558 字三段）。
+- 管理端删除的 e2e 未跑（接口层有集成测试与 401/403 证据）。

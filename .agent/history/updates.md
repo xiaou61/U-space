@@ -5203,3 +5203,36 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-027 · 推送 master 并部署上线（含一次线上事故）
+
+- 类型：deployment
+- 变更：
+  - 合并 `feat/work-027-digest` 进 master 并推送（与 WORK-029 的三处冲突按"两边都保留"处理）
+  - 线上 `/opt/paideia-app/application.yml` 新增 `paideia.ai.digest` 段（`enabled: true`、GitHub token、5 个 RSS 源）
+  - 迁移重命名 `V20261021134700` → `V20261021161000__create_digest_tables.sql`（避开与 camp 的版本倒挂）
+  - `maxTokens` 8192 → 16384 + 按 24 条分批；`aiTimeoutSeconds` 180（整轮）→ 120（每批）
+- **事故：迁移版本倒挂，线上服务挂了约 20 分钟**
+  - 现象：部署后 `health=000`、5 次重启循环，日志 `Validate failed: Migrations have failed validation`
+  - 根因：本项的迁移时间戳（`…134700`）比另一会话的 camp 迁移（`…135406`）**早**，但 camp 先部署，
+    我的成了"更早但未应用"。`application-test.yml` 开了 `out-of-order: true`，生产刻意没开——**所以本地永远绿**
+  - 修复过程中又踩两次：① `mvn package` 不 clean 时旧迁移残留在 `target/classes`，jar 里打两个版本；
+    ② 从工作树构建缺对方会话的文件 → `applied migration not resolved locally`
+  - 最终从主树 `mvn clean package`，用 `unzip -l` 确认 jar 里只有两个正确迁移才部署成功
+  - 已把这条与处理步骤写进 `.agent/rules/always.md`
+- **满批 AI 调用两层缺陷（都是线上才暴露）**：
+  1. 60 条一次性调用，8192 maxTokens 被思考吃满 → 上游静默返回空 → 60 条全降级。
+     5 条 / 12 条都够用，**问题只在满批**
+  2. 改分批后，超时按"整轮 180 秒"算，第 1 批用完预算 → 第 2、3 批 `InterruptedException`。
+     改为按批 120 秒
+- 线上结果（16:52 那轮）：
+  ```
+  速递完成：候选 159 条，已存在 0 条，入库 60 条（其中降级 0 条），失败源 0 个
+  ```
+  分组 news 18 / community 18 / github 15 / hackernews 9，**0 条降级**；
+  `ai_runs`：`kind=digest userId=0 status=ok input=7493 output=7523`
+  线上 `GET /api/v1/digest` 返回 60 条四组齐全；学习者端 e2e 打线上 4 passed / 1 skipped
+- **仍未做**：周报没在生产触发（`initialDelay=10min`，本轮窗口没等到；提示词已在本机真连验证）；
+  管理端删除的 e2e 未跑
+- 本地提交：`7bdd748`（及合并前的 5 笔）
+- 远端推送：**已完成**（`2309acb..7bdd748`）
