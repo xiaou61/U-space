@@ -32,6 +32,12 @@ public final class RunKind {
     /** 条目精简卡片（WORK-005）。 */
     public static final String ENTRY_SUMMARY = "entry_summary";
 
+    /** 每日技术速递那一次压缩调用（WORK-027）。 */
+    public static final String DIGEST = "digest";
+
+    /** 周报生成（WORK-027）。与日报分开记，便于分别看成本。 */
+    public static final String DIGEST_WEEKLY = "digest_weekly";
+
     private RunKind() {
     }
 }
