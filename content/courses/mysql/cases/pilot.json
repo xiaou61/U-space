@@ -2,11 +2,10 @@
   {
     "id": "my-01-readonly",
     "course": "01",
-    "kind": "sql-blank",
+    "kind": "fill",
     "title": "建表时该给金额用什么类型",
     "goal": "能选对存金额的类型：知道浮点存不准、DECIMAL 才精确",
     "trap": "NULL 和 0、空字符串是一回事",
-    "template": "CREATE TABLE prices (id INT PRIMARY KEY, amount {{0}}(10,2));",
     "options": [
       [
         "DECIMAL",
@@ -17,7 +16,9 @@
     "answers": [
       0
     ],
-    "explain": "DECIMAL 按十进制精确存储；FLOAT/DOUBLE 是二进制浮点，0.1 这种值存的是近似值，累加后会与预期差出小数。"
+    "explain": "DECIMAL 按十进制精确存储；FLOAT/DOUBLE 是二进制浮点，0.1 这种值存的是近似值，累加后会与预期差出小数。",
+    "language": "sql",
+    "template": "CREATE TABLE prices (id INT PRIMARY KEY, amount {{0}}(10,2));"
   },
   {
     "id": "my-03-write",

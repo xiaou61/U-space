@@ -156,8 +156,14 @@ def check_blocks(path: Path, body: str) -> None:
         if not isinstance(block_id, str) or not block_id or len(block_id) > LIMITS["id"]:
             fail(path, f"动手块第 {line} 行：id 缺失或超过 {LIMITS['id']} 字符")
         kind = data.get("kind")
-        if kind not in ("fill", "order", "bug", "run"):
-            fail(path, f"动手块 {block_id}：kind 只能是 fill/order/bug/run")
+        if kind not in ("fill", "order", "bug", "run", "sql-write", "sql-fix"):
+            fail(path, f"动手块 {block_id}：kind 只能是 fill/order/bug/run/sql-write/sql-fix")
+        if kind in ("sql-write", "sql-fix"):
+            # SQL 题的结构校验在 scripts/sql_cases.py 里（它要真连数据库跑参考解）；
+            # 这里只挡住"少了必填字段"这类明显错误，避免课程门禁依赖数据库。
+            for key in ("dataset", "expectHash", "starter"):
+                if key not in data:
+                    fail(path, f"SQL 题 {block_id}：缺少 {key}")
         if kind == "order":
             lines = data.get("lines")
             answer = data.get("answer")

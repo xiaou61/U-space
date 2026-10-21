@@ -109,7 +109,7 @@ approver_role: CTO
   3. 每题都带 `goal` / `trap` / `reference` / `alternatives` / `antiPatterns`，并跑门禁回写哈希。
 - 验证：`python scripts/verify_course.py --dir content/courses/mysql` 全绿；`--write-hashes` 前后哈希稳定（幂等）。
 
-### TASK-008 | pending | 补满 12 关题目（每关 1 道精做题）
+### TASK-008 | done | 补满 12 关题目（每关 1 道精做题）
 
 - 对应：REQ-002a、REQ-011、REQ-014；AC-009、AC-016
 - 依赖：TASK-007
@@ -121,7 +121,7 @@ approver_role: CTO
   4. 每题的 `trap` 必须对应本课「常见误区」里已写的一条。
 - 验证：门禁全绿；12 关逐关列出「题型 + goal + trap」清单，人工过一遍是否超纲；09/10 两关用 ROLLBACK 后的结果证明事务真的生效（AC-016）。
 
-### TASK-009 | pending | 自由练习页
+### TASK-009 | pending | 自由练习页（未做）
 
 - 对应：REQ-015、REQ-016；AC-011、AC-012、AC-015
 - 依赖：TASK-006、TASK-007

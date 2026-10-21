@@ -35,14 +35,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 COURSE_DIR = ROOT / "content" / "courses" / "mysql"
-DATASET_DIR = COURSE_DIR / "datasets"
+# 数据集在**沙箱模块的 resources** 里，不在 content 下：隐藏数据集不能随题面/内容源下发，
+# 客户端只拿 key。门禁读同一份文件，所以校验的就是线上真正会执行的那份 SQL。
+DATASET_DIR = ROOT / "backend" / "paideia-sandbox" / "src" / "main" / "resources" / "sandbox" / "datasets"
 CASES_DIR = COURSE_DIR / "cases"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sql_judge  # noqa: E402
 
 EXECUTABLE_KINDS = ("sql-write", "sql-fix")
-READONLY_KINDS = ("sql-predict", "sql-diagnose", "sql-blank")
+# 不执行的题型：`fill` 直接复用既有填空块（沙箱关闭时也能做），另三种是 SQL 专用的读图/读报错。
+READONLY_KINDS = ("sql-predict", "sql-diagnose", "sql-blank", "fill")
 ALL_KINDS = EXECUTABLE_KINDS + READONLY_KINDS
 
 failures: list[str] = []
@@ -99,6 +102,17 @@ class SqlRunner:
             if not self.cursor.nextset():
                 break
         return tables
+
+    def try_run(self, sql: str) -> tuple[list[dict], str | None]:
+        """跑一条可能报错的语句（反模式往往是错的）。
+
+        返回 (结果集, 错误)。**报错本身就是一种"与参考解不同"**：`SELECT city FROM orders`
+        这种写法根本跑不通，正是这题要抓的东西。所以不抛给调用方。
+        """
+        try:
+            return self.run(sql), None
+        except Exception as error:  # noqa: BLE001 - 语法/语义错误都算"这条写法不对"
+            return [], str(error)
 
     def reset(self, dataset: str) -> None:
         """重建库并灌数据集：反模式改过数据后必须回到干净状态再跑下一条。"""
@@ -220,19 +234,23 @@ def check_executable(case: dict, runner: SqlRunner | None, datasets: dict[str, s
         # ① 每个等价写法都必须与 reference 结果相同
         for index, alternative in enumerate(case["alternatives"]):
             runner.reset(dataset)
-            got_sets = runner.run(alternative)
+            got_sets, alternative_error = runner.try_run(alternative)
+            if alternative_error is not None:
+                fail(name, f"数据集 {key}：alternatives[{index}] 执行失败（{alternative_error}）——"
+                           f"等价写法必须是能跑通的")
+                continue
             got = got_sets[0] if got_sets else {"columns": [], "rows": []}
             if not sql_judge.judge_sql(expected, got, normalize):
                 fail(name, f"数据集 {key}：alternatives[{index}] 被判为不同——"
                            f"说明判题口径太窄，会误杀正确写法")
 
         # ② 每个反模式必须在**至少一个**数据集上与 reference 不同
-        #    这里只记录"是否至少一处不同"，跨数据集的汇总在下面
+        #    报错也算不同（那是这条写法本身不成立），所以用 try_run
         for index, anti in enumerate(case["antiPatterns"]):
             runner.reset(dataset)
-            got_sets = runner.run(anti)
+            got_sets, anti_error = runner.try_run(anti)
             got = got_sets[0] if got_sets else {"columns": [], "rows": []}
-            if not sql_judge.judge_sql(expected, got, normalize):
+            if anti_error is not None or not sql_judge.judge_sql(expected, got, normalize):
                 case.setdefault("_anti_caught", {}).setdefault(index, []).append(key)
 
         hashes[key] = sql_judge.canonical_sha256(expected, normalize)

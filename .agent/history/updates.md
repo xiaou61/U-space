@@ -5407,3 +5407,30 @@ schema_version: 1
     已核对：这两个文件都不在本次改动里
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-008 十二关题目与课时接入
+
+- 类型：content
+- 变更：
+  - `cases/lessons.json`：新增 9 道题，12 关各 1 道（01 填空 + 11 道可执行）
+  - 每题都带 `goal`（考什么认知）与 `trap`（对应本课哪条误区），门禁强制核对
+  - 题目插入各课正文的「## 动手」节；**题面只带 expectHash，不带 reference/alternatives/antiPatterns**
+  - 数据集加 `customers.note` 可空列：公开集 3 行分别是 `'VIP'` / `''` / `NULL`。
+    **原数据集里根本没有 NULL，第 02 课讲 NULL 却考不出区别**——这条是被门禁逼出来的
+  - 删掉各课原有的「找 bug」动手题（每关 1 道精做题的裁决），并把「## 动手」移回
+    「## 检查一下」之前（课程固定七节顺序）
+- 决策：
+  - 门禁遇到反模式报错时**不崩**，把"跑不通"也算作"与参考解不同"——`SELECT city FROM orders`
+    这种写法根本执行不了，正是那题要抓的东西
+- 验证：
+  - `python scripts/verify_course.py --dir content/courses` → 50 个文件含代码执行全通过
+  - `python scripts/sql_cases.py --check` → 12 道题通过
+  - `python scripts/check_sql_judge_parity.py` → 24 条两侧无差异
+  - 题面与源文件 `expectHash` 逐题比对一致，且**无一处泄漏 reference/antiPatterns**
+- 门禁抓出的三个真实题目设计问题（都已修）：
+  1. 第 02 课的反模式 `= NULL` 与参考解结果相同 → 说明数据集里没有 NULL，题目无区分度
+  2. 第 10 课的 alternatives 按订单粒度分组，与按客户汇总的参考解**本来就不是同一个查询**
+     （我写错了，不是判题口径问题）
+  3. 第 12 课的 alternatives 用标量子查询会把无订单客户带成 NULL 行，与 INNER JOIN 语义不同
+- 本地提交：见下一笔
+- 远端推送：未执行
