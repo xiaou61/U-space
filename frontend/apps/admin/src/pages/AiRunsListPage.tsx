@@ -66,15 +66,27 @@ interface SpanView {
   errorType: string | null
   startedAt: string
   durationMs: number | null
+  ttftMs: number | null
   inputTokens: number
   outputTokens: number
   attrs: Record<string, unknown>
+}
+
+interface RunPayload {
+  seq: number
+  requestBody: string | null
+  responseBody: string | null
+  requestBytes: number
+  responseBytes: number
+  truncated: boolean
 }
 
 interface RunDetail {
   run: RunSummary
   attrs: Record<string, unknown>
   spans: SpanView[]
+  payloads: RunPayload[]
+  payloadEnabled: boolean
 }
 
 interface Page<T> {
@@ -408,26 +420,16 @@ function RunSteps({ traceId }: { traceId: string }) {
             <TableHead>名称</TableHead>
             <TableHead>状态</TableHead>
             <TableHead className="text-right">耗时</TableHead>
+            <TableHead className="text-right">首字</TableHead>
             <TableHead className="text-right">tokens</TableHead>
+            <TableHead className="text-right">详情</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {detail.data.spans.map((span) => (
-            <TableRow key={span.seq}>
-              <TableCell className="text-xs tabular-nums">{span.seq}</TableCell>
-              <TableCell className="text-xs">{span.kind}</TableCell>
-              <TableCell className="text-xs">{span.name}</TableCell>
-              <TableCell className="text-xs">
-                {STATUS_LABEL[span.status] ?? span.status}
-                {span.errorType === null ? null : (
-                  <span className="text-muted-foreground ml-1 text-[10px]">{span.errorType}</span>
-                )}
-              </TableCell>
-              <TableCell className="text-right text-xs tabular-nums">{ms(span.durationMs)}</TableCell>
-              <TableCell className="text-right text-xs tabular-nums">
-                {span.inputTokens} / {span.outputTokens}
-              </TableCell>
-            </TableRow>
+            <StepRow key={span.seq} span={span}
+              payload={detail.data.payloads.find((p) => p.seq === span.seq) ?? null}
+              payloadEnabled={detail.data.payloadEnabled} />
           ))}
         </TableBody>
       </Table>
@@ -443,4 +445,120 @@ function RunSteps({ traceId }: { traceId: string }) {
       </Button>
     </div>
   )
+}
+
+/**
+ * 一步的详情（WORK-030 阶段 B）。
+ *
+ * <p>点「查看」展开三块：**工具入参与返回**（在 attrs 里，截断过）、**完整请求**、**完整响应**
+ * （在 payload 表里）。排查"它为什么答错"时，光看"成功了、耗时 300ms"没有用——
+ * 得知道它收到什么、回了什么、模型到底看到了什么。
+ */
+function StepRow({ span, payload, payloadEnabled }: {
+  span: SpanView
+  payload: RunPayload | null
+  payloadEnabled: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const toolArgs = span.attrs?.toolArgs
+  const toolResult = span.attrs?.toolResult
+  const hasDetail = toolArgs !== undefined || toolResult !== undefined
+    || payload !== null || !payloadEnabled
+
+  return (
+    <>
+      <TableRow>
+        <TableCell className="text-xs tabular-nums">{span.seq}</TableCell>
+        <TableCell className="text-xs">{span.kind}</TableCell>
+        <TableCell className="text-xs">{span.name}</TableCell>
+        <TableCell className="text-xs">
+          {STATUS_LABEL[span.status] ?? span.status}
+          {span.errorType === null ? null : (
+            <span className="text-muted-foreground ml-1 text-[10px]">{span.errorType}</span>
+          )}
+        </TableCell>
+        <TableCell className="text-right text-xs tabular-nums">{ms(span.durationMs)}</TableCell>
+        <TableCell className="text-right text-xs tabular-nums">
+          {span.ttftMs === null ? '—' : ms(span.ttftMs)}
+        </TableCell>
+        <TableCell className="text-right text-xs tabular-nums">
+          {span.inputTokens} / {span.outputTokens}
+        </TableCell>
+        <TableCell className="text-right">
+          {hasDetail ? (
+            <Button variant="outline" size="xs" onClick={() => setOpen(!open)}
+              data-testid={`span-detail-${span.seq}`}>
+              {open ? '收起' : '查看'}
+            </Button>
+          ) : (
+            <span className="text-muted-foreground text-[10px]">—</span>
+          )}
+        </TableCell>
+      </TableRow>
+      {open ? (
+        <TableRow>
+          <TableCell colSpan={8} className="bg-muted/40">
+            <div className="space-y-3 py-1">
+              {toolArgs === undefined && toolResult === undefined ? null : (
+                <>
+                  <PayloadBlock title="工具入参" text={String(toolArgs ?? '—')}
+                    testId={`span-tool-args-${span.seq}`} />
+                  <PayloadBlock title="工具返回" text={String(toolResult ?? '—')}
+                    testId={`span-tool-result-${span.seq}`} />
+                </>
+              )}
+              {payload === null ? (
+                payloadEnabled ? null : (
+                  <p className="text-muted-foreground text-xs" data-testid={`span-payload-off-${span.seq}`}>
+                    本次未记录请求体与响应体（采集已停用）。
+                  </p>
+                )
+              ) : payload.truncated ? (
+                <p className="text-muted-foreground text-xs" data-testid={`span-payload-truncated-${span.seq}`}>
+                  内容超过上限已省略：请求 {payload.requestBytes} 字节、响应 {payload.responseBytes} 字节。
+                </p>
+              ) : (
+                <>
+                  <PayloadBlock title="完整请求" text={pretty(payload.requestBody)}
+                    testId={`span-payload-request-${span.seq}`} />
+                  <PayloadBlock title="完整响应" text={pretty(payload.responseBody)}
+                    testId={`span-payload-response-${span.seq}`} />
+                </>
+              )}
+            </div>
+          </TableCell>
+        </TableRow>
+      ) : null}
+    </>
+  )
+}
+
+/** 一块等宽可复制的文本。长内容限高滚动，不把整页撑开。 */
+function PayloadBlock({ title, text, testId }: { title: string; text: string; testId: string }) {
+  return (
+    <div>
+      <div className="text-muted-foreground mb-1 flex items-center justify-between text-[11px]">
+        <span>{title}</span>
+        <span className="tabular-nums">{text.length} 字符</span>
+      </div>
+      <pre
+        className="bg-background max-h-72 overflow-auto rounded-md border p-2 text-[11px] whitespace-pre-wrap"
+        data-testid={testId}
+      >
+        {text}
+      </pre>
+    </div>
+  )
+}
+
+/** JSON 就美化，不是就原样——解析失败不该让这一块变空白。 */
+function pretty(json: string | null): string {
+  if (json === null) {
+    return '—'
+  }
+  try {
+    return JSON.stringify(JSON.parse(json), null, 2)
+  } catch {
+    return json
+  }
 }
