@@ -163,6 +163,30 @@ MODEL_CALL_END#2 in=446 out=12 cached=256 reasoning=0   total=458 upstreamTime=0
 - 只为了"用上框架的更好写法"。第一步（升版本）已经能拿到大部分收益。
 - 团队对 `Middleware` 的行为没有把握时——它包裹的是整条执行链，写错会让流式卡住。
 
+### 第二、三步的六个尖刺（2026-10-21 追加，决定了实现方式）
+
+六轮真实 DeepSeek 实测，得出的约束直接改变了原先设想：
+
+| # | 验什么 | 结果 |
+| --- | --- | --- |
+| 4 | 运行中 `toolkit.registerAgentTool(...)` 能否让新工具在**同一请求的下一轮**可用 | **不能**。Toolkit 里确实有了该工具，但模型下一轮仍看不到，回答"调用通道没打开" |
+| 5a | 用 `Middleware.onModelCall` 改写 `ModelCallInput.tools()` 注入 schema | **能看到**，但**执行失败**——execution 侧用的是请求开始时的快照 |
+| 5b | 启动时注册**全部**工具 + Middleware 收窄/放开 schema | **成功**。`STARTUP_TOOLKIT=[get_weather, discover_tools]`，首轮 schema 只发 `discover_tools`，`find_tools` 之后下一轮发两个，`get_weather` 真被调用并返回数据 |
+| 6 | 多条 `SYSTEM` 消息放进 `inputMessages` | **抛异常**：`Hooks must not inject SYSTEM messages into PreCallEvent.inputMessages. Use event.setSystemMessage() or event.appendSystemContent() instead` |
+| 6b | 改用 `builder.sysPrompt(...)` | **正常**。框架把它作为唯一的 SYSTEM 放进每次模型调用（`call#1 count=2 [SYSTEM:50, USER:8]`） |
+| 6c | 复用同一个 agent 实例连做两次调用（同一 sessionId） | **有状态泄漏**：`call#2 count=4 [SYSTEM:50, USER:8, ASSISTANT:495, USER:6]`——上一轮的助手回复被框架自己留在上下文里 |
+
+**因此实现方式被这三条钉死：**
+
+1. **每次请求新建 `ReActAgent`**（`try (ReActAgent agent = ...)`）。我们不能让框架管历史——历史在 MySQL，由 `ConversationWindow` 裁好传进来。复用实例会把历史发两遍。
+2. **提示词必须合成一条 `sysPrompt`**。现在的 `toMessages()` 把条目上下文、记忆、学情**各挂一条 SYSTEM**（放用户侧会被模型当成用户说的话），这套必须改成"按顺序拼成一段文本"再交给 `sysPrompt`。
+3. **工具在构建时全量注册，可见性由 Middleware 收窄**。`find_tools` 的"下一轮就能用"靠的是：这个 harness 能用的工具**已经全在执行侧**，Middleware 只负责决定这一轮**发给模型看**哪些。执行侧的权限校验仍在 `AgentToolBridge.run`（按 harness 视图判），与现在一致。
+
+### 什么情况下**不要**迁移
+
+- 只为了"用上框架的更好写法"。第一步（升版本）已经能拿到大部分收益。
+- 团队对 `Middleware` 的行为没有把握时——它包裹的是整条执行链，写错会让流式卡住。
+
 ## 四、密钥与配置边界
 
 - DeepSeek API 密钥存于本机 Windows 凭据管理器（`Codex/quick-server/paideia-deepseek`），**不进仓库、不写进任何被跟踪的文件**。

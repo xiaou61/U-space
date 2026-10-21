@@ -70,20 +70,33 @@ approver_role: CTO
 - 全绿；Skipped 数与改动前一致
 - `AiTelemetryIntegrationTest`、`McpStartupSmokeTest` 在内并通过
 
-### TASK-005 | pending | 第二步：ReActAgent 替换手写循环（未批准，待追加任务）
+### TASK-005 | done | 第二步：ReActAgent 替换手写循环
 
-**为什么留一条 pending**：本项共三步，本次只批准第一步。没有这条占位时，四个任务全 done 会让
-工作项状态显示成"可完成"，而实际上对话链路还没换——那是假的完成。
+**做了什么**
 
-**做什么（待第一步观察后细化）**：用 `ReActAgent` + `MiddlewareBase` 替换
-`AgentScopeConversation` 的手写循环；逐条对上三处实测补丁；写八类输入的对照套件。
+- `AgentScopeConversation` 重写：手写 `for (round)` 删除，改由 `ReActAgent` + `RoundMiddleware` 驱动
+- 三条实测约束落到代码：每次请求新建 Agent、提示词合成一条 `sysPrompt`、
+  `AgentToolBridge.callable()` 一次注册齐 + Middleware 逐轮收窄
+- 三处实测补丁逐条对上：最终轮才推正文、tool 消息交框架、思考不进历史
+- 顺带修两处迁移中暴露的缺陷：步序号并发撞号、用量累加丢更新
 
-**可检查结果**：见 requirements 的「第二步与第三步的验收」——届时先补成正式 AC 再动手。
+**可检查结果（实测）**
 
-### TASK-006 | pending | 第三步：MiddlewareBase 成为唯一观测钩子（未批准）
+- `AgentTurnBehaviorTest` 7 条全绿（假模型走真实 ReActAgent）
+- `AgentLiveConversationTest` 2 条真连 DeepSeek 通过（含真工具循环，答案含工具返回内容）
+- 反向验证：去掉 schema 收窄后 `find_tools` 用例立刻红
 
-把步骤级首字、模型、工具入参与返回、完整请求体都收口到 `Middleware.onModelCall`
-与 `AgentTool.callAsync`，为 WORK-030 阶段 B 定型采集点。
+### TASK-006 | done | 第三步：观测采集点收口到 Middleware
+
+**做了什么**
+
+- 每轮模型调用在 `RoundMiddleware.onModelCall` 里开一步 `SpanSpec.llm(seq)`，记 tokens（含缓存）与成功/失败
+- 每次工具调用在 `BridgedTool.callAsync` 里开一步 `SpanSpec.tool(name)`，工具入参与返回都在这一步可达
+- `Middleware.onModelCall` 的 `ModelCallInput` 提供 messages/tools/options/model——WORK-030 阶段 B 的采集点就此定型
+
+**可检查结果（实测）**
+
+- 全量 554 条 / 0 失败 / 10 跳过，`AiTelemetryIntegrationTest` 在内通过
 
 ## 完成判据
 
