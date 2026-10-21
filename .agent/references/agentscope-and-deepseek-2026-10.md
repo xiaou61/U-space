@@ -66,7 +66,104 @@ DeepSeek 页面明确提示：当**同时**存在工具与结构化输出时，D
 
 推理是同一模型上的开关（`enableThinking(true)`），流式输出会把 `ThinkingBlockDeltaEvent` 与 `TextBlockDeltaEvent` 分开推送。**前端的流式渲染必须能分别处理这两类事件**，否则思考内容与正式回答会混在一起。
 
-## 三、密钥与配置边界
+## 三、ReActAgent 能不能用（2026-10-21 尖刺实测，**结论已改**）
+
+问题反复被问起（公众号《AgentScope Java 事件流》传播后）。**第一版结论（"接不上、收益为零"）已被实测推翻**，下面是真实跑出来的结果。
+
+### 尖刺工程
+
+`C:\Users\Lenovo\AppData\Local\Temp\as-spike`（临时，不入库）：`agentscope-core:2.0.4` + `agentscope-extensions-model-openai:2.0.4` + JDK 25 + **真实 DeepSeek**，三个程序：
+
+| 程序 | 验什么 | 结果 |
+| --- | --- | --- |
+| `Spike` | `streamEvents` 全事件 + **程序化 AgentTool**（非注解） | **通过**，5.9 秒跑完两轮工具调用 |
+| `HookSpike` | `Hook` 能否拿到完整 prompt | **通过**，但 `hook` 包已标 `removal` |
+| `MiddlewareSpike` | `MiddlewareBase` 能否落 payload 表要的全部字段 | **通过**，4.3 秒跑完 |
+
+### 实测结论一：程序化工具直接能接，不需要注解、不需要挂起
+
+这是第一版结论错得最狠的地方。`Toolkit.registerAgentTool(AgentTool)` 存在，而 `AgentTool` 的接口就是：
+
+```java
+String getName(); String getDescription(); Map<String,Object> getParameters();
+Mono<ToolResultBlock> callAsync(ToolCallParam param);
+```
+
+**与项目自己的 `PaideiaTool` 形状几乎一致**，`callAsync` 里 `param.getInput()` 就是工具入参。既不用 `@Tool` 注解，也不用 Schema-Only + `TOOL_SUSPENDED` 的外部执行往返。
+
+实测输出（第二轮才拿到工具结果，两轮共 2 次工具调用）：
+
+```
+TOOL_INPUT_LOOKUP={topic=redis}
+TOOL_INPUT_MULTIPLY={factor=3, value=7}
+ELAPSED_MS=5906
+EVENT_COUNTS={AGENT_START=1, MODEL_CALL_START=3, TEXT_BLOCK_START=2, TEXT_BLOCK_DELTA=29,
+  TEXT_BLOCK_END=2, TOOL_CALL_START=2, TOOL_CALL_DELTA=22, TOOL_CALL_END=2, MODEL_CALL_END=3,
+  TOOL_RESULT_START=2, TOOL_RESULT_TEXT_DELTA=2, TOOL_RESULT_END=2, THINKING_BLOCK_START=1,
+  THINKING_BLOCK_DELTA=8, THINKING_BLOCK_END=1, AGENT_RESULT=1, AGENT_END=1}
+```
+
+### 实测结论二：完整请求体拿得到，而且是在"发送前一刻"
+
+`MiddlewareBase.onModelCall` 的入参 `ModelCallInput` 是 record，四个字段齐全：
+
+```
+MODEL_CALL#1 model=deepseek-flash msgs=2 msgChars=62
+  roles=[SYSTEM:38, USER:24] tools=1 toolNames=[fetch_record]
+MODEL_CALL#2 model=deepseek-flash msgs=4 msgChars=89
+  roles=[SYSTEM:38, USER:24, ASSISTANT:12, TOOL:15] tools=1
+```
+
+`messages() / tools() / options() / model()` —— 这正是 WORK-030 `REQ-060/061` 要的"实际发送而不是打算发送"。
+
+### 实测结论三：SDK 给的用量比我们现在记的多两种
+
+```
+MODEL_CALL_END#1 in=325 out=38 cached=0   reasoning=0   total=363 upstreamTime=2.523
+MODEL_CALL_END#2 in=446 out=12 cached=256 reasoning=0   total=458 upstreamTime=0.874
+```
+
+**`cached=256` 是真实的缓存命中**。而项目现在的 `AgentScopeConversation.toUsage()` 只读 `inputTokens / outputTokens / totalTokens`，`step.tokens(..., 0)` 把 cacheRead **写死成 0** ⇒ `ai_runs.cache_read_tokens` 与 `ai_run_spans.cache_read_tokens` **永远是 0**，即使上游报了命中。`ChatUsage` 还另有 `getReasoningTokens()`，同样被丢掉。
+
+**这是本次尖刺顺手挖出的一个真缺陷，与迁不迁移无关，应当单独修。**
+
+### 实测结论四：`hook` 包已废弃，`Middleware` 是替代
+
+`-Xlint:removal` 明确报：`io.agentscope.core.hook` 中的 `Hook` / `HookEvent` / `PreReasoningEvent` / `PostReasoningEvent`「已过时，且标记为待删除」。**新代码只用 `MiddlewareBase`。**
+
+### 实测结论五：`ToolResultEndEvent` 不含结果正文
+
+它的 accessor 只有 `getReplyId / getToolCallId / getToolCallName / getState`。要拿工具返回正文得靠：
+- `PostActingEvent.getToolResult()`（但它在弃用的 hook 包里），或
+- **在 `AgentTool.callAsync` 里自己记**（最直接，且我们本来就要在工具层做权限与审计）。
+
+### 所以：迁移的代价重估
+
+| 原判断 | 实测后 |
+| --- | --- |
+| 「动态工具接不上，要走挂起往返」 | **错**。`registerAgentTool` 直接支持，`find_tools` 也能实现成程序化工具 |
+| 「收益为零，五类事件我们都有」 | **错**。SDK 额外给 `cached` / `reasoning` tokens、`FinalAnswerFilterMiddleware`、`OtelTracingMiddleware`、完整 `ModelCallInput` |
+| 「记忆要写适配器」 | **仍然成立**。`AgentStateStore` 是 `(userId, sessionId, key)` KV，我们的记忆在 MySQL |
+| 「草稿旁路要走 Middleware」 | **仍然成立**，但 Middleware 已验证可用 |
+| 「DeepSeek 工具 + 结构化输出要重验」 | **已验**：`nativeStructuredOutputWithTools(false)` + `DeepSeekFormatter` 下工具循环正常 |
+
+仍要自己写的只有三件：**记忆适配器**、**草稿旁路**（Middleware）、**工具层审计**（本来就有）。
+
+### 建议路径
+
+**值得做，但不并进 WORK-030。** 理由：WORK-030 是管理端信息密度，迁移会重写对话链路——两件事混在一个 WORK 里，任何一侧出问题都分不清是谁造成的。
+
+先做**独立的一项**，且分两步落地：
+
+1. **第一步（低风险、立刻有收益）**：升 `2.0.0 → 2.0.4`，**同时把 `backend/pom.xml` 的 MCP SDK pin 从 `0.17.0` 升到 `0.17.2`**（2.0.4 传递带的是 0.17.2，不升会 `NoSuchMethodError`）。这一步不改架构，白拿 `FinalAnswerFilterMiddleware` 与 `OtelTracingMiddleware`。
+2. **第二步（换运行时）**：用 `ReActAgent` + `MiddlewareBase` 替换手写循环，把现有的实测补丁逐条对上——最终轮才推正文（交给 `FinalAnswerFilterMiddleware`）、每轮一条 `ToolResultMessage`（框架内处理）、思考不进历史（框架的 `ThinkingBlock` 处理）。**必须有对照套件**：同一批语料在旧循环与新 Agent 下逐条比对输出与用量。
+
+### 什么情况下**不要**迁移
+
+- 只为了"用上框架的更好写法"。第一步（升版本）已经能拿到大部分收益。
+- 团队对 `Middleware` 的行为没有把握时——它包裹的是整条执行链，写错会让流式卡住。
+
+## 四、密钥与配置边界
 
 - DeepSeek API 密钥存于本机 Windows 凭据管理器（`Codex/quick-server/paideia-deepseek`），**不进仓库、不写进任何被跟踪的文件**。
 - 应用侧计划通过环境变量 `DEEPSEEK_API_KEY` 注入；本地开发配置放被 `.gitignore` 忽略的 `backend/config/application-local.yml`。

@@ -4896,3 +4896,104 @@ schema_version: 1
 - 验证：三种跑法都实跑过（27s / 54s / 13s），结果与用例数一致
 - 本地提交：见下一笔
 - 远端推送：未推送
+
+## 2026-10-21 14:24:42 +0800 · WORK-030 · 建项：管理端优化（draft）
+
+- 类型：decision
+- 变更：新建 WORK-030-管理端优化/requirements.md（draft）：记录积分调整页应能搜索全部用户、新增用户管理页
+- 决策：建 WORK-030，范围由用户逐条口述，口述完成前不进入方案阶段
+- 依据：用户：积分调整这里应该是可以搜索到全部用户吧，你这个让人搜用户id干什么呢；我们要添加一个用户管理
+- 验证：validate 通过，无 WORK-030 相关错误或警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:28:34 +0800 · WORK-030 · 第二轮口述：删积分调整页、并入用户管理，管理端整体去简约
+
+- 类型：decision
+- 变更：requirements.md 补第二轮口述的九条用户决定、管理端十页现状表（筛选/分页/问题）、sub2api 参照形态、REQ-001..040 与四条质量要求
+- 决策：删掉独立积分调整页，积分配额并入新增的用户管理；用户管理可下钻单个用户的积分与 AI 消耗；后台列表页必须都有筛选；调用明细与整体观感照 sub2api 重做
+- 依据：用户：这个调整积分的功能都不需要，可以删掉；后台很多东西你都没有可以筛选的按钮；调用明细参考 sub2api 那样的方式，目前 UI 太简约了
+- 验证：逐页读码核实十页现状：条目管理是唯一同时有筛选与分页的页；举报与调用明细的后端已支持筛选但前端未用；validate 无 WORK-030 错误
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:31:50 +0800 · WORK-030 · 第三轮：参照物换成 new-api，用户管理补齐增删改与字段清单
+
+- 类型：decision
+- 变更：requirements.md 补字段清单（用户列表九列、详情两块、调用明细十一列）、三条实现约束（角色写进令牌故改角色需吊销 refresh；AccountDeletionService 需密码不可直接复用；UserMapper 三条 SELECT 写死列清单）、AC-001..015、非目标与假设；参照物章节改写
+- 决策：U-10 参照物由 sub2api 换为 new-api；U-12 用户管理基本操作全要（改角色/禁用/删除/调积分/看消耗）；U-13 管理员不能动自己；U-11 列表字段补密
+- 依据：用户：可以类似于newapi那种ui 也可以 不用sub2api了；主要我感觉字段也少；1.可以 2.管理员不能动自己 3.你换成newapi那种
+- 验证：读码核实：TokenService.issueWithin 把 role 写进 claim（改角色对旧令牌无效）；RefreshTokenMapper.deleteByUser 已存在；AccountDeletionService.delete 校验用户密码；UserMapper 三条 SELECT 无 created_at；validate 仅余文件体积警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:37:37 +0800 · WORK-030 · 调用明细：核实 AgentScope 事件流不适用，改为补步骤级信息（REQ-050..055）
+
+- 类型：decision
+- 变更：requirements.md 新增 U-14/U-15、实现选择章节（含八条技术选择）、REQ-050..055、AC-016..019、两条质量要求（内容限长与隐私边界）、待确认问题 6/7
+- 决策：不采用 streamEvents/Middleware（我们是手写工具循环 + agentscope-core 2.0.0，只用了 Model 与 accumulator，事件流的五类产出我们已有 e2e 记录）；改为补四项步骤级信息：首字延迟、模型与提示词版本、工具入参、工具返回预览
+- 依据：用户分享 AgentScope Java 事件流文章并问是否可用、作用是什么，诉求是调用明细信息更详细
+- 验证：逐行核实：pom 声明 agentscope-core 2.0.0；AgentScopeConversation:103 是手写 for 循环不是 ReActAgent；ai_run_spans 已记六列；SpanRecord.ttftMs 字段存在但 DefaultRunRecorder.close() 恒传 null；ALLOWED_ATTRS 仅 8 个请求级键；validate 无 WORK-030 错误，REQ 编号无重号
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:40:28 +0800 · WORK-030 · U-16/U-17 裁决：工具返回与完整 payload 都要存，新增 payload 表
+
+- 类型：decision
+- 变更：requirements.md 增 REQ-060..067、AC-020..025、质量要求两条（payload 与 attrs 的职责区分、payload 不得同步写阻塞对话）、待确认问题 8/9；修复上一轮误删的调用概览与总览两节
+- 决策：U-16 工具返回照存（隐私边界选 A）；U-17 完整 prompt 与模型原始返回也要存，落到新表 ai_run_payloads（独立保留期 7 天、独立开关、超 1MB 存占位、写入走既有异步队列）
+- 依据：用户：第一 第二我们都需要存的
+- 验证：validate 无 WORK-030 错误；REQ 共 40 条无重号；误删的 REQ-030/031/040 已复位并复核存在
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:42:20 +0800 · WORK-030 · 核实为何不用 ReActAgent，结论写入 references（不迁移）
+
+- 类型：decision
+- 变更：.agent/references/agentscope-and-deepseek-2026-10.md 新增第三节「为什么不用 ReActAgent」，含版本核实、五条迁移阻碍、四条重评触发条件、升级时必须连带升级 MCP SDK pin
+- 决策：不迁移到 ReActAgent：收益为零（五类事件的数据我们已有 ai_run_spans），成本落在全项目 bug 密度最高的 379 行；只在遇到能力墙（子 Agent／运行中干预／沙箱）时重评
+- 依据：用户：我们为什么不用 AgentScope 提供的 ReActAgent 呢？他们的应该是更加好用的吧？是不是可以新开一个 work 专门做这个事情
+- 验证：解包核实：2.0.0 的 jar 无 FinalAnswerFilterMiddleware，2.0.4 有；2.0.4 传递 mcp 0.17.2 而仓库 pin 0.17.0；Maven Central 最新稳定 2.0.4、另有 2.1.0-BETA1；代码核实 AgentScopeConversation:103 为手写循环、:300 有 NoteDraft 旁路、:303 有 find_tools 逐轮发现
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:53:58 +0800 · WORK-031 · 尖刺实测通过：建 WORK-031（ReActAgent 迁移），并修正上一轮的错误结论
+
+- 类型：decision
+- 变更：新建 WORK-031/requirements.md（12 REQ + 12 AC）；references/agentscope-and-deepseek-2026-10.md 第三节整节重写为实测结果
+- 决策：建 WORK-031「Agent运行时迁移到ReActAgent」（draft）：分三步——升 2.0.4 并连带升 MCP pin 到 0.17.2、用 ReActAgent 替换手写循环、用 MiddlewareBase 补齐观测。上一轮「程序化工具接不上、收益为零」的结论被实测推翻，已在 references 更正
+- 依据：用户：我们为什么不用 Agent Scope 提供的 ReActAgent 呢？是不是可以新开一个 work 专门做这个事情呢
+- 验证：真实 DeepSeek 跑通三个尖刺：Spike 5.9s（17 种事件、两轮工具调用、程序化 AgentTool 无需注解）；HookSpike 通过但 hook 包已标 removal；MiddlewareSpike 4.3s（ModelCallInput 给出 messages/tools/options/model，ChatUsage 给出 cached=256 与 reasoning）；validate 无 WORK-031 错误
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:57:46 +0800 · WORK-031 · 确定 WORK-030/031 顺序：031 先做，030 拆两阶段
+
+- 类型：decision
+- 变更：WORK-030 requirements 加 related_to WORK-031 与「分阶段与依赖」章节（逐条列出被阻塞与被放行的 REQ/AC）；WORK-031 requirements 加「本项与 WORK-030 的顺序」章节，指明 Middleware.onModelCall 与 AgentTool.callAsync 是 030 阶段 B 的落点
+- 决策：WORK-031 先做；WORK-030 拆为阶段 A（用户管理、筛选、分页、总览、删积分页，不依赖 031）与阶段 B（步骤级遥测与 payload 表，硬等 031）。不把 WORK-030 整项标 depends_on 031，否则用户管理会被引擎重写拖住
+- 依据：用户：ok可以的 那么既然这样 work30是不是要依赖这个31 这个31要先做了
+- 验证：逐条比对两项的代码落点：030 的遥测簇采集点在 runRound/execute（031 会替换），030 阶段 A 只碰 paideia-account、管理端前端与既有只读端点；迁移目录无冲突（031 不动 db/migration）；validate 仅余 WORK-030 体积警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 15:05:00 +0800 · 基础设施 · 建立架构图存档（mermaid + 生成 + 校验）
+
+- 类型：feature
+- 变更：新建 `docs/architecture/`（README 规则 + 01 模块依赖自动生成 + 02 请求链路 + 03 部署拓扑）；新增 `scripts/gen-arch-diagram.mjs`（从 pom 生成模块依赖图，`--check` 防漂移）与 `scripts/check-diagrams.mjs`（扫全仓 mermaid 图块做语法校验）；`AGENTS.md` 的「节奏」增加一条图与代码同提交的纪律；`frontend/` 根 devDeps 增加 `mermaid` 与 `jsdom`
+- 决策：图的权威副本用**纯文本 mermaid**，不用 draw.io/Excalidraw（画布格式 diff 全是噪声，模型只能整张重画、无法局部改）；分流规则是**能抽取的不让 AI 画**——模块依赖、表关系这类答案在 pom/schema 里的必须脚本生成，因为模型凭印象复述会漏会错；请求链路、时序、状态机这类抽取不出来的才由 AI 写
+- 依据：用户：其实我更想要的是那种能让AI生成的…就是能让AI生成的；以及：可以的 你看着怎么来实现一下，开始吧
+- 验证：`node scripts/check-diagrams.mjs` 扫 224 个文件 / 7 个图块全通过（6.5 秒）；`gen-arch-diagram.mjs --check` 与 pom 一致（11 模块 / 32 条依赖）；反向验证校验器：故意写坏图返回退出码 1 且定位到第 11 行；实测 mermaid 11 种图类型在 Node+jsdom 下均可 parse，且**不需要 chromium**（class/state/C4 在无 DOM 时会误报 DOMPurify 错误，故必须带 jsdom）
+- 已知限制：校验只做语法不做渲染，布局拥挤查不出来；`subgraph` 标题含全角括号必须加引号，否则词法错误
+- 本地提交：已提交（updates.md 本身未随本笔提交——文件里有其它会话的 WORK-030/031 未提交条目）
+- 远端推送：未推送
+
+## 2026-10-21 14:59:57 +0800 · WORK-031 · 签署 .agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
