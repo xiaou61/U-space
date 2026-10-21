@@ -4840,3 +4840,30 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-027 每日技术速递 · 实施完成（工作在 `.worktrees/work-027`，分支 `feat/work-027-digest`）
+
+- 类型：implementation
+- 分支：`feat/work-027-digest`（4 笔提交，主树 `master` 只留了工件签署那笔）
+- 变更：
+  - 迁移 `V20261021134700__create_digest_tables.sql`：`digest_items`（指纹全局唯一）+ `digest_weeklies`（周唯一）
+  - `paideia-ai/internal/digest/`：`DigestSource` / `FetchedItem` / `DigestHttp` / `FeedXml` / `RssDigestSource` / `GithubTrendingSource` / `HackerNewsSource` / `DigestFingerprint` / `DigestSummarizer` / `DigestPrompt` / `DigestCollectionService` / `DigestWeeklyService` / `DigestJob` / `DigestWeeklyJob` / `DigestConfiguration` / `DigestProperties` / `DigestMapper` / `web/{DigestController,DigestAdminController}`
+  - `RunKind` 加 `DIGEST` / `DIGEST_WEEKLY`；`SecurityConfiguration` 加两条规则（管理端在前）
+  - 前端：`@paideia/knowledge` 的 `digest-client` / `digest-types`；`DigestPage`；路由 `/digest`；导航与首页入口；`preferredNav` 六处；`NoteNewPage` 读 query 预填
+- 决策与实跑暴露的三个缺陷（都已修，单测钉住）：
+  1. **`github.com/trending` 已改成 SPA**：真实 HTML 里 `<article>`/`Box-row`/`stars today` 各 0 次、仓库链接 0 个，仓库行由 JS 注入。原设计的"无 token 走页面解析为主"等于每天拿空结果 → **主次反转**：Search API 为主，页面解析降为补充
+  2. **Search API 查询串含 `>` 是 URI 非法字符**：`URI.create` 抛 `IllegalArgumentException`，被 catch 吞成"空结果"。同一串用 curl 手打返回 261 个结果——**只有应用真跑才暴露**。改为 `URLEncoder` 整体编码后 GitHub 从 0 条变 15 条
+  3. **成本闸按前缀截断会让单个源垄断**：实跑入库 60 条全是 IT 之家，GitHub/社区/HN 三组为 0。改为按分组轮转取（`takeByGroup` + 4 条单测）
+- 验证：
+  - **七个源全部实测 200**：量子位 10 / IT之家 60 / InfoQ 20 / 掘金 20 / 开源中国 50 / HN 10 / GitHub 15（无 token，匿名 search 限额 10/10）
+  - **真跑一次完整日报**（test profile + 独立库 + 端口 18099）：`候选 35 条，入库 34 条（降级 34），失败源 0 个`；分组 `news 10 / github 15 / hackernews 9`；34 个不同指纹 / 34 行
+  - 后端全量：**592 运行 / 0 失败 / BUILD SUCCESS**
+  - 学习者端 e2e：**4 passed / 1 skipped / 0 failed**（跳过那条是当天无内容时"每条都有原文链接"无法断言）
+  - 前端 identity 单测 4 条（含新增"每个身份都含 digest"）
+- 如实登记的未达项（见 `testing/report.md`）：
+  - **AI 摘要与周报的真实上游调用一次都没跑过**——实跑环境没配平台凭据，全部走了降级分支；只有解析层 8 条单测
+  - AC-008 的"当日恰好 1 条"：`RunRecorder` 已接入（首个版本漏了，写报告时才发现并补），但补完后没再跑一次带凭据的实跑，所以 `ai_runs` 表里没有实际行
+  - 社区组：源可用性已验证（掘金 20 / 开源中国 50 可解析），但实跑批次只配了量子位一个 RSS
+  - 未部署；`application.yml` 默认 `enabled: false`
+- 本地提交：`feat/work-027-digest` 分支 4 笔
+- 远端推送：未推送
