@@ -1,0 +1,718 @@
+{
+  "version": 1,
+  "nullMarker": "\u0000NULL",
+  "note": "SQL 判题口径的单一真相。前端 TS（frontend/packages/ui/src/markdown/renderers/sql-judge.ts）与内容门禁 Python（scripts/sql_judge.py）各自实现、同一份语料对照。改这里等于改判题规则，两侧必须同时跟上并各自跑一遍。",
+  "cases": [
+    {
+      "name": "decimal-trailing-zero",
+      "why": "DECIMAL 按数值比较：92.5 与 92.50 是同一个数。这是「数据类型怎么选」那一课的核心，判错就等于课讲错了。",
+      "normalize": {
+        "types": {
+          "total": "decimal"
+        }
+      },
+      "expected": {
+        "columns": [
+          "total"
+        ],
+        "rows": [
+          [
+            "92.50"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "total"
+        ],
+        "rows": [
+          [
+            "92.5"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "total\n92.5"
+    },
+    {
+      "name": "decimal-leading-zero-and-sign",
+      "why": "前导零与正负号归一，避免 -0.00 与 0 被判成不同。",
+      "normalize": {
+        "types": {
+          "amt": "decimal"
+        }
+      },
+      "expected": {
+        "columns": [
+          "amt"
+        ],
+        "rows": [
+          [
+            "-0.00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "amt"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "amt\n0"
+    },
+    {
+      "name": "decimal-differs",
+      "why": "数值真的不同时必须判错，否则归一化把判题变松。",
+      "normalize": {
+        "types": {
+          "amt": "decimal"
+        }
+      },
+      "expected": {
+        "columns": [
+          "amt"
+        ],
+        "rows": [
+          [
+            "92.50"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "amt"
+        ],
+        "rows": [
+          [
+            "92.51"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "string-keeps-trailing-zero",
+      "why": "字符串列的 92.5 与 92.50 是两个不同的值——归一化只对声明为数值的列生效。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "code"
+        ],
+        "rows": [
+          [
+            "92.50"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "code"
+        ],
+        "rows": [
+          [
+            "92.5"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "row-order-ignored-by-default",
+      "why": "默认忽略行序：同样的行换个顺序仍然是同一个结果集。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "name"
+        ],
+        "rows": [
+          [
+            "ann"
+          ],
+          [
+            "bob"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "name"
+        ],
+        "rows": [
+          [
+            "bob"
+          ],
+          [
+            "ann"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "name\nann\u001ebob"
+    },
+    {
+      "name": "row-order-strict-fails",
+      "why": "排序题必须能把顺序判错。一刀切忽略行序会让「排序、分页与去重」整课无法出题。",
+      "normalize": {
+        "rowOrder": "strict"
+      },
+      "expected": {
+        "columns": [
+          "salary"
+        ],
+        "rows": [
+          [
+            "25000.00"
+          ],
+          [
+            "18000.00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "salary"
+        ],
+        "rows": [
+          [
+            "18000.00"
+          ],
+          [
+            "25000.00"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "row-order-strict-passes",
+      "why": "严格行序下完全一致必须通过。",
+      "normalize": {
+        "rowOrder": "strict"
+      },
+      "expected": {
+        "columns": [
+          "salary"
+        ],
+        "rows": [
+          [
+            "25000.00"
+          ],
+          [
+            "18000.00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "salary"
+        ],
+        "rows": [
+          [
+            "25000.00"
+          ],
+          [
+            "18000.00"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "salary\n25000.00\u001e18000.00"
+    },
+    {
+      "name": "column-order-ignored",
+      "why": "列顺序不同但列名与值对应时应当通过：学习者换个 SELECT 顺序不该被判错。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "id",
+          "name"
+        ],
+        "rows": [
+          [
+            "1",
+            "ann"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "name",
+          "id"
+        ],
+        "rows": [
+          [
+            "ann",
+            "1"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "id\u001fname\n1\u001fann"
+    },
+    {
+      "name": "column-order-strict-fails",
+      "why": "声明严格列序时，顺序不同必须判错。",
+      "normalize": {
+        "columnOrder": "strict"
+      },
+      "expected": {
+        "columns": [
+          "id",
+          "name"
+        ],
+        "rows": [
+          [
+            "1",
+            "ann"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "name",
+          "id"
+        ],
+        "rows": [
+          [
+            "ann",
+            "1"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "column-name-mismatch",
+      "why": "列名不同不是同一个结果集——别名写错说明对需求理解错了。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "total"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "sum"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "null-is-not-empty-string",
+      "why": "NULL 与空串必须区分，否则「NULL 的坑」那一课整段失效。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "note"
+        ],
+        "rows": [
+          [
+            "\u0000NULL"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "note"
+        ],
+        "rows": [
+          [
+            ""
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "null-matches-null",
+      "why": "两边都是 NULL 时通过。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "note"
+        ],
+        "rows": [
+          [
+            "\u0000NULL"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "note"
+        ],
+        "rows": [
+          [
+            "\u0000NULL"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "note\n\u0000NULL"
+    },
+    {
+      "name": "datetime-format-normalized",
+      "why": "同一时刻用不同格式表达应当通过：时区与显示格式不该影响判题。",
+      "normalize": {
+        "types": {
+          "created": "datetime"
+        }
+      },
+      "expected": {
+        "columns": [
+          "created"
+        ],
+        "rows": [
+          [
+            "2026-10-21 10:00:00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "created"
+        ],
+        "rows": [
+          [
+            "2026-10-21T10:00:00"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "created\n2026-10-21 10:00:00"
+    },
+    {
+      "name": "datetime-differs",
+      "why": "不同时刻必须判错。",
+      "normalize": {
+        "types": {
+          "created": "datetime"
+        }
+      },
+      "expected": {
+        "columns": [
+          "created"
+        ],
+        "rows": [
+          [
+            "2026-10-21 10:00:00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "created"
+        ],
+        "rows": [
+          [
+            "2026-10-21 11:00:00"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "date-to-datetime-same-day",
+      "why": "DATE 列取出来的 2026-10-21 与 2026-10-21 00:00:00 是同一天。",
+      "normalize": {
+        "types": {
+          "day": "datetime"
+        }
+      },
+      "expected": {
+        "columns": [
+          "day"
+        ],
+        "rows": [
+          [
+            "2026-10-21 00:00:00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "day"
+        ],
+        "rows": [
+          [
+            "2026-10-21"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "day\n2026-10-21 00:00:00"
+    },
+    {
+      "name": "int-leading-zero",
+      "why": "整数列 007 与 7 是同一个数。",
+      "normalize": {
+        "types": {
+          "cnt": "int"
+        }
+      },
+      "expected": {
+        "columns": [
+          "cnt"
+        ],
+        "rows": [
+          [
+            "7"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "cnt"
+        ],
+        "rows": [
+          [
+            "007"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "cnt\n7"
+    },
+    {
+      "name": "duplicate-rows-are-multiset",
+      "why": "重复行按多重集比较：两行相同的数据不能被当成一行。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "v"
+        ],
+        "rows": [
+          [
+            "1"
+          ],
+          [
+            "1"
+          ],
+          [
+            "2"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "v"
+        ],
+        "rows": [
+          [
+            "2"
+          ],
+          [
+            "1"
+          ],
+          [
+            "1"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "v\n1\u001e1\u001e2"
+    },
+    {
+      "name": "duplicate-count-must-match",
+      "why": "行数不同必须判错——这是「LEFT JOIN 让行数翻倍」那类错误能否被发现的根本。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "v"
+        ],
+        "rows": [
+          [
+            "1"
+          ],
+          [
+            "1"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "v"
+        ],
+        "rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "empty-result-set-equal",
+      "why": "两边都是空结果集时通过（列名仍需一致）。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "actual": {
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "pass": true,
+      "canonical": "id\n"
+    },
+    {
+      "name": "empty-vs-one-row",
+      "why": "空结果集与一行结果必须判错——「查不到」和「查到 0」是两回事。",
+      "normalize": {},
+      "expected": {
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "actual": {
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      "pass": false
+    },
+    {
+      "name": "multi-column-mixed-types",
+      "why": "一题里同时出现多种类型时要各自归一，不能整表当字符串比。",
+      "normalize": {
+        "types": {
+          "total": "decimal",
+          "created": "datetime",
+          "cnt": "int"
+        }
+      },
+      "expected": {
+        "columns": [
+          "cnt",
+          "total",
+          "created"
+        ],
+        "rows": [
+          [
+            "2",
+            "487.50",
+            "2026-10-21 00:00:00"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "created",
+          "cnt",
+          "total"
+        ],
+        "rows": [
+          [
+            "2026-10-21",
+            "02",
+            "487.5"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "cnt\u001fcreated\u001ftotal\n2\u001f2026-10-21 00:00:00\u001f487.5"
+    },
+    {
+      "name": "no-columns-no-rows",
+      "why": "多语句里 BEGIN/COMMIT 不产生结果集，不会走到判题；但空表结构本身要能表示而不崩。",
+      "normalize": {},
+      "expected": {
+        "columns": [],
+        "rows": []
+      },
+      "actual": {
+        "columns": [],
+        "rows": []
+      },
+      "pass": true,
+      "canonical": "\n"
+    },
+    {
+      "name": "int-negative-sign-kept",
+      "why": "负数整数必须保留符号：-7 与 7 是两个不同的值。丢了符号会让「库存变负」这类错误判不出来。",
+      "normalize": {
+        "types": {
+          "qty": "int"
+        }
+      },
+      "expected": {
+        "columns": [
+          "qty"
+        ],
+        "rows": [
+          [
+            "-7"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "qty"
+        ],
+        "rows": [
+          [
+            "-007"
+          ]
+        ]
+      },
+      "pass": true,
+      "canonical": "qty\n-7"
+    },
+    {
+      "name": "int-sign-difference-fails",
+      "why": "差一个负号必须判错。",
+      "normalize": {
+        "types": {
+          "qty": "int"
+        }
+      },
+      "expected": {
+        "columns": [
+          "qty"
+        ],
+        "rows": [
+          [
+            "-7"
+          ]
+        ]
+      },
+      "actual": {
+        "columns": [
+          "qty"
+        ],
+        "rows": [
+          [
+            "7"
+          ]
+        ]
+      },
+      "pass": false
+    }
+  ]
+}
