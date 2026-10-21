@@ -4754,3 +4754,36 @@ schema_version: 1
 - 验证：按文档命令实跑 `-T 1C -pl '!paideia-app'` → **148 运行 / 0 失败 / 3 跳过 / BUILD SUCCESS**，与记录的 1 分 12 秒一致
 - 本地提交：见下一笔
 - 远端推送：未推送
+
+## 2026-10-21 · WORK-026 线上接通（开 Laya 开关）+ 修超时 + 补 WORK-024 工件
+
+- 类型：implementation
+- 变更：
+  - 服务器 `/opt/paideia-app/application.yml` 新增 `paideia.ai.decision` 段：`enabled: true`、`base-url: http://127.0.0.1:8091`、`api-key`（从 `/etc/laya/laya.env` 的 `LAYA_API_KEY` 原样取，40 位，未回显）、`timeout-ms: 8000`、`min-confidence: 0.7`、`max-text-chars: 4000`。改前已备份为 `application.yml.bak-20261021110651`
+  - **`timeout-ms` 默认值 5000 → 8000**（`DecisionProperties` 与 `application.yml` 同步），注释换成实测依据
+  - 补 `WORK-024` 四件工件 + `testing/report.md`（反向记录已上线功能）
+- 决策：
+  - **先确认"没接上"到底是哪种没接上**再动手。核实结果：代码**早就接好了**——`EssayCollectionService:115` 就在调 `TechEssayFilter.isTechnical()`，而 `TechEssayFilter` 会调 `ContentClassifier`。真正缺的只有一件事：服务器配置里**根本没有 `decision` 段**，于是走代码默认 `false`，打开它就行，不需要改代码
+  - **超时是这次接通才暴露的真缺陷**。5 秒是 WORK-026 当时按"热态单条 147~260ms、并发 16 p95 2965ms"标的，但那是**短文本**下的数。实测延迟随输入长度线性涨：810 字 1.1s / 1620 字 2.9s / 3240 字 3.8s / 4000 字 4.0s。`maxTextChars` 就是 4000，5 秒只留不到 1 秒余量
+- 验证：
+  - Laya 侧带 key 直连 `/v1/systemone`：技术面经判 `technical` 概率 0.9744（与部署前记录一致）
+  - 重启后运维摘要 `switches` 组：`decision | 开`；启动日志 0 ERROR
+  - **第一次跑批（5 秒超时）**：`八股文抓取完成：抓 12 篇，跳过非技术 1 篇，抽出 8 题，新建 2 条，重复 6 条，失败 1 篇`，但日志里有 **2 次** `LayaContentClassifier : 决策模型判定失败，退回规则判断：HttpTimeoutException`
+  - **改 8 秒后第二次跑批**：同样抓 12 篇、跳过 1 篇、抽出 8 题（重复 8 条），**`LayaContentClassifier` WARN 计数 = 0**；Laya 端收到 6 次 `POST /v1/systemone 200 OK`
+  - 前后对比表：
+
+    | 项 | 5 秒 | 8 秒 |
+    | --- | --- | --- |
+    | 抓取/跳过/抽题 | 12 / 1 / 8 | 12 / 1 / 8 |
+    | Laya 超时降级 | **2 次** | **0 次** |
+
+  - `TechEssayFilterTest` 6 运行 / 0 失败
+  - 另一条失败 `面经抽题失败（2929211）：上游模型服务暂时不可用` **不是 Laya 的问题**，是 DeepSeek 上游那一次没返回；两轮都在同一篇上失败，与决策模型无关
+- WORK-024 补账：
+  - 现状：代码（`V22`/`V23` 迁移、`TrackMapper`/`TrackService`/`LearnTrackController`、`LearnPage`/`TrackMapPage`、24 篇 Java 课程、`verify_course.py`）早已上线且有更新历史，但 `.agent/changes/` 下**从来没有 `WORK-024-*`**。原因是当时状态脚本报 `WORK-024` 而工作区已被在飞的八股文占用，本项取了 `WORK-025`；后来学习轨道那一路直接用 024 落了代码却没补工件
+  - 后果：`validate` 对这项**完全静默**——代码在跑、治理上看不见，也没人知道它改过什么
+  - 补了 `requirements/proposal/design/tasks` 四件 + `testing/report.md`，全部按已实现行为反向记录，**不改一行代码**。`mode: strict`（新增两张表与三个端点）
+  - 线上实测：4 条轨道（Python 0/13、Java 0/24、源码解读 0/1、计算机网络 0/2）；`GET /knowledge/categories` 已无 `lineKind` 非空项（AC-005 生效）
+- 本地提交：`3ed6ab7`（超时）、`2d036a7`（WORK-024 工件）
+- 远端推送：未推送
+- **仍未做**：WORK-024 与 WORK-027 的需求都需要用户重新签署（`validate` 各报一条「需求尚未形成，但已经存在下游工件」）
