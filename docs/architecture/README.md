@@ -25,16 +25,18 @@ mermaid 在 GitHub 上原生渲染，且在 `frontend/` 里已有渲染链路（
 | --- | --- | --- |
 | [`01-module-dependencies.md`](01-module-dependencies.md) | 脚本生成 | 后端 11 个 Maven 模块的依赖方向 |
 | [`02-request-path.md`](02-request-path.md) | AI 撰写 | 一个请求从浏览器到数据库、以及 AI 流式回答的时序 |
-| [`03-deployment.md`](03-deployment.md) | AI 撰写 | 部署形态与端口拓扑 |
+| [`03-deployment.md`](03-deployment.md) | AI 撰写 | 部署形态、信任边界与端口拓扑 |
+| [`04-frontend-packages.md`](04-frontend-packages.md) | 脚本生成 | 前端 14 个 workspace 包的依赖方向 |
+| [`05-database-tables.md`](05-database-tables.md) | 脚本生成 | 36 张表与 13 条真实外键 |
 
 ## 改图之前先跑这两条
 
 ```bash
 node scripts/check-diagrams.mjs          # 语法校验：全部 .md 里的 mermaid 图块
-node scripts/gen-arch-diagram.mjs --check # 结构图与 pom 是否一致
+node scripts/gen-arch-diagram.mjs --check # 三张结构图（后端/前端/数据库）与声明是否一致
 ```
 
-第一条是**给 AI 用的**，不是给 CI 用的：它让 AI 写完图能立刻确认语法是对的，不必等到有人打开文档才发现图是坏的。第二条防漂移。
+第一条是**给 AI 用的**，不是给 CI 用的：它让 AI 写完图能立刻确认语法是对的，不必等到有人打开文档才发现图是坏的。第二条防漂移（三张结构图各查一次）。
 
 生成结构图用 `node scripts/gen-arch-diagram.mjs`（不加 `--check` 时直接重写文件）。
 

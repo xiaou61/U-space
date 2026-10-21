@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 /**
- * 从 pom 生成后端模块依赖图。
+ * 生成**结构性的**依赖图：后端 Maven 模块、前端 pnpm 包。
  *
- * **这类图不让 AI 画**：模块有几个、谁依赖谁，答案在 pom 里，不在语义里。
- * 让模型凭印象复述一定会漏会错，而且错得很像真的。脚本产出的这张图永远是对的。
+ * **这类图不让 AI 画**：有几个模块、谁依赖谁，答案在 pom 与 package.json 里，不在语义里。
+ * 让模型凭印象复述一定会漏会错，而且错得很像真的。脚本产出的图永远等于事实。
  * 叙事性的图（请求链路、状态机、业务流程）才由 AI 写 mermaid。
  *
  * 用法：
- *   node scripts/gen-arch-diagram.mjs          # 重写 docs/architecture/01-module-dependencies.md
+ *   node scripts/gen-arch-diagram.mjs          # 重写 01 与 04 两个文件
  *   node scripts/gen-arch-diagram.mjs --check  # 只比对，不一致则退出码 1（防漂移）
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BACKEND = join(ROOT, 'backend');
-const OUT = join(ROOT, 'docs', 'architecture', '01-module-dependencies.md');
+const FRONTEND = join(ROOT, 'frontend');
+const ARCH = join(ROOT, 'docs', 'architecture');
 const OWN_GROUP = 'io.github.xiaou61';
 
 const block = (xml, tag) => {
@@ -48,68 +49,238 @@ function moduleDeps(pomPath, self) {
   return [...deps];
 }
 
-const rootPom = readFileSync(join(BACKEND, 'pom.xml'), 'utf8');
-// 模块声明顺序本身就是"由底向上"的（platform 在前、app 在最后），保留它让布局贴近分层
-const modules = [...block(rootPom, 'modules').matchAll(/<module>([^<]+)<\/module>/g)].map((m) => m[1].trim());
-if (modules.length === 0) {
-  console.error('backend/pom.xml 里没有 <modules>，无法生成。');
-  process.exit(2);
-}
+const HEADER = (source) =>
+  [
+    '<!--',
+    '  本文件由 scripts/gen-arch-diagram.mjs 生成，**不要手改**。',
+    `  手改会让 \`node scripts/gen-arch-diagram.mjs --check\` 失败（那是刻意的：这张图必须等于 ${source} 的事实）。`,
+    '  要改图就改依赖声明或改生成脚本，然后重跑生成。',
+    '-->',
+  ].join('\n');
 
-const edges = [];
-const rows = [];
-for (const module of modules) {
-  const deps = moduleDeps(join(BACKEND, module, 'pom.xml'), module);
-  for (const dep of deps) {
-    edges.push([module, dep]);
+// ── 后端：Maven 模块 ────────────────────────────────────────────────────────
+function backendDoc() {
+  const rootPom = readFileSync(join(BACKEND, 'pom.xml'), 'utf8');
+  // 模块声明顺序本身就是"由底向上"的（platform 在前、app 在最后），保留它让布局贴近分层
+  const modules = [...block(rootPom, 'modules').matchAll(/<module>([^<]+)<\/module>/g)].map((m) => m[1].trim());
+  if (modules.length === 0) {
+    console.error('backend/pom.xml 里没有 <modules>，无法生成。');
+    process.exit(2);
   }
-  rows.push({ module, deps });
-}
 
-const id = (module) => module.replace(/^paideia-/, '');
-const lines = [];
-lines.push('<!--');
-lines.push('  本文件由 scripts/gen-arch-diagram.mjs 生成，**不要手改**。');
-lines.push('  手改会让 `node scripts/gen-arch-diagram.mjs --check` 失败（那是刻意的：这张图必须等于 pom 的事实）。');
-lines.push('  要改图就改 pom 或改生成脚本，然后重跑生成。');
-lines.push('-->');
-lines.push('');
-lines.push('# 后端模块依赖');
-lines.push('');
-lines.push(`由 \`backend/pom.xml\` 的 ${modules.length} 个模块生成。箭头方向是**依赖方 → 被依赖方**，`);
-lines.push('所以箭头指向的模块可以不知道调用者的存在（依赖只许单向下行，`spring-modulith` 在构建期挡循环）。');
-lines.push('');
-lines.push('```mermaid');
-lines.push('flowchart TB');
-for (const { module } of rows) {
-  lines.push(`  ${id(module)}["${module}"]`);
-}
-for (const [from, to] of edges) {
-  lines.push(`  ${id(from)} --> ${id(to)}`);
-}
-lines.push('```');
-lines.push('');
-lines.push('## 各模块的直接依赖');
-lines.push('');
-lines.push('| 模块 | 直接依赖 |');
-lines.push('| --- | --- |');
-for (const { module, deps } of rows) {
-  lines.push(`| \`${module}\` | ${deps.length === 0 ? '（无）' : deps.map((d) => `\`${d}\``).join('、')} |`);
-}
-lines.push('');
-
-const output = lines.join('\n');
-const mode = process.argv.includes('--check');
-if (mode) {
-  const current = existsSync(OUT) ? readFileSync(OUT, 'utf8') : '';
-  if (current !== output) {
-    console.error('✗ docs/architecture/01-module-dependencies.md 与 pom 不一致（已漂移）。');
-    console.error('  跑 `node scripts/gen-arch-diagram.mjs` 重新生成，再连同代码一起提交。');
-    process.exit(1);
+  const edges = [];
+  const rows = [];
+  for (const module of modules) {
+    const deps = moduleDeps(join(BACKEND, module, 'pom.xml'), module);
+    for (const dep of deps) {
+      edges.push([module, dep]);
+    }
+    rows.push({ module, deps });
   }
-  console.log(`✓ 模块依赖图与 pom 一致（${modules.length} 个模块 / ${edges.length} 条依赖）。`);
-} else {
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, output, 'utf8');
-  console.log(`✓ 已写出 docs/architecture/01-module-dependencies.md（${modules.length} 个模块 / ${edges.length} 条依赖）。`);
+
+  const id = (module) => module.replace(/^paideia-/, '');
+  const lines = [];
+  lines.push(HEADER('pom'));
+  lines.push('');
+  lines.push('# 后端模块依赖');
+  lines.push('');
+  lines.push(`由 \`backend/pom.xml\` 的 ${modules.length} 个模块生成。箭头方向是**依赖方 → 被依赖方**，`);
+  lines.push('所以箭头指向的模块可以不知道调用者的存在（依赖只许单向下行，`spring-modulith` 在构建期挡循环）。');
+  lines.push('');
+  lines.push('```mermaid');
+  lines.push('flowchart TB');
+  for (const { module } of rows) {
+    lines.push(`  ${id(module)}["${module}"]`);
+  }
+  for (const [from, to] of edges) {
+    lines.push(`  ${id(from)} --> ${id(to)}`);
+  }
+  lines.push('```');
+  lines.push('');
+  lines.push('## 各模块的直接依赖');
+  lines.push('');
+  lines.push('| 模块 | 直接依赖 |');
+  lines.push('| --- | --- |');
+  for (const { module, deps } of rows) {
+    lines.push(`| \`${module}\` | ${deps.length === 0 ? '（无）' : deps.map((d) => `\`${d}\``).join('、')} |`);
+  }
+  lines.push('');
+  return { output: lines.join('\n'), summary: `${modules.length} 个模块 / ${edges.length} 条依赖` };
+}
+
+// ── 前端：pnpm workspace 包 ─────────────────────────────────────────────────
+function frontendDoc() {
+  const readPkg = (path) => JSON.parse(readFileSync(path, 'utf8'));
+  // 顺序固定为 packages 先、apps 后，让布局接近"底层库在上、应用在下"
+  const dirs = [];
+  for (const dir of ['packages', 'apps']) {
+    for (const name of readdirSync(join(FRONTEND, dir))) {
+      const pkgPath = join(FRONTEND, dir, name, 'package.json');
+      if (!existsSync(pkgPath)) {
+        continue;
+      }
+      dirs.push({ dir, name, pkg: readPkg(pkgPath) });
+    }
+  }
+
+  const edges = [];
+  const rows = [];
+  for (const { dir, name, pkg } of dirs) {
+    const self = pkg.name;
+    const deps = new Set();
+    for (const key of ['dependencies', 'devDependencies', 'peerDependencies']) {
+      for (const dep of Object.keys(pkg[key] ?? {})) {
+        // 只保留 workspace 内互相依赖（版本写成 workspace:*）；外部包不画
+        if (String(pkg[key][dep]).startsWith('workspace:') && dep !== self) {
+          deps.add(dep);
+        }
+      }
+    }
+    for (const dep of deps) {
+      edges.push([self, dep]);
+    }
+    rows.push({ self, dir, deps: [...deps].sort() });
+  }
+
+  const known = new Set(rows.map((r) => r.self));
+  const missing = edges.filter(([, to]) => !known.has(to));
+  if (missing.length > 0) {
+    console.error('存在指向未收录包的依赖（pnpm-workspace 可能漏了目录）：', missing.map(([f, t]) => `${f} -> ${t}`).join(', '));
+  }
+
+  const id = (name) => name.replace(/^@paideia\//, '').replace(/[^a-zA-Z0-9]/g, '_');
+  const lines = [];
+  lines.push(HEADER('package.json'));
+  lines.push('');
+  lines.push('# 前端包依赖');
+  lines.push('');
+  lines.push(`由 \`frontend/\` 的 ${rows.length} 个 workspace 包生成（\`packages/*\` 是库，\`apps/*\` 是可运行端）。`);
+  lines.push('只画**包之间**的依赖，外部依赖（React、Vite 等）不画。箭头方向是**依赖方 → 被依赖方**。');
+  lines.push('');
+  lines.push('```mermaid');
+  lines.push('flowchart TB');
+  lines.push('  subgraph 库 packages');
+  for (const r of rows.filter((r) => r.dir === 'packages')) {
+    lines.push(`    ${id(r.self)}["${r.self.replace('@paideia/', '')}"]`);
+  }
+  lines.push('  end');
+  lines.push('  subgraph 可运行端 apps');
+  for (const r of rows.filter((r) => r.dir === 'apps')) {
+    lines.push(`    ${id(r.self)}["${r.self.replace('@paideia/', '')}"]`);
+  }
+  lines.push('  end');
+  for (const [from, to] of edges) {
+    lines.push(`  ${id(from)} --> ${id(to)}`);
+  }
+  lines.push('```');
+  lines.push('');
+  lines.push('## 各包的直接依赖');
+  lines.push('');
+  lines.push('| 包 | 目录 | 直接依赖 |');
+  lines.push('| --- | --- | --- |');
+  for (const { self, dir, deps } of rows) {
+    lines.push(`| \`${self}\` | \`${dir}\` | ${deps.length === 0 ? '（无）' : deps.map((d) => `\`${d}\``).join('、')} |`);
+  }
+  lines.push('');
+  lines.push('`@paideia/desktop` 是 Electron 外壳，它的"依赖"是构建期的 app 产物（脚本里 `--filter @paideia/app build:desktop`），');
+  lines.push('不是包依赖，所以图上没有边。');
+  lines.push('');
+  return { output: lines.join('\n'), summary: `${rows.length} 个包 / ${edges.length} 条依赖` };
+}
+
+// ── 数据库：表与外键 ────────────────────────────────────────────────────────
+function databaseDoc() {
+  const MIG_DIR = join(BACKEND, 'paideia-app', 'src', 'main', 'resources', 'db', 'migration');
+  const files = readdirSync(MIG_DIR).filter((f) => f.endsWith('.sql')).sort();
+
+  const tables = new Map(); // 表名 -> 定义它的迁移
+  const fks = [];
+  for (const file of files) {
+    const sql = readFileSync(join(MIG_DIR, file), 'utf8');
+    for (const m of sql.matchAll(/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+`?(\w+)`?/gi)) {
+      if (!tables.has(m[1])) {
+        tables.set(m[1], file);
+      }
+    }
+    // 外键可能跨行写（CONSTRAINT ... FOREIGN KEY (...) \n REFERENCES ...）
+    for (const m of sql.matchAll(/FOREIGN KEY\s*\(([^)]+)\)\s*REFERENCES\s+`?(\w+)`?/gi)) {
+      // 归属表 = 同一文件里这段之前最近的 CREATE TABLE
+      const before = sql.slice(0, m.index);
+      const owners = [...before.matchAll(/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+`?(\w+)`?/gi)];
+      const from = owners.length > 0 ? owners[owners.length - 1][1] : '?';
+      fks.push({ from, column: m[1].replace(/`/g, '').trim(), to: m[2] });
+    }
+  }
+
+  const byTable = new Map();
+  for (const fk of fks) {
+    if (!byTable.has(fk.from)) {
+      byTable.set(fk.from, []);
+    }
+    byTable.get(fk.from).push(fk);
+  }
+
+  const connected = [...byTable.keys()].sort();
+  const lines = [];
+  lines.push(HEADER('迁移文件'));
+  lines.push('');
+  lines.push('# 数据库表');
+  lines.push('');
+  lines.push(`由 \`backend/paideia-app/src/main/resources/db/migration/\` 的 ${files.length} 个迁移生成：`);
+  lines.push(`共 **${tables.size} 张表**，其中只有 **${fks.length} 条外键**。`);
+  lines.push('');
+  lines.push('外键少是**刻意的**，不是遗漏：跨模块的关联（比如 `ai_memories_structured.user_id` → `users.id`）');
+  lines.push('由应用层保证，不交给数据库。所以下面这张图只画**有真实外键约束**的关系，');
+  lines.push('看不到关联不代表没关系——去读 mapper 或实体。');
+  lines.push('');
+  lines.push('```mermaid');
+  lines.push('flowchart LR');
+  for (const table of connected) {
+    lines.push(`  ${table}["${table}"]`);
+  }
+  for (const fk of fks) {
+    lines.push(`  ${fk.from} -->|${fk.column}| ${fk.to}`);
+  }
+  lines.push('```');
+  lines.push('');
+  lines.push('## 全部表');
+  lines.push('');
+  lines.push('| 表 | 迁移 | 外键 |');
+  lines.push('| --- | --- | --- |');
+  for (const table of [...tables.keys()].sort()) {
+    const mine = byTable.get(table) ?? [];
+    const desc = mine.length === 0 ? '（无）' : mine.map((fk) => `\`${fk.column}\` → \`${fk.to}\``).join('、');
+    lines.push(`| \`${table}\` | \`${tables.get(table).replace(/\.sql$/, '')}\` | ${desc} |`);
+  }
+  lines.push('');
+  return { output: lines.join('\n'), summary: `${tables.size} 张表 / ${fks.length} 条外键` };
+}
+
+const targets = [
+  { file: join(ARCH, '01-module-dependencies.md'), label: '01-module-dependencies.md', build: backendDoc, kind: '后端模块依赖图' },
+  { file: join(ARCH, '04-frontend-packages.md'), label: '04-frontend-packages.md', build: frontendDoc, kind: '前端包依赖图' },
+  { file: join(ARCH, '05-database-tables.md'), label: '05-database-tables.md', build: databaseDoc, kind: '数据库表清单' },
+];
+
+const check = process.argv.includes('--check');
+let failed = false;
+mkdirSync(ARCH, { recursive: true });
+for (const target of targets) {
+  const { output, summary } = target.build();
+  if (check) {
+    const current = existsSync(target.file) ? readFileSync(target.file, 'utf8') : '';
+    if (current !== output) {
+      console.error(`✗ docs/architecture/${target.label} 已漂移（${target.kind}与声明不一致）。`);
+      console.error('  跑 `node scripts/gen-arch-diagram.mjs` 重新生成，再连同代码一起提交。');
+      failed = true;
+    } else {
+      console.log(`✓ ${target.kind}与声明一致（${summary}）。`);
+    }
+  } else {
+    writeFileSync(target.file, output, 'utf8');
+    console.log(`✓ 已写出 docs/architecture/${target.label}（${summary}）。`);
+  }
+}
+if (failed) {
+  process.exit(1);
 }

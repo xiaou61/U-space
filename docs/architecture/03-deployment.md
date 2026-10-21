@@ -20,7 +20,6 @@ flowchart TB
     subgraph 依赖服务
       DB[("MySQL 8<br/>库 paideia / paideia_test")]
       OBJ[("对象存储<br/>S3 兼容，预签名直读")]
-      RMQ["消息中间件<br/>RabbitMQ（outbox 中继投递）"]
       REDIS[("Redis<br/>未被应用使用，仅作探活对象")]
     end
 
@@ -37,7 +36,6 @@ flowchart TB
   D --> APP
   APP --> DB
   APP --> OBJ
-  APP --> RMQ
   APP --> UPSTREAM
   APP -. "反代" .-> GRAF
   PROM --> APP
@@ -51,6 +49,7 @@ flowchart TB
 几个**读图时容易误判**的地方：
 
 - **Redis 不是应用的依赖。**它跑着、被探活着，但应用一行 Redis 代码都没有（`OpsSummaryService` 里明写"未被应用使用"）。看到它在图上就以为要配 Redis，是常见误会。
+- **RabbitMQ 还没上线。**`.agent/rules/always.md` 的 D-14 裁决了"引入 RabbitMQ + outbox 中继"，但代码里既没有 amqp 依赖也没有 outbox 表，所以这张图里没有它。**这是"已裁决 ≠ 已实现"的典型**——读规则时别把决策当成现状。
 - **运维面没有独立公网端口。**Prometheus / Grafana / 各 exporter 全绑回环，Grafana 只能经应用的反代进管理端。所以"运维面板打不开"要先看应用是否活着。
 - **对象存储的读路径是 302 预签名直读**，不经过应用转发。代价是每次新签名 URL 都会被浏览器当新资源，**吃掉一年的静态缓存**（折中：302 本身缓存 1 小时）。
 - 附件读取与公开分享是**全项目仅有的免鉴权读端点**，安全性靠 UUID 不可枚举，不靠认证。改这两条路径前先想清楚这一点。
