@@ -59,6 +59,32 @@ class ApiSurfaceTest {
         }
     }
 
+    /**
+     * 把注册 pattern 与实际请求路径对上。
+     *
+     * <p>不能用正则：反代端点 {@code /api/v1/ops/grafana/**} 里的 {@code **} 是非法正则，
+     * 直接 {@code matches} 会抛 {@code PatternSyntaxException}（2026-10-21 实测，
+     * 表现为整轮自查第一个请求就中断、111 条端点全被记成"没打到"）。用 Spring 自己的
+     * {@link org.springframework.util.AntPathMatcher}，`{id}` 与 `**` 都是它原生支持的写法。
+     */
+    static boolean matches(String pattern, String path) {
+        return PATH_MATCHER.match(pattern, path);
+    }
+
+    private static final org.springframework.util.AntPathMatcher PATH_MATCHER =
+            new org.springframework.util.AntPathMatcher();
+
+    /**
+     * 越具体的 pattern 排越前：通配符（`{` 与 `*`）越少越具体。
+     *
+     * <p>必须有这个顺序：`/credits/audit` 与 `/credits/{userId}` 都能匹配 {@code /credits/audit}，
+     * 按注册顺序遍历会随机归到通配那条上，审计端点于是永远显示"没走到"。
+     */
+    static java.util.Comparator<String> bySpecificity() {
+        return java.util.Comparator.comparingLong((String pattern) -> pattern.chars()
+                .filter(ch -> ch == '{').count());
+    }
+
     static List<Endpoint> endpoints(RequestMappingHandlerMapping mapping) {
         List<Endpoint> endpoints = new ArrayList<>();
         for (var entry : mapping.getHandlerMethods().entrySet()) {
@@ -106,6 +132,25 @@ class ApiSurfaceTest {
         }
         ApiAccess onDeclaring = handler.getMethod().getDeclaringClass().getAnnotation(ApiAccess.class);
         return onDeclaring == null ? null : onDeclaring.value();
+    }
+
+    @Test
+    @DisplayName("pattern 匹配能处理 `**` 与 `{id}`，且更具体的排在前")
+    void patternMatchingHandlesWildcardsAndSpecificity() {
+        // `/api/v1/ops/grafana/**` 曾被当成正则去跑，`**` 抛 PatternSyntaxException，
+        // 整轮自查第一个请求就中断——111 条端点被记成"没打到"。这两条钉住它。
+        assertThat(ApiSurfaceTest.matches("/api/v1/ops/grafana/**", "/api/v1/ops/grafana/api/health"))
+                .isTrue();
+        assertThat(ApiSurfaceTest.matches("/api/v1/notes/{id}", "/api/v1/notes/17")).isTrue();
+        // `/credits/audit` 不能被 `/credits/{userId}` 抢走
+        assertThat(java.util.stream.Stream.of("/api/v1/ai/admin/credits/{userId}",
+                        "/api/v1/ai/admin/credits/audit")
+                .sorted(ApiSurfaceTest.bySpecificity()).findFirst())
+                .contains("/api/v1/ai/admin/credits/audit");
+        // `*` 也计入具体度：`/a/{b}`（1 个通配）必须排在 `/a/**`（2 个）之前，
+        // 否则反代整条 `/**` 会把更具体的映射抢走
+        assertThat(java.util.stream.Stream.of("/a/**", "/a/{b}")
+                .sorted(ApiSurfaceTest.bySpecificity()).findFirst()).contains("/a/{b}");
     }
 
     @Test

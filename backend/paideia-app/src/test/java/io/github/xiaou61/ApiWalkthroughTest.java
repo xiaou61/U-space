@@ -279,6 +279,17 @@ class ApiWalkthroughTest {
         call("我的知识图谱", "GET", "/api/v1/learning/graph", bearer, null);
         call("重置本站", "DELETE", "/api/v1/learning/entries/" + entryId, bearer, null);
 
+        // ---- 学习轨道（WORK-024）----
+        // 轨道只有一个写入口：导入脚本用它 upsert。自查也走它，然后读列表与地图。
+        call("导入学习轨道", "POST", "/api/v1/knowledge/admin/tracks", adminToken(),
+                json(Map.of("slug", "walk-track-" + suffix, "name", "自查轨道 " + suffix,
+                        "summary", "自查用", "kind", "course", "sortOrder", 900,
+                        "stages", java.util.List.of(
+                                Map.of("entryId", entryId, "seq", 1, "chapter", "第一章",
+                                        "level", "beginner")))));
+        call("轨道清单", "GET", "/api/v1/learn/tracks", bearer, null);
+        call("轨道关卡地图", "GET", "/api/v1/learn/tracks/walk-track-" + suffix, bearer, null);
+
         // ---- 笔记与分享 ----
         MvcResult note = call("建笔记", "POST", "/api/v1/notes", bearer,
                 json(Map.of("title", "自查笔记 " + suffix, "body", "笔记正文。")));
@@ -527,11 +538,14 @@ class ApiWalkthroughTest {
         // 反代路径只在 Grafana 活着时才 200，所以用 bestEffort 打一下让"全接口自查"覆盖到它。
         // 目标不可达时本接口返回 502（这是设计），不算失败。
         bestEffort("GET", "/api/v1/ops/grafana/api/health", adminToken());
+        // 面板的图线走 Grafana 的 POST 查询接口（唯一的 POST 例外，语义仍是只读）
+        bestEffort("POST", "/api/v1/ops/grafana/api/ds/query", adminToken());
 
         } catch (RuntimeException | AssertionError failure) {
             // 单步异常不中断整轮：把这一条记下来，最后连同其余失败一起报
             steps.add(new Step("中断于：" + failure.getClass().getSimpleName(), "-", "-", 0, false,
                     String.valueOf(failure.getMessage())));
+            failure.printStackTrace();
         }
 
         assertFullCoverage();
@@ -640,10 +654,8 @@ class ApiWalkthroughTest {
                 .filter(endpoint -> endpoint.method().equals(method))
                 .map(ApiSurfaceTest.Endpoint::pattern)
                 .distinct()
-                .sorted(java.util.Comparator.comparingLong(
-                        (String pattern) -> pattern.chars().filter(ch -> ch == '{').count()))
-                .filter(pattern -> pattern.equals(bare)
-                        || bare.matches(pattern.replaceAll("\\{[^}]+}", "[^/]+")))
+                .sorted(ApiSurfaceTest.bySpecificity())
+                .filter(pattern -> pattern.equals(bare) || ApiSurfaceTest.matches(pattern, bare))
                 .findFirst()
                 .orElse(bare);
     }
@@ -732,12 +744,11 @@ class ApiWalkthroughTest {
                 .filter(endpoint -> endpoint.method().equals(method))
                 .map(ApiSurfaceTest.Endpoint::pattern)
                 .distinct()
-                .sorted(java.util.Comparator.comparingLong(
-                        (String pattern) -> pattern.chars().filter(ch -> ch == '{').count()))
+                .sorted(ApiSurfaceTest.bySpecificity())
                 .toList();
 
         for (String pattern : patterns) {
-            if (pattern.equals(bare) || bare.matches(pattern.replaceAll("\\{[^}]+}", "[^/]+"))) {
+            if (pattern.equals(bare) || ApiSurfaceTest.matches(pattern, bare)) {
                 touched.add(method + " " + pattern);
                 return;
             }
