@@ -4687,3 +4687,44 @@ schema_version: 1
 - 本地提交：见下一笔
 - 远端推送：未推送
 - **下一步**：需求需重新签署；签完后 proposal/design/tasks 三件 stale 也要一并复核签署（改动集中在身份那一节，其余未变）
+
+## 2026-10-21 · 修掉长期红的 ApiWalkthroughTest（真因是正则匹配，不是端点欠账）+ 五项未验证功能线上复核
+
+- 类型：verification
+- 变更：
+  - `ApiSurfaceTest` 新增 `matches()`（Spring `AntPathMatcher`）与 `bySpecificity()`（`{` 与 `*` 都计入通配数），`ApiWalkthroughTest` 的 `canonicalPath` / `noteTouched` 两处改用它
+  - 自查补上四个此前没走到的端点：`POST /knowledge/admin/tracks`、`GET /learn/tracks`、`GET /learn/tracks/{slug}`、`POST /ops/grafana/**`
+  - `api-shape.json` 随之更新（新增 4 个端点；`knowledge/categories` 变两级嵌套；`entries/{id}` 多 `sourceUrl`）
+  - 中断分支补 `printStackTrace()`
+  - 新增单测 `patternMatchingHandlesWildcardsAndSpecificity`（3 条断言）
+- 决策：
+  - **真因不是"40+ 端点覆盖欠账"**。WORK-028 引入的 `/api/v1/ops/grafana/**` 被当成正则喂给 `bare.matches()`，`**` 抛 `PatternSyntaxException` → 第一个请求就中断 → 111 条端点全被记成"没打到"。之前两次判断成欠账都错了
+  - **为什么长期被掩盖**：`assertFullCoverage()` 排在 `assertFailures()` 之前，覆盖率断言先红，真实异常（记录在 `steps` 里）根本没机会被看到
+  - 用 Spring 自带的 `AntPathMatcher` 而不是继续手写正则：`{id}` 与 `**` 都是它原生写法，零新依赖
+- 验证：
+  - `ApiSurfaceTest` **7 运行 / 0 失败**、`ApiWalkthroughTest` **1 运行 / 0 失败**（同一独占库连跑两遍，快照不抖）
+  - **反向验证两条**：把 `matches` 退回 `path.matches(pattern)` → `PatternSyntaxException` 当场红；把具体度退回只数 `{` → `/a/{b}` 断言红。恢复后全绿
+  - 后端全量（`scripts/test-db.sh mvn -B test`）：**227 运行 / 0 失败 / 4 跳过，BUILD SUCCESS**——持续多日的唯一红消失
+- 线上复核（`http://36.212.5.130:8081`，账号走被忽略的 `application-local.yml`）：
+  | 项 | 结果 |
+  | --- | --- |
+  | WORK-011 会话与历史 | `GET /ai/conversations` → 17 条；任一会话 `GET /messages` → 200、2 条消息 |
+  | WORK-013 记忆 | 列表 0 条 → 写入 → 列表 1 条（来源/理由/时间都对）→ 按 `text/1` 删除 → 列表回 0 |
+  | WORK-013 三个开关 | `PUT /ai/settings` 关掉总闸后 `POST /ai/memories` 返回 **409 / 40910**「个性化记忆已关闭」，第二道闸生效；已恢复为原值（全开） |
+  | WORK-020 学习线 | `GET /learning/lines` → 4 条（Python 13 / Java 28 / 源码解读 1 / 计算机网络 2） |
+  | WORK-021 知识图谱 | `GET /learning/graph` → 14 个概念、5 个已触碰、0 已掌握 |
+  | WORK-024 学习轨道 | `GET /learn/tracks` → 4 条（Java 24 关） |
+  | WORK-026 Laya | 服务 `layaUp=1`（运维摘要），**但应用层 `paideia.ai.decision.enabled=false`** |
+  | WORK-025 八股文 | 首页入口 e2e 通过；`essay` 开关=开 |
+  | 学习者端 e2e 打线上 | **64 passed / 0 failed / 21 skipped** |
+  | 管理端 e2e 打线上 | **22 passed / 0 failed** |
+- 实测发现（如实登记，未擅改线上配置）：
+  - **WORK-026 在线上是"装了但没接"**：`laya` 服务 active、`/health` ok，但 `paideia.ai.decision.enabled=false`，所以 `TechEssayFilter` 永远走规则判断、一次也不调 Laya。design 写的是"部署时显式打开"，线上没打开。**关掉时功能可降级，不是故障**，但 WORK-026 的收益目前为零
+  - `services` 组报 WARN：`laya 85%` 且其余四个服务均未设内存上限——不是崩溃，是容量信号
+  - `WORK-027` 的 `GET /api/v1/digest` 在线上返回 404（未实现，与"本项一行代码没写"一致）
+  - 记忆写入用中文会返回 `400 请求体无法解析`，**是 Windows shell 传参编码问题不是产品缺陷**：同样的中文经界面（e2e 覆盖）正常，纯 ASCII 直连 curl 正常
+- 顺手发现的流程缺口（未处理）：
+  - **WORK-024 没有工件目录**：代码（V22/V23、`LearnTrackController`、关卡地图）已上线且有更新历史，但 `.agent/changes/` 下从来没有 `WORK-024-*`。原因是当时状态脚本报 `WORK-024` 而工作区已被占用，本项取了 025；后来学习轨道那一路直接用 024 落了代码却没补工件
+  - 该次提交（`0a4171e`）是并发会话在我做反向验证的**中途**提交了工作区——里面 `bySpecificity` 停在"只数 `{`"的临时状态，而 `/a/{b}` 断言已在，等于 HEAD 上必红。已用 `e47196e` 补回
+- 本地提交：`e47196e`
+- 远端推送：未推送
