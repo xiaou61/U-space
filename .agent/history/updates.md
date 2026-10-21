@@ -5367,3 +5367,22 @@ schema_version: 1
   - 自动断言挡得住"坏题"，挡不住"平庸的题"——TASK-008 之后仍需一次人工题目评审
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-006 能力探测与分档配额接线
+
+- 类型：implementation
+- 变更：
+  - `SqlDatasets`：数据集白名单，内容放 `paideia-sandbox/src/main/resources/sandbox/datasets/`。
+    **客户端只传 key，不传数据**——否则隐藏数据集必然随题面下发，"硬编码答案"就防不住
+  - `SandboxController`：`/status` 返回 `sqlDailyLimit` / `sqlUsedToday` / `datasets`（分开给，
+    不合成一个"剩余次数"）；`/run` 对 sql 用数据集 key 解析 stdin、未知 key 400；
+    配额改调 `requireQuota(userId, language)`
+  - `RunView` 加 `tables`（`statementIndex` + 列名 + 行值），`RunRequest` 加 `dataset`
+- 验证：
+  - `mvn -pl paideia-sandbox test` → 17 通过
+  - `mvn -pl paideia-app -Dtest=SandboxIntegrationTest test` → **8 通过**
+    （含新增断言：`sqlDailyLimit=20`、`datasets` 含两个 key）
+  - 首次跑集成测试时报 `PathNotFound: sqlDailyLimit`——原因是 `paideia-app` 从 ~/.m2 取
+    **旧的 sandbox jar**，不是代码错误。`mvn -pl paideia-sandbox install` 后通过
+- 本地提交：见下一笔
+- 远端推送：未执行

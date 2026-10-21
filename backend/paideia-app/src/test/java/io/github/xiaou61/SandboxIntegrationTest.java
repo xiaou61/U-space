@@ -225,8 +225,14 @@ class SandboxIntegrationTest {
         String json = body(result);
         assertThat(JsonPath.<Boolean>read(json, "$.data.ready")).isTrue();
         assertThat(JsonPath.<Integer>read(json, "$.data.dailyLimit")).isEqualTo(50);
+        // sql 是否出现取决于配置里有没有 sql-image（WORK-032）：语言列表按镜像可用性给出，
+        // 不是写死的常量。所以只断言"包含 java 与 python"，sql 允许在配置了镜像时出现。
         assertThat(JsonPath.<java.util.List<String>>read(json, "$.data.languages"))
-                .containsExactlyInAnyOrder("java", "python");
+                .contains("java", "python");
+        assertThat(JsonPath.<Integer>read(json, "$.data.sqlDailyLimit")).isEqualTo(20);
+        assertThat(JsonPath.<java.util.List<String>>read(json, "$.data.datasets"))
+                .as("数据集 key 由服务端持有，客户端只拿 key")
+                .contains("orders-public", "orders-hidden-a");
     }
 
     private String token() {
