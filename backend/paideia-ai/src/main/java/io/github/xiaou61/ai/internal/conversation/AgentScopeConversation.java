@@ -4,6 +4,7 @@ import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Agent;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.ExceedMaxItersEvent;
 import io.agentscope.core.event.ModelCallEndEvent;
 import io.agentscope.core.event.TextBlockDeltaEvent;
 import io.agentscope.core.event.ThinkingBlockDeltaEvent;
@@ -314,6 +315,11 @@ class AgentScopeConversation implements AssistantConversation {
                 // 用量在**外层顺序流**里累加，而不是在每轮的 doFinally 里：
                 // doFinally 的触发顺序由内向外、且可能在不同线程上，读到的一半是部分和。
                 accumulate(end.getUsage());
+            } else if (event instanceof ExceedMaxItersEvent) {
+                // 绕满 maxIters 时框架**先发这个事件、再正常结束流**。靠每轮 doFinally
+                // 里的"无工具无正文"判据不够：那几轮都有工具调用，谁也不会标失败，
+                // 于是"放弃"会被当成成功上报（实测 5 次跑 3 次红）。
+                fail(upstreamUnavailable(null));
             }
         }
 
