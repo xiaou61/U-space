@@ -5041,3 +5041,40 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 15:40:00 +0800 · 基础设施 · 架构存档补全到四张结构图，并更正部署图里的 RabbitMQ
+
+- 类型：feature
+- 变更：`docs/architecture/` 增加 `04-frontend-packages.md`（14 包 / 27 依赖）、`05-database-tables.md`（36 表 / 13 外键）、`06-api-surface.md`（112 端点 / 31 控制器）；`scripts/gen-arch-diagram.mjs` 扩展为一次生成四张结构图；`03-deployment.md` 删掉 RabbitMQ 节点并加正文说明；README 新增「这份存档不包含什么」；`AGENTS.md` 同步为四张图
+- 决策：结构图按「能不能从代码抽取」分四类覆盖——模块（pom）、前端包（package.json）、表（迁移）、端点（Controller 注解）；接口字段契约、前端路由、C4 组件层、状态机**明确不做**并写进 README，因为引入 springdoc 会改变公开接口面，而其余几类在当前规模下维护成本高于价值
+- 依据：用户：现在这个是全的吗？
+- 验证：`gen-arch-diagram.mjs --check` 四张全一致；`check-diagrams.mjs` 9/9 图块通过；112 端点与 grep 独立统计吻合；反向验证 --check 能拦下手改并返回退出码 1
+- 更正：上一版部署图里画了 RabbitMQ，实测**全仓无 amqp 依赖、无 outbox 表**，D-14 只是裁决未实现——已删节点并在正文点明「已裁决 ≠ 已实现」
+- 踩坑：端点生成器初版遍历整个 `backend/`，把测试里的 FixtureItemController 与 ProbeController 计入（虚高 6 个端点），已限定 `src/main`
+- 本地提交：已提交
+## 2026-10-21 · WORK-027 每日技术速递 · 实施完成（工作在 `.worktrees/work-027`，分支 `feat/work-027-digest`）
+
+- 类型：implementation
+- 分支：`feat/work-027-digest`（5 笔提交）
+- 变更：
+  - 迁移 `V20261021134700__create_digest_tables.sql`：`digest_items`（指纹全局唯一）+ `digest_weeklies`（周唯一）
+  - `paideia-ai/internal/digest/`：端口与源（`DigestSource`/`FetchedItem`/`DigestHttp`/`FeedXml`/`RssDigestSource`/`GithubTrendingSource`/`HackerNewsSource`）、指纹、AI 压缩（`DigestSummarizer`/`DigestPrompt`）、编排（`DigestCollectionService`/`DigestWeeklyService`）、调度、配置、`DigestMapper`、`web/{DigestController,DigestAdminController}`
+  - `RunKind` 加 `DIGEST`/`DIGEST_WEEKLY`；`SecurityConfiguration` 加两条规则（管理端在前）
+  - 前端：`@paideia/knowledge` 的 `digest-client`/`digest-types`；`DigestPage`；路由 `/digest`；导航与首页入口；`preferredNav` 六处；`NoteNewPage` 读 query 预填
+- **实跑暴露并修掉的四个真缺陷**（每个都有单测或实测钉住）：
+  1. **`github.com/trending` 已改成 SPA**：真实 HTML 里 `<article>`/`Box-row`/`stars today` 各 0 次、仓库链接 0 个，仓库行由 JS 注入。原设计"无 token 走页面解析为主"等于每天拿空结果 → **主次反转**：Search API 为主，页面解析降为补充
+  2. **Search API 查询串含 `>` 是 URI 非法字符**：`URI.create` 抛异常被 catch 吞成"空结果"。同一串用 curl 手打返回 261 个结果——**只有应用真跑才暴露**。`URLEncoder` 编码后 GitHub 从 0 条变 15 条
+  3. **成本闸按前缀截断让单个源垄断**：实跑 60 条全是 IT 之家，另三组为 0。改为按分组轮转取（`takeByGroup` + 4 条单测）
+  4. **`GuardedHttpTransport` 的 OkHttp 读超时是默认 10 秒**（AgentScope 自己默认 5 分钟）：12 条候选跑约 20 秒，卡在 10 秒抛 `Failed to read response body: timeout`，整批静默降级。既有调用都是单条几秒所以一直没撞到。改为读 5min / 写 1min / call 6min
+  5. 另修提示词：原写"可以挑掉不重要的条目"，真连实测 5 条只返回 3 条，而编排把全部候选都入库 → 被挑掉的显示"这条还没写好摘要"，等于三分之二卡片看起来是坏的。改为"每一条都要写"后 5/5
+- 验证：
+  - 七个源实测 200：量子位 10 / IT之家 60 / InfoQ 20 / 掘金 20 / 开源中国 50 / HN 10 / GitHub 15
+  - **真跑完整日报（配真实 DeepSeek 凭据）**：`候选 35 条，入库 12 条（降级 0 条），失败源 0 个`；分组 `news 4 / github 4 / hackernews 4`（轮转生效）
+  - **`ai_runs` 复验**：`kind=digest userId=0 status=ok in=1266 out=3405`，当轮恰好 1 条（AC-008）
+  - 摘要真连：5/5 条 9.0 秒 2320 tokens；英文标题正确译为中文（"Introducing the new reasoning model" → 「介绍全新推理模型」）
+  - 周报真连：558 字三段 markdown、9.9 秒
+  - 后端全量：**596 运行 / 0 失败**
+  - 学习者端 e2e（digest.spec.ts）：4 passed / 1 skipped / 0 failed
+- 仍未做：**未部署**（`application.yml` 默认 `enabled: false`，上线需配 GitHub token 并打开开关）
+- 本地提交：`feat/work-027-digest` 分支 5 笔
+- 远端推送：未推送

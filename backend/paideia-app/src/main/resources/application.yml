@@ -28,6 +28,47 @@ spring:
 
 paideia:
   ai:
+    digest:
+      # 每日技术速递（WORK-027）。**默认关闭**：它要访问多个外部站点、每天花一次 AI 调用。
+      enabled: false
+      # GitHub token：**可选增强**。配置后热榜主通路走 Search API（稳定、限额高）；
+      # 不配则走页面解析、失败退回匿名 Search API（60/时，一天一次够用）。
+      # 值只进被忽略的本地配置文件，仓库里只留环境变量占位。
+      github-token: ${DIGEST_GITHUB_TOKEN:}
+      # 成本闸：单次最多入库条数，也决定喂给 AI 的候选池上限。
+      max-items-per-run: 60
+      # 周报素材上限。
+      weekly-max-items: 150
+      # 抓多久以内（小时）。30 = 覆盖「昨天至今」并留容错，漏跑一次不丢内容。
+      lookback-hours: 30
+      # 单次 HTTP 抓取超时（秒）。
+      timeout-seconds: 20
+      # 一次 AI 压缩的超时（秒）。要处理几十条，给足。
+      ai-timeout-seconds: 180
+      # 内容直出（用户裁决 D-07）。
+      publish-directly: true
+      # 源清单在配置里而不是代码里：加一个 RSS 源不该改代码。
+      rss:
+        - key: qbitai
+          name: 量子位
+          url: https://www.qbitai.com/feed
+          group: news
+        - key: ithome
+          name: IT之家
+          url: https://www.ithome.com/rss/
+          group: news
+        - key: infoq
+          name: InfoQ
+          url: https://www.infoq.cn/feed
+          group: news
+        - key: juejin
+          name: 掘金
+          url: https://juejin.cn/rss
+          group: community
+        - key: oschina
+          name: 开源中国
+          url: https://www.oschina.net/news/rss
+          group: community
     essay:
       # 八股文专区（WORK-025）。**默认关闭**：它要访问外部站点并消耗 AI 额度。
       enabled: false

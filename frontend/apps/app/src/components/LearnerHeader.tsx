@@ -52,6 +52,7 @@ import { api } from '../api'
  * 这是"按身份推荐"唯一一处会改变**入口集合**的地方——其余都只是顺序差别。
  */
 const NAV = [
+  { key: 'digest' as const, to: '/digest', label: '每日速递', testId: 'learner-nav-digest' },
   { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
   { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
   { key: 'my-assessments' as const, to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
