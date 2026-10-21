@@ -5274,3 +5274,34 @@ schema_version: 1
 - 验证：后端全量 690/0/18（跳过 18 条逐条核过均需外部服务）；管理端 e2e 25 passed；权限规则反向验证按预期红（学习者拿到 200）；调积分/改角色/删号/不可自伤/口令不泄露五条各有集成用例；tsc 与构建通过
 - 本地提交：365859d 后端，df73133 前端
 - 远端推送：未推送
+
+## 2026-10-21 · 建项 WORK-032 · MySQL 实训沙箱与题库（draft）
+
+- 类型：decision
+- 变更：新建 `.agent/changes/WORK-032-MySQL实训沙箱与题库/`，四件工件全部起草（requirements / proposal / design / tasks），
+  均 `status: draft`；`project-lifecycle approve` 由用户执行，模型未代签
+- 决策依据：
+  - 用户要求「新开一个」，且明确「题目设计很重要」——因此 `mode: strict`、`workflow: full`，
+    排序原则是"题目可信度优先于题量"
+  - 不改 WORK-015 的范围：它是已实施的代码执行沙箱，本项扩展其语言与结果契约
+- 实测基线（服务器真跑，写进 design.md）：
+  - `mysqld --initialize` **17.89 秒**、datadir **180MB** ⇒ 必须预初始化，不能每次初始化
+  - 预初始化后启动到可 ping **4.36 / 4.45 / 4.61 / 4.71 秒**（4 次）
+  - 常驻内存 **348MB**（512m 上限下），500 行负载后几乎不变
+  - `secure_file_priv` 指向**不存在**的目录会让 mysqld **直接 Aborting**（第一次测试就踩到）
+  - 复用同一 datadir 起两次，第二次 `CREATE DATABASE` 报 **1007 已存在** ⇒ 每次运行必须拷干净副本
+  - `max_execution_time=300` 时 0.56 秒报 3024；**设为 0 时九表笛卡尔积跑了 259.5 秒** ⇒ 必须有容器级硬杀
+- 验证：`project-lifecycle validate` 对 WORK-032 报"需求尚未形成，但已经存在下游工件"——
+  这是生命周期对"需求未批准先有下游"的纪律，**批准后自动消失**；其余为既有项告警
+- 本地提交：未提交（待用户确认需求）
+- 远端推送：未执行
+
+## 2026-10-21 18:06:32 +0800 · WORK-032 · 签署 .agent/changes/WORK-032-MySQL实训沙箱与题库/requirements.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/proposal.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/design.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-032-MySQL实训沙箱与题库/requirements.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/proposal.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/design.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-032-MySQL实训沙箱与题库/requirements.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/proposal.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/design.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
