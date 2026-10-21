@@ -5340,3 +5340,30 @@ schema_version: 1
   3. 未建库/未指定库 → `ERROR 1046 No database selected`（脚本里 `CREATE DATABASE practice` + `--database`）
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-005/007 题目质量门禁与先行 3 题
+
+- 类型：implementation
+- 变更：
+  - `scripts/sql_cases.py`：题目门禁。四条断言 —— reference 能跑、alternatives 全部与它相同、
+    antiPatterns 至少在一处不同、至少 2 个数据集；外加 goal/trap 非空且 trap 必须能在本课
+    「常见误区」里找到（防超纲）
+  - `content/courses/mysql/datasets/`：`orders-public`（3 客户/3 单/4 明细）与 `orders-hidden-a`
+    （4 客户/4 单/6 明细，含非整除小数与不同行数）
+  - `content/courses/mysql/cases/pilot.json`：3 道先行题（01 填空、03 排序写查询、05 LEFT JOIN 修错）
+  - `--write-hashes` 回写 `expectHash`；默认只校验不写盘
+- 决策：
+  - 期望结果**由参考解真跑得出**，不手写。手写必然与数据集脱节且无人发现
+  - trap 比对时去掉反引号与空白：要求作者在两处敲出一样的反引号只会制造无意义报错
+- 验证（全部真跑）：
+  - `python scripts/sql_cases.py --check` → 3 道通过；`--write-hashes` 回写后二次运行仍通过（幂等）
+  - **反向验证四条**（每条都是故意注入坏数据，确认门禁真的会红）：
+    ① antiPattern 换成 reference 本身 → 报"没有区分度，任何写法都能过"
+    ② alternatives 换成错写法 → 报"判题口径太窄，会误杀正确写法"（两个数据集各一条）
+    ③ 硬编码 `487.50` 当等价写法 → 被隐藏集判不同
+    ④ 只留一个数据集 → 报"否则硬编码答案也能过"
+- 已知缺口：
+  - 没有数据库凭据时门禁**跳过执行校验并明确打印"未验证"**，不当作通过
+  - 自动断言挡得住"坏题"，挡不住"平庸的题"——TASK-008 之后仍需一次人工题目评审
+- 本地提交：见下一笔
+- 远端推送：未执行

@@ -73,7 +73,7 @@ approver_role: CTO
   4. 规范序列化格式写死并在两侧各有一条测试（用于隐藏集哈希）：列名按名排序、行按序列化后排序、值按类型规整。
 - 验证：`node`/`vitest` 与 `python` 两侧对同一语料结论一致；**故意改坏一侧的一条规则，对照测试必须红**（反向验证）。
 
-### TASK-005 | pending | 内容门禁扩展（题目质量断言）
+### TASK-005 | done | 内容门禁扩展（题目质量断言）
 
 - 对应：REQ-007、REQ-008、REQ-009、REQ-012、REQ-013；AC-005、AC-006、AC-009、AC-010
 - 依赖：TASK-004（判定口径）、TASK-001~003（要真跑 reference 才能算哈希）
@@ -98,7 +98,7 @@ approver_role: CTO
   4. 四种失败（起不来 / 超时 / 超限 / 配额）各自状态可区分。
 - 验证：`SandboxIntegrationTest` 加 SQL 用例（需服务器有 Docker）；无 Docker 时跳过且不报红。
 
-### TASK-007 | pending | 数据集与先行 3 道题
+### TASK-007 | done | 数据集与先行 3 道题
 
 - 对应：REQ-014；AC-005~AC-009
 - 依赖：TASK-005
