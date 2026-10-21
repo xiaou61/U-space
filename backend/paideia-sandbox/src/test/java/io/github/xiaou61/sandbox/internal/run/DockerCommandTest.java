@@ -135,6 +135,10 @@ class DockerCommandTest {
         String script = DockerCommand.scriptFor("sql");
         assertThat(script).contains("--secure-file-priv=");
         assertThat(script).as("必须指向已存在的目录，否则 mysqld 起不来").contains("mkdir -p /tmp/nofiles");
+        // 根文件系统只读：pid 与 X 协议 socket 默认写到 /var/run/mysqld，那里不可写。
+        // 写不了时 mysqld 不报错也不退出，只是静默卡住——线上表现为每次都 20 秒超时。
+        assertThat(script).as("pid 文件必须落到 tmpfs").contains("--pid-file=/tmp/data/mysqld.pid");
+        assertThat(script).as("mysqlx 插件要往只读目录写 socket，必须关掉").contains("--mysqlx=0");
         assertThat(script).contains("--local-infile=0");
         assertThat(script).contains("--skip-log-bin");
         assertThat(script).as("必须用 socket 而不是 TCP").contains("--skip-networking");
