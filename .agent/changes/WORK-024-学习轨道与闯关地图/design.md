@@ -2,11 +2,14 @@
 artifact: design
 work_id: WORK-024
 work: 学习轨道与闯关地图
-status: draft
+status: approved
 depends_on: [proposal]
 related_to: [WORK-004, WORK-020, WORK-021]
 created: 2026-10-21
 updated: 2026-10-21
+approved_by: xiaou61
+approved_at: 2026-10-21 13:42:23 +0800
+approver_role: CTO
 ---
 
 # 设计 · 学习轨道与闯关地图

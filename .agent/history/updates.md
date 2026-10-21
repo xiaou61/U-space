@@ -4787,3 +4787,46 @@ schema_version: 1
 - 本地提交：`3ed6ab7`（超时）、`2d036a7`（WORK-024 工件）
 - 远端推送：未推送
 - **仍未做**：WORK-024 与 WORK-027 的需求都需要用户重新签署（`validate` 各报一条「需求尚未形成，但已经存在下游工件」）
+
+## 2026-10-21 · 线上界面导入 FigCraft 可编辑稿 + 恢复 figcraft MCP
+
+- 类型：tooling
+- 变更：
+  - 装 FigCraft 0.8.0（Windows x64 便携版）到 `C:\Users\Lenovo\AppData\Local\FigCraft\app`，含 `figcraft.exe`（桌面）与 `figcraft-cli.exe`（含 `mcp` 子命令），桌面建了快捷方式
+  - `~/.zcode/cli/config.json` 的 `mcp.servers` 重新加回 `figcraft`（stdio，工作区限定在 `F:/Paideia`），原配置备份为 `config.json.bak-figcraft-*`
+  - 新增 `docs/design/paideia-live-2026-10-21.figcraft`：14 页（1 索引 + 13 个线上页面）、1557 节点，全部是真图层
+  - 流水线脚本放 `output/fc/`（未入库）：`capture*.mjs` 抓线上 DOM、`absolutize.py` + `build-icons.py` 转矢量图标、`build_figcraft.py` 合成
+- 决策：
+  - **不用截图位图**：每个元素落成 FRAME / TEXT / VECTOR，文字可改、框可挪；只有 1 张裁图（无法矢量化的一处）
+  - **图标走真矢量**：SVG path 先归一成绝对坐标，再由 `figcraft-cli` 转成它自己的 `network`。LC 的自带解析器读不了相对命令与 arc 紧凑写法，直接喂原始 path 会画出半截箭头
+  - FigCraft 只是查看/编辑工具，**不改变「界面改动直接实现」这条既有约定**（2026-10-20 撤销过「先原型再设计」）
+- 依据：用户「figcraft有一个mcp 和cli之类的你给我看看，给我下载上，然后把当前线上的最新的设计图给我导入到这个里面，可编辑的那种哦」
+- 验证：
+  - `figcraft-cli info` 读回 14 页 / 1557 节点 / `repairs` 为空
+  - `node.set` 改文字、字号、颜色后 `file.save` 回写成功（`editcheck.figcraft`）
+  - 逐页 `render` 与线上截图比对：首页、知识库分类、知识库条目、简历、身份与目标、我的自评、学习地图、管理端总览/条目/分类/积分 均一致
+  - MCP 握手通过：`initialize` 返回 `FigCraft 0.8.0`，`tools/list` 给出 19 个工具
+- 已知限制：Tailwind 的 `box-shadow`、`backdrop-filter`、CSS 灰阶以外的渐变角度未完整还原；响应式断点只抓了 1440 宽
+- 本地提交：未提交（`docs/design/` 与 `output/` 均未被 Git 跟踪，是否入库待定）
+- 远端推送：未推送
+
+## 2026-10-21 · 移除 figcraft MCP（用户否决）
+
+- 类型：tooling
+- 变更：`~/.zcode/cli/config.json` 的 `mcp.servers.figcraft` 整条移除，剩余 8 个（codegraph/context7/drawio/bep-mcp-prod/firecrawl/paideia/github/deepseek-search）
+- 决策：用户「算了，删掉这个mcp吧，你弄的太丑了」——判定这份自动生成的界面稿质量不达标，工具链撤回
+- 依据：同上的用户原话
+- 验证：`json.load` 解析通过，`figcraft` 不在 `mcp.servers` 中
+- 保留：`docs/design/paideia-live-2026-10-21.figcraft` 与 `output/fc/` 脚本未删除（均未被 Git 跟踪），是否清理由用户决定
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 13:42:24 +0800 · WORK-024 · 签署 .agent/changes/WORK-024-学习轨道与闯关地图/requirements.md、.agent/changes/WORK-024-学习轨道与闯关地图/proposal.md、.agent/changes/WORK-024-学习轨道与闯关地图/design.md、.agent/changes/WORK-024-学习轨道与闯关地图/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-024-学习轨道与闯关地图/requirements.md、.agent/changes/WORK-024-学习轨道与闯关地图/proposal.md、.agent/changes/WORK-024-学习轨道与闯关地图/design.md、.agent/changes/WORK-024-学习轨道与闯关地图/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-024-学习轨道与闯关地图/requirements.md、.agent/changes/WORK-024-学习轨道与闯关地图/proposal.md、.agent/changes/WORK-024-学习轨道与闯关地图/design.md、.agent/changes/WORK-024-学习轨道与闯关地图/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
