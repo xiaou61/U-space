@@ -5078,3 +5078,32 @@ schema_version: 1
 - 仍未做：**未部署**（`application.yml` 默认 `enabled: false`，上线需配 GitHub token 并打开开关）
 - 本地提交：`feat/work-027-digest` 分支 5 笔
 - 远端推送：未推送
+
+## 2026-10-21 · 工程规范 · 切片提交不再跑后端全量，改跑两段组合
+
+- 类型：docs
+- 变更：
+  - `AGENTS.md` 第 28 行「提交、交接、改跨模块契约时跑全量」改为「**切片提交不跑全量**」，给出两段命令：
+    `-pl '!paideia-app'`（88 秒 / 410 条）+ 四个守卫类 `-pl paideia-app -am -Dtest=...`（46 秒 / 9 条）
+  - `.agent/notes/dev-workflow.md` 测试节奏表拆成三行（内环 / 外环=提交前 / 全量），
+    「实测基线」表按实测/未实测分开标注，「三条结论」补第 4 条（多会话撞 MySQL 连接上限）
+- 决策：**全量里真正属于"提交该管"的只有四个守卫类**（模块边界、迁移命名、迁移校验和、迁移不污染种子表），
+  它们单独跑只要 46 秒；`paideia-app` 那 257 条集成用例要 2 分 15 秒且只在改端点/契约时相关，
+  不该被每次切片提交拖着跑。全量触发条件收窄为：交接、改跨模块契约、改 schema 或迁移、发版带 `-WithTests`
+- 依据：用户：「每次提交前不应该是只跑他修改的模块吗？」并在下一轮确认「切片提交是肯定的」
+- 验证：
+  - `-pl '!paideia-app'` 实测 **88 秒 / 410 条 / 0 失败**（各模块：platform 27、web 11、persistence 4、
+    security 11、account 16、knowledge 62、note 6、ai 242、sandbox 6、mcp 25）
+  - 四个守卫类实测 **46 秒 / 9 条 / 0 失败**（`ModularityTest` 1 条 14.8 秒、三类迁移守卫 8 条）
+  - 用例总数按 surefire 报告汇总为 **667**（`paideia-app` 257）
+- 更正：文档里 `mvn -pl paideia-ai test` 的用例数原写 **148**，实际 `paideia-ai` 是 **242**——
+  148 是"非 app 全模块"的旧数被抄错了行
+- 踩坑（本轮实测，已写进 notes 第 4 条）：**两个会话同时跑后端测试会撞 MySQL 连接上限**
+  （`max_connections=151`，实测 `Max_used_connections` 已 152）。撞上时 `paideia-app` 一批集成类
+  集体报 `Too many connections`，看起来像十几个测试同时坏了，实际零产品缺陷。
+  另一轮 232 条全错的原因则是**别的会话正在主树里改迁移**（`V20261021134700` 改名 `V20261021161000`
+  并跑 `-Dmigration.checksums.update=true`），Flyway 报 failed migration、上下文起不来。
+  `test-db.sh` 只隔离库名，**不隔离连接数、也不隔离工作树里正在改的迁移**
+- 未完成：全量在用例涨到 667 后**没有在干净树上重测**，文档里 3:30 已标注为"543 条时的实测"
+- 本地提交：待用户授权
+- 远端推送：未执行
