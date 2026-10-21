@@ -96,6 +96,20 @@ public class AgentToolBridge {
         return catalog.size() > eagerLimit;
     }
 
+    /**
+     * 这个 harness **有可能**看到的全部工具（不只是这一轮可见的）。
+     *
+     * <p>WORK-031 的 `ReActAgent` 在请求开始时锁定可执行工具，运行中再注册的调不动（实测）。
+     * 所以执行侧必须**一次注册齐**，可见性由 Middleware 按轮收窄。这一条就是"一次注册齐"的来源。
+     */
+    public List<ToolSchema> callable(Harness harness) {
+        Set<String> toolsets = toolsetsOf(harness);
+        if (toolsets.isEmpty()) {
+            return List.of();
+        }
+        return toSchemas(catalog.view(ToolQuery.internal(toolsets, "USER")));
+    }
+
     /** `find_tools` 的 schema；未启用时返回空。 */
     public List<ToolSchema> discoverySchemas() {
         if (!discoveryEnabled()) {
