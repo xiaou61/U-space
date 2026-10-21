@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-027
 work: 每日技术速递
-status: draft
+status: approved
 mode: strict
 mode_reason: 持续抓取多个外部站点（外部集成与合规面）；新增定时任务与两张新表（数据边界与迁移）；新增学习者端与导航入口（导航与公共接口）；每日一次平台 AI 调用（成本面）；凭据进部署配置
 workflow: full
@@ -11,7 +11,7 @@ related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022]
 created: 2026-10-20
 updated: 2026-10-20
 approved_by: xiaou61
-approved_at: 2026-10-21 09:48:57 +0800
+approved_at: 2026-10-21 13:46:49 +0800
 approver_role: CTO
 ---
 

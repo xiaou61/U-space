@@ -2,14 +2,14 @@
 artifact: proposal
 work_id: WORK-027
 work: 每日技术速递
-status: stale
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022, WORK-025]
 created: 2026-10-20
 updated: 2026-10-20
 approved_by: xiaou61
-approved_at: 2026-10-21 10:01:43 +0800
+approved_at: 2026-10-21 13:46:49 +0800
 approver_role: CTO
 ---
 
