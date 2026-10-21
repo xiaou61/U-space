@@ -1,0 +1,12 @@
+[Unit]
+Description=Paideia MySQL 全量备份
+Documentation=https://github.com/xiaou61/Paideia
+# 数据库没起来时备份没有意义；不设 Requires，避免数据库重启期间连带着失败
+After=mysql.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/paideia-ops/paideia-backup.sh
+# 备份是内存里的流式 dump + gzip；2.2MB 的库用不到 100MB，给上限防意外
+MemoryMax=256M
+Nice=10

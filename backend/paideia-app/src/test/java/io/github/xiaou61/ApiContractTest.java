@@ -150,7 +150,10 @@ class ApiContractTest {
     void malformedBodyIsAClientError() throws Exception {
         List<String> failures = new ArrayList<>();
         for (ApiSurfaceTest.Endpoint endpoint : endpoints()) {
-            if (isPublicWrite(endpoint) || !hasRequestBody(endpoint)) {
+            // 反代端点的请求体是**不透明字节**，本服务不解析它（WORK-028）：畸形 JSON 对它
+            // 是合法输入，应当原样转给 Grafana 由下游决定。把它算进来等于逼转发路径加一层
+            // 它不该有的解析。
+            if (isPublicWrite(endpoint) || isOpaqueForwarder(endpoint) || !hasRequestBody(endpoint)) {
                 continue;
             }
             String token = tokenFor(endpoint);
@@ -230,6 +233,11 @@ class ApiContractTest {
 
     private static boolean isPublicWrite(ApiSurfaceTest.Endpoint endpoint) {
         return endpoint.access() == ApiAccess.Access.PUBLIC_WRITE;
+    }
+
+    /** Grafana 反代（WORK-028）：请求体原样透传，本服务不解析。 */
+    private static boolean isOpaqueForwarder(ApiSurfaceTest.Endpoint endpoint) {
+        return endpoint.pattern().startsWith("/api/v1/ops/grafana/");
     }
 
     private String tokenFor(ApiSurfaceTest.Endpoint endpoint) {

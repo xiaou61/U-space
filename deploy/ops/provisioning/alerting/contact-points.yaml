@@ -1,0 +1,32 @@
+# 告警的收件人（WORK-028 REQ-032）。
+#
+# **SMTP 口令不在这里**：它在 /etc/grafana/grafana.env（600），由 systemd 注入环境变量。
+# 本文件只写"发给谁"，进仓库也不会泄露任何凭据。
+#
+# 四条规则不分组（group_by 为空即每条独立通知），因为它们的处置动作完全不同：
+# 目标下线看面板、磁盘低了清镜像、备份过期看 journal、Laya 内存考虑重启。合成一封反而更难读。
+#
+# 邮件模板用 Grafana 内置的，不自定义——内容已足够（标题 + 摘要 + 面板链接）。
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: paideia-mail
+    receivers:
+      - uid: paideia-mail-1
+        type: email
+        disableResolveMessage: false
+        settings:
+          # 收件地址按用户 2026-10-20 的裁决：用线上 SMTP 发件人自己给自己发
+          addresses: 3153566913@qq.com
+          singleEmail: true
+          # 这三个值来自 /etc/grafana/grafana.env，写在 provisioning 里会被 GF_ 环境变量覆盖
+          fromAddress: 3153566913@qq.com
+          fromName: Paideia 运维
+policies:
+  - orgId: 1
+    receiver: paideia-mail
+    group_by: []
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 12h

@@ -1,10 +1,13 @@
 package io.github.xiaou61.ai.internal.telemetry;
 
+import io.github.xiaou61.platform.ScheduledTaskRecorder;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -32,20 +35,40 @@ public class TelemetryRetentionPurger {
     private final AiRunMapper runs;
     private final AiRunSpanMapper spans;
     private final TelemetryProperties properties;
+    /** 可空：测试切片与局部启动里没有这个 bean。 */
+    private final ObjectProvider<ScheduledTaskRecorder> recorder;
 
-    TelemetryRetentionPurger(AiRunMapper runs, AiRunSpanMapper spans, TelemetryProperties properties) {
+    TelemetryRetentionPurger(AiRunMapper runs, AiRunSpanMapper spans, TelemetryProperties properties,
+                             ObjectProvider<ScheduledTaskRecorder> recorder) {
         this.runs = runs;
         this.spans = spans;
         this.properties = properties;
+        this.recorder = recorder;
     }
 
     @Scheduled(fixedDelay = 3600_000L)
     public void purge() {
+        // 关闭时**不记录**：那条"上次运行"应当如实停在关闭之前，
+        // 让面板能区分"关掉了"与"跑了但失败"（WORK-028 REQ-018）。
         if (!properties.isEnabled()) {
             return;
         }
-        markStuck();
-        deleteExpired();
+        long startedAt = System.nanoTime();
+        try {
+            markStuck();
+            deleteExpired();
+            record(startedAt, null);
+        } catch (RuntimeException e) {
+            record(startedAt, e);
+            throw e;
+        }
+    }
+
+    private void record(long startedAt, Throwable error) {
+        ScheduledTaskRecorder target = recorder.getIfAvailable();
+        if (target != null) {
+            target.record("telemetry-retention", Duration.ofNanos(System.nanoTime() - startedAt), error);
+        }
     }
 
     private void markStuck() {

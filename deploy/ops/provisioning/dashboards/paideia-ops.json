@@ -1,0 +1,218 @@
+{
+  "uid": "paideia-ops",
+  "title": "Paideia 运维",
+  "tags": ["paideia", "ops"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "磁盘已用（/）",
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.70 },
+              { "color": "red", "value": 0.85 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}",
+          "legendFormat": "已用"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "主机资源",
+      "gridPos": { "h": 6, "w": 10, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 10, "lineWidth": 1 }, "unit": "percent" },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))",
+          "legendFormat": "CPU 已用"
+        },
+        {
+          "refId": "B",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+          "legendFormat": "内存已用"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "线程池队列（打满 = 用户看不到回答）",
+      "description": "队列容量 8。queued 贴近容量时，第 41 条并发就会被直接 429，而服务端此前没有任何计数。",
+      "gridPos": { "h": 6, "w": 10, "x": 14, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 20, "lineWidth": 1 }, "unit": "short" },
+        "overrides": []
+      },
+      "targets": [
+        { "refId": "A", "expr": "executor_queued_tasks", "legendFormat": "排队中" },
+        { "refId": "B", "expr": "executor_active_threads", "legendFormat": "活跃线程" },
+        {
+          "refId": "C",
+          "expr": "sum(increase(executor_rejected_tasks_total[5m])) or vector(0)",
+          "legendFormat": "5 分钟拒绝次数"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Laya 内存水位（上限 3G）",
+      "description": "2026-10-20 实测 2.55G / 3G = 85%。OOM 后分类器静默退回规则判断，功能还在但决策模型已经不在了。",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 15, "lineWidth": 1 }, "unit": "decbytes" },
+        "overrides": []
+      },
+      "targets": [
+        { "refId": "A", "expr": "paideia_unit_memory_bytes{unit=\"laya\"}", "legendFormat": "已用" },
+        {
+          "refId": "B",
+          "expr": "paideia_unit_memory_max_bytes{unit=\"laya\"}",
+          "legendFormat": "上限"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "请求量与错误率",
+      "description": "注意：SSE 端点（助手回答）量不准——SseEmitter 让 handler 立即返回，这里量不到 5–60 秒的流式生成。",
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 10, "lineWidth": 1 }, "unit": "reqps" },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "总请求"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) or vector(0)",
+          "legendFormat": "5xx"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[5m])) or vector(0)",
+          "legendFormat": "4xx"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "备份新鲜度",
+      "description": "超过 36 小时没有成功备份即红。当前 7 天保留、每日 03:15。",
+      "gridPos": { "h": 6, "w": 5, "x": 15, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 36 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value" },
+      "targets": [{ "refId": "A", "expr": "paideia_backup_age_seconds / 3600", "legendFormat": "小时" }]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "采集目标与外部依赖",
+      "description": "up=0 表示这个目标连不上。firecrawl 走 http_401 探活：401 才算通，502 是 api 挂了。",
+      "gridPos": { "h": 7, "w": 10, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "cellOptions": { "type": "auto" } } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "up", "format": "table", "instant": true },
+        {
+          "refId": "B",
+          "expr": "probe_success",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "systemd 单元与容器",
+      "gridPos": { "h": 7, "w": 10, "x": 10, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "cellOptions": { "type": "auto" } } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "paideia_unit_active", "format": "table", "instant": true },
+        { "refId": "B", "expr": "paideia_container_running", "format": "table", "instant": true }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "MySQL 连接与查询速率",
+      "gridPos": { "h": 7, "w": 10, "x": 20, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "paideia-prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 10, "lineWidth": 1 } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "mysql_global_status_threads_connected",
+          "legendFormat": "连接数"
+        },
+        {
+          "refId": "B",
+          "expr": "mysql_global_variables_max_connections",
+          "legendFormat": "上限"
+        },
+        {
+          "refId": "C",
+          "expr": "rate(mysql_global_status_questions[5m])",
+          "legendFormat": "查询/秒"
+        }
+      ]
+    }
+  ]
+}

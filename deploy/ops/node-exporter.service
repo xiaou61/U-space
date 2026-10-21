@@ -1,0 +1,22 @@
+[Unit]
+Description=node_exporter（主机指标）
+After=network-online.target
+
+[Service]
+Type=simple
+User=node_exporter
+Group=node_exporter
+ExecStart=/usr/local/bin/node_exporter \
+    --web.listen-address=127.0.0.1:9100 \
+    --collector.textfile.directory=/var/lib/node_exporter/textfile
+Restart=on-failure
+RestartSec=5
+MemoryMax=128M
+NoNewPrivileges=true
+ProtectHome=true
+PrivateTmp=true
+# textfile 目录要能被同组读到（ops-textfile 以 root 写入）
+ReadWritePaths=/var/lib/node_exporter
+
+[Install]
+WantedBy=multi-user.target

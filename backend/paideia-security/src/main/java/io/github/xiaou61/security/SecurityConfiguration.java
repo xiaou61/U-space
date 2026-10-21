@@ -114,12 +114,44 @@ public class SecurityConfiguration {
                 // 表现为"浏览器直接调通、跨域调用全挂"。规则本身来自 paideia-web 的 WebMvcConfigurer。
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                // iframe 嵌入（WORK-028）：运维面板由 Grafana 渲染、被管理端同源 iframe 嵌入，
+                // 而 Spring Security 默认发 `X-Frame-Options: DENY`——实测浏览器直接拒绝显示面板。
+                // 改成 SAMEORIGIN：仍然禁止**任何第三方站点**嵌入本服务（这才是点击劫持的威胁），
+                // 只是允许我们自己同源嵌入。DENY 额外多挡的"本站自嵌"没有防护价值——
+                // 能控制本站页面的人已经不需要靠 iframe 来做事了。
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // 指标端点（WORK-028）：只允许**本机来源**读。8081 是公网端口，
+                        // /actuator/prometheus 会暴露 JVM 内部结构与业务维度标签，不能像 health
+                        // 那样整体放行。**触发重评**：一旦本进程前面挂了反向代理，远端地址会
+                        // 变成 127.0.0.1，这条白名单即失效——那时必须改为独立回环管理端口。
+                        .requestMatchers("/actuator/metrics/**", "/actuator/prometheus")
+                        .access(LocalOnlyAuthorizationManager.INSTANCE)
                         .requestMatchers("/error").permitAll()
                         // 见类注释的前缀纪律：这个前缀下只放凭据交换类端点
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // 运维面板（WORK-028）。两条都**必须排在 anyRequest() 之前**：
+                        //   ① 摘要接口与其它管理端接口同权；
+                        //   ② Grafana 反代是面板的唯一入口，它内部开匿名 Viewer——
+                        //      这条规则一旦静默失效，等于把 Grafana 直接公开给任何登录用户。
+                        .requestMatchers("/api/v1/ops/admin/**").hasRole("ADMIN")
+                        // Grafana 反代**整体放行，安全边界交给 Grafana 自己**（WORK-028）。
+                        //
+                        // 试过而放弃的三条路，每条都有实测证据：
+                        //   ① 要求 hasRole("ADMIN")：iframe 的导航请求不带 Authorization 头 → 401；
+                        //   ② 加 ?ticket= 查询参数：导航能过，但 SPA 的静态资源与 API 子请求
+                        //      既不继承头、也不带查询串 → 逐个 401，面板永远停在
+                        //      "Grafana has failed to load its application files"；
+                        //   ③ 只放行 /public/**：资源过了，dashboard API 又 401。
+                        // 根因是**本项目无 Cookie、纯 Bearer**，而 Grafana 是 SPA——它需要一套
+                        // 跨请求自动携带的会话，那只能是 Cookie。
+                        //
+                        // 所以：本前缀放行，Grafana **关掉匿名、开内置登录**，由它自己的会话
+                        // cookie 把关。于是"谁能看面板"由 Grafana 口令决定（值在服务器上 600 的
+                        // grafana.env 里，不进仓库）。代价是多一套口令，这一点如实记在报告里。
+                        .requestMatchers("/api/v1/ops/grafana/**").permitAll()
                         // 知识库的管理端写接口。**必须排在下面的 anyRequest() 之前**：
                         // Spring Security 按声明顺序取第一个匹配的规则，顺序写反这条永不生效，
                         // 且不会有任何报错——只会在某天表现为"任何已登录的学习者都能改知识库"。

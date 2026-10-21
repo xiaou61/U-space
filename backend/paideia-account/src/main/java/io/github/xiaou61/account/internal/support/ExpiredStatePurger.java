@@ -2,10 +2,12 @@ package io.github.xiaou61.account.internal.support;
 
 import io.github.xiaou61.account.internal.credential.VerificationCode;
 import io.github.xiaou61.account.internal.token.RefreshTokenMapper;
+import io.github.xiaou61.platform.ScheduledTaskRecorder;
 import java.time.Duration;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -30,25 +32,45 @@ public class ExpiredStatePurger {
     private final ExpiringStore<VerificationCode> emailCodeStore;
     private final RateLimiter rateLimiter;
     private final RefreshTokenMapper refreshTokenMapper;
+    /** 可空：测试切片与局部启动里没有这个 bean，任务照常跑、只是不留痕。 */
+    private final ObjectProvider<ScheduledTaskRecorder> recorder;
 
     ExpiredStatePurger(ExpiringStore<String> captchaAnswerStore,
                        ExpiringStore<VerificationCode> emailCodeStore,
                        RateLimiter rateLimiter,
-                       RefreshTokenMapper refreshTokenMapper) {
+                       RefreshTokenMapper refreshTokenMapper,
+                       ObjectProvider<ScheduledTaskRecorder> recorder) {
         this.captchaAnswerStore = captchaAnswerStore;
         this.emailCodeStore = emailCodeStore;
         this.rateLimiter = rateLimiter;
         this.refreshTokenMapper = refreshTokenMapper;
+        this.recorder = recorder;
     }
 
     @Scheduled(fixedDelay = 5 * 60 * 1000L)
     void purge() {
-        int removed = captchaAnswerStore.purgeExpired()
-                + emailCodeStore.purgeExpired()
-                + rateLimiter.purgeExpired();
-        int expiredTokens = refreshTokenMapper.deleteExpiredBefore(Instant.now());
-        if (removed > 0 || expiredTokens > 0) {
-            log.debug("清理过期的验证码与限流记录 {} 条；过期的刷新令牌 {} 条", removed, expiredTokens);
+        long startedAt = System.nanoTime();
+        try {
+            int removed = captchaAnswerStore.purgeExpired()
+                    + emailCodeStore.purgeExpired()
+                    + rateLimiter.purgeExpired();
+            int expiredTokens = refreshTokenMapper.deleteExpiredBefore(Instant.now());
+            if (removed > 0 || expiredTokens > 0) {
+                log.debug("清理过期的验证码与限流记录 {} 条；过期的刷新令牌 {} 条", removed, expiredTokens);
+            }
+            record(startedAt, null);
+        } catch (RuntimeException e) {
+            // 先记失败再抛出：@Scheduled 只会打一行错误，不留记录的话"上次什么时候失败过"无从查起
+            record(startedAt, e);
+            throw e;
+        }
+    }
+
+    private void record(long startedAt, Throwable error) {
+        ScheduledTaskRecorder target = recorder.getIfAvailable();
+        if (target != null) {
+            target.record("expired-state-purger",
+                    Duration.ofNanos(System.nanoTime() - startedAt), error);
         }
     }
 }

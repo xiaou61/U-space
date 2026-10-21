@@ -1,0 +1,20 @@
+[Unit]
+Description=redis_exporter（Redis 指标）
+After=network-online.target redis-server.service
+
+[Service]
+Type=simple
+User=redis_exporter
+Group=redis_exporter
+ExecStart=/usr/local/bin/redis_exporter \
+    --redis.addr=redis://127.0.0.1:6379 \
+    --web.listen-address=127.0.0.1:9121
+Restart=on-failure
+RestartSec=5
+MemoryMax=128M
+NoNewPrivileges=true
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -9,6 +9,7 @@ import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
 import { NoteReportsPage } from './pages/NoteReportsPage'
+import { OpsPage } from './pages/OpsPage'
 import { RequireAdmin } from './require-admin'
 
 /**
@@ -90,6 +91,17 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <AiRunsListPage />
+      </RequireAdmin>
+    ),
+  },
+  // 运维面板（WORK-028）。单页，不需要父项分组；`/ops` 一条转向只是为了
+  // 手敲地址时不落到空白。
+  { path: '/ops', element: <Navigate to="/ops/panel" replace /> },
+  {
+    path: '/ops/panel',
+    element: (
+      <RequireAdmin>
+        <OpsPage />
       </RequireAdmin>
     ),
   },
