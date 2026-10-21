@@ -14,6 +14,8 @@
  */
 
 /** 列类型。`float` 刻意不提供：浮点误差会让判题不稳定，题目数据必须用 DECIMAL。 */
+import { sha256Hex } from './sha256'
+
 export type SqlColumnType = 'string' | 'int' | 'decimal' | 'datetime'
 
 /** 服务端返回的一个结果集。 */
@@ -219,9 +221,12 @@ function compareStrings(left: string, right: string): number {
   return left < right ? -1 : 1
 }
 
-/** 规范串的 SHA-256（十六进制，小写）。浏览器与 Node 18+ 都有 `crypto.subtle`。 */
-export async function canonicalSha256(table: SqlTable, normalize: SqlNormalize = {}): Promise<string> {
-  const bytes = new TextEncoder().encode(canonicalize(table, normalize))
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+/**
+ * 规范串的 SHA-256（十六进制，小写）。
+ *
+ * <p>用本仓库的纯实现而不是 `crypto.subtle`：后者只在安全上下文（https / localhost）可用，
+ * 而本项目线上是 http，`crypto.subtle` 直接是 undefined——判题会在部署后才炸（已踩过）。
+ */
+export function canonicalSha256(table: SqlTable, normalize: SqlNormalize = {}): string {
+  return sha256Hex(canonicalize(table, normalize))
 }
