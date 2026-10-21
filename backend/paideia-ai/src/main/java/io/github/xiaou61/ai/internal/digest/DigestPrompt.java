@@ -13,6 +13,9 @@ import java.util.List;
  */
 final class DigestPrompt {
 
+    /** 日报压缩提示词的版本号，写进 `ai_runs.prompt_version`。改规则必须改它。 */
+    static final String VERSION = "digest-v1";
+
     private DigestPrompt() {
     }
 

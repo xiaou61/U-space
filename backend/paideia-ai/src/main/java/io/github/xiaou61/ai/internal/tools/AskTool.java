@@ -4,6 +4,7 @@ import io.github.xiaou61.ai.AssistantAnswerer;
 import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
+import io.github.xiaou61.ai.internal.conversation.HarnessPrompts;
 import io.github.xiaou61.platform.PaideiaTool;
 import io.github.xiaou61.platform.ToolContext;
 import io.github.xiaou61.platform.ToolDescriptor;
@@ -92,7 +93,9 @@ public class AskTool implements PaideiaTool {
         long reserved = 0;
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.MCP_ASK, context.userId())
-                .withModel(modelAccess.model()));
+                .withModel(modelAccess.model())
+                // 外部问答走的是同一个通用助手提示词，版本也就跟着它
+                .withPromptVersion(HarnessPrompts.version(io.github.xiaou61.ai.Harness.ASSISTANT)));
         try {
             run.attribute("reqChars", question.length());
             reserved = credits.reserve(context.userId(), credits.estimate());

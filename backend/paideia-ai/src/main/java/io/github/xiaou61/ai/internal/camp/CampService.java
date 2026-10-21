@@ -167,7 +167,9 @@ public class CampService {
 
         long reserved = credits.reserve(userId, credits.estimate());
         TokenUsage usage = null;
-        var run = recorder.begin(RunSpec.of(RunKind.CAMP_GENERATE, userId).withModel(access.model()));
+        var run = recorder.begin(RunSpec.of(RunKind.CAMP_GENERATE, userId)
+                .withModel(access.model())
+                .withPromptVersion(CampPrompts.GENERATE_VERSION));
         try {
             Map<String, Long> concepts = conceptsByName();
             Generation result = generate(() -> generator.diagnostic(
@@ -437,7 +439,9 @@ public class CampService {
 
         long reserved = credits.reserve(userId, credits.estimate());
         TokenUsage usage = null;
-        var run = recorder.begin(RunSpec.of(RunKind.CAMP_RETEST, userId).withModel(access.model()));
+        var run = recorder.begin(RunSpec.of(RunKind.CAMP_RETEST, userId)
+                .withModel(access.model())
+                .withPromptVersion(CampPrompts.RETEST_VERSION));
         try {
             Map<String, Long> concepts = conceptsByName();
             Generation result = generate(() -> generator.retest(digest.promptBlock(),

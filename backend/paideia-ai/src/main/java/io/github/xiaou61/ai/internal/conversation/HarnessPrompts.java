@@ -14,7 +14,7 @@ import io.github.xiaou61.ai.Harness;
  * <p>工具分层不在这里：工具是"能做什么"，与提示词是"怎么说话"分开维护（见 {@code AssistantTools}
  * 的 {@code schemas(Harness)}）。两者只靠 {@link Harness} 这个枚举对齐。
  */
-final class HarnessPrompts {
+public final class HarnessPrompts {
 
     private HarnessPrompts() {
     }
@@ -34,8 +34,16 @@ final class HarnessPrompts {
         };
     }
 
-    /** 提示词版本（进日志/回归用）。同样是穷尽 switch。 */
-    static String version(Harness harness) {
+    /**
+     * 提示词版本，写进 `ai_runs.prompt_version`。
+     *
+     * <p><b>必须由调用方在起一轮时带进 {@code RunSpec}</b>：版本号只有落库才有意义——
+     * 改了提示词之后，前后两批行长得一模一样，就再也分不出"涨的那两个点来自哪一版"。
+     * 这是**补不回来的**：没带版本的那一轮永远不知道用的是哪份提示词。
+     *
+     * <p>穷尽 switch，与 {@link #system} 同一纪律。
+     */
+    public static String version(Harness harness) {
         return switch (harness) {
             case ASSISTANT -> ConversationPrompt.VERSION;
             case INTERVIEW -> InterviewPrompt.VERSION;

@@ -135,7 +135,8 @@ public class MemoryExtractionService {
             var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                     .of(io.github.xiaou61.ai.RunKind.MEMORY_EXTRACT, userId)
                     .withConversation(slice.conversationId())
-                    .withModel(access.get().model()));
+                    .withModel(access.get().model())
+                    .withPromptVersion(MemoryExtractionPrompt.VERSION));
             try {
                 MemoryExtractor.MemoryExtraction result = extractor.extract(
                         new MemoryExtractor.MemoryExtractionRequest(slice.turns(), pool), access.get());

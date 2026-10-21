@@ -83,7 +83,8 @@ public class ResumeImportService {
         io.github.xiaou61.ai.TokenUsage usage = null;
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.RESUME_IMPORT, userId)
-                .withModel(access.get().model()));
+                .withModel(access.get().model())
+                .withPromptVersion(ResumePrompts.PARSE_VERSION));
         try {
             run.attribute("reqChars", text.length());
             ResumeParser.Parsed parsed = parser.parse(text, access.get());

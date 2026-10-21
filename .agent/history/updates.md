@@ -5107,3 +5107,41 @@ schema_version: 1
 - 未完成：全量在用例涨到 667 后**没有在干净树上重测**，文档里 3:30 已标注为"543 条时的实测"
 - 本地提交：待用户授权
 - 远端推送：未执行
+
+## 2026-10-21 · AI 可观测性 · 补接 prompt_version 与终态归类（cancelled/timeout）
+
+- 变更：
+  - **11 条 AI 入口全部接上提示词版本**，写进 `ai_runs.prompt_version`：对话主链路
+    （`HarnessPrompts.version(harness)`，`AssistantConversationController.runFor`）、面试点评
+    （`ReviewPrompt.VERSION`）、记忆整理（`MemoryExtractionPrompt.VERSION`）、外部问答
+    （`HarnessPrompts.version(ASSISTANT)`）、简历解析（`ResumePrompts.PARSE_VERSION`）、
+    简历分析与提案（`ANALYZE_VERSION` / `PROPOSE_VERSION`）、训练营出卷与复测
+    （`CampPrompts.GENERATE_VERSION` / `RETEST_VERSION`）、日报（新增 `DigestPrompt.VERSION`）、
+    周报（新增 `DigestWeeklyService.PROMPT_VERSION`）
+  - `HarnessPrompts` 由包私有改 `public`（跨包调用：`internal.web`、`internal.tools`）；
+    `ReviewPrompt.VERSION` 同步放开到 `public`。两者原本就写着"进日志/回归用"，只是没人用
+  - 对话一轮的终态不再把所有失败压成 `failed`：新增 `ClientGoneException`（专用子类，
+    不靠错误码或文案判断）→ `RunOutcome.CANCELLED` / `error_type=client_gone`，
+    `TimeoutException` 沿 cause 链 → `RunOutcome.TIMEOUT` / `error_type=upstream_timeout`
+- 决策：**用专用异常子类而不是字符串匹配**。上游报错文本完全可能包含"连接已断开"这几个字
+  且会被包进 cause 链，按消息认会把上游故障记成用户放弃——测试 `messageSubstringAloneDoesNotCancel`
+  就守这一条。`RunOutcome.CANCELLED/TIMEOUT` 两个常量早就定义、全仓零调用方，这次才第一次用上
+- 依据：用户给了一篇讲 Agent 效果归因的文章（TRAIL + Snowflake Agent GPA），问本项目有没有类似能力、
+  要不要做优化。核实结论：文章两项论文的 95%/86% 数字真实，但那 86% 来自 6 个专精 judge + claude-4-sonnet
+  高推理 + GEPA 刷提示词 + meta-judge 复核；TRAIL 原文写明最好的 Gemini-2.5-pro 在"指出错在哪一步"上只有 11%。
+  我们的 `ai_runs`/`ai_run_spans` 已覆盖"节点化"那根杠杆，不值得照搬 judge 体系；真正缺的是
+  prompt_version 没接线（**已跑过的行永远补不回来**）与 CANCELLED/TIMEOUT 无人使用。用户：「简单你直接给我做了吧」
+- 未做（明确不做）：LLM-as-judge 打分、checkpoint 回放、条件边、节点级看板扩展。判据是
+  "稳定真实流量 + 出现'知道变差了但说不清哪一步'的实际困扰"两条同时成立才值得做，现在都不满足
+- 验证：
+  - `-pl '!paideia-app'` **250 条 / 0 失败 / 11 跳过**（跳过的是四个 `*LiveTest` 联网探针 + 一条 FileStorage 契约用例，均为既有设计）
+  - 四个守卫类 **9 条 / 0 失败**（模块边界、迁移命名、迁移校验和、迁移不污染种子表）
+  - `AssistantConversationIntegrationTest` **14 条 / 0 失败**（真 MySQL），含新增的
+    `recordsPromptVersion` 断言 `ai_runs.prompt_version = assistant-chat-v1`
+  - **反向验证**：临时注释掉 `withPromptVersion` 后 `recordsPromptVersion` 变红（`but was: null`），恢复后转绿
+  - 新增 `AssistantConversationOutcomeTest` 4 条（取消 / 超时 / 其余失败 / 文案子串不误判）
+- 踩坑：本轮两次 `mvn compile` 撞 `insufficient memory for the Java Runtime Environment`——
+  机器上有别的会话在跑，`MAVEN_OPTS=-Xmx1200m` 后正常。另 `mvn -pl paideia-ai` 必须从
+  `backend/` 跑（根目录无 pom），`scripts/test-db.sh` 也要带 `-f backend/pom.xml`
+- 本地提交：待用户授权
+- 远端推送：未执行

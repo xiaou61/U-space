@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import io.github.xiaou61.ai.AssistantConversation;
+import io.github.xiaou61.ai.Harness;
 import io.github.xiaou61.ai.TokenUsage;
+import io.github.xiaou61.ai.internal.conversation.HarnessPrompts;
 import io.github.xiaou61.ai.internal.memory.MemoryStore;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
@@ -204,6 +206,37 @@ class AssistantConversationIntegrationTest {
         // 按 JSON 取值而不是比字符串：MySQL 的 JSON 列会**规范化**存储
         // （键重排、冒号后加空格），紧凑串读回来就变了形。
         assertThat(JsonPath.<Integer>read(usageJson, "$.total")).isEqualTo(33);
+    }
+
+    @Test
+    @DisplayName("这一轮把提示词版本写进了 ai_runs：改提示词前后才分得出来")
+    void recordsPromptVersion() throws Exception {
+        // 版本号只有落库才有用。缺了它，改了 tutor/面试的提示词之后，
+        // 前后两批行长得一模一样，再也说不出"涨的那两个点来自哪一版"——而且是补不回来的。
+        configureCredential(userA);
+        long conversationId = createConversation(userA, null);
+        stubStream(null, "答案", new TokenUsage(1, 1, 2));
+        sendMessage(userA, conversationId, "问题");
+
+        // 写队列是异步的：轮次行可能在 dispatch 返回之后才落库，等到出现为止
+        String version = awaitPromptVersion(conversationId);
+        assertThat(version).isEqualTo(HarnessPrompts.version(Harness.ASSISTANT));
+        assertThat(version).isNotBlank();
+    }
+
+    /** 等这一轮的 prompt_version 落库（写线程异步）。 */
+    private String awaitPromptVersion(long conversationId) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 5000;
+        while (System.currentTimeMillis() < deadline) {
+            List<String> rows = jdbcTemplate.queryForList(
+                    "SELECT prompt_version FROM ai_runs WHERE conversation_id = ? AND kind = 'chat'",
+                    String.class, conversationId);
+            if (!rows.isEmpty() && rows.get(0) != null) {
+                return rows.get(0);
+            }
+            Thread.sleep(50);
+        }
+        return null;
     }
 
     @Test

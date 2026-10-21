@@ -11,6 +11,7 @@ import io.github.xiaou61.ai.NoteDraft;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.conversation.ConversationService;
+import io.github.xiaou61.ai.internal.conversation.HarnessPrompts;
 import io.github.xiaou61.ai.internal.memory.MemoryExtractionService;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.MediaType;
@@ -87,6 +89,21 @@ class AssistantConversationController {
      * 轮次标识是另一个东西，两者互不覆盖。
      */
     private static final String TRACE_MDC_KEY = "traceId";
+
+    /**
+     * 客户端断开（用户点停止 / 关页面）的专用异常。
+     *
+     * <p>**不能靠错误码或文案区分**：上游故障与它同为 {@code INTERNAL}，而错误消息里
+     * 完全可能出现同样的字样（它会被包进 cause 链）。一个子类就是最省事的可靠判据。
+     */
+    static final class ClientGoneException extends BizException {
+        ClientGoneException() {
+            super(ErrorCode.INTERNAL, CLIENT_GONE);
+        }
+    }
+
+    /** 客户端断开的可见文案（也是唯一会写进 SSE error 事件的这句话）。 */
+    static final String CLIENT_GONE = "连接已断开";
 
     AssistantConversationController(ConversationService conversations,
                                     AssistantConversation assistant,
@@ -170,7 +187,8 @@ class AssistantConversationController {
         RunSpec spec = RunSpec.of(RunKind.CHAT, userId)
                 .withConversation(conversationId)
                 .withHarness(turn.harness().key())
-                .withModel(turn.access().model());
+                .withModel(turn.access().model())
+                .withPromptVersion(HarnessPrompts.version(turn.harness()));
         RunRecorder.RunScope run = recorder.begin(spec);
         run.attribute("historyMsgs", turn.history().size());
         run.attribute("memoryHits", turn.memorySnippets().size());
@@ -279,7 +297,9 @@ class AssistantConversationController {
                             run.tokens(usageRef[0] == null ? 0 : usageRef[0].inputTokens(),
                                     usageRef[0] == null ? 0 : usageRef[0].outputTokens(), 0);
                             run.addCredits(charged);
-                            run.finish(RunOutcome.FAILED, errorTypeOf(failure));
+                            // 先落终态再往事件流写：写事件对已断开的客户端会抛
+                            RunOutcome outcome = outcomeOf(failure);
+                            run.finish(outcome, errorTypeOf(failure, outcome));
                             send(emitter, "error", Map.of("message", failure.getMessage() == null
                                     ? "生成失败，请稍后再试" : failure.getMessage()));
                             emitter.complete();
@@ -323,8 +343,35 @@ class AssistantConversationController {
     }
 
     /** 失败原因归一成低基数标识。**不写异常消息**：它可能含上游地址或响应片段。 */
-    private static String errorTypeOf(BizException failure) {
-        return failure.errorCode() == null ? "unknown" : failure.errorCode().name();
+    /**
+     * 这一轮怎么结束的：用户放弃、上游超时、还是真的失败。
+     *
+     * <p>三者在库里必须分开——「用户主动停止」是**最诚实的"这次回答不行"信号**，
+     * 把它和"上游挂了"混成一个 failed，就再也分不出"我们的回答被嫌弃"和"服务出故障"。
+     *
+     * <p>沿 cause 链找，因为上游失败会把下层异常包一层再上报：
+     * {@code send()} 抛的 {@link ClientGoneException} 会以
+     * {@code upstreamUnavailable(...).initCause(...)} 的形状到这里。
+     */
+    static RunOutcome outcomeOf(BizException failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ClientGoneException) {
+                return RunOutcome.CANCELLED;
+            }
+            if (cause instanceof TimeoutException) {
+                return RunOutcome.TIMEOUT;
+            }
+        }
+        return RunOutcome.FAILED;
+    }
+
+    /** 失败原因归一成低基数标识。**不写异常消息**：它可能含上游地址或响应片段。 */
+    static String errorTypeOf(BizException failure, RunOutcome outcome) {
+        return switch (outcome) {
+            case CANCELLED -> "client_gone";
+            case TIMEOUT -> "upstream_timeout";
+            default -> failure.errorCode() == null ? "unknown" : failure.errorCode().name();
+        };
     }
 
     private static Map<String, Object> usagePayload(TokenUsage usage) {
@@ -338,7 +385,7 @@ class AssistantConversationController {
         try {
             emitter.send(SseEmitter.event().name(name).data(json.writeValueAsString(payload)));
         } catch (IOException | IllegalStateException exception) {
-            throw new BizException(ErrorCode.INTERNAL, "连接已断开");
+            throw new ClientGoneException();
         }
     }
 }

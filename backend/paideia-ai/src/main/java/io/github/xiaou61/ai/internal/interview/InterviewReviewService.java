@@ -6,6 +6,7 @@ import io.github.xiaou61.ai.ModelAccess;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.conversation.ConversationService;
+import io.github.xiaou61.ai.internal.conversation.ReviewPrompt;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.platform.BizException;
 import java.util.List;
@@ -98,7 +99,8 @@ public class InterviewReviewService {
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.INTERVIEW_REVIEW, userId)
                 .withConversation(conversationId)
-                .withModel(access.get().model()));
+                .withModel(access.get().model())
+                .withPromptVersion(ReviewPrompt.VERSION));
         try {
             run.attribute("reqChars", transcript.length());
             InterviewReviewer.GeneratedReview result = reviewer.review(transcript, access.get());

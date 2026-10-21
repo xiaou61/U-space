@@ -97,7 +97,8 @@ public class DigestWeeklyService {
         // userId=0 表示平台行为（速递没有用户归属）。
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.DIGEST_WEEKLY, 0L)
-                .withModel(access.get().model()));
+                .withModel(access.get().model())
+                .withPromptVersion(PROMPT_VERSION));
         String body;
         try {
             body = callModel(titles, access.get());
@@ -152,6 +153,9 @@ public class DigestWeeklyService {
         }
         return text.toString();
     }
+
+    /** 周报提示词的版本号，写进 `ai_runs.prompt_version`。改下面那段 SYSTEM 必须改它。 */
+    private static final String PROMPT_VERSION = "digest-weekly-v1";
 
     private static final String SYSTEM = """
             你是中文技术编辑。根据下面这一周的资讯标题，写一段「本周技术主线」。

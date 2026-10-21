@@ -154,7 +154,8 @@ public class ResumeOptimizationService {
         TokenUsage usage = null;
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.RESUME_OPTIMIZE, userId)
-                .withModel(access.model()));
+                .withModel(access.model())
+                .withPromptVersion(ResumePrompts.ANALYZE_VERSION));
         try {
             ResumeAnalyzer.Analyzed analyzed = analyzer.analyze(document.data(), version.getJdText(), access);
             usage = analyzed.usage();
@@ -221,7 +222,8 @@ public class ResumeOptimizationService {
         TokenUsage usage = null;
         var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                 .of(io.github.xiaou61.ai.RunKind.RESUME_OPTIMIZE, userId)
-                .withModel(access.model()));
+                .withModel(access.model())
+                .withPromptVersion(ResumePrompts.PROPOSE_VERSION));
         try {
             ResumeProposer.Proposed proposed = proposer.propose(document.data(), version.getJdText(),
                     analysisForModel, gaps, access);

@@ -15,7 +15,7 @@ package io.github.xiaou61.ai.internal.conversation;
 public final class ReviewPrompt {
 
     /** 独立版本号：改字段或改约束都必须改它。 */
-    static final String VERSION = "review-v1";
+    public static final String VERSION = "review-v1";
 
     /** 各维度最多几个字、整体上限。与解析器保持一致。 */
     static final int MAX_DIMENSION_COMMENT = 200;

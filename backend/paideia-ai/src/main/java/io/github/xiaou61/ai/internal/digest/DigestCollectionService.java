@@ -164,7 +164,8 @@ public class DigestCollectionService {
             // 运营统计里能一眼认出这是系统调用而不是某个学习者花的钱。
             var run = recorder.begin(io.github.xiaou61.ai.RunSpec
                     .of(io.github.xiaou61.ai.RunKind.DIGEST, 0L)
-                    .withModel(access.get().model()));
+                    .withModel(access.get().model())
+                    .withPromptVersion(DigestPrompt.VERSION));
             try {
                 outcome = summarizer.summarize(items, selected, access.get(),
                         properties.getAiTimeoutSeconds());
