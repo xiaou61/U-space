@@ -138,7 +138,13 @@ function columnOrder(table: SqlTable, normalize: SqlNormalize): number[] {
     return indexes
   }
   return indexes.sort((left, right) =>
-    compareStrings(table.columns[left], table.columns[right]) || left - right)
+    compareStrings(table.columns[left] ?? '', table.columns[right] ?? '') || left - right)
+}
+
+/** 按列名取类型；未声明或列名缺失时按字符串。 */
+function typeOf(table: SqlTable, index: number, normalize: SqlNormalize): SqlColumnType {
+  const name = table.columns[index]
+  return (name === undefined ? undefined : normalize.types?.[name]) ?? 'string'
 }
 
 function cellAt(row: string[], index: number, table: SqlTable, normalize: SqlNormalize): string {
@@ -146,7 +152,7 @@ function cellAt(row: string[], index: number, table: SqlTable, normalize: SqlNor
   if (value === undefined) {
     throw new Error(`结果集第 ${index} 列缺失值（列名 ${table.columns[index] ?? '?'}）`)
   }
-  return normalizeCell(value, normalize.types?.[table.columns[index]] ?? 'string')
+  return normalizeCell(value, typeOf(table, index, normalize))
 }
 
 /** 判题：把 actual 与 expected 按同一口径归一后比较。 */
@@ -159,22 +165,18 @@ export function judgeSql(expected: SqlTable, actual: SqlTable, normalize: SqlNor
     return false
   }
   // 按 expected 的列顺序取值，这样列序不同也能比；类型也按 expected 声明的列名取
-  const expectedRows = expected.rows.map((row) => normalizeRow(row, expected, normalize))
+  const expectedRows = expected.rows.map((row) =>
+    row.map((value, index) => normalizeCell(value, typeOf(expected, index, normalize))))
   const actualRows = actual.rows.map((row) =>
-    expected.columns.map((name, position) =>
-      normalizeCell(row[pairing[position]] ?? NULL_MARKER, normalize.types?.[name] ?? 'string')))
+    expected.columns.map((_, position) =>
+      normalizeCell(row[pairing[position] ?? -1] ?? NULL_MARKER, typeOf(expected, position, normalize))))
   if (normalize.rowOrder === 'strict') {
-    return expectedRows.every((row, index) => sameRow(row, actualRows[index]))
+    return expectedRows.every((row, index) => sameRow(row, actualRows[index] ?? []))
   }
   const sortKey = (row: string[]) => row.join(COLUMN_SEP)
   expectedRows.sort((left, right) => compareStrings(sortKey(left), sortKey(right)))
   actualRows.sort((left, right) => compareStrings(sortKey(left), sortKey(right)))
-  return expectedRows.every((row, index) => sameRow(row, actualRows[index]))
-}
-
-function normalizeRow(row: string[], table: SqlTable, normalize: SqlNormalize): string[] {
-  return row.map((value, index) =>
-    normalizeCell(value, normalize.types?.[table.columns[index]] ?? 'string'))
+  return expectedRows.every((row, index) => sameRow(row, actualRows[index] ?? []))
 }
 
 function sameRow(left: string[], right: string[]): boolean {
@@ -191,7 +193,7 @@ function pairColumns(expected: string[], actual: string[], strictOrder: boolean)
       ? expected.map((_, index) => index)
       : null
   }
-  const remaining = new Map<string, number>()
+  const remaining = new Map<string, number[]>()
   actual.forEach((name, index) => {
     const list = remaining.get(name) ?? []
     list.push(index)
@@ -200,10 +202,11 @@ function pairColumns(expected: string[], actual: string[], strictOrder: boolean)
   const pairing: number[] = []
   for (const name of expected) {
     const list = remaining.get(name)
-    if (list === undefined || list.length === 0) {
+    const next = list === undefined ? undefined : list.shift()
+    if (next === undefined) {
       return null
     }
-    pairing.push(list.shift() as number)
+    pairing.push(next)
   }
   return pairing
 }

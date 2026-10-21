@@ -52,12 +52,26 @@ export interface RunOutput {
   timedOut: boolean
   outOfMemory: boolean
   truncated: boolean
+  /**
+   * 结构化结果集（WORK-032）。**只有 SQL 会返回**，其它语言是空数组。
+   *
+   * <p>值一律是字符串，类型归一在判题侧按题面声明做——`DECIMAL` 的 92.50 一旦转成
+   * JSON 数字就再也还不出那个尾零。
+   */
+  tables?: import('./sql-judge').SqlTable[]
 }
 
 /** 代码执行能力。缺这一项时「运行」按钮不渲染（管理端预览、未登录等）。 */
 export interface SandboxPort {
   ready(): Promise<boolean>
-  run(input: { language: string; code: string; stdin?: string; caseId?: string }): Promise<RunOutput>
+  run(input: {
+    language: string
+    code: string
+    stdin?: string
+    /** SQL 专用：数据集 key，服务端按白名单取内容（WORK-032）。 */
+    dataset?: string
+    caseId?: string
+  }): Promise<RunOutput>
   /**
    * 逐步录制（WORK-023）。**可选**：后端没接这条路、或后端拒绝（比如 Java 暂不支持）时，
    * 前端退回"一次性运行"，不显示播放器。

@@ -5386,3 +5386,24 @@ schema_version: 1
     **旧的 sandbox jar**，不是代码错误。`mvn -pl paideia-sandbox install` 后通过
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-21 · WORK-032 TASK-010（部分）SQL 题型渲染与前端契约
+
+- 类型：implementation
+- 变更：
+  - `schema.ts`：新增 `SqlChallenge`（`sql-write` / `sql-fix`），解析 `starter` / `dataset` /
+    `normalize` / `expectHash`；类型只允许 string/int/decimal/datetime——**float 被明确拒绝**
+  - `sql-judge.ts`：修 `noUncheckedIndexedAccess` 下的索引类型（补 `typeOf()`，去掉悬空引用）
+  - `context.tsx`：`RunOutput.tables`、`SandboxPort.run` 的 `dataset` 参数
+  - `sql-challenge.tsx`：编辑器 + 运行 + 多结果集表格 + 逐数据集判定；期望值比 **SHA-256 规范串**，
+    题面不含答案
+  - `code-challenge.tsx`：接入两种新题型
+- 验证：
+  - `tsc --noEmit`（ui 包）→ 无错误
+  - `vitest src/markdown/renderers/` → **96 passed / 4 files**
+  - `vitest` 全量 → 191 passed / **2 failed**，两条都是既有失败、与本次无关：
+    ① `AdminUsersPage.tsx` 出现 `bg-black/40`（WORK-030 的改动）
+    ② `packages/camp/src` 未在 `globals.css` 的 `@source` 登记（camp 包的改动）
+    已核对：这两个文件都不在本次改动里
+- 本地提交：见下一笔
+- 远端推送：未执行

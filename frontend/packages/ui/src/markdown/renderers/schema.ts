@@ -11,6 +11,8 @@
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string }
 
+import type { SqlNormalize } from './sql-judge'
+
 const LIMITS = {
   id: 64,
   title: 120,
@@ -388,7 +390,36 @@ export interface RunChallenge {
   explain?: string
 }
 
-export type CodeChallenge = FillChallenge | OrderChallenge | BugChallenge | RunChallenge
+export type CodeChallenge = FillChallenge | OrderChallenge | BugChallenge | RunChallenge | SqlChallenge
+
+/**
+ * SQL 写查询 / 改错（WORK-032）。
+ *
+ * <p>**期望值不在题面里**：它由参考解在数据集上真跑得出，题面只带 `expectHash`
+ * （规范序列化的 SHA-256）。客户端把自己跑出的结果按同一口径规范化后比哈希——
+ * 这样隐藏数据集的内容与答案都不必下发，判题仍留在客户端（服务端不认识"正确答案"，
+ * 与 WORK-015 同一条纪律）。
+ *
+ * <p>`antiPatterns` / `alternatives` 只在内容源里给门禁用，不随题面下发。
+ */
+export interface SqlChallenge {
+  id: string
+  kind: 'sql-write' | 'sql-fix'
+  title: string
+  /** 这题考什么认知，一句话。 */
+  goal?: string
+  /** 对应的本课误区标题（内容门禁用它防超纲）。 */
+  trap?: string
+  /** 可用于本题的数据集 key。客户端只拿到 key，内容在服务端。 */
+  dataset: string[]
+  /** 编辑器初始内容：`sql-write` 是骨架，`sql-fix` 是那段写坏的 SQL。 */
+  starter: string
+  /** 归一化口径，与 `sql-judge.ts` / `sql_judge.py` 同构。 */
+  normalize?: SqlNormalize
+  /** 数据集 key → 规范序列化哈希。 */
+  expectHash: Record<string, string>
+  explain?: string
+}
 
 export function blankCount(template: string): number {
   return [...template.matchAll(/\{\{(\d+)\}\}/g)].length
@@ -456,7 +487,44 @@ export function parseCodeChallenge(code: string): ParseResult<CodeChallenge> {
       }
     }
 
-    throw new BadInput('kind 只能是 fill / order / bug / run')
+    if (kind === 'sql-write' || kind === 'sql-fix') {
+      const starter = asText(raw['starter'], 'starter', LIMITS.codeChars)
+      const dataset = asStringArray(raw['dataset'], 'dataset', 1, LIMITS.focus, 64)
+      const expectHash = asObject(raw['expectHash'], 'expectHash')
+      const normalize = asObject(raw['normalize'] ?? {}, 'normalize')
+      const rowOrder = normalize['rowOrder']
+      const columnOrder = normalize['columnOrder']
+      need(rowOrder === undefined || rowOrder === 'ignore' || rowOrder === 'strict',
+        'normalize.rowOrder 只能是 ignore 或 strict')
+      need(columnOrder === undefined || columnOrder === 'ignore' || columnOrder === 'strict',
+        'normalize.columnOrder 只能是 ignore 或 strict')
+      const types: Record<string, import('./sql-judge').SqlColumnType> = {}
+      const rawTypes = asObject(normalize['types'] ?? {}, 'normalize.types')
+      for (const [name, value] of Object.entries(rawTypes)) {
+        need(value === 'string' || value === 'int' || value === 'decimal' || value === 'datetime',
+          `normalize.types.${name} 只能是 string / int / decimal / datetime（不支持 float：误差会让判题不稳）`)
+        types[name] = value as import('./sql-judge').SqlColumnType
+      }
+      const hashes: Record<string, string> = {}
+      for (const key of dataset) {
+        // 每个数据集都必须有期望值哈希，否则那一个数据集无法判题
+        hashes[key] = asText(expectHash[key], `expectHash.${key}`, 128)
+      }
+      return {
+        id,
+        kind,
+        title,
+        goal: optionalText(raw['goal'], 'goal', 300),
+        trap: optionalText(raw['trap'], 'trap', 300),
+        dataset,
+        starter,
+        normalize: { rowOrder, columnOrder, types } as SqlNormalize,
+        expectHash: hashes,
+        explain,
+      }
+    }
+
+    throw new BadInput('kind 只能是 fill / order / bug / run / sql-write / sql-fix')
   })
 }
 
