@@ -1,5 +1,6 @@
 package io.github.xiaou61.knowledge.internal.concept;
 
+import io.github.xiaou61.knowledge.MasteryEvidence;
 import io.github.xiaou61.knowledge.internal.assessment.SelfAssessmentService;
 import io.github.xiaou61.knowledge.internal.category.Category;
 import io.github.xiaou61.knowledge.internal.category.CategoryMapper;
@@ -72,6 +73,11 @@ public class ConceptGraphService {
     private final CategoryMapper categoryMapper;
     private final LearningProgressService progressService;
     private final SelfAssessmentService assessmentService;
+    /**
+     * 训练营那一路证据（WORK-029）。**可选**：没有 ai 模块时它是默认空实现，
+     * 图谱退化为原来的三路，分数与改动前逐位相同。
+     */
+    private final MasteryEvidence masteryEvidence;
 
     ConceptGraphService(ConceptMapper conceptMapper,
                         ConceptLinkMapper linkMapper,
@@ -79,7 +85,8 @@ public class ConceptGraphService {
                         EntryViewMapper viewMapper,
                         CategoryMapper categoryMapper,
                         LearningProgressService progressService,
-                        SelfAssessmentService assessmentService) {
+                        SelfAssessmentService assessmentService,
+                        MasteryEvidence masteryEvidence) {
         this.conceptMapper = conceptMapper;
         this.linkMapper = linkMapper;
         this.entryMapper = entryMapper;
@@ -87,6 +94,7 @@ public class ConceptGraphService {
         this.categoryMapper = categoryMapper;
         this.progressService = progressService;
         this.assessmentService = assessmentService;
+        this.masteryEvidence = masteryEvidence;
     }
 
     public Graph build(long userId) {
@@ -108,6 +116,9 @@ public class ConceptGraphService {
         for (EntryViewMapper.Row row : viewMapper.findByUser(userId)) {
             views.put(row.entryId(), row);
         }
+        // 第四路（WORK-029）：某概念上的训练营答对率。没有记录的概念不在 map 里，
+        // 于是它的证据列表与改动前完全一样
+        Map<Long, Double> campRatios = masteryEvidence == null ? Map.of() : masteryEvidence.campRatios(userId);
 
         // 概念 → 载体条目
         Map<Long, Set<Long>> entriesByConcept = new HashMap<>();
@@ -130,7 +141,8 @@ public class ConceptGraphService {
         List<Node> nodes = new ArrayList<>(concepts.size());
         for (Concept concept : concepts) {
             nodes.add(toNode(concept, entriesByConcept.getOrDefault(concept.getId(), Set.of()),
-                    titles, categoryNames, progress, assessments, views, now));
+                    titles, categoryNames, progress, assessments, views,
+                    campRatios.get(concept.getId()), now));
         }
 
         boolean truncated = nodes.size() > MAX_NODES;
@@ -178,7 +190,7 @@ public class ConceptGraphService {
                                Map<Long, String> categoryNames,
                                Map<Long, LearningProgressService.View> progress,
                                Map<Long, String> assessments,
-                               Map<Long, EntryViewMapper.Row> views, Instant now) {
+                               Map<Long, EntryViewMapper.Row> views, Double campRatio, Instant now) {
         List<Carrier> carriers = new ArrayList<>();
         List<ConceptMastery.Evidence> evidences = new ArrayList<>();
         boolean reviewDue = false;
@@ -214,11 +226,36 @@ public class ConceptGraphService {
             }
         }
 
+        // 训练营那一路单独加：它不属于任何载体条目，但同样是"这个人在这概念上的表现"。
+        // 权重、半衰期、档位阈值全都不动——`Evidence` 的 scoreRatio 就是它的落点
+        if (campRatio != null) {
+            evidences.add(new ConceptMastery.Evidence(campRatio, null, false,
+                    evidenceInstant(evidences)));
+        }
+
         ConceptMastery.Result result = ConceptMastery.compute(evidences, reviewDue, now);
         return new Node(concept.getId(), concept.getName(), concept.getSummary(),
                 concept.getCategoryId(), concept.getCategoryId() == null ? null : categoryNames.get(concept.getCategoryId()),
                 result.score(), result.tier(), result.reviewDue(),
                 new Evidence(viewed, assessed, scored), List.copyOf(carriers));
+    }
+
+    /**
+     * 训练营证据的时间戳。
+     *
+     * <p>用已有的最新活动时刻，而不是"现在"：用 now 会让衰减因子恒为 1，等于把训练营成绩
+     * 变成一份永不过期的证据——那与"两个月没碰就降权"的既有设计矛盾。
+     * 没有其它证据时返回 null（不衰减），此时训练营是唯一信号，本来也没有"多久没碰"可言。
+     */
+    private static Instant evidenceInstant(List<ConceptMastery.Evidence> evidences) {
+        Instant latest = null;
+        for (ConceptMastery.Evidence evidence : evidences) {
+            Instant at = evidence.lastActivity();
+            if (at != null && (latest == null || at.isAfter(latest))) {
+                latest = at;
+            }
+        }
+        return latest;
     }
 
     /** 一个条目的得分率：挑战与小测都算，取平均；没有记录返回 null。 */

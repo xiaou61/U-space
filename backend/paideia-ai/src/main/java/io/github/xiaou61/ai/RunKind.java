@@ -32,6 +32,12 @@ public final class RunKind {
     /** 条目精简卡片（WORK-005）。 */
     public static final String ENTRY_SUMMARY = "entry_summary";
 
+    /** 训练营出诊断卷（WORK-029）。 */
+    public static final String CAMP_GENERATE = "camp_generate";
+
+    /** 训练营出复测卷（WORK-029）。与诊断卷分开：用户要能看出"复测那一下花了多少"。 */
+    public static final String CAMP_RETEST = "camp_retest";
+
     private RunKind() {
     }
 }

@@ -18,12 +18,13 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * 简历那三次调用的**共同骨架**（WORK-018）。
+ * "一次非流式调用、不要工具、只要 JSON"这类调用的**共同骨架**。
  *
- * <p>三次调用（解析 / 分析 / 提案）在传输层的差异只有 system 与 user 两段文字，其余
- * ——模型构造、不挂工具、关掉原生结构化输出、超时、错误归一——完全相同。
- * 抽成一个包内基类而不是三个复制粘贴，是因为这几条设置里任何一条改了，三处必须一起改：
- * 只改两处会得到"解析走思考模式、提案不走"这种极难察觉的不一致。
+ * <p>第一个消费者是简历那三次（WORK-018：解析 / 分析 / 提案），第四个是训练营出卷
+ * （WORK-029）。它们之间的差异只有 system 与 user 两段文字，其余——模型构造、不挂工具、
+ * 关掉原生结构化输出、超时、错误归一、空内容按失败——完全相同。抽成一个基类而不是复制粘贴，
+ * 是因为这几条设置里任何一条改了，所有调用点必须一起改：只改一处会得到
+ * "解析走思考模式、出卷不走"这种极难察觉的不一致。
  *
  * <p>思考关不掉（deepseek-flash 默认就思考，本项目没有关它的开关）：思考 token 占用
  * {@code maxTokens}，给少了会把 JSON 截成半截（2026-10-19 在点评那路实测复现），
@@ -32,12 +33,12 @@ import java.util.List;
  * <p>为什么 {@code nativeStructuredOutput(false)}：DeepSeek 不支持原生结构化输出。
  * 我们用"要求模型只回 JSON + 本地严格校验"那套，与 {@code AgentScopeInterviewReviewer} 一致。
  */
-abstract class ResumeModelCaller {
+public abstract class SingleShotModelCaller {
 
     private final AiProperties properties;
     private final GuardedHttpTransport transport;
 
-    protected ResumeModelCaller(AiProperties properties, GuardedHttpTransport transport) {
+    protected SingleShotModelCaller(AiProperties properties, GuardedHttpTransport transport) {
         this.properties = properties;
         this.transport = transport;
     }

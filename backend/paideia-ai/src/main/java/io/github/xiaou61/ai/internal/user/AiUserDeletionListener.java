@@ -45,6 +45,13 @@ class AiUserDeletionListener {
             {"resume_versions", "user_id"},
             {"resume_edit_history", "user_id"},
             {"resume_documents", "user_id"},
+            // 训练营（WORK-029）：五张表，**子表在前**。题目/作答/计划都挂在 program 上，
+            // 任务又挂在 plan 上；顺序反了会留下"计划没了但任务还在"的孤儿行
+            {"camp_tasks", "user_id"},
+            {"camp_plans", "user_id"},
+            {"camp_attempts", "user_id"},
+            {"camp_items", "user_id"},
+            {"camp_programs", "user_id"},
             // AI 调用追踪（WORK-022）：轮次表有 user_id，步骤表没有（它随 trace 走），
             // 所以步骤在下面按子查询删。**先删步骤再删轮次**——顺序反过来就找不到 trace 了。
             {"ai_runs", "user_id"},

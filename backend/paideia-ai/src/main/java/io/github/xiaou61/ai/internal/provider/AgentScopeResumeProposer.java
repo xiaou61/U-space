@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  * ——位置真实、原文对得上、缺口词不出现。
  */
 @Component
-class AgentScopeResumeProposer extends ResumeModelCaller implements ResumeProposer {
+class AgentScopeResumeProposer extends SingleShotModelCaller implements ResumeProposer {
 
     private final ResumeProposalParser parser;
 

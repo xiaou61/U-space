@@ -1,6 +1,8 @@
 package io.github.xiaou61.knowledge;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -78,6 +80,69 @@ public interface KnowledgeApi {
      */
     default CreateOutcome createCollected(CollectedEntry input) {
         throw new UnsupportedOperationException("本实现不支持自动采集写入");
+    }
+
+    // ── 训练营（WORK-029） ────────────────────────────────────────────
+
+    /**
+     * 概念的全量清单（id + 名称）。训练营出题时用它把模型的 concept 名解析成 id。
+     *
+     * <p>全量而不是按需：概念数量级是数百，一次取全比逐条查便宜（与
+     * {@code ConceptGraphService} 同一取舍）。
+     */
+    default List<ConceptRef> concepts() {
+        return List.of();
+    }
+
+    /**
+     * 概念 → 载体条目，**只含已发布**。
+     *
+     * <p>{@code hasBlocks} 表示正文里有 {@code quiz} / {@code challenge} 围栏块——
+     * 计划据此把"读"升级成"做"并多给 10 分钟。
+     *
+     * <p>不传 userId：条目是公共内容，与本人的学习进度无关。
+     */
+    default Map<Long, List<EntryCarrier>> conceptCarriers(Collection<Long> conceptIds) {
+        return Map.of();
+    }
+
+    /**
+     * 某人到期该复习的条目（{@code review_due_at <= now}）。
+     *
+     * <p><b>必须由调用方传入 userId</b>，与 {@link #findMarks} 同一纪律——传别人的 id 就会读到
+     * 别人的复习安排。训练营那侧把它绑在服务层，不让请求体有机会提供。
+     */
+    default List<DueEntry> dueReviews(long userId, int limit) {
+        return List.of();
+    }
+
+    /**
+     * 概念的前置关系：概念 id → 它的前置概念 id 列表。
+     *
+     * <p>只取 {@code prerequisite} 这一种边（{@code related} 是无向的，不构成先后）。
+     * 训练营排期用它保证"前置弱的先学"（REQ-019）。
+     *
+     * <p>全量返回：边数量级与概念同阶，按需查反而多一次往返。
+     */
+    default Map<Long, List<Long>> conceptPrerequisites() {
+        return Map.of();
+    }
+
+    /** 概念的最小识别信息。 */
+    record ConceptRef(long id, String name) {
+    }
+
+    /**
+     * 一个概念的载体条目。
+     *
+     * @param bodyChars 正文字符数，用于估算阅读时长
+     * @param hasBlocks 正文是否含 quiz / challenge 围栏块
+     */
+    record EntryCarrier(long entryId, String title, int bodyChars, boolean hasBlocks) {
+    }
+
+    /** 到期复习的一条。`conceptId` 可能为空（条目没挂概念）。 */
+    record DueEntry(Long conceptId, long entryId, String title) {
     }
 
     /** 一条自动采集条目的写入输入。 */

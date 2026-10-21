@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * （{@code ResumeKeywordClassifier}）。把"会不会"留给模型等于把最容易幻觉的判断交给了模型。
  */
 @Component
-class AgentScopeResumeAnalyzer extends ResumeModelCaller implements ResumeAnalyzer {
+class AgentScopeResumeAnalyzer extends SingleShotModelCaller implements ResumeAnalyzer {
 
     private final ResumeAnalysisParser parser;
 

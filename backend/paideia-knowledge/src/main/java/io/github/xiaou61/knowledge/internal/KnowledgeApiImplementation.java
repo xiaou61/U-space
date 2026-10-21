@@ -5,6 +5,9 @@ import io.github.xiaou61.knowledge.KnowledgeApi;
 import io.github.xiaou61.knowledge.internal.assessment.SelfAssessmentService;
 import io.github.xiaou61.knowledge.internal.category.Category;
 import io.github.xiaou61.knowledge.internal.category.CategoryService;
+import io.github.xiaou61.knowledge.internal.concept.ConceptLinkMapper;
+import io.github.xiaou61.knowledge.internal.concept.ConceptLinks;
+import io.github.xiaou61.knowledge.internal.concept.ConceptMapper;
 import io.github.xiaou61.knowledge.internal.entry.Entry;
 import io.github.xiaou61.knowledge.internal.entry.EntryMapper;
 import io.github.xiaou61.knowledge.internal.entry.EntryService;
@@ -12,7 +15,12 @@ import io.github.xiaou61.knowledge.internal.learning.LearningProgressService;
 import io.github.xiaou61.platform.PageQuery;
 import io.github.xiaou61.platform.PageResult;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -32,17 +40,23 @@ class KnowledgeApiImplementation implements KnowledgeApi {
     private static final int DEFAULT_LIMIT = 10;
 
     private final EntryMapper entryMapper;
+    private final ConceptMapper conceptMapper;
+    private final ConceptLinkMapper conceptLinkMapper;
     private final EntryService entryService;
     private final CategoryService categoryService;
     private final SelfAssessmentService selfAssessments;
     private final LearningProgressService learningProgress;
 
     KnowledgeApiImplementation(EntryMapper entryMapper,
+                               ConceptMapper conceptMapper,
+                               ConceptLinkMapper conceptLinkMapper,
                                EntryService entryService,
                                CategoryService categoryService,
                                SelfAssessmentService selfAssessments,
                                LearningProgressService learningProgress) {
         this.entryMapper = entryMapper;
+        this.conceptMapper = conceptMapper;
+        this.conceptLinkMapper = conceptLinkMapper;
         this.entryService = entryService;
         this.categoryService = categoryService;
         this.selfAssessments = selfAssessments;
@@ -156,6 +170,59 @@ class KnowledgeApiImplementation implements KnowledgeApi {
             return DEFAULT_LIMIT;
         }
         return Math.min(limit, 50);
+    }
+
+    // ── 训练营（WORK-029） ────────────────────────────────────────────
+
+    @Override
+    public List<ConceptRef> concepts() {
+        return conceptMapper.findAll().stream()
+                .map(concept -> new ConceptRef(concept.getId(), concept.getName()))
+                .toList();
+    }
+
+    @Override
+    public Map<Long, List<EntryCarrier>> conceptCarriers(Collection<Long> conceptIds) {
+        // 空集合不查库：没有弱项时调用方会传空，没必要为它发一次 IN ()
+        if (conceptIds == null || conceptIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = conceptIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        // SQL 里就带 status = 'published'：下架条目不该出现在计划里，
+        // 靠调用方过滤等于给每个调用方留一个会漏的口子
+        Map<Long, List<EntryCarrier>> carriers = new LinkedHashMap<>();
+        for (EntryMapper.CarrierRow row : entryMapper.findPublishedCarriersByConceptIds(ids)) {
+            carriers.computeIfAbsent(row.conceptId(), key -> new ArrayList<>())
+                    .add(new EntryCarrier(row.entryId(), row.title(), row.bodyChars(), row.hasBlocks()));
+        }
+        return carriers;
+    }
+
+    @Override
+    public List<DueEntry> dueReviews(long userId, int limit) {
+        if (userId <= 0) {
+            return List.of();
+        }
+        return entryMapper.findDueReviews(userId, saneLimit(limit)).stream()
+                .map(row -> new DueEntry(row.conceptId(), row.entryId(), row.title()))
+                .toList();
+    }
+
+    @Override
+    public Map<Long, List<Long>> conceptPrerequisites() {
+        Map<Long, List<Long>> prerequisites = new LinkedHashMap<>();
+        for (ConceptLinks.Edge edge : conceptLinkMapper.findAllEdges()) {
+            // 只认 prerequisite：related 是无向的，不构成先后
+            if (!"prerequisite".equals(edge.relationType())) {
+                continue;
+            }
+            prerequisites.computeIfAbsent(edge.toConceptId(), key -> new ArrayList<>())
+                    .add(edge.fromConceptId());
+        }
+        return prerequisites;
     }
 
     private static CategoryNode toNode(Category category) {

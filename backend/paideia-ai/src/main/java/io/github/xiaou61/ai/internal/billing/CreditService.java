@@ -159,7 +159,18 @@ public class CreditService {
         return settleAs(userId, reserved, CreditLedger.KIND_RESUME, model, inputTokens, outputTokens, refMessageId);
     }
 
-    /** 结算，并指定流水种类。私有：种类是领域决定，不该由调用方随手给。 */
+    /**
+     * 训练营出卷/复测的结算（WORK-029）。
+     *
+     * <p>种类单独记（{@code CAMP}）：一个营至少两笔调用（诊断 + 复测），与简历混成一类之后，
+     * 用户没法回答"这个营到底花了多少"。
+     */
+    @Transactional
+    public int settleCamp(long userId, long reserved, String model,
+                          Integer inputTokens, Integer outputTokens, Long refMessageId) {
+        return settleAs(userId, reserved, CreditLedger.KIND_CAMP, model, inputTokens, outputTokens, refMessageId);
+    }
+
     /**
      * 结算的公共实现。
      *

@@ -205,6 +205,60 @@ public interface EntryMapper {
             """)
     List<Entry> findPublishedTitlesByIds(@Param("ids") List<Long> ids);
 
+    /**
+     * 概念 → 已发布载体条目（WORK-029）。
+     *
+     * <p>一次查完而不是按概念逐条查：图谱与计划都要"每个概念下面有哪些内容"，
+     * 逐条查会把一次查询变成几百次。
+     *
+     * <p>{@code hasBlocks} 用 {@code LIKE '%```quiz%'} 约等于判断有没有 quiz 围栏块。
+     * 这条近似刻意留着：精确解析 markdown 围栏的成本远高于收益（它只影响计划里多给 10 分钟），
+     * 漏判的后果只是少给 10 分钟。
+     *
+     * <p>{@code bodyChars} 用 {@code CHAR_LENGTH} 而不是 {@code LENGTH}：后者按字节算，
+     * 中文正文会虚高 3 倍，阅读时长直接顶到上限。
+     */
+    @Select("""
+            <script>
+            SELECT c.concept_id, e.id AS entry_id, e.title,
+                   CHAR_LENGTH(e.body) AS body_chars,
+                   (e.body LIKE '%```quiz%' OR e.body LIKE '%```challenge%') AS has_blocks
+            FROM knowledge_entry_concepts c
+            JOIN knowledge_entries e ON e.id = c.entry_id
+            WHERE e.status = 'published' AND c.concept_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+            ORDER BY c.concept_id, e.id
+            </script>
+            """)
+    List<CarrierRow> findPublishedCarriersByConceptIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 某人到期该复习的条目（WORK-029）。
+     *
+     * <p>只返回**已发布**的：下架条目不能作为计划项被点开。{@code concept_id} 取该条目挂的
+     * 最小概念 id——一条内容可能挂多个概念，复习项只需要能归到某处（可空）。
+     */
+    @Select("""
+            SELECT p.entry_id, e.title,
+                   (SELECT MIN(c.concept_id) FROM knowledge_entry_concepts c WHERE c.entry_id = e.id)
+                       AS concept_id
+            FROM learning_progress p
+            JOIN knowledge_entries e ON e.id = p.entry_id
+            WHERE p.user_id = #{userId} AND e.status = 'published'
+              AND p.review_due_at IS NOT NULL AND p.review_due_at <= UTC_TIMESTAMP(3)
+            ORDER BY p.review_due_at, p.entry_id
+            LIMIT #{limit}
+            """)
+    List<DueRow> findDueReviews(@Param("userId") long userId, @Param("limit") int limit);
+
+    /** 训练营用的载体行。`hasBlocks` 由 MySQL 的布尔结果映射。 */
+    record CarrierRow(long conceptId, long entryId, String title, int bodyChars, boolean hasBlocks) {
+    }
+
+    /** 到期复习行。`conceptId` 可空：条目可能没挂任何概念。 */
+    record DueRow(Long conceptId, long entryId, String title) {
+    }
+
     @Insert("""
             INSERT INTO knowledge_entries (category_id, sort_order, title, body, source_url, fingerprint,
                                            status, published_at)

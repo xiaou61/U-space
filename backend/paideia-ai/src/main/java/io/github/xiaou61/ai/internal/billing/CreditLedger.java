@@ -45,6 +45,14 @@ class CreditLedger {
      */
     static final String KIND_MCP_ASK = "MCP_ASK";
 
+    /**
+     * 训练营出卷与复测（WORK-029）。
+     *
+     * <p>与简历分开：一个营是"出诊断卷 + 出复测卷"两笔，用户要能单独回答
+     * "这个营到底花了多少"。两笔内部不再细分——它们在用户眼里是同一件事。
+     */
+    static final String KIND_CAMP = "CAMP";
+
     private Long id;
     private Long userId;
     private long delta;
