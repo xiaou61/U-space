@@ -137,3 +137,24 @@ test('首页有去处；笔记页与知识库页共用同一套外壳', async ({
   await expect(page.getByTestId('category-grid')).toBeVisible()
   await expect(shellFooter).toBeVisible()
 })
+
+/**
+ * 「八股文专区」入口（WORK-025 REQ-004，2026-10-21 补）。
+ *
+ * <p>此前后端抽题、分类、条目全在跑，学习者却没有可发现的路进去——**入口缺失是验收级缺口**，
+ * 而它一直没被发现，是因为 e2e 全靠直接跳 URL 掩盖了这一点。
+ *
+ * <p>断言分两段，第二段才是关键：卡片存在只说明渲染了，**点进去到达的是那个分类页**才说明
+ * id 解析对了。分类 id 在生产是 20、全新库是 900，写死任何一个都会让另一侧指向空分类。
+ */
+test('首页有「八股文专区」入口，点进去到达该分类', async ({ page }) => {
+  await signIn(page)
+
+  const entrance = page.getByTestId('home-entry-essay')
+  await expect(entrance).toBeVisible()
+  await entrance.click()
+
+  // 分类页（不是"全部条目"）：url 带 categories 段
+  await expect(page).toHaveURL(/#\/knowledge\/categories\/\d+$/)
+  await expect(page.getByText('八股文 · 面经真题')).toBeVisible()
+})
