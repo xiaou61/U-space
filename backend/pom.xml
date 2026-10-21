@@ -53,11 +53,11 @@
     -->
     <pdfbox.version>3.0.7</pdfbox.version>
     <!--
-      MCP SDK（WORK-019）。**不是新依赖**：agentscope-core 已经把 0.17.0 传进来，这里显式 pin
+      MCP SDK（WORK-019）。**不是新依赖**：agentscope-core 已经把 0.17.2 传进来，这里显式 pin
       同一版本，防止依赖调解把它换掉——换掉之后 AgentScope 的 MCP 客户端会在运行期
       NoSuchMethodError。升级要等 AgentScope 一起升。
     -->
-    <mcp-sdk.version>0.17.0</mcp-sdk.version>
+    <mcp-sdk.version>0.17.2</mcp-sdk.version>
   </properties>
 
   <dependencyManagement>
