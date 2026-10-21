@@ -62,8 +62,14 @@ export function KnowledgeEntryPage() {
   const sandbox = useMemo(
     () => ({
       ready: () => knowledge.sandboxStatus().then((status) => status.ready),
-      run: (input: { language: string; code: string; stdin?: string; caseId?: string }) =>
-        knowledge.runCode({ ...input, entryId }),
+      run: (input: {
+        language: string
+        code: string
+        stdin?: string
+        /** SQL 专用：数据集 key，内容在服务端（WORK-032）。 */
+        dataset?: string
+        caseId?: string
+      }) => knowledge.runCode({ ...input, entryId }),
       // 逐步录制（WORK-023）：只在条目页注入，管理端预览与笔记预览都没有它，
       // 所以那些地方的「逐步执行」按钮不会出现——与 `run` 同一条纪律。
       trace: (input: { language: string; code: string; stdin?: string; caseId?: string }) =>

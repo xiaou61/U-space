@@ -45,6 +45,11 @@ export interface SandboxStatus {
   languages: string[]
   dailyLimit: number
   usedToday: number
+  /** SQL 单独一档配额（WORK-032）：额度不与 Java/Python 共用。 */
+  sqlDailyLimit?: number
+  sqlUsedToday?: number
+  /** 已知数据集 key（SQL）。内容在服务端，客户端只拿 key。 */
+  datasets?: string[]
   reason: string | null
 }
 
@@ -52,6 +57,8 @@ export interface RunCodeInput {
   language: string
   code: string
   stdin?: string
+  /** SQL 专用：数据集 key，服务端按白名单取内容（WORK-032）。 */
+  dataset?: string
   entryId?: number
   caseId?: string
 }
@@ -70,6 +77,8 @@ export interface RunCodeResult {
   timedOut: boolean
   outOfMemory: boolean
   truncated: boolean
+  /** 结构化结果集（WORK-032）。只有 SQL 会返回；值一律是字符串。 */
+  tables?: { statementIndex: number; columns: string[]; rows: string[][] }[]
 }
 
 /**

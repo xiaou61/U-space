@@ -12,7 +12,8 @@
 CREATE TABLE customers (
   id   INT PRIMARY KEY,
   name VARCHAR(20) NOT NULL,
-  city VARCHAR(20) NOT NULL
+  city VARCHAR(20) NOT NULL,
+  note VARCHAR(20) NULL
 );
 CREATE TABLE orders (
   id          INT PRIMARY KEY,
@@ -28,10 +29,10 @@ CREATE TABLE order_items (
 );
 
 INSERT INTO customers VALUES
-  (1, 'dan',  '广州'),
-  (2, 'eve',  '广州'),
-  (3, 'fang', '深圳'),
-  (4, 'guo',  '深圳');
+  (1, 'dan',  '广州', NULL),
+  (2, 'eve',  '广州', '老客户'),
+  (3, 'fang', '深圳', ''),
+  (4, 'guo',  '深圳', NULL);
 
 INSERT INTO orders VALUES
   (20, 1, '2026-10-01 08:00:00'),

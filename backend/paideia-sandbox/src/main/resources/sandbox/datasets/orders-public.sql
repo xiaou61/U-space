@@ -8,7 +8,10 @@
 CREATE TABLE customers (
   id   INT PRIMARY KEY,
   name VARCHAR(20) NOT NULL,
-  city VARCHAR(20) NOT NULL
+  city VARCHAR(20) NOT NULL,
+  -- 可空列：第 02 课讲 NULL，数据集里必须有 NULL 才考得出区别。
+  -- cid 是 NULL（没有值），bob 是 ''（有值但长度为零）——两者在判题侧必须不同。
+  note VARCHAR(20) NULL
 );
 CREATE TABLE orders (
   id          INT PRIMARY KEY,
@@ -24,9 +27,9 @@ CREATE TABLE order_items (
 );
 
 INSERT INTO customers VALUES
-  (1, 'ann', '北京'),
-  (2, 'bob', '上海'),
-  (3, 'cid', '北京');
+  (1, 'ann', '北京', 'VIP'),
+  (2, 'bob', '上海', ''),
+  (3, 'cid', '北京', NULL);
 
 INSERT INTO orders VALUES
   (10, 1, '2026-10-20 10:00:00'),
