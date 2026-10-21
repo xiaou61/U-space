@@ -1,4 +1,10 @@
-import { createKnowledgeApi, createLearningApi, plainText, recentReading } from '@paideia/knowledge'
+import {
+  createKnowledgeApi,
+  createLearningApi,
+  plainText,
+  recentReading,
+  type CategoryNode,
+} from '@paideia/knowledge'
 import { configFor, createIdentityApi } from '@paideia/identity'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
@@ -6,6 +12,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRight,
   BookOpen,
+  FileQuestion,
   GraduationCap,
   Layers,
   MessagesSquare,
@@ -170,6 +177,30 @@ export function HomePage() {
     queryKey: ['knowledge-categories'],
     queryFn: () => knowledge.categories(),
   })
+  /**
+   * 「八股文专区」入口（WORK-025 REQ-004，2026-10-21 补）。
+   *
+   * <p>**按 slug 找分类，不写死 id**：生产库里它是 20，全新测试库上是 900
+   * （`db/devdata/V949` 为避开种子冲突把它挪走了）。写死任何一个都会在另一侧指向空分类。
+   *
+   * <p>找不到就**不渲染这张卡**——分类不存在时（比如刚部署、定时任务还没建）指向一个
+   * 空分类页比不显示入口更糟。
+   */
+  const essayCategory = useMemo(() => {
+    const find = (nodes: CategoryNode[]): CategoryNode | undefined => {
+      for (const node of nodes) {
+        if (node.slug === 'essay-java') {
+          return node
+        }
+        const hit = find(node.children)
+        if (hit !== undefined) {
+          return hit
+        }
+      }
+      return undefined
+    }
+    return find(categories.data ?? [])
+  }, [categories.data])
   const assessments = useQuery({
     queryKey: ['my-assessments'],
     queryFn: () => knowledge.myAssessments(),
@@ -462,6 +493,29 @@ export function HomePage() {
               </CardContent>
             </Card>
           ))}
+          {/*
+            八股文专区（WORK-025 REQ-004）。它是知识库里的一个分类，不是独立页面，
+            所以不进 `QUICK_LINKS`（那张表要求静态 `to`，而这里的 id 必须运行时解析）。
+          */}
+          {essayCategory === undefined ? null : (
+            <Card className="hover:shadow-card transition-shadow">
+              <CardContent className="pt-6">
+                <span className="tile-surface border-border mb-3 flex size-10 items-center justify-center rounded-lg border">
+                  <FileQuestion className="text-primary size-5" />
+                </span>
+                <Link
+                  to={`/knowledge/categories/${essayCategory.id}`}
+                  data-testid="home-entry-essay"
+                  className="block font-medium underline-offset-4 hover:underline"
+                >
+                  八股文专区
+                </Link>
+                <p className="text-muted-foreground mt-1.5 text-sm leading-6">
+                  每天从面经里抽题，AI 逐题解析，面试前刷一遍。
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </Section>
     </AppShell>
