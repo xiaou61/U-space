@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +85,10 @@ class AgentScopeConversation implements AssistantConversation {
      * 不是功能上限——真出现"4 轮不够"的实测再提成配置。
      */
     private static final int MAX_TOOL_ROUNDS = 4;
+
+    /** 工具入参与返回的截断上限（字符）。超限处标注，不静默截。 */
+    private static final int ARGS_LIMIT = 1000;
+    private static final int RESULT_LIMIT = 500;
     private static final Logger log = LoggerFactory.getLogger(AgentScopeConversation.class);
 
     private final ConversationProperties properties;
@@ -209,6 +214,22 @@ class AgentScopeConversation implements AssistantConversation {
                 .httpTransport(transport)
                 .generateOptions(options)
                 .build();
+    }
+
+    /**
+     * 截断到上限并在末尾标注；未超限原样返回。
+     *
+     * <p>超限时**标明原长**而不是静默切：读的人要能判断"这是不是全部内容"——
+     * 一段被悄悄切掉的工具返回，会让人以为是工具本身只返回了那么多。
+     */
+    static String truncate(String value, int limit) {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= limit) {
+            return value;
+        }
+        return value.substring(0, limit) + "…（已截断，原长 " + value.length() + " 字符）";
     }
 
     /** 两段用量相加。任一段缺失（上游没给）时按"另一段"计，两段都缺才是 null。 */
@@ -360,19 +381,32 @@ class AgentScopeConversation implements AssistantConversation {
             // 读-改-写会撞号（实测曾让 5 轮的 seq 全是 1）。
             int seq = turn.nextSeq();
             RunRecorder.StepScope step = turn.run.step(SpanSpec.llm(seq));
+            long roundStart = System.nanoTime();
             StringBuilder text = new StringBuilder();
+            StringBuilder thinking = new StringBuilder();
             AtomicReference<ChatUsage> usage = new AtomicReference<>();
+            AtomicInteger ttft = new AtomicInteger(-1);
             boolean[] sawToolCall = {false};
 
             // 这一轮可见的工具**在这里重算**：上一轮 find_tools 可能刚发现新的
+            List<ToolSchema> visible = turn.visibleSchemas();
             ModelCallInput narrowed = new ModelCallInput(
-                    input.messages(), turn.visibleSchemas(), input.options(), input.model());
+                    input.messages(), visible, input.options(), input.model());
+
+            // **请求体在这里快照**：入参就是"实际要发的东西"，序列化层做的裁剪与注入都已在内。
+            // 只取安全字段（`PayloadJson` 白名单），凭据不进库。
+            String requestBody = PayloadJson.request(input.messages(), visible, input.options());
 
             return next.apply(narrowed)
                     .doOnNext(event -> {
                         if (event instanceof TextBlockDeltaEvent delta) {
+                            if (ttft.get() < 0) {
+                                ttft.set((int) ((System.nanoTime() - roundStart) / 1_000_000));
+                            }
                             text.append(delta.getDelta());
-                        } else if (event instanceof ToolCallStartEvent) {
+                        } else if (event instanceof ThinkingBlockDeltaEvent delta) {
+                            thinking.append(delta.getDelta());
+                        } else if (event instanceof ToolCallStartEvent start) {
                             sawToolCall[0] = true;
                         } else if (event instanceof ModelCallEndEvent end) {
                             usage.set(end.getUsage());
@@ -382,8 +416,10 @@ class AgentScopeConversation implements AssistantConversation {
                     // doFinally 由终止信号**之后**异步触发，此时 blockLast() 可能已经返回、
                     // listener.onCompleted() 也已经调过——用户会看到一条空回答。
                     // doOnComplete/doOnError 在信号同步传播路径上，早于外部订阅者看到终止。
-                    .doOnComplete(() -> finishRound(step, usage.get(), text.toString(), sawToolCall[0], null))
-                    .doOnError(error -> finishRound(step, usage.get(), text.toString(), sawToolCall[0], error))
+                    .doOnComplete(() -> finishRound(step, usage.get(), text.toString(), thinking.toString(),
+                            requestBody, ttft.get(), sawToolCall[0], null))
+                    .doOnError(error -> finishRound(step, usage.get(), text.toString(), thinking.toString(),
+                            requestBody, ttft.get(), sawToolCall[0], error))
                     .doOnCancel(() -> {
                         // 主动取消（前端断开）：记成中断，不推正文
                         ChatUsage used = usage.get();
@@ -395,11 +431,15 @@ class AgentScopeConversation implements AssistantConversation {
                     });
         }
 
-        /** 一轮收尾：记 tokens、判成败、最终轮推正文。只执行一次。 */
-        private void finishRound(RunRecorder.StepScope step, ChatUsage used, String text,
+        /** 一轮收尾：记 tokens / 首字 / 完整载荷、判成败、最终轮推正文。只执行一次。 */
+        private void finishRound(RunRecorder.StepScope step, ChatUsage used, String text, String thinking,
+                                 String requestBody, int ttft,
                                  boolean sawToolCall, Throwable error) {
             if (used != null) {
                 step.tokens(used.getInputTokens(), used.getOutputTokens(), used.getCachedTokens());
+            }
+            if (ttft >= 0) {
+                step.ttftMs(ttft);
             }
             if (error != null) {
                 step.failed("upstream_error");
@@ -416,6 +456,8 @@ class AgentScopeConversation implements AssistantConversation {
                     turn.listener.onContent(text);
                 }
             }
+            // 完整载荷：失败与成功都留（失败的更要看"它到底收到了什么"）
+            step.payload(requestBody, PayloadJson.response(text, thinking, null));
             step.close();
         }
     }
@@ -458,6 +500,12 @@ class AgentScopeConversation implements AssistantConversation {
             try (RunRecorder.StepScope step = turn.run.step(SpanSpec.tool(getName()))) {
                 AgentToolBridge.Outcome outcome = tools.run(
                         turn.request.userId(), turn.request.harness(), getName(), param.getInput());
+                // 入参与返回记进这一步的 attrs（WORK-030 阶段 B）：排查"它为什么答错"时，
+                // 光知道"工具成功了"没有用，得知道它收到什么、回了什么。
+                // **截断在写入前做**：一次笔记全文或一段记忆就是几十 KB，attrs 是 JSON 列，
+                // 写大了会拖慢整张步骤表。
+                step.attribute("toolArgs", truncate(String.valueOf(param.getInput()), ARGS_LIMIT));
+                step.attribute("toolResult", truncate(outcome.text(), RESULT_LIMIT));
                 if (outcome.error()) {
                     step.failed("tool_error");
                 } else {

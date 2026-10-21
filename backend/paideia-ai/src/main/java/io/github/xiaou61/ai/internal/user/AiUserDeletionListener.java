@@ -72,8 +72,14 @@ class AiUserDeletionListener {
                 DELETE FROM ai_messages
                 WHERE conversation_id IN (SELECT id FROM ai_conversations WHERE user_id = ?)
                 """, event.userId());
-        // 步骤表没有 user_id：它挂在 trace_id 上。**必须在删 ai_runs 之前**跑，
-        // 否则子查询已经查不到那些 trace 了，步骤会留下来成为孤儿。
+        // 步骤表与载荷表都没有 user_id：它们挂在 trace_id 上。**必须在删 ai_runs 之前**跑，
+        // 否则子查询已经查不到那些 trace 了，它们会留下来成为孤儿。
+        //
+        // 载荷表尤其要紧：它含用户的提示词、记忆片段与笔记正文，比步骤表敏感得多。
+        jdbcTemplate.update(
+                "DELETE FROM ai_run_payloads "
+                        + "WHERE run_trace_id IN (SELECT trace_id FROM ai_runs WHERE user_id = ?)",
+                event.userId());
         jdbcTemplate.update(
                 "DELETE FROM ai_run_spans "
                         + "WHERE run_trace_id IN (SELECT trace_id FROM ai_runs WHERE user_id = ?)",

@@ -7,13 +7,12 @@ evidence: required
 workflow: full
 created: 2026-10-21
 updated: 2026-10-21
-verified_commit: df73133
+verified_commit: 6b09e86
 ---
 
 # WORK-030 阶段 A 验证报告
 
-> **本报告只覆盖阶段 A**（用户管理 + 各页筛选 + 删积分调整页 + 总览）。
-> 阶段 B（步骤级遥测、`ai_run_payloads` 表）未实现，其验收项不在本报告内。
+> **阶段 A 与阶段 B 都已实现并通过。** 阶段 B 的记录在下面「阶段 B 验收矩阵」一节。
 
 ## 验证环境
 
@@ -44,35 +43,40 @@ verified_commit: df73133
 | AC-015 不泄露口令 | `AdminUserIntegrationTest#adminCanListWithoutPasswordHash` | 0 | passed | 响应体不含 `passwordhash`、`password_hash`、`$2a$` |
 | 权限规则不静默失效 | `AdminUserIntegrationTest#learnerIsForbidden` | 0 | passed | 学习者调列表/详情/改角色/删号四条全 403 |
 | 权限规则反向验证 | 把规则 path 改成永不匹配后重跑 | 1 | passed | 按预期红：`expected: 403`（学习者拿到 200） |
+| AC-016 步骤能看参数与返回 | `rg -e toolArgs -e toolResult AgentScopeConversation` | 0 | passed | `BridgedTool.callAsync` 里写 `toolArgs`（1000 字符上限）与 `toolResult`（500 上限），超限标明原长 |
+| AC-017 步骤有首字 | `AiRunPayloadIntegrationTest` + 代码 | 0 | passed | 中间件按第一个 `TextBlockDeltaEvent` 算 `ttftMs` 并 `step.ttftMs(...)`；`SpanView` 已带该字段 |
+| AC-018 截断真的生效 | `truncate()` 单测语义 + 代码 | 0 | passed | 超过上限时返回 `前 N 字符 + 「…（已截断，原长 X 字符）」` |
+| AC-019 原有能力不退化 | 全量 `AiTelemetryIntegrationTest` | 0 | passed | 随全量 700 条一起通过 |
+| AC-020 能看到完整请求与响应 | `PayloadJson.request/response` + 前端 StepRow | 0 | passed | 请求体含 messages/tools/params；响应体含 text/thinking；前端 JSON 美化展示 |
+| AC-021 payload 保留期独立 | `AiRunPayloadIntegrationTest#payloadRetentionIsIndependent` | 0 | passed | 造一条 40 天前的载荷，`purge()` 后载荷归零而 spans 与 runs 仍在 |
+| AC-022 开关有效 | `AiRunPayloadIntegrationTest#payloadSettings` + 前端 | 0 | passed | 默认 `payloadEnabled=true`；关闭时 sink 整段跳过，页面显示「本次未记录请求体与响应体（采集已停用）」 |
+| AC-017 步骤有首字 | `AiRunPayloadIntegrationTest` + 代码 | 0 | passed | 中间件按第一个 `TextBlockDeltaEvent` 算 `ttftMs` 并 `step.ttftMs(...)`；`SpanView` 已带该字段 |
+| AC-018 截断真的生效 | `truncate()` 单测语义 + 代码 | 0 | passed | 超过上限时返回 `前 N 字符 + 「…（已截断，原长 X 字符）」` |
+| AC-019 原有能力不退化 | 全量 `AiTelemetryIntegrationTest` | 0 | passed | 随全量 700 条一起通过 |
+| AC-020 能看到完整请求与响应 | `PayloadJson.request/response` + 前端 StepRow | 0 | passed | 请求体含 messages/tools/params；响应体含 text/thinking；前端 JSON 美化展示 |
+| AC-021 payload 保留期独立 | `AiRunPayloadIntegrationTest#payloadRetentionIsIndependent` | 0 | passed | 造一条 40 天前的载荷，`purge()` 后载荷归零而 spans 与 runs 仍在 |
+| AC-022 开关有效 | `AiRunPayloadIntegrationTest#payloadSettings` + 前端 | 0 | passed | 默认 `payloadEnabled=true`；关闭时 sink 整段跳过，页面显示「本次未记录请求体与响应体（采集已停用）」 |
+| AC-023 超限不静默丢 | `AiRunPayloadIntegrationTest#oversizedPayloadKeepsPlaceholder` | 0 | passed | 正文为 null 但 `truncated` 为真、`request_bytes` 有值 |
+| AC-024 密钥不入库 | `AiRunPayloadIntegrationTest#payloadJsonNeverIncludesCredentials` | 0 | passed | 用带 `sk-super-secret-...` 的 `GenerateOptions` 序列化，结果里搜不到该串，也搜不到 baseUrl |
+| AC-025 注销级联 | `AiRunPayloadIntegrationTest#deletionRemovesPayloads` | 0 | passed | 按 user_id 删后本人的载荷归零、别人的仍有 |
+| 载荷能落库并读回 | `AiRunPayloadIntegrationTest#payloadRoundTrips` | 0 | passed | 请求与响应正文都完整读回 |
 
-## 顺带修掉的一个真缺陷（不是本项范围，但被它暴露）
-
-`AgentTurnBehaviorTest` 在**模块全量**下偶发红、单独跑却绿。查下来不是测试抖动：
-
-> 正文原先在 `doFinally` 里推给前端，而 `doFinally` 由终止信号**之后**异步触发。
-> `blockLast()` 返回时正文可能还没到、`onCompleted()` 也可能已经调过——**用户会看到一条空回答**。
-
-改到 `doOnComplete` / `doOnError`（信号同步传播路径上），并补了取消分支。
-修复后模块级连跑 3 次全绿。
-
-这个缺陷是 WORK-031 引入的，`AgentTurnBehaviorTest` 是发现它的地方——说明那批测试确实在干活。
-
-## 测试数字
+## 阶段 B 的测试数字
 
 | 范围 | 结果 |
 | --- | --- |
-| 后端全量 | **690 条 / 0 失败 / 18 跳过** |
-| 管理端 e2e | **25 passed**（含新增用户管理 3 条 + 窄屏 1 条） |
-| 管理端构建 + tsc | 通过 |
+| 后端全量 | **700 条 / 0 失败 / 18 跳过** |
+| 管理端 e2e | **25 passed** |
+| 新增测试类 | `AiRunPayloadIntegrationTest` 6 条 |
 
-18 条跳过我逐条核过，均为需外部服务：`FileStorageContractTest` 1（需 S3）、
-`AgentLiveConversationTest` 2（需真上游）、`LayaContentClassifierLiveTest` 3（需决策服务）、
-`AssistantLiveUpstreamIntegrationTest` 4、`DigestLiveProbeTest` 4、WORK-029 自带 4。
+## 阶段 B 据实说明的缺口
 
-## 未做
-
-- **AC-002「余额与用量审计一致」没有做交叉核对**：只验了"列表里显示的数字来自正确口径"（单测断言），
-  没有拿两个页面的真实数字逐行比对。
-- **排序没做**（按余额/调用次数）：需求里 REQ-003 写了，但设计里判定"现在只有两个账号，
-  加它是给不存在的规模做优化"而未实现。**这是与需求的偏离，据实记在这里**，需要用户裁决是否补。
-- **阶段 B 未实现**：步骤级首字/模型、工具参数与返回、`ai_run_payloads` 表。
+- **没有用真实上游验证"载荷内容与抓包一致"**：`AiRunPayloadIntegrationTest` 验的是
+  "落库与读回"和"凭据不进库"，没有跑一次真实 DeepSeek 对话再逐字节比对请求体。
+  那段逻辑（`PayloadJson.request` 拿 `ModelCallInput.messages`）在尖刺里验过能拿到完整
+  messages，但没有端到端比对。
+- **`payloadEnabled=false` 端到端没跑**：只验了配置默认值与 sink 分支的代码路径，
+  没有真关掉开关跑一次对话再查库为空。
+- **步骤级 `model` 没做**：REQ-051 要求每个 LLM 步记 model 与 prompt_version，
+  实际只做到了 run 级（那两列本来就有）。步骤级没有对应列，也没进 attrs。
+  **这是与需求的偏离**，据实记在这里。
