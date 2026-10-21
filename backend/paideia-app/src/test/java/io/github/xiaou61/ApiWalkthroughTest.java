@@ -23,6 +23,8 @@ import io.github.xiaou61.ai.ResumeProposer;
 import io.github.xiaou61.ai.SummaryCard;
 import io.github.xiaou61.ai.TokenUsage;
 import io.github.xiaou61.ai.internal.billing.CreditService;
+import io.github.xiaou61.ai.internal.camp.CampItemGenerator;
+import io.github.xiaou61.ai.internal.camp.ItemValidator;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -121,6 +123,10 @@ class ApiWalkthroughTest {
 
     @MockitoBean
     ResumeProposer proposer;
+
+    /** 训练营出题（WORK-029）：同样桩住，自查只验端点可达与契约形状。 */
+    @MockitoBean
+    CampItemGenerator campGenerator;
 
     /** 让 SSE 的产出在请求线程里同步跑完（理由见 {@code AssistantConversationIntegrationTest}）。 */
     @MockitoBean(name = "applicationTaskExecutor")
@@ -467,6 +473,57 @@ class ApiWalkthroughTest {
         call("删版本", "DELETE", "/api/v1/ai/versions/" + versionId, bearer, null);
         call("删简历", "DELETE", "/api/v1/ai/resumes/" + resumeId, bearer, null);
         stepOk("回滚后的 revision=" + revisionAfterRestore + "（保存与回滚都各推进一次）");
+
+        // ---- 训练营（WORK-029）----
+        when(campGenerator.diagnostic(anyString(), anyString(), anyInt(), any()))
+                .thenReturn(new CampItemGenerator.Generated(
+                        campItems("集合", "并发"), "{}", new TokenUsage(10, 20, 30)));
+        // 复测卷的题干必须与诊断卷不同，否则会被同卷去重全过滤掉（`kept.isEmpty()` 直接失败）
+        when(campGenerator.retest(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(new CampItemGenerator.Generated(
+                        campItems("集合", "并发").stream()
+                                .map(item -> new ItemValidator.RawItem(item.topic(), item.conceptName(),
+                                        item.difficulty(), "复测自查：" + item.stem(), item.options(),
+                                        item.answerIndex(), item.explanation()))
+                                .toList(),
+                        "{}", new TokenUsage(10, 20, 30)));
+        // 上面那份自查简历已经被删掉，训练营要自己再建一份带技能区的
+        MvcResult campResume = call("训练营用的简历", "POST", "/api/v1/ai/resumes", bearer,
+                json(Map.of("title", "训练营自查简历", "plainText", "张三 Java MySQL",
+                        "data", Map.of("basics", Map.of("name", "张三", "phone", "13800001111",
+                                        "email", "z@example.test", "city", "杭州", "links", List.of()),
+                                "intent", Map.of("role", "Java 后端", "city", "杭州", "availability", ""),
+                                "education", List.of(), "work", List.of(), "projects", List.of(),
+                                "skills", List.of(Map.of("group", "技术栈",
+                                        "items", List.of("Java", "MySQL"))),
+                                "awards", List.of(), "selfEvaluation", ""))), 200);
+        long resumeIdForCamp = idAt(campResume);
+        MvcResult campCreated = call("开训练营（桩）", "POST", "/api/v1/ai/camps", bearer,
+                json(Map.of("resumeDocumentId", resumeIdForCamp, "days", 3)), 200);
+        long campId = idAt(campCreated);
+        call("我的训练营", "GET", "/api/v1/ai/camps", bearer, null);
+        call("营概览", "GET", "/api/v1/ai/camps/" + campId, bearer, null);
+        MvcResult campItemsResult = call("取诊断卷", "GET",
+                "/api/v1/ai/camps/" + campId + "/items?form=diagnostic", bearer, null, 200);
+        java.util.List<Integer> itemIds = JsonPath.read(body(campItemsResult), "$.data[*].id");
+        call("交诊断卷", "POST", "/api/v1/ai/camps/" + campId + "/submit", bearer,
+                json(Map.of("form", "diagnostic", "answers",
+                        itemIds.stream().map(id -> Map.of("itemId", id, "choice", 1)).toList())), 200);
+        call("诊断结果", "GET", "/api/v1/ai/camps/" + campId + "/result?form=diagnostic", bearer, null);
+        call("出计划", "POST", "/api/v1/ai/camps/" + campId + "/plan", bearer, null, 200);
+        MvcResult campPlan = call("读计划", "GET", "/api/v1/ai/camps/" + campId + "/plan", bearer, null, 200);
+        long campTaskId = longAt(campPlan, "$.data.dayPlans[0].tasks[0].id");
+        call("勾选任务", "PATCH", "/api/v1/ai/camps/" + campId + "/tasks/" + campTaskId, bearer,
+                json(Map.of("done", true)));
+        call("复测出卷（桩）", "POST", "/api/v1/ai/camps/" + campId + "/retest", bearer, null, 200);
+        MvcResult campRetest = call("取复测卷", "GET",
+                "/api/v1/ai/camps/" + campId + "/items?form=retest", bearer, null, 200);
+        java.util.List<Integer> retestIds = JsonPath.read(body(campRetest), "$.data[*].id");
+        call("交复测卷", "POST", "/api/v1/ai/camps/" + campId + "/submit", bearer,
+                json(Map.of("form", "retest", "answers",
+                        retestIds.stream().map(id -> Map.of("itemId", id, "choice", 1)).toList())), 200);
+        call("复测结果（并排）", "GET", "/api/v1/ai/camps/" + campId + "/result?form=retest", bearer, null);
+        call("删营", "DELETE", "/api/v1/ai/camps/" + campId, bearer, null);
 
         call("管理端用量流水", "GET", "/api/v1/ai/admin/credits/audit", adminToken(), null);
         call("管理端查某人积分", "GET", "/api/v1/ai/admin/credits/" + userId, adminToken(), null);
@@ -819,6 +876,20 @@ class ApiWalkthroughTest {
             + java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 250);
 
     // ---- JSON 辅助 ----
+
+    /** 训练营自查用的两主题各 2 题（共 4 题，够走完判分与计划两条链）。 */
+    private static java.util.List<ItemValidator.RawItem> campItems(String first, String second) {
+        java.util.List<ItemValidator.RawItem> list = new java.util.ArrayList<>();
+        for (String topic : java.util.List.of(first, second)) {
+            for (int index = 0; index < 2; index++) {
+                list.add(new ItemValidator.RawItem(topic, "", "medium",
+                        topic + " 第 " + index + " 道自查题：这个技术点在什么场景下会出问题？",
+                        java.util.List.of("并发扩容时", "冷启动时", "序列化时", "编译阶段"), 0,
+                        "并发扩容时是这道题的核心考点，选项一为正解。"));
+            }
+        }
+        return list;
+    }
 
     private static String json(Map<String, Object> values) throws Exception {
         return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(values);

@@ -131,7 +131,8 @@ class PlanBuilderTest {
                 .flatMap(day -> day.tasks().stream())
                 .map(PlanBuilder.Task::topic)
                 .toList();
-        assertThat(order).containsExactly("索引", "事务");
+        // 只校验前两项的顺序：第 2、3 天会用同一条缺口项补空天，尾部内容不属于这条断言
+        assertThat(order.subList(0, 2)).containsExactly("索引", "事务");
 
         // 前置不在 weak 里 → 不产生它的任务
         PlanBuilder.Plan withoutPrerequisite = PlanBuilder.build(
@@ -139,7 +140,8 @@ class PlanBuilderTest {
                 Map.of(), List.of(), 3, 90);
         assertThat(withoutPrerequisite.days().stream()
                 .flatMap(day -> day.tasks().stream())
-                .map(PlanBuilder.Task::topic)).containsExactly("事务");
+                .map(PlanBuilder.Task::topic)
+                .distinct()).containsExactly("事务");
     }
 
     @Test

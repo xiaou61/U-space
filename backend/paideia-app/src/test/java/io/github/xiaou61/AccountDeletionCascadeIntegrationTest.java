@@ -71,6 +71,12 @@ class AccountDeletionCascadeIntegrationTest {
             {"resume_versions", "user_id"},
             {"resume_edit_history", "user_id"},
             {"resume_documents", "user_id"},
+            // 训练营（WORK-029）：五张表，子表在前
+            {"camp_tasks", "user_id"},
+            {"camp_plans", "user_id"},
+            {"camp_attempts", "user_id"},
+            {"camp_items", "user_id"},
+            {"camp_programs", "user_id"},
             // MCP 外部接入凭据（WORK-019）：留下一条就是"这个人还有一把能用的钥匙"
             {"mcp_access_tokens", "user_id"},
             // 知识库自评（"我对哪些条目懂／不懂"）：本项目第一张用户私有业务数据表
@@ -257,6 +263,41 @@ class AccountDeletionCascadeIntegrationTest {
                 VALUES (?, ?, 1, 'work[0].bullets[0]', 'bullet', '原文', '改后', 'rewrite', '依据',
                         1, 'passed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
                 """, versionId, owner);
+        // 训练营五张表（WORK-029）：逐表真种一行。只种营本身会让另外四张的断言
+        // 变成"断言一个空表"，等于没验。
+        jdbcTemplate.update("""
+                INSERT INTO camp_programs (user_id, resume_document_id, resume_title, days, item_count,
+                                           dropped_count, created_at, updated_at)
+                VALUES (?, ?, '主简历', 3, 1, 0, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+                """, owner, resumeId);
+        long campId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM camp_programs WHERE user_id = ?", Long.class, owner);
+        jdbcTemplate.update("""
+                INSERT INTO camp_items (program_id, user_id, form, seq, topic, concept_id, difficulty,
+                                        stem, options_json, answer_index, explanation, fingerprint, created_at)
+                VALUES (?, ?, 'diagnostic', 1, '集合', NULL, 'medium',
+                        '这道题用来验证注销级联', '["A项","B项","C项","D项"]', 0, '解析内容足够长。',
+                        REPEAT('d', 64), UTC_TIMESTAMP(3))
+                """, campId, owner);
+        long campItemId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM camp_items WHERE program_id = ?", Long.class, campId);
+        jdbcTemplate.update("""
+                INSERT INTO camp_attempts (program_id, user_id, item_id, choice, correct, created_at)
+                VALUES (?, ?, ?, 0, 1, UTC_TIMESTAMP(3))
+                """, campId, owner, campItemId);
+        jdbcTemplate.update("""
+                INSERT INTO camp_plans (program_id, user_id, days, budget_minutes, weak_json,
+                                        unscheduled_json, created_at)
+                VALUES (?, ?, 3, 90, '[]', '[]', UTC_TIMESTAMP(3))
+                """, campId, owner);
+        long campPlanId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM camp_plans WHERE program_id = ?", Long.class, campId);
+        jdbcTemplate.update("""
+                INSERT INTO camp_tasks (plan_id, program_id, user_id, day_no, seq, kind, entry_id,
+                                        concept_id, topic, title, minutes, why, created_at)
+                VALUES (?, ?, ?, 1, 1, 'gap', NULL, NULL, '集合', '集合', 15, '没有可读内容', UTC_TIMESTAMP(3))
+                """, campPlanId, campId, owner);
+
         // MCP 凭据（WORK-019）：必须真种一条，否则新加的断言只会命中空表。
         jdbcTemplate.update("""
                 INSERT INTO mcp_access_tokens (user_id, name, token_prefix, token_hash, scopes, expires_at, created_at)

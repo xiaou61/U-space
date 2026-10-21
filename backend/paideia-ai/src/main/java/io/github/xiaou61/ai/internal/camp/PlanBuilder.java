@@ -292,31 +292,41 @@ public final class PlanBuilder {
     }
 
     /**
-     * 用前面天里已出现过的条目补足空天。
+     * 用前面天里已出现过的项补足空天。
      *
      * <p>只在"候选任务本来就少于天数"时走到：此时不补就是空日历，而空日历会被读成
-     * "这个计划没生成好"。补的是一条复习项，指向同一个真实条目。
+     * "这个计划没生成好"（AC-010 要求天天有项）。
+     *
+     * <p>优先补一条**回看真实条目**的复习项；如果前面的项全是缺口项（那门课平台还没有内容），
+     * 就再排一次同一个缺口项，理由改成"可以让助手讲一讲"。两种情况都不编造标题与链接。
      */
     private static void fillWithReview(List<List<Candidate>> bins) {
         for (int day = 0; day < bins.size(); day++) {
             if (!bins.get(day).isEmpty()) {
                 continue;
             }
-            Candidate source = null;
-            for (int earlier = day - 1; earlier >= 0 && source == null; earlier--) {
+            Candidate withEntry = null;
+            Candidate anyEarlier = null;
+            for (int earlier = day - 1; earlier >= 0 && withEntry == null; earlier--) {
                 for (Candidate candidate : bins.get(earlier)) {
+                    if (anyEarlier == null) {
+                        anyEarlier = candidate;
+                    }
                     if (candidate.entryId() != null) {
-                        source = candidate;
+                        withEntry = candidate;
                         break;
                     }
                 }
             }
-            if (source == null) {
-                continue;
+            if (withEntry != null) {
+                bins.get(day).add(new Candidate(KIND_REVIEW, withEntry.topic(), withEntry.title(),
+                        ReadingMinutes.REVIEW, "昨天读过的内容今天再回看一遍", withEntry.entryId(),
+                        withEntry.conceptId(), false));
+            } else if (anyEarlier != null) {
+                bins.get(day).add(new Candidate(KIND_GAP, anyEarlier.topic(), anyEarlier.title(),
+                        ReadingMinutes.GAP, "这一概念没有可读内容，可以让助手讲一讲",
+                        null, anyEarlier.conceptId(), false));
             }
-            bins.get(day).add(new Candidate(KIND_REVIEW, source.topic(), source.title(),
-                    ReadingMinutes.REVIEW, "昨天读过的内容今天再回看一遍", source.entryId(),
-                    source.conceptId(), false));
         }
     }
 

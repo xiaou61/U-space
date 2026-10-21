@@ -33,17 +33,17 @@ public final class CampGenerationException extends RuntimeException {
         return kind;
     }
 
-    static CampGenerationException emptyResponse() {
+    public static CampGenerationException emptyResponse() {
         return new CampGenerationException(Kind.EMPTY_RESPONSE,
                 "模型返回了空内容，本次生成失败，未扣积分");
     }
 
-    static CampGenerationException badShape(String detail) {
+    public static CampGenerationException badShape(String detail) {
         return new CampGenerationException(Kind.BAD_SHAPE,
                 "模型输出不符合题目格式（" + detail + "），本次生成失败，未扣积分");
     }
 
-    static CampGenerationException noValidItem() {
+    public static CampGenerationException noValidItem() {
         return new CampGenerationException(Kind.NO_VALID_ITEM,
                 "这次一道有效的题都没生成出来，本次生成失败，未扣积分");
     }
