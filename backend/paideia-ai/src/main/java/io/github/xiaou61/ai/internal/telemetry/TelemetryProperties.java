@@ -30,6 +30,28 @@ public class TelemetryProperties {
     /** 单次批处理的条数上限。 */
     private int batchSize = 50;
 
+    /**
+     * 完整载荷（请求体 + 响应体）的开关（WORK-030 阶段 B）。
+     *
+     * <p>默认**开**：这一项存在的目的是排查"模型为什么这样答"，关掉就看不到。
+     * 关掉时不写库，管理端显示「已停用」而不是空白（REQ-064）。
+     */
+    private boolean payloadEnabled = true;
+
+    /**
+     * 载荷的保留天数（U-20：30 天）。**与 {@link #retentionDays} 独立**：
+     * spans 是账目级（90 天），payload 是诊断级（30 天）且体积大得多。
+     *
+     * <p>量级估算：一天 100 次调用 × 每次 5 轮 × 平均 20KB ≈ 10MB/天，30 天约 300MB。
+     */
+    private int payloadRetentionDays = 30;
+
+    /**
+     * 单条载荷的体积上限（字节）。超限时**存占位记录而不是丢弃**（REQ-066）——
+     * 静默丢会让"这一轮为什么没有请求体"变成一个新的谜。
+     */
+    private int payloadMaxBytes = 1_048_576;
+
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public double getSampling() { return sampling; }
@@ -42,4 +64,10 @@ public class TelemetryProperties {
     public void setStuckAfterHours(int stuckAfterHours) { this.stuckAfterHours = stuckAfterHours; }
     public int getBatchSize() { return batchSize; }
     public void setBatchSize(int batchSize) { this.batchSize = batchSize; }
+    public boolean isPayloadEnabled() { return payloadEnabled; }
+    public void setPayloadEnabled(boolean payloadEnabled) { this.payloadEnabled = payloadEnabled; }
+    public int getPayloadRetentionDays() { return payloadRetentionDays; }
+    public void setPayloadRetentionDays(int payloadRetentionDays) { this.payloadRetentionDays = payloadRetentionDays; }
+    public int getPayloadMaxBytes() { return payloadMaxBytes; }
+    public void setPayloadMaxBytes(int payloadMaxBytes) { this.payloadMaxBytes = payloadMaxBytes; }
 }

@@ -29,15 +29,24 @@ final class DefaultRunRecorder implements RunRecorder {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRunRecorder.class);
 
-    /** 只接受这几个冷字段键，见 design「attrs 的键（本期）」。 */
+    /**
+     * 只接受这几个键，见 design「attrs 的键」。
+     *
+     * <p>白名单是**刻意的**：不拦的话总有一天有人把提示词或用户输入整段塞进来。
+     * `toolArgs` / `toolResult` 是 WORK-030 阶段 B 加的，**调用方负责截断**——
+     * 采集器不替它判长度，因为"截多长"是业务判断（1000 / 500 字符），不是采集器的职责。
+     */
     private static final Set<String> ALLOWED_ATTRS = Set.of(
             "httpTraceId", "historyMsgs", "memoryHits", "entryChars",
-            "learningSummaryChars", "queued", "reqChars", "respChars");
+            "learningSummaryChars", "queued", "reqChars", "respChars",
+            "toolArgs", "toolResult");
 
     private final RunWriteQueue queue;
+    private final TelemetryProperties properties;
 
-    DefaultRunRecorder(RunWriteQueue queue) {
+    DefaultRunRecorder(RunWriteQueue queue, TelemetryProperties properties) {
         this.queue = queue;
+        this.properties = properties;
     }
 
     @Override
@@ -48,7 +57,7 @@ final class DefaultRunRecorder implements RunRecorder {
     @Override
     public RunScope begin(RunSpec spec) {
         String traceId = newTraceId();
-        RunScopeImpl scope = new RunScopeImpl(traceId, spec, queue);
+        RunScopeImpl scope = new RunScopeImpl(traceId, spec, queue, properties);
         // **立刻投一条 running**：进程崩溃 / 线程卡死的那一轮必须留得下来，
         // 而那种行恰好是最该查的。只在结束时写的话，这三类故障一行都不会有。
         queue.offer(new RunPayload.RunBegin(scope.runningSnapshot()));
@@ -66,9 +75,11 @@ final class DefaultRunRecorder implements RunRecorder {
         private final String traceId;
         private final RunSpec spec;
         private final RunWriteQueue queue;
+        private final TelemetryProperties properties;
         private final Instant startedAt = Instant.now();
         private final Map<String, Object> attrs = new LinkedHashMap<>();
         private final List<SpanRecord> spans = new ArrayList<>();
+        private final List<PayloadRecord> payloads = new ArrayList<>();
         private final AtomicBoolean finished = new AtomicBoolean(false);
         private final AtomicInteger tokens = new AtomicInteger();
         private final AtomicInteger llmRounds = new AtomicInteger();
@@ -80,10 +91,11 @@ final class DefaultRunRecorder implements RunRecorder {
         private volatile Integer ttftMs;
         private volatile int credits;
 
-        RunScopeImpl(String traceId, RunSpec spec, RunWriteQueue queue) {
+        RunScopeImpl(String traceId, RunSpec spec, RunWriteQueue queue, TelemetryProperties properties) {
             this.traceId = traceId;
             this.spec = spec;
             this.queue = queue;
+            this.properties = properties;
         }
 
         RunRecord runningSnapshot() {
@@ -135,6 +147,29 @@ final class DefaultRunRecorder implements RunRecorder {
             this.credits = charged;
         }
 
+        /**
+         * 收一份完整载荷。
+         *
+         * <p>**超上限在这里判，不在调用方**：调用方只负责把内容给出来，存不存得下是采集器的事。
+         * 超限时**留占位而不是丢弃**——静默丢会让"这一轮为什么没有请求体"变成新的谜（REQ-066）。
+         */
+        void addPayload(int seq, String requestBody, String responseBody) {
+            int reqBytes = byteLength(requestBody);
+            int respBytes = byteLength(responseBody);
+            boolean truncated = reqBytes > properties.getPayloadMaxBytes()
+                    || respBytes > properties.getPayloadMaxBytes();
+            synchronized (payloads) {
+                payloads.add(new PayloadRecord(traceId, seq,
+                        truncated ? null : requestBody,
+                        truncated ? null : responseBody,
+                        reqBytes, respBytes, truncated, Instant.now()));
+            }
+        }
+
+        private static int byteLength(String value) {
+            return value == null ? 0 : value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        }
+
         void addSpan(SpanRecord span) {
             synchronized (spans) {
                 spans.add(span);
@@ -155,7 +190,11 @@ final class DefaultRunRecorder implements RunRecorder {
             if (!finished.compareAndSet(false, true)) {
                 return;
             }
-            queue.offer(new RunPayload.RunFinish(snapshot(outcome.key(), errorType)));
+            List<PayloadRecord> payloadCopy;
+            synchronized (payloads) {
+                payloadCopy = List.copyOf(payloads);
+            }
+            queue.offer(new RunPayload.RunFinish(snapshot(outcome.key(), errorType), payloadCopy));
         }
 
         /** 没 finish 就关：说明调用方走了异常路径。补一条 interrupted，绝不留 running 僵尸。 */
@@ -195,6 +234,9 @@ final class DefaultRunRecorder implements RunRecorder {
         private int inputTokens;
         private int outputTokens;
         private int cacheReadTokens;
+        private Integer ttftMs;
+        private String requestBody;
+        private String responseBody;
 
         StepScopeImpl(RunScopeImpl run, SpanSpec spec) {
             this.run = run;
@@ -222,6 +264,17 @@ final class DefaultRunRecorder implements RunRecorder {
         }
 
         @Override
+        public void ttftMs(int millis) {
+            this.ttftMs = millis;
+        }
+
+        @Override
+        public void payload(String requestBody, String responseBody) {
+            this.requestBody = requestBody;
+            this.responseBody = responseBody;
+        }
+
+        @Override
         public void succeeded() {
             this.status = "ok";
             this.errorType = null;
@@ -240,8 +293,12 @@ final class DefaultRunRecorder implements RunRecorder {
             }
             int millis = (int) Duration.between(startedAt, Instant.now()).toMillis();
             run.addSpan(new SpanRecord(run.traceId(), null, seq, spec.kind(), spec.name(),
-                    status, errorType, startedAt, millis, null,
+                    status, errorType, startedAt, millis, ttftMs,
                     inputTokens, outputTokens, cacheReadTokens, attrs));
+            // 完整载荷单独走一路：它可能几十 KB，不能跟着步骤一起进 attrs
+            if (requestBody != null || responseBody != null) {
+                run.addPayload(seq, requestBody, responseBody);
+            }
         }
     }
 }

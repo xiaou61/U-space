@@ -73,6 +73,25 @@ public interface RunRecorder {
 
         void tokens(int input, int output, int cacheRead);
 
+        /**
+         * 这一轮的首字延迟（WORK-030 阶段 B）。只对 LLM 步有意义；工具步不必调。
+         *
+         * <p>传的是**毫秒数**而不是时刻：调用方拿到的是"第一个增量距本轮开始多久"，
+         * 那个差值只能在流式回调里算，交给采集器算会引入另一套时钟。
+         */
+        void ttftMs(int millis);
+
+        /**
+         * 这一步的完整输入与输出（WORK-030 阶段 B）。
+         *
+         * <p>**只在 LLM 步调**：工具步没有"发给模型的一整包消息"这回事，它的入参与返回走
+         * {@link #attribute(String, Object)}。
+         *
+         * <p>超上限时实现负责**存占位而不是丢弃**——静默丢会让"为什么没有请求体"变成新的谜。
+         * 调用方不必自己判大小。
+         */
+        void payload(String requestBody, String responseBody);
+
         void succeeded();
 
         void failed(String errorType);

@@ -11,6 +11,12 @@ sealed interface RunPayload {
     record RunBegin(RunRecord run) implements RunPayload {
     }
 
-    record RunFinish(RunRecord run) implements RunPayload {
+    /**
+     * @param run      轮次终态快照
+     * @param payloads 这一轮各 LLM 步的完整载荷。**跟着 finish 一起走**：
+     *                 它只在结束后才有意义（步序号与用量都要对得上），
+     *                 而单独投递会让"步骤已落库但载荷还在队列里"多一个中间状态。
+     */
+    record RunFinish(RunRecord run, java.util.List<PayloadRecord> payloads) implements RunPayload {
     }
 }

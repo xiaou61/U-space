@@ -34,14 +34,17 @@ public class TelemetryRetentionPurger {
 
     private final AiRunMapper runs;
     private final AiRunSpanMapper spans;
+    private final AiRunPayloadMapper payloads;
     private final TelemetryProperties properties;
     /** 可空：测试切片与局部启动里没有这个 bean。 */
     private final ObjectProvider<ScheduledTaskRecorder> recorder;
 
-    TelemetryRetentionPurger(AiRunMapper runs, AiRunSpanMapper spans, TelemetryProperties properties,
+    TelemetryRetentionPurger(AiRunMapper runs, AiRunSpanMapper spans, AiRunPayloadMapper payloads,
+                             TelemetryProperties properties,
                              ObjectProvider<ScheduledTaskRecorder> recorder) {
         this.runs = runs;
         this.spans = spans;
+        this.payloads = payloads;
         this.properties = properties;
         this.recorder = recorder;
     }
@@ -56,6 +59,7 @@ public class TelemetryRetentionPurger {
         long startedAt = System.nanoTime();
         try {
             markStuck();
+            deleteExpiredPayloads();
             deleteExpired();
             record(startedAt, null);
         } catch (RuntimeException e) {
@@ -76,6 +80,31 @@ public class TelemetryRetentionPurger {
         int marked = runs.markStuck(threshold, Instant.now());
         if (marked > 0) {
             log.warn("ai.telemetry.stuck-marked rows={} before={}", marked, threshold);
+        }
+    }
+
+    /**
+     * 载荷单独清（REQ-063）。
+     *
+     * <p>**不复用 {@link #properties#getRetentionDays()}**：spans 是账目级（90 天），
+     * payload 是诊断级且体积大得多（30 天，U-20）。共用一个值要么让账目留得太短、
+     * 要么让载荷吃得太多。
+     *
+     * <p>关掉 payload 采集时**照常清理**——关开关的意思是"以后不记了"，
+     * 不是"以前的也留着占地方"。
+     */
+    private void deleteExpiredPayloads() {
+        Instant before = Instant.now().minus(properties.getPayloadRetentionDays(), ChronoUnit.DAYS);
+        int total = 0;
+        while (true) {
+            int deleted = payloads.deleteExpired(before, BATCH);
+            total += deleted;
+            if (deleted < BATCH) {
+                break;
+            }
+        }
+        if (total > 0) {
+            log.info("ai.telemetry.payloads-purged rows={} before={}", total, before);
         }
     }
 

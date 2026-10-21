@@ -74,6 +74,14 @@ public final class NoopRunRecorder implements RunRecorder {
         }
 
         @Override
+        public void ttftMs(int millis) {
+        }
+
+        @Override
+        public void payload(String requestBody, String responseBody) {
+        }
+
+        @Override
         public void succeeded() {
         }
 

@@ -27,12 +27,15 @@ class MysqlRunSink implements RunSink {
 
     private final AiRunMapper runs;
     private final AiRunSpanMapper spans;
+    private final AiRunPayloadMapper payloads;
     private final TelemetryProperties properties;
     private final java.util.Random random = new java.util.Random();
 
-    MysqlRunSink(AiRunMapper runs, AiRunSpanMapper spans, TelemetryProperties properties) {
+    MysqlRunSink(AiRunMapper runs, AiRunSpanMapper spans, AiRunPayloadMapper payloads,
+                 TelemetryProperties properties) {
         this.runs = runs;
         this.spans = spans;
+        this.payloads = payloads;
         this.properties = properties;
     }
 
@@ -53,6 +56,11 @@ class MysqlRunSink implements RunSink {
         runs.finish(toRow(run));
         if (!run.spans().isEmpty()) {
             spans.insertBatch(toSpanRows(run));
+        }
+        // 载荷在**步骤之后**写：它的 seq 要能对上刚落库的步骤。
+        // 开关关掉时整段跳过（REQ-064），页面会显示「已停用」。
+        if (properties.isPayloadEnabled() && !finish.payloads().isEmpty()) {
+            payloads.insertBatch(toPayloadRows(finish.payloads()));
         }
     }
 
@@ -96,6 +104,23 @@ class MysqlRunSink implements RunSink {
         row.setCredits(run.credits());
         row.setAttrsJson(AiRunMapper.AiRunRow.toJson(run.attrs()));
         return row;
+    }
+
+    private List<AiRunPayloadMapper.Row> toPayloadRows(List<PayloadRecord> records) {
+        List<AiRunPayloadMapper.Row> rows = new ArrayList<>(records.size());
+        for (PayloadRecord record : records) {
+            AiRunPayloadMapper.Row row = new AiRunPayloadMapper.Row();
+            row.setRunTraceId(record.traceId());
+            row.setSeq(record.seq());
+            row.setRequestBody(record.requestBody());
+            row.setResponseBody(record.responseBody());
+            row.setRequestBytes(record.requestBytes());
+            row.setResponseBytes(record.responseBytes());
+            row.setTruncated(record.truncated());
+            row.setCreatedAt(record.createdAt());
+            rows.add(row);
+        }
+        return rows;
     }
 
     private List<AiRunSpanMapper.AiRunSpanRow> toSpanRows(RunRecord run) {

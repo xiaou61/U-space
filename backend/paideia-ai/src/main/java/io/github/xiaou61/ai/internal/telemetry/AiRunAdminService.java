@@ -28,13 +28,15 @@ public class AiRunAdminService {
 
     private final AiRunMapper runs;
     private final AiRunSpanMapper spans;
+    private final AiRunPayloadMapper payloads;
     private final TelemetrySummaryMapper summary;
     private final TelemetryProperties properties;
 
-    AiRunAdminService(AiRunMapper runs, AiRunSpanMapper spans,
+    AiRunAdminService(AiRunMapper runs, AiRunSpanMapper spans, AiRunPayloadMapper payloads,
                       TelemetrySummaryMapper summary, TelemetryProperties properties) {
         this.runs = runs;
         this.spans = spans;
+        this.payloads = payloads;
         this.summary = summary;
         this.properties = properties;
     }
@@ -71,11 +73,27 @@ public class AiRunAdminService {
     }
 
     public record SpanView(int seq, Integer parentSeq, String kind, String name, String status,
-                    String errorType, Instant startedAt, Integer durationMs,
+                    String errorType, Instant startedAt, Integer durationMs, Integer ttftMs,
                     int inputTokens, int outputTokens, Map<String, Object> attrs) {
     }
 
-    public record RunDetail(RunSummary run, Map<String, Object> attrs, List<SpanView> spans) {
+    /**
+     * 一轮的详情。
+     *
+     * @param payloads 各 LLM 步的完整请求与响应（WORK-030 阶段 B）。**按 seq 对应步骤**，
+     *                 前端展开某一步时按 seq 取。未开启采集时为空，`payloadEnabled` 告诉页面该说什么。
+     */
+    public record RunDetail(RunSummary run, Map<String, Object> attrs, List<SpanView> spans,
+                            List<PayloadView> payloads, boolean payloadEnabled) {
+    }
+
+    /**
+     * 一份完整载荷。
+     *
+     * @param truncated 内容超上限（>1MB），正文为空但字节数与标记都在
+     */
+    public record PayloadView(int seq, String requestBody, String responseBody,
+                       int requestBytes, int responseBytes, boolean truncated) {
     }
 
     /** 时间窗：缺省 7 天；跨度超过保留期时收敛到保留期。 */
@@ -151,11 +169,20 @@ public class AiRunAdminService {
         for (AiRunSpanMapper.AiRunSpanRow span : spans.findByTraceId(traceId)) {
             views.add(new SpanView(span.getSeq() == null ? 0 : span.getSeq(), span.getParentSeq(),
                     span.getKind(), span.getName(), span.getStatus(), span.getErrorType(),
-                    span.getStartedAt(), span.getDurationMs(),
+                    span.getStartedAt(), span.getDurationMs(), span.getTtftMs(),
                     orZero(span.getInputTokens()), orZero(span.getOutputTokens()),
                     parseAttrs(span.getAttrsJson())));
         }
-        return new RunDetail(toSummary(row), parseAttrs(row.getAttrsJson()), views);
+        List<PayloadView> payloadViews = payloads.findByTraceId(traceId).stream()
+                .map(p -> new PayloadView(
+                        p.getSeq() == null ? 0 : p.getSeq(),
+                        p.getRequestBody(), p.getResponseBody(),
+                        p.getRequestBytes() == null ? 0 : p.getRequestBytes(),
+                        p.getResponseBytes() == null ? 0 : p.getResponseBytes(),
+                        Boolean.TRUE.equals(p.getTruncated())))
+                .toList();
+        return new RunDetail(toSummary(row), parseAttrs(row.getAttrsJson()), views,
+                payloadViews, properties.isPayloadEnabled());
     }
 
     /** 时间窗内出现过的 kind / status / model，供筛选下拉。 */

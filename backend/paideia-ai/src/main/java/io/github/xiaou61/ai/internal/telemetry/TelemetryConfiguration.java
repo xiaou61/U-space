@@ -27,6 +27,6 @@ class TelemetryConfiguration {
             log.warn("ai.telemetry.disabled：AI 调用统计已关闭，不产生任何记录（历史数据不受影响）");
             return new NoopRunRecorder();
         }
-        return new DefaultRunRecorder(queue);
+        return new DefaultRunRecorder(queue, properties);
     }
 }
