@@ -4634,3 +4634,41 @@ schema_version: 1
 - **过程中我自己踩了记录在案的老坑**：删掉探针 SQL 后没清 `target/classes`，Flyway 仍扫到它们 → 201 个错误。`always.md` 早有这条（"删掉资源文件后必须 `mvn clean`"），这次由我本人复现了一遍
 - 本地提交：`e4cd5bd`
 - 远端推送：未推送
+
+## 2026-10-21 10:26:46 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/design.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-027-每日技术速递/design.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-027-每日技术速递/design.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-21 10:26:51 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-027-每日技术速递/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-027-每日技术速递/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-21 · WORK-027 四件工件齐签，design/tasks 六处修正
+
+- 类型：requirements
+- 变更：
+  - `design.md` 修正 4 处 + 补 2 处：
+    1. **管理端路径** `/api/v1/admin/digest` → `/api/v1/digest/admin/**`（前者没有任何规则匹配，会落到 `anyRequest().authenticated()`，**任何登录用户都能删条目**）
+    2. **`preferredNav` 改动点从"加类型联合"扩成六处表**：类型 + 四个身份配置 + `HomePage` 的 `QUICK_LINKS`
+    3. **`GuardedHttpTransport` 用不上**：它是 AgentScope 的 `HttpTransport`，拦的是出站模型请求；抓 RSS 用 JDK `HttpClient`（照抄 WORK-025）
+    4. **RSS 解析必须自己防 XXE**（原 design 漏了）：外部 XML 与用户上传 docx 同一风险面，补四条 `DocumentBuilderFactory` 开关 + 单测喂恶意 DOCTYPE
+  - 另修两处：编排里"分类缺失就跳过"是 WORK-025 的残留（速递不进知识库、没有分类概念）；`RunKind` 现值核对为 7 个，明确新增 `digest` / `digest_weekly`
+  - `tasks.md` 三处：TASK-001 迁移改 14 位时间戳（原写 `V25__`，正是新规矩要禁的）、TASK-003 补 XXE 与 HTTP 边界要求及第四份恶意夹具、TASK-011 路径订正、TASK-012 验收改为"配置结构齐备"（原要求"不同身份取不同值"，与 design 的"一期值相同"矛盾）
+- 决策：四件工件全部签署（requirements 09:48、proposal 10:01、design 10:26、tasks 10:26），进入实现阶段
+- 依据：用户「先推送，然后再处理 design」「可以的修正一下吧」
+- 验证：`project-lifecycle.ps1 validate` → WORK-027 **零错误、零警告**；`brief` 显示 phase=implementation
+- 本地提交：未提交
+- 远端推送：未推送
+- **下一步**：按 tasks.md TASK-001..013 实施（13 个任务，尚未开始）

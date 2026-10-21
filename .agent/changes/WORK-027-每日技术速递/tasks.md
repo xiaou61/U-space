@@ -2,12 +2,15 @@
 artifact: tasks
 work_id: WORK-027
 work: 每日技术速递
-status: draft
+status: approved
 workflow: full
 depends_on: [design]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022, WORK-025]
 created: 2026-10-20
 updated: 2026-10-20
+approved_by: xiaou61
+approved_at: 2026-10-21 10:26:51 +0800
+approver_role: CTO
 ---
 
 # 任务 · 每日技术速递
@@ -26,9 +29,14 @@ updated: 2026-10-20
 
 ### TASK-001 | pending | 迁移与数据模型
 
-新建 `V25__create_digest_tables.sql`（**编号按当时实际最大值取，不许写死**）：`digest_items` 与 `digest_weeklies` 两张表，字段与索引见 design.md。`created_at` 由应用写入 UTC，**不用 `DEFAULT CURRENT_TIMESTAMP`**。
+新建迁移 `V<14位时间戳>__create_digest_tables.sql`（例如 `V20261021103045__create_digest_tables.sql`）：
+`digest_items` 与 `digest_weeklies` 两张表，字段与索引见 design.md。`created_at` 由应用写入 UTC，**不用 `DEFAULT CURRENT_TIMESTAMP`**。
 
-**验收**：`scripts/test-db.sh` 跑一次，`MigrationChecksumTest` 通过；`SHOW CREATE TABLE digest_items` 里能看到 `uk_digest_items_fingerprint` 与 `idx_digest_items_edition`。
+**不要用 `V25__` 这种递增号**（2026-10-21 起的新规矩）：多会话并行时递增号是被争抢的共享命名空间，
+实测两个分支都写 `V25` 会让应用整体起不来。`MigrationVersionFormatTest` 会挡住纯数字号。
+只建结构、不插业务数据（`MigrationSeedOverlapTest` 守着）。
+
+**验收**：`scripts/test-db.sh` 跑一次，`MigrationChecksumTest` 与 `MigrationVersionFormatTest` 通过；`SHOW CREATE TABLE digest_items` 里能看到 `uk_digest_items_fingerprint` 与 `idx_digest_items_edition`。
 
 ### TASK-002 | pending | 指纹与 URL 规范化
 
@@ -40,7 +48,17 @@ updated: 2026-10-20
 
 `RssDigestSource`：用 JDK `javax.xml.parsers` 解析 RSS 2.0 / Atom，取 `title`/`link`/`pubDate`/`description`（截断 200 字作 `summaryHint`）。**单个条目的 `pubDate` 坏掉只跳过该条，不整批失败。**
 
-**验收**：单测喂三份夹具——① 正常 RSS ② 含一条坏 `pubDate` 的 RSS（断言好条目仍在）③ Atom 格式。真实联调一次：`qbitai` 与 `ithome` 各抓到非零条。（research.md 已实测两个源可访问）
+**XXE 防护是必做项，不是加固可选项**：RSS 是外部站点给的 XML，`DOCTYPE` 实体能让解析器去读
+`file:///...`。`DocumentBuilderFactory` 必须设这四条（照抄 `ResumeTextExtractor` 的先例）：
+`disallow-doctype-decl=true`、`external-general-entities=false`、`external-parameter-entities=false`、
+`FEATURE_SECURE_PROCESSING=true`，外加 `setXIncludeAware(false)`、`setExpandEntityReferences(false)`。
+
+**访问源地址的 HTTP 也要有边界**：只允许 `http`/`https`、不跟随跨主机重定向、连接与读取都要超时
+（`DigestHttp` 薄封装统一做）。
+
+**验收**：单测喂四份夹具——① 正常 RSS ② 含一条坏 `pubDate` 的 RSS（断言好条目仍在）③ Atom 格式
+④ **带 `<!DOCTYPE ... <!ENTITY xxe SYSTEM "file:///etc/passwd">]>` 的恶意 RSS（断言解析拒绝、
+该源记为失败、不向调用方抛异常、不读到任何文件内容）**。真实联调一次：`qbitai` 与 `ithome` 各抓到非零条。（research.md 已实测两个源可访问）
 
 ### TASK-004 | pending | GitHub 与 HN 两个源
 
@@ -87,7 +105,11 @@ updated: 2026-10-20
 
 ### TASK-011 | pending | 管理端删除
 
-`DigestAdminController`：`GET /api/v1/admin/digest?date=`、`DELETE /api/v1/admin/digest/{id}`。**路径规则里必须写 `hasRole('ADMIN')` 且顺序在免鉴权规则之前**（WORK-004 的教训）。管理端加一页（列表 + 删除）。
+`DigestAdminController`：`GET /api/v1/digest/admin/items?date=`、`DELETE /api/v1/digest/admin/items/{id}`。**路径规则里必须写 `hasRole('ADMIN')` 且顺序在 `/api/v1/digest/**` 之前**（WORK-004 的教训）。
+
+**路径必须是 `<模块>/admin`，不是 `/api/v1/admin/<模块>`**（2026-10-21 订正，见 design「接口」节）。
+项目现有四条管理端规则全是前者。写错时没有任何规则匹配，会落到
+`anyRequest().authenticated()` —— **任何登录用户都能删条目**，而且不报错。
 
 **验收**：集成测试——非管理员 403、管理员可删、删后学习者端读不到（AC-010）。
 
@@ -95,7 +117,14 @@ updated: 2026-10-20
 
 `identity` 配置加 `digestGroups`；`DigestPage` 按它排序与过滤；`NoteNewPage` 读 query 参数预填标题与正文；卡片加「存成笔记」按钮。
 
-**验收**：单测——`configFor()` 对不同身份返回不同 `digestGroups`；改 `digestGroups` 后页面分组顺序随之变化（AC-014）。e2e——点「存成笔记」跳到 `/notes/new` 且标题与正文已预填，保存后出现在笔记列表（AC-015）。
+**`preferredNav` 的改动点有六处，漏一处就报错或行为不一致**（2026-10-21 订正，见 design「前端」节）：
+类型联合、`CONFIGS` 的四个身份（`job_seeker` / `postgrad` / `civil_service` / `daily_learning`）、
+`HomePage` 的 `QUICK_LINKS`。`config.test.ts` 补断言「每个身份的 `preferredNav` 都含 `'digest'`」。
+
+**验收**：单测——`configFor()` 对每个身份都返回非空的 `digestGroups`，且每个身份的
+`preferredNav` 都含 `'digest'`（**注意：一期四个身份的 `digestGroups` 取值相同**，
+design 已写明「只是结构就位」，所以断言的是"配置结构齐备"而不是"身份间取值不同"——
+后者一期不成立）。e2e——点「存成笔记」跳到 `/notes/new` 且标题与正文已预填，保存后出现在笔记列表（AC-015）。
 
 ### TASK-013 | pending | 实跑与收口
 
