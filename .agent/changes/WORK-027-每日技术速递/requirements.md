@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-027
 work: 每日技术速递
-status: draft
+status: approved
 mode: strict
 mode_reason: 持续抓取多个外部站点（外部集成与合规面）；新增定时任务与两张新表（数据边界与迁移）；新增学习者端与导航入口（导航与公共接口）；每日一次平台 AI 调用（成本面）；凭据进部署配置
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-025]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022]
 created: 2026-10-20
 updated: 2026-10-20
+approved_by: xiaou61
+approved_at: 2026-10-21 09:48:57 +0800
+approver_role: CTO
 ---
 
 # 每日技术速递需求
@@ -188,7 +191,7 @@ updated: 2026-10-20
 - **假设**：每天几十条候选池在 DeepSeek 1M 上下文内绰绰有余，单次成本可忽略。
 - **假设**：周报素材（一周约 200–300 条日报）一次性喂给模型也在上下文内。**未实测**，若超限则改为按天分段汇总两轮。
 
-## 仍待确认
+## 待确认问题
 
 无阻断项。两条先前问题已答（Q-02 扩展点、Q-07 token 形态），痕迹见 [research.md](research.md) 第五节。
 

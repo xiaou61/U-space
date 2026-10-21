@@ -4567,3 +4567,35 @@ schema_version: 1
 - 本地提交：`44ddb49`
 - 远端推送：未推送
 - **仍未做**：`feat/ops-monitor` 分支未删（已完全合并，等确认）；`docs/design/` 与 `output/` 两个未跟踪目录仍未决定是否入库
+
+## 2026-10-21 09:48:57 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-027-每日技术速递/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-027-每日技术速递/requirements.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-21 · 补八股文专区入口（WORK-025 AC-004 缺口）并批准 WORK-027 需求
+
+- 类型：implementation
+- 变更：
+  - `HomePage`：快捷卡之后新增「八股文专区」卡片，指向 `/knowledge/categories/{id}`
+  - **按 slug 找分类，不写死 id**：生产库是 20，全新测试库是 900（V949 为避开种子冲突挪过）
+  - `home.spec.ts` 新增一条 e2e：从首页卡片点进去，断言落到该分类页
+- 决策：
+  - **先补 025 入口再开工 WORK-027**（用户裁决）。proposal 的 D-08 本来就把它设成开工前提，核实后发现该前提不成立：学习者端 `NAV` 里没有八股文，`home.spec.ts` 也从未点过这条路
+  - **GitHub token 沿用现有 `gh` token**（用户裁决，维持 D-16）。已提醒该 token 带 `repo` 写权限、只为读热榜权限给大了，用户选择沿用
+- 核实到的事实（修正 proposal 的两处说法）：
+  - 「点不进去」**不准确**：分类树里 `八股文 · 面经真题` 是顶级分类，知识库卡片里本来就点得进去。真正缺的是**首页/导航入口**——学习者得先想到去知识库找
+  - 「定时任务未在生产启用」**已过期**：线上 `paideia.ai.essay.enabled=true`，已产出 5 条
+  - 但点进去显示「共 0 条」：5 条全是 `draft`（`publish-directly: false` 是设计如此），需管理端过目后发布。管理端条目页能改 status，路径是通的
+- 验证：
+  - `pnpm --filter @paideia/app typecheck` 通过；`build` 通过
+  - e2e 打线上：`home.spec.ts` **8 passed**（含新增那条）
+  - 浏览器实测：卡片文案「八股文专区 / 每天从面经里抽题，AI 逐题解析，面试前刷一遍。」→ 点击 → `#/knowledge/categories/20`
+- 本地提交：`a512ee1`、`5a6f322`
+- 远端推送：未推送（WORK-027 批准记录 + 本次改动）
+- **仍未做**：5 条草稿未发布（等你过目）；WORK-027 proposal/design/tasks 仍是 draft，等签署
