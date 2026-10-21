@@ -28,9 +28,11 @@ public class CampItemGenerator extends SingleShotModelCaller {
      * 4096 上限下第 3 道题就被截断，整份 JSON 不是合法的（表现为"模型输出不符合题目格式"，
      * 看起来像模型不听话，其实是我们的上限太小）。
      *
-     * <p>8192 是当前 DeepSeek 可选值的硬顶；按题数算出的值超过它时仍会被它夹住。
+     * <p><b>硬顶不能取 8192</b>：18 道题实测 completion 用到 7210 token（其中思考 4463），
+     * 思考量会波动，8192 会在抖动时被吃满、再次截断（2026-10-21 实测 7 天营失败）。
+     * 探针用 12280 能正常 `finish_reason=stop`，说明上游允许更大；这里取 16384 留足余量。
      */
-    private static final int MAX_OUTPUT_TOKENS = 8192;
+    private static final int MAX_OUTPUT_TOKENS = 16384;
 
     /** 每道题的输出预算。实测一道题（题干 + 4 选项 + 解析）约 350–450 token。 */
     private static final int TOKENS_PER_ITEM = 450;
