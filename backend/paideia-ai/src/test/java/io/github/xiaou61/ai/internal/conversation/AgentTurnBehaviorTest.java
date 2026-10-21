@@ -170,6 +170,7 @@ class AgentTurnBehaviorTest {
 
         Recorder recorder = run(new ScriptedConversation(model, toolsStub()), Harness.ASSISTANT);
 
+        assertThat(recorder.failed).as("不该失败").isNull();
         assertThat(recorder.content.toString())
                 .as("只应有最终答案，不含工具轮的旁白")
                 .isEqualTo("最终答案");
@@ -213,6 +214,7 @@ class AgentTurnBehaviorTest {
 
         Recorder recorder = run(new ScriptedConversation(model, toolsStub()), Harness.ASSISTANT);
 
+        assertThat(recorder.failed).as("不该失败").isNull();
         assertThat(recorder.content.toString()).isEqualTo("够了");
         assertThat(recorder.completed).isTrue();
     }

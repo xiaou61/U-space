@@ -132,6 +132,12 @@ public class SecurityConfiguration {
                         .requestMatchers("/error").permitAll()
                         // 见类注释的前缀纪律：这个前缀下只放凭据交换类端点
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // 账号的管理端接口（WORK-030）。**必须排在任何更宽的 /api/v1/account 规则
+                        // 与 anyRequest() 之前**：顺序写反这条永不生效、也不会有任何报错，只会在
+                        // 某天表现为"任何已登录的学习者都能列出全部账号、改别人的角色、删别人的号"。
+                        // 现有 /api/v1/account/** 没有专门规则（落 authenticated），但靠 anyRequest
+                        // 兜底来保护管理端接口太脆弱，所以显式写在这里。
+                        .requestMatchers("/api/v1/account/admin/**").hasRole("ADMIN")
                         // 运维面板（WORK-028）。两条都**必须排在 anyRequest() 之前**：
                         //   ① 摘要接口与其它管理端接口同权；
                         //   ② Grafana 反代是面板的唯一入口，它内部开匿名 Viewer——

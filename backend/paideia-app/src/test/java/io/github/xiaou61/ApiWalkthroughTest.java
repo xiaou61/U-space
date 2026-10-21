@@ -526,7 +526,25 @@ class ApiWalkthroughTest {
         call("删营", "DELETE", "/api/v1/ai/camps/" + campId, bearer, null);
 
         call("管理端用量流水", "GET", "/api/v1/ai/admin/credits/audit", adminToken(), null);
+        call("管理端用量流水（分页筛选）", "GET",
+                "/api/v1/ai/admin/credits/ledger?page=1&size=10", adminToken(), null);
         call("管理端查某人积分", "GET", "/api/v1/ai/admin/credits/" + userId, adminToken(), null);
+
+        // ---- 用户管理（WORK-030）----
+        // 造一个一次性账号来验四条写路径；删号放在最后，正好也验了级联。
+        String managedSuffix = Long.toString(System.nanoTime() % 1_000_000L);
+        jdbcTemplate.update(
+                "INSERT INTO users (username, email, password_hash, role, email_verified_at)"
+                        + " VALUES (?, ?, ?, 'learner', CURRENT_TIMESTAMP(3))",
+                "walk-" + managedSuffix, "walk-" + managedSuffix + "@example.test", "$2a$10$placeholder");
+        long managedId = jdbcTemplate.queryForObject("SELECT MAX(id) FROM users", Long.class);
+        call("管理端用户列表", "GET", "/api/v1/account/admin/users?page=1&size=10", adminToken(), null);
+        call("管理端用户详情", "GET", "/api/v1/account/admin/users/" + managedId, adminToken(), null);
+        call("管理端改角色", "POST", "/api/v1/account/admin/users/" + managedId + "/role", adminToken(),
+                json(Map.of("role", "admin")));
+        call("管理端调积分（用户管理）", "POST", "/api/v1/account/admin/users/" + managedId + "/credits",
+                adminToken(), json(Map.of("delta", 10, "note", "自查调分")));
+        call("管理端删号", "DELETE", "/api/v1/account/admin/users/" + managedId, adminToken(), null);
         call("管理端调分", "POST", "/api/v1/ai/admin/credits/" + userId + "/adjust", adminToken(),
                 json(Map.of("delta", 100, "note", "自查调分")));
 
