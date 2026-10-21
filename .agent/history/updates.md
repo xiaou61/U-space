@@ -4997,3 +4997,13 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-21 15:18:02 +0800 · WORK-031 · 第一步完成：升 2.0.4 与缓存 token 修复，全量 545/0/4
+
+- 类型：verification
+- 变更：backend/pom.xml 与 paideia-ai/pom.xml 版本；TokenUsage 加 cacheReadTokens 并保留三参构造；toUsage 与 10 处 step/run.tokens 传真实缓存量；api-shape 快照新增一个字段；新增 TokenUsageTest；testing/plan.md 与 report.md
+- 决策：第一步完成并验证通过；第二三步未实现
+- 依据：用户裁决 WORK-031 先做，且本次只批准第一步
+- 验证：编译 0；dependency:tree 确认 agentscope-core 2.0.4 带 mcp 0.17.2；内环 150/0/3；全量 12 模块 545/0/4；反向验证按预期红 expected 0 but was 120；ApiWalkthroughTest 首跑红并指出新增字段，快照 diff 仅一处新增；Skipped 4 条均为既有设计
+- 本地提交：a1af6ce 版本，c001d4d 缓存修复
+- 远端推送：未推送

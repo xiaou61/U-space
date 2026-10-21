@@ -18,7 +18,7 @@ approver_role: CTO
 
 ## 计划
 
-### TASK-001 | pending | 升 AgentScope 与 MCP SDK 版本
+### TASK-001 | done | 升 AgentScope 与 MCP SDK 版本
 
 **做什么**
 
@@ -33,7 +33,7 @@ approver_role: CTO
 - `mvn -B -pl paideia-ai -am compile` 通过
 - `mvn -B dependency:tree -pl paideia-ai` 里 `io.modelcontextprotocol.sdk:mcp` 是 `0.17.2`
 
-### TASK-002 | pending | TokenUsage 承载缓存 token
+### TASK-002 | done | TokenUsage 承载缓存 token
 
 **做什么**
 
@@ -45,7 +45,7 @@ approver_role: CTO
 - 全模块编译通过（证明三参构造的兼容性保住了）
 - 新增一条单测：三参构造得到 `cacheReadTokens == 0`，四参构造得到给定值
 
-### TASK-003 | pending | 把缓存 token 写进两处遥测
+### TASK-003 | done | 把缓存 token 写进两处遥测
 
 **做什么**
 
@@ -57,7 +57,7 @@ approver_role: CTO
 - 全模块编译通过
 - 真实调用后 `ai_runs.cache_read_tokens > 0`（同问题连问两次，第二次命中缓存）
 
-### TASK-004 | pending | 验证
+### TASK-004 | done | 验证
 
 **做什么**
 
@@ -69,6 +69,21 @@ approver_role: CTO
 
 - 全绿；Skipped 数与改动前一致
 - `AiTelemetryIntegrationTest`、`McpStartupSmokeTest` 在内并通过
+
+### TASK-005 | pending | 第二步：ReActAgent 替换手写循环（未批准，待追加任务）
+
+**为什么留一条 pending**：本项共三步，本次只批准第一步。没有这条占位时，四个任务全 done 会让
+工作项状态显示成"可完成"，而实际上对话链路还没换——那是假的完成。
+
+**做什么（待第一步观察后细化）**：用 `ReActAgent` + `MiddlewareBase` 替换
+`AgentScopeConversation` 的手写循环；逐条对上三处实测补丁；写八类输入的对照套件。
+
+**可检查结果**：见 requirements 的「第二步与第三步的验收」——届时先补成正式 AC 再动手。
+
+### TASK-006 | pending | 第三步：MiddlewareBase 成为唯一观测钩子（未批准）
+
+把步骤级首字、模型、工具入参与返回、完整请求体都收口到 `Middleware.onModelCall`
+与 `AgentTool.callAsync`，为 WORK-030 阶段 B 定型采集点。
 
 ## 完成判据
 
