@@ -116,10 +116,10 @@ java.net.URI.create("…?q=created:>=2026-10-14+stars:>100…")
 
 | 项 | 原因 | 状态 |
 | --- | --- | --- |
-| **AC-008 `ai_runs` 记 `kind=digest`** | **首个版本漏了**：`RunKind.DIGEST` 常量加了，但编排里没有 `recorder.begin()` 调用。写本报告时发现并已补上（日报写 `DIGEST`、周报写 `DIGEST_WEEKLY`，`userId=0` 表示平台行为）。**补上后没再跑一次带 AI 凭据的实跑**，所以"当日恰好 1 条"这个数字本身仍只有代码级的证据，没有 `ai_runs` 表里的实际行 | **已修代码，实跑未复验** |
-| AI 摘要的真实写作质量 | 实跑时未配 AI 凭据，全部走了降级分支。`DigestSummarizer` 的解析层有 8 条单测（正常/少返回/集合外指纹/空内容/坏 JSON），但**一次真实上游调用没跑过** | 未验证 |
+| ~~AC-008 `ai_runs` 记 `kind=digest`~~ | 首个版本漏了（常量加了、`recorder.begin()` 没接），写报告时发现并补上。**2026-10-21 真跑复验**：`ai_runs` 里出现 `kind=digest userId=0 status=ok in=1266 out=3405`，当轮恰好 1 条 | **已通过** |
+| ~~AI 摘要的真实写作质量~~ | **已补验**：见下方「真连上游」一节，12 条全部产出中文摘要、0 条降级 | **已通过** |
 | 社区组内容 | 实跑只配了量子位一个 RSS 源；掘金与开源中国虽实测 200 且能解析（20 / 50 条），但没进实跑批次 | 部分验证（源可用性已验证） |
-| 周报真实生成 | `DigestWeeklyService` 有集成测试覆盖 upsert 幂等与缺失返回 null，但**一次真实 AI 调用没跑过**（同样因为没配凭据） | 未验证 |
+| ~~周报真实生成~~ | **已补验**：见下方「真连上游」一节，产出 558 字三段 markdown | **已通过** |
 | `digest.spec.ts` e2e | 5 条中 4 条通过、1 条按设计跳过（当天无内容时"每条都有原文链接"无法断言） | **已执行** |
 | 生产部署 | 未部署；`application.yml` 默认 `enabled: false`，需要部署时显式打开并配 GitHub token | 未执行 |
 
@@ -143,3 +143,64 @@ java.net.URI.create("…?q=created:>=2026-10-14+stars:>100…")
 `AC-008` 的补法：`DigestCollectionService` 里 `recorder.begin(RunSpec.of(RunKind.DIGEST, 0L))`
 包住那一次 AI 调用，`DigestWeeklyService` 同样用 `DIGEST_WEEKLY`。`userId=0` 表示平台行为
 （速递没有用户归属，与 WORK-025 同一取舍），运营统计里能与真实学习者花的钱区分开。
+
+## 真连上游（2026-10-21 下午，用线上那把 DeepSeek key）
+
+实跑环境原先缺平台凭据，摘要与周报都只走了降级分支。本轮补了三条真连验证。
+
+### 1. 提示词缺陷：要求"挑"导致 60% 的条目看起来是坏的
+
+首次真连（5 条候选）：**只返回 3 条**。原提示词写的是"可以挑掉你认为不重要的条目"。
+
+问题在于编排层**把所有候选都入库**——被挑掉的那两条会落 `degraded`，界面上显示
+「这条还没写好摘要」。也就是说"挑"没有真的过滤掉任何东西，只是让三分之二的卡片看起来是坏的。
+而 `degraded` 这个状态应该只表示"AI 这次没写成"（凭据缺失/上游失败/超时，即 AC-005）。
+
+改成"**每一条都要写**"后重跑：**5/5 条全部返回**，9.0 秒、2320 tokens。
+
+### 2. 共享传输层的 10 秒读超时——只在"非流式 + 大输出"时暴露
+
+配好凭据后真跑 12 条候选，日志：
+
+```
+WARN OkHttpTransport : Failed to read response body: timeout
+WARN DigestSummarizer: 速递 AI 压缩失败，全部按降级入库：OpenAI API returned empty response body
+速递完成：候选 35 条，入库 12 条（其中降级 12 条）
+```
+
+根因：`GuardedHttpTransport` 里的 `OkHttpClient.Builder()` **没有设 `readTimeout`**，
+OkHttp 4.x 的默认值是 **10 秒**，而 AgentScope 自己的 `HttpTransportConfig` 默认是 **5 分钟**。
+12 条约跑 20 秒 → 卡在 10 秒 → 整批静默降级。
+
+**为什么之前没人发现**：既有调用（面经抽题、记忆整理、简历优化）都是"单条、几秒"，撞不到 10 秒。
+这是本项第一个"一次处理几十条"的调用。
+
+修法：显式设 `readTimeout=5min` / `writeTimeout=1min` / `callTimeout=6min`，
+真正的时间上限仍由调用方的 `blockLast(Duration)` 决定。
+
+修后重跑同一批：**12 条全部成功、降级 0 条**。
+
+### 3. 真连实测数据
+
+| 项 | 结果 |
+| --- | --- |
+| 摘要（5 条单测式真连） | 5/5 条，9.0 秒，2320 tokens |
+| 摘要（12 条整批实跑） | 12/12 条，降级 0，`ai_runs`: in=1266 / out=3405 |
+| 周报（6 条素材） | 558 字、三段 markdown、9.9 秒 |
+| 英文翻译 | "Introducing the new reasoning model" → 「介绍全新推理模型」 |
+| 中文保持 | 「AI 推理模型发布，长链思考更强」原样保留 |
+| HN 标题 | "Ask HN: is Rust worth learning in 2026" → 「Ask HN：2026 年 Rust 还值得学吗」 |
+
+分组轮转在同一轮也验证到了：`news 4 / github 4 / hackernews 4`——上限 12 时三组各拿 4 条，
+没有再出现"一个源吃满配额"。
+
+摘要样例（真实产出）：
+
+```
+[量子位] 飞书豆包工作AI先锋未来人才大赛：企业正在争抢会用AI做成事的人
+  → 大赛聚焦真实问题解决力，企业争抢能用AI做成事的人。
+[GitHub 热榜] deepseek-ai/DeepInfer
+  → DeepSeek 模型的高性能大规模推理框架。
+[Hacker News] eMudhra 中间 CA 遭入侵
+  → eMudhra 中间 CA 遭入侵，引发 376 条评论讨论。
+```
