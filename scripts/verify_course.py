@@ -268,8 +268,8 @@ def check_runnable(path: Path, body: str) -> None:
             continue
         code_start, language, _ = after[0]
         code = "\n".join(lines[code_start : after[0][2]])
-        if language not in ("python", "java"):
-            fail(path, f"第 {marker_line} 行的可运行示例语言必须是 python 或 java，实际 {language!r}")
+        if language not in ("python", "java", "sql"):
+            fail(path, f"第 {marker_line} 行的可运行示例语言必须是 python / java / sql，实际 {language!r}")
             continue
         expected = None
         for candidate in after[1:]:
@@ -291,6 +291,8 @@ def check_runnable(path: Path, body: str) -> None:
 
 
 def run_code(language: str, code: str) -> str | None:
+    if language == "sql":
+        return run_sql(code)
     with tempfile.TemporaryDirectory(prefix="paideia-course-") as directory:
         workdir = Path(directory)
         env = dict(os.environ)
@@ -324,6 +326,60 @@ def run_code(language: str, code: str) -> str | None:
             print(decode(result.stderr), file=sys.stderr)
             return None
         return decode(result.stdout)
+
+
+def run_sql(code: str) -> str | None:
+    """在一个一次性库里执行整段 SQL，把每个结果集按 `列=值 | 列=值` 打出来。
+
+    用独立库而不是既有库，是因为示例里有 CREATE/DROP/INSERT：跑在 paideia_test 上
+    会删掉别人的数据。库名带 pid，用完即删。
+    """
+    user = os.environ.get("PAIDEIA_TEST_DB_USER")
+    password = os.environ.get("PAIDEIA_TEST_DB_PASSWORD")
+    if not user or password is None:
+        print("  跳过：没有 PAIDEIA_TEST_DB_USER / PAIDEIA_TEST_DB_PASSWORD", file=sys.stderr)
+        return None
+    try:
+        import pymysql
+        from pymysql.constants import CLIENT
+    except ImportError:
+        print("  跳过：本机 Python 没有 pymysql（pip install pymysql）", file=sys.stderr)
+        return None
+    host = os.environ.get("PAIDEIA_TEST_DB_HOST", "127.0.0.1")
+    port = int(os.environ.get("PAIDEIA_TEST_DB_PORT", "3306"))
+    schema = f"paideia_course_{os.getpid()}"
+    connection = None
+    try:
+        connection = pymysql.connect(host=host, port=port, user=user, password=password,
+                                     charset="utf8mb4", autocommit=True,
+                                     client_flag=CLIENT.MULTI_STATEMENTS)
+        cursor = connection.cursor()
+        cursor.execute(f"DROP DATABASE IF EXISTS `{schema}`")
+        cursor.execute(f"CREATE DATABASE `{schema}`")
+        cursor.execute(f"USE `{schema}`")
+        cursor.execute(code)
+        rows: list[str] = []
+        while True:
+            if cursor.description is not None:
+                columns = [column[0] for column in cursor.description]
+                for row in cursor.fetchall():
+                    rows.append(" | ".join(
+                        f"{name}={value}" if value is not None else f"{name}=NULL"
+                        for name, value in zip(columns, row)))
+            if not cursor.nextset():
+                break
+        return "\n".join(rows)
+    except Exception as error:  # noqa: BLE001 - 任何驱动层错误都算"示例跑不了"
+        print(f"  SQL 执行失败：{error}", file=sys.stderr)
+        return None
+    finally:
+        if connection is not None:
+            try:
+                with connection.cursor() as cleanup:
+                    cleanup.execute(f"DROP DATABASE IF EXISTS `{schema}`")
+            except Exception:  # noqa: BLE001
+                pass
+            connection.close()
 
 
 def decode(raw: bytes) -> str:

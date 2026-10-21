@@ -27,6 +27,9 @@ target/
 build/
 out/
 !.mvn/wrapper/maven-wrapper.jar
+# Python 脚本被 import 时生成的字节码（scripts/ 下有几个校验脚本）
+__pycache__/
+*.pyc
 
 # ---- 前端与桌面壳构建产物 ----
 node_modules/

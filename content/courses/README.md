@@ -9,9 +9,11 @@ content/courses/python/00-总览.md
 content/courses/python/01-环境与第一行代码.md
 content/courses/java/00-总览.md
 content/courses/java/01-编译运行与变量.md
+content/courses/mysql/00-总览.md
+content/courses/mysql/01-第一张表.md
 ```
 
-一门语言 = 1 个总览 + 12 课。目录名对应分类 slug：`python` → `python-from-zero`，`java` → `java-from-zero`。
+一条线 = 1 个总览 + N 课。目录名对应分类 slug：`python` → `python-from-zero`，`java` → `java-from-zero`，`mysql` → `mysql-from-zero`。
 
 ## 文件格式
 
@@ -62,6 +64,8 @@ print("你好")
 
 `<!-- run -->` 后面紧跟的代码块会被**真的执行**，输出必须与紧接着的 ```text 块逐字相同。
 Python 示例不得依赖第三方库；Java 示例必须是**单个 `Main` 类**（校验脚本按 `Main.java` 编译运行）。
+
+SQL 示例（```sql）在**一次性库**里执行，执行完即删，绝不碰 `paideia_test`。它需要本机 MySQL 与 `pymysql`，凭据从 `PAIDEIA_TEST_DB_USER` / `PAIDEIA_TEST_DB_PASSWORD` 读（`source backend/config/remote-db.local.env`）；缺凭据时**跳过执行**，不报错。输出按 `列=值 | 列=值` 逐行比对——所以 SQL 示例里只查结果，不要查带时间戳或自增 id 的列，那些每次都不一样。
 
 ## 动手题的形状
 

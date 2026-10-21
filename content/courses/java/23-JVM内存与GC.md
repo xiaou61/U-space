@@ -3,7 +3,7 @@ title: 23 · JVM 内存与垃圾回收入门
 order: 23
 chapter: 并发与运行时
 level: advanced
-prerequisite: 并发入门：线程、线程池与共享状态
+prerequisite: 22 · 并发入门：线程、线程池与共享状态
 category: java-from-zero
 minutes: 30
 status: published

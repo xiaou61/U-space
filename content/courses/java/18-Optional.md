@@ -3,7 +3,7 @@ title: 18 · Optional：该用在哪、不该用在哪
 order: 18
 chapter: 泛型与函数式
 level: advanced
-prerequisite: 泛型：类型参数与通配符
+prerequisite: 17 · 泛型：类型参数与通配符
 category: java-from-zero
 minutes: 26
 status: published

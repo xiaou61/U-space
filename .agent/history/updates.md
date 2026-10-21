@@ -5236,3 +5236,32 @@ schema_version: 1
   管理端删除的 e2e 未跑
 - 本地提交：`7bdd748`（及合并前的 5 笔）
 - 远端推送：**已完成**（`2309acb..7bdd748`）
+
+## 2026-10-21 · 内容 · 计算机网络线补齐 7 篇 + 新开 MySQL 从零开始
+
+- 类型：content
+- 变更：
+  - `content/reading/network/` 新增 02–08 七篇（四层模型、域名解析、三次握手、关闭与 TIME_WAIT、
+    HTTP 报文、连接复用与 QUIC、抓包验证），总览里早就排好的 8 站清单到此全部有正文
+  - 新增 `content/courses/mysql/`：总览 + 12 课，七节结构与 Python/Java 线一致
+  - `scripts/verify_course.py` 增加 ```sql 可运行示例：在**一次性库**（`paideia_course_<pid>`）里执行，
+    用完即删，不碰 `paideia_test`；缺凭据时跳过而非报错
+  - `content/courses/java/*.md` 的 22 条 `prerequisite` 补上课号前缀（`集合与泛型` → `08 · 集合与泛型`）
+  - 三条线补 `level`（阅读线原先没有，导入时被 `levelOfChapter` 兜底成 advanced）；
+    Java 与 MySQL 总览的 `line_summary` 站数改为与实际关卡数一致
+- 决策：
+  - 计算机网络线保留"阅读线"形态（普通 markdown，不强制七节与可运行代码），
+    因为它讲的是排障路径而不是手写代码；难度用 `level` 显式声明而不是靠章节名推
+  - MySQL 示例全部真跑：课程的"可运行"承诺对 SQL 也成立，不是贴一段没验证过的语句
+- 依据：`python scripts/verify_course.py --dir content/courses` → 50 个文件含代码执行全通过
+- 验证：
+  - 内容门禁 50/50 通过（Python 13 + Java 24 + MySQL 13）
+  - 线上导入后 API 复核：`GET /learn/tracks` 五条轨道，MySQL 13 关、网络 9 关；
+    网络线关卡难度按课分配 beginner/intermediate/advanced
+  - 前置关系：MySQL 11 条、Java 27 条（修复前 Java 只有 5 条，22 个标题对不上）
+  - 打线上的 `e2e/learn.spec.ts` 6 passed
+- 已知缺口：
+  - 阅读线的 quiz 块不走课程门禁（七节结构是课程专用），只做了 JSON 合法性校验
+  - 中文正文的 ```sql 高亮依赖 shiki 的 sql 语法包，未在浏览器里目视确认
+- 本地提交：见下一笔提交
+- 远端推送：未执行
