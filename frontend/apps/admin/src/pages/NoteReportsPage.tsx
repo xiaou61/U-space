@@ -12,6 +12,11 @@ import {
   EmptyMedia,
   EmptyTitle,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Table,
   TableBody,
@@ -37,7 +42,23 @@ interface Report {
   createdAt: string | null
 }
 
-const list = () => api.requestEnvelope<Report[]>('/api/v1/notes/admin/reports')
+/**
+ * 状态筛选（WORK-030）：后端 `GET /reports?status=` 早就支持，前端一直没传——
+ * 于是待处理与已下架混在一张表里，全靠人眼分辨。这里接上，且**默认只看待处理**
+ * （那才是需要动手的那一批）。
+ */
+const list = (status: string) =>
+  api.requestEnvelope<Report[]>(
+    status === 'all'
+      ? '/api/v1/notes/admin/reports'
+      : `/api/v1/notes/admin/reports?status=${encodeURIComponent(status)}`,
+  )
+
+const STATUS_FILTERS = [
+  { value: 'pending', label: '待处理' },
+  { value: 'taken_down', label: '已下架' },
+  { value: 'all', label: '全部' },
+]
 const takedown = (id: number) =>
   api.requestEnvelope<boolean>(`/api/v1/notes/admin/reports/${id}/takedown`, { method: 'POST' })
 
@@ -53,7 +74,11 @@ export function NoteReportsPage() {
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
 
-  const reports = useQuery({ queryKey: ['note-reports'], queryFn: list })
+  const [statusFilter, setStatusFilter] = useState('pending')
+  const reports = useQuery({
+    queryKey: ['note-reports', statusFilter],
+    queryFn: () => list(statusFilter),
+  })
 
   /** 待确认下架的那条。原生 `window.confirm` 在这里与整站观感不一致，也带不了上下文。 */
   const [pending, setPending] = useState<{ id: number; title: string } | null>(null)
@@ -87,11 +112,29 @@ export function NoteReportsPage() {
                 下架后链接立刻不可读，且不可恢复。
               </p>
             </div>
-            {reports.isSuccess ? (
-              <span className="text-muted-foreground shrink-0 text-xs" data-testid="reports-total">
-                共 {reports.data.length} 条 · 待处理 {reports.data.filter((item) => item.status === 'pending').length} 条
-              </span>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-2">
+              <Select
+                items={STATUS_FILTERS}
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as string)}
+              >
+                <SelectTrigger size="sm" className="w-28" data-testid="reports-status-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTERS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {reports.isSuccess ? (
+                <span className="text-muted-foreground text-xs" data-testid="reports-total">
+                  共 {reports.data.length} 条
+                </span>
+              ) : null}
+            </div>
           </div>
           {reports.isLoading ? (
             <Spinner />

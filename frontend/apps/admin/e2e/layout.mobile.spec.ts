@@ -48,8 +48,8 @@ const PAGES = [
   { hash: '/knowledge/categories', name: '分类管理' },
   { hash: '/knowledge/entries', name: '条目管理' },
   { hash: '/reports', name: '举报处理' },
-  { hash: '/ai-credits/grant', name: '积分调整' },
   { hash: '/ai-credits/audit', name: '用量审计' },
+  { hash: '/users', name: '用户管理' },
 ]
 
 test.describe('管理端窄屏', () => {

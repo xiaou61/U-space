@@ -81,6 +81,7 @@ export function KnowledgeEntriesPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [keyword, setKeyword] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [creating, setCreating] = useState(false)
@@ -126,7 +127,10 @@ export function KnowledgeEntriesPage() {
 
   const all = entries.data?.items ?? []
   const needle = keyword.trim().toLowerCase()
-  const filtered = needle === '' ? all : all.filter((item) => item.title.toLowerCase().includes(needle))
+  // 分类筛选（WORK-030）：`categoryId` 原先只在编辑弹窗里出现，列表筛不了。
+  const filtered = all
+    .filter((item) => categoryFilter === 'all' || String(item.categoryId) === categoryFilter)
+    .filter((item) => needle === '' || item.title.toLowerCase().includes(needle))
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   // 过滤后条数变少时把页码夹回范围内：夹在渲染里算，就不必再写一个"筛选变化时重置页码"的副作用
   const current = Math.min(page, totalPages)
@@ -179,6 +183,31 @@ export function KnowledgeEntriesPage() {
                     {option.label}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              items={[{ value: 'all', label: '全部分类' }, ...categoryOptions(flat, '未分类')
+                .filter((option) => option.value !== null)
+                .map((option) => ({ value: String(option.value), label: option.label }))]}
+              value={categoryFilter}
+              onValueChange={(value) => {
+                setCategoryFilter(value as string)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger size="sm" className="w-36" data-testid="admin-entry-category-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部分类</SelectItem>
+                {categoryOptions(flat, '未分类')
+                  .filter((option) => option.value !== null)
+                  .map((option) => (
+                    <SelectItem key={option.value} value={String(option.value)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
