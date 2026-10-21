@@ -4,7 +4,7 @@ work_id: WORK-029
 work: AI训练营
 status: passed
 evidence: required
-run_at: 2026-10-21 15:10 +0800
+run_at: 2026-10-21 15:40 +0800
 target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 ---
 
@@ -16,7 +16,7 @@ target: 本地独占测试库（scripts/test-db.sh）+ 本地 Playwright
 
 四项**不在验收标准之内**的未验事项如实列在「未覆盖」一节——最重要的一条是**真实模型出题的质量从未验过**（全部测试里模型都是桩）。那不影响"接口与判定链对不对"，但它决定了这个功能实际好不好用，所以验收通过之后仍应人工跑一次。
 
-后端 **245 条测试执行 / 0 失败 / 4 跳过**（跳过的是既有的 `FileStorageContractTest` 用例），前端 camp 包 **7 条单测**，学习者端 e2e **camp.spec.ts 3 条全绿**。
+后端 **249 条测试执行 / 0 失败 / 4 跳过**（跳过的是既有的 `FileStorageContractTest` 用例），前端 camp 包 **7 条单测**，学习者端 e2e **camp.spec.ts 3 条全绿**。
 
 **实施中订正了工件里的两处矛盾**，都在这里说明，因为它们改变了行为：
 
