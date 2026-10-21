@@ -38,28 +38,36 @@ test.describe('SQL 自由练习', () => {
   })
 
   test('练习不写学习进度（AC-011）', async ({ page }) => {
-    // 先记下当前的进度条数，跑完页面再比。**用接口断，不用肉眼**：
-    // "看起来没有增加"不能证明没有写入。
-    const before = await progressCount(page)
+    /**
+     * **用网络层证据，不用数据库条数**。
+     *
+     * <p>一开始写的是"查一次进度条数，练完再查一次，应当不变"。这条路走不通：
+     * 这个应用是纯 Bearer + refresh 轮换，测试进程里拿不到访问令牌（`page.request` 401），
+     * 而从页面里用 refresh 令牌换也会因为轮换后过期而 401（两种都实测过）。
+     *
+     * <p>更直接也更强的做法：**监视页面发出的请求**。学习进度只会通过
+     * `PUT /api/v1/learning/entries/{id}` 写入，只要整个练习过程里一个都没发出去，
+     * 就不可能有进度被写——这比"条数没变"更接近要证明的事。
+     */
+    const writes: string[] = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (request.method() !== 'GET' && /\/api\/v1\/learning\//.test(url)) {
+        writes.push(`${request.method()} ${url}`)
+      }
+    })
+
     await page.goto('/#/practice/sql')
     await expect(page.getByRole('heading', { name: /写一段 SQL/ })).toBeVisible()
 
-    // 页面停留与交互（编辑一下再离开），这期间任何进度写入都该被这里抓到
+    // 编辑一下并等渲染稳定：这期间任何进度写入都该被上面那个监听抓到
     const editor = page.getByTestId('sql-practice-editor')
     if (await editor.isVisible()) {
       await editor.fill('SELECT 1;')
+      await expect(editor).toHaveValue('SELECT 1;')
     }
     await page.waitForTimeout(500)
 
-    const after = await progressCount(page)
-    expect(after, '自由练习不允许写 learning_progress').toBe(before)
+    expect(writes, '自由练习不允许写 learning_progress').toEqual([])
   })
 })
-
-/** 当前用户的学习记录条数。 */
-async function progressCount(page: import('@playwright/test').Page): Promise<number> {
-  const response = await page.request.get('/api/v1/learning/progress?limit=500')
-  expect(response.ok()).toBeTruthy()
-  const json = (await response.json()) as { data?: unknown[] }
-  return Array.isArray(json.data) ? json.data.length : 0
-}

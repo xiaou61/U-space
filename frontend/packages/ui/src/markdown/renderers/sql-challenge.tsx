@@ -5,7 +5,7 @@ import { Button } from '../../components/button'
 
 import { useSourceReading } from './context'
 import type { SqlChallenge } from './schema'
-import { judgeSql, canonicalize, type SqlTable } from './sql-judge'
+import { canonicalSha256, type SqlTable } from './sql-judge'
 
 /**
  * SQL 写查询 / 改错（WORK-032）。
@@ -90,7 +90,7 @@ export function SqlBody({
           outcomes.push({ key, passed: false })
           continue
         }
-        const actualHash = await sha256(canonicalize(first, challenge.normalize ?? {}))
+        const actualHash = canonicalSha256(first, challenge.normalize ?? {})
         outcomes.push({ key, passed: actualHash === expectedHash })
       }
       setTables(lastTables)
@@ -204,10 +204,4 @@ function describeFailure(output: {
   }
   const message = output.stderr.trim()
   return message === '' ? '执行失败（没有错误输出）' : message
-}
-
-async function sha256(text: string): Promise<string> {
-  const bytes = new TextEncoder().encode(text)
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
