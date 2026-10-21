@@ -598,6 +598,25 @@ class ApiWalkthroughTest {
         // 面板的图线走 Grafana 的 POST 查询接口（唯一的 POST 例外，语义仍是只读）
         bestEffort("POST", "/api/v1/ops/grafana/api/ds/query", adminToken());
 
+        // ---- 每日速递（WORK-027）----
+        // 读接口在学习者端；管理端两个走 ADMIN。抓取由定时任务做，自查不触发。
+        call("速递当日", "GET", "/api/v1/digest", bearer, null);
+        call("速递日期列表", "GET", "/api/v1/digest/dates", bearer, null);
+        call("速递周报", "GET", "/api/v1/digest/weekly", bearer, null);
+        MvcResult digestItems = call("管理端速递清单", "GET", "/api/v1/digest/admin/items",
+                adminToken(), null);
+        // 删除端点要有条真实 id 才能打到；今天没有速递内容时跳过（接口本身仍被
+        // 上面的清单命中，覆盖度不受影响）。有内容时删掉一条，顺便验证硬删语义。
+        String digestDeleteId = firstIdOrNull(digestItems);
+        if (digestDeleteId != null) {
+            call("管理端删速递", "DELETE", "/api/v1/digest/admin/items/" + digestDeleteId,
+                    adminToken(), null);
+        } else {
+            // 没有数据时用 bestEffort 打一次不存在的 id：端点被走到，404 不影响结论
+            bestEffort("DELETE", "/api/v1/digest/admin/items/999999999", adminToken());
+        }
+
+
         } catch (RuntimeException | AssertionError failure) {
             // 单步异常不中断整轮：把这一条记下来，最后连同其余失败一起报
             steps.add(new Step("中断于：" + failure.getClass().getSimpleName(), "-", "-", 0, false,
@@ -939,6 +958,16 @@ class ApiWalkthroughTest {
     private long firstIdAt(MvcResult result) throws Exception {
         Object nested = JsonPath.read(body(result), "$.data[0].id");
         return ((Number) nested).longValue();
+    }
+
+    /** 列表为空时返回 null（不抛）——给"有数据才删一条"这种可选步骤用。 */
+    private String firstIdOrNull(MvcResult result) throws Exception {
+        try {
+            Object nested = JsonPath.read(body(result), "$.data[0].id");
+            return String.valueOf(((Number) nested).longValue());
+        } catch (RuntimeException exception) {
+            return null;
+        }
     }
 
     private long longAt(MvcResult result, String path) throws Exception {

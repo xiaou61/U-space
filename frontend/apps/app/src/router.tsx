@@ -8,6 +8,7 @@ import { CampDetailPage } from './pages/CampDetailPage'
 import { CampListPage } from './pages/CampListPage'
 import { CategoryEntriesPage } from './pages/CategoryEntriesPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
+import { DigestPage } from './pages/DigestPage'
 import { LearnPage } from './pages/LearnPage'
 import { TrackMapPage } from './pages/TrackMapPage'
 import { LoginPage } from './pages/LoginPage'
@@ -71,6 +72,15 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <TrackMapPage />
+      </RequireAuth>
+    ),
+  },
+  // 每日速递（WORK-027）：当天有什么值得知道的事，一屏看完。
+  {
+    path: '/digest',
+    element: (
+      <RequireAuth>
+        <DigestPage />
       </RequireAuth>
     ),
   },

@@ -15,7 +15,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, Link2, Search, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -36,8 +36,10 @@ const knowledge = createKnowledgeApi(api)
 export function NoteNewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  // 速递「存成笔记」带着预填内容跳到这里（WORK-027 I-16）：/notes/new?title=…&content=…
+  const [searchParams] = useSearchParams()
+  const [title, setTitle] = useState(() => searchParams.get('title') ?? '')
+  const [body, setBody] = useState(() => searchParams.get('content') ?? '')
   const [entry, setEntry] = useState<{ id: number; title: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmLeave, setConfirmLeave] = useState(false)

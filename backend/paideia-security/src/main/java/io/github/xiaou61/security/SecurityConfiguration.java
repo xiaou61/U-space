@@ -163,6 +163,14 @@ public class SecurityConfiguration {
                         // 之前**：顺序写反这条永不生效、也不会有任何报错，只会在某天表现为
                         // "任何已登录的学习者都能看别人的用量、给自己发积分"。
                         .requestMatchers("/api/v1/ai/admin/**").hasRole("ADMIN")
+                        // 速递的管理端删除（WORK-027）。**必须排在任何更宽的 /api/v1/digest 规则
+                        // 之前**：顺序写反这条永不生效、也不会有任何报错，只会在某天表现为
+                        // "任何已登录的学习者都能删速递条目"。路径用 `<模块>/admin` 而不是
+                        // `/api/v1/admin/<模块>`——后者不匹配任何既有规则，会直接落到 anyRequest。
+                        .requestMatchers("/api/v1/digest/admin/**").hasRole("ADMIN")
+                        // 速递的读接口（WORK-027）：要登录。内容本身是公开新闻，但"哪天看过什么"
+                        // 是隐私，且不做匿名访问可以避免它被当成公开抓取源。
+                        .requestMatchers("/api/v1/digest/**").authenticated()
                         // AI 精简（WORK-005）：**只要有身份即可，不要求角色**。显式写一条而不是
                         // 靠下面的 anyRequest() 兜住，是为了让"它没有角色限制"成为一个可读的声明——
                         // 否则将来看到这个前缀没有规则，会以为漏配了。余额与明细都是每个用户自己的，
