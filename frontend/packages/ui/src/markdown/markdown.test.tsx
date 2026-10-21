@@ -26,7 +26,13 @@ import { Markdown, type MarkdownProps } from './markdown'
  * （两种模式渲染同一个 markdown 得到同一副骨架，AC-008）。
  */
 
-/** 渲染器是懒加载的：先热一次，之后每次挂载都不再走 Suspense。 */
+/**
+ * 渲染器是懒加载的：先热一次，之后每次挂载都不再走 Suspense。
+ *
+ * <p>超时由 `vitest.config.ts` 统一放宽（`hookTimeout`）——这里不重复写数字，
+ * 免得同一个旋钮两处给值。原因见那份配置的注释：`pnpm -r test` 并发时这一步会超过默认 10 秒，
+ * 而它一失败就会让整个文件的 73 条用例静默不跑。
+ */
 beforeAll(async () => {
   await import('streamdown')
   await act(async () => {

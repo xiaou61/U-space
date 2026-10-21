@@ -174,7 +174,14 @@ MSYS_NO_PATHCONV=1 E2E_BASE_URL=http://<服务器>:8081 E2E_ADMIN_PATH=/admin/ \
 - `E2E_ADMIN_PATH` 必须给：部署形态是"一个进程同时供 API 与两个前端"，**两个前端各占一个地址**——学习者端在 `/`、管理端在 `/admin/`（`/admin` 与 `/admin/` 都由 view controller 转发到管理端的 index.html）。
 - **账号必须给**：种子账号（`seed-admin`/`seed-learner`）不在线上——口令写在公开仓库里，放到公网可达的实例上等于开放管理权限。线上是 `admin` 与 `e2e-learner`（后者是为 e2e 建的普通学习者），口令见被忽略的 `backend/config/application-local.yml`。
 - **`MSYS_NO_PATHCONV=1` 不能省**：Git Bash 会把 `/admin/index.html` 这类值改写成 Windows 路径，测试会全红、且报错指向"元素找不到"，极易误判成界面坏了。
-- 这条路径的两个边界：① 它**真的写线上库**（知识库那条用例自己建、自己删）；② 注册/邮箱验证码那几条**只能在本机跑**——要靠内存信箱读验证码，线上是真实 SMTP。学习者端的 e2e 因此仍走本地那条。
+- 这条路径的两个边界：① 它**真的写线上库**（知识库那条用例自己建、自己删）；② 注册/邮箱验证码那几条**只能在本机跑**——要靠内存信箱读验证码，线上是真实 SMTP。
+- **学习者端也能打线上**（2026-10-21 实测订正，旧说法"学习者端仍走本地那条"已过期）。
+  命令与上一节相同，只把末尾换成 `pnpm --filter @paideia/app test:e2e`，**五个环境变量都要给**：
+  `E2E_BASE_URL` / `E2E_ADMIN_IDENTIFIER` / `E2E_ADMIN_PASSWORD` / `E2E_LEARNER_IDENTIFIER` / `E2E_LEARNER_PASSWORD`。
+  实测 **61 条 / 2 分 36 秒**（串行，`workers: 1`，因为后端有状态）。
+- **三组凭据缺一不可，漏了会伪装成"产品缺陷"**（2026-10-21 踩到）：`graph.spec.ts` 单独硬编码了
+  `seed-admin` 作默认值，而线上没有这个账号 → 4 条用例报「管理员登录失败：夹具没法造」。
+  补上 `E2E_ADMIN_*` 后 6 条全过。**全仓只有 `graph.spec.ts` 需要管理员身份**。
 
 ## 工作树与磁盘（2026-10-21 实测）
 
