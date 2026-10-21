@@ -4857,14 +4857,187 @@ schema_version: 1
   - 失败语义：**空返回不重试**（通常是 `max_tokens` 被思考吃满，再问一次只会让用户被扣两次）；坏格式**只修复一轮**；修复本身失败时保留第一轮已合格题；已产生用量按实际结算、没产生才全退。
 - 依据：`.agent/changes/WORK-029-AI训练营/{requirements,proposal,design,tasks}.md`（2026-10-20 由 xiaou61 签署）
 - 验证：
-  - 后端全量 `scripts/test-db.sh mvn -B -T 1C test` → **245 执行 / 0 失败 / 4 跳过**
+  - 后端全量 `scripts/test-db.sh mvn -B -T 1C test` → **249 执行 / 0 失败 / 4 跳过**
   - `CampIntegrationTest` 18 条、camp 包 17 条单测、纯函数 32 条全绿
   - 契约：`ApiContractTest` + `ApiWalkthroughTest` 走查 11 个端点，`api-shape.json` 增 11 行且不含 `answerIndex`/`explanation`
   - 注销级联逐表断言；迁移校验和登记一行
   - 前端 `@paideia/camp` 7 条单测、`tsc` 通过、`camp.spec.ts` 3 条 e2e 全绿（含 390px 无横向滚动）
   - 学习者端全量 e2e：79 passed / 7 failed / 2 skipped。**7 条与本轮无关**——`learn.spec` 与 `graph.spec` 依赖种子轨道与概念，空的自建测试库没有这些数据；对照实验：撤掉本轮 `LearnPage` 改动后同样红 6 条
   - 七条反向验证逐条真跑红过：PII 泄露、解析锚定、分档余数、优先级排序、inconclusive 分支、注销级联某表、e2e 交卷门
-  - `project-lifecycle.ps1 validate --strict` 通过
-- 未覆盖（报告里逐条写明）：真实模型出题质量、AC-013 的「全对 > 全错」端到端、TASK-018 的手动串联、空概念部署的界面文案
-- 本地提交：4 笔（5408f06 / af82e64 / e94cd95 / 3f8e904），在 `feat/work-029-camp` 工作树
+  - `project_validate.py --strict`：`errors` 为空；`valid=false` 只由**全库既有**的 Markdown 体积/证据时点类警告触发（master 上同样如此），本轮未新增任何错误
+- 未覆盖（报告里逐条写明）：**真实模型出题质量**（全部测试模型都是桩）、TASK-018 只验到 do 任务指向真条目、空概念部署的界面文案
+- 收尾时又修掉三个真缺陷（见下一段），并补 `CampMasteryIntegrationTest` 4 条
+- 本地提交：5 笔（5408f06 / af82e64 / e94cd95 / 3f8e904 / 22005d3），在 `feat/work-029-camp` 工作树
 - 远端推送：未执行（等用户授权）
+
+## 2026-10-21 15:30 +0800 · WORK-029 · 补测试时抓出三个真缺陷
+
+- 类型：fix
+- 变更：
+  - `CampService.weakTopics` 的两个 `long` 参数顺序与调用点相反 → 概念永远查不到，计划**全部**降级成缺口项
+  - `buildPlan` 写完立即返回的视图把「已发布条目集合」传成空集 → 新出的计划每一项都被标「已下架」；两处组装合并为 `assemblePlanView`
+  - `CampIntegrationTest.planDegradesWhenEntryUnpublished` 因此长期**假通过**：计划本来就空，"下架后 id 消失"自然成立
+  - 新增 `CampMasteryIntegrationTest`（4 条）：AC-013 全对 > 全错、无营状态两次同分、连续两次逐位相同、计划 do 任务指向带 quiz 的真条目并走既有上报端点
+- 依据：写 TASK-018 的端到端用例时，计划里本应出现 `kind=do` 却一个都没有
+- 验证：
+  - 后端全量 `scripts/test-db.sh mvn -B -T 1C test` → **249 执行 / 0 失败 / 4 跳过**
+  - 三条反向验证真红过：第四路证据固定传 null（`全对 0.0000 vs 全错 0.0000`）、`weakTopics` 参数写反（强化后的 AC-009 立即红）、注销级联去表
+- 教训：**两个同类型参数相邻的方法，返回值看起来"正常"时最容易假通过**。AC-009 之所以没抓到，是因为它的断言只检查"不该出现的东西没出现"
+- 本地提交：22005d3
+- 远端推送：未执行（等用户授权）
+## 2026-10-21 · 前端测试实测：修掉一个会静默跳过 73 条的假失败
+
+- 类型：fix
+- 变更：
+  - `frontend/packages/ui/vitest.config.ts` 加 `testTimeout: 60_000` 与 `hookTimeout: 60_000`
+  - `frontend/packages/ui/src/markdown/markdown.test.tsx` 的 `beforeAll` 注释改为指向配置（不重复给数字）
+  - `dev-workflow.md` 的「在线上跑 e2e」一节订正两处过期说法
+- 实测（2026-10-21）：
+  | 项 | 数字 |
+  | --- | --- |
+  | 前端单测 `pnpm -r test` | **284 条 / 33–54 秒**（旧记录「176 条 / 11.5 秒」已过期） |
+  | 学习者端 e2e 打线上 | **61 条 / 2 分 36 秒**（`workers: 1`，后端有状态所以串行） |
+  | 管理端 e2e 打线上 | 22 条（此前实测） |
+  | e2e 单条均值 | **2.30 秒**；最慢 6.1 秒（分享链接）——没有哪一条是瓶颈，是 61 条叠加 |
+- **修掉的真缺陷（flaky，最危险的形态）**：`packages/ui` 的 `markdown.test.tsx` 在
+  `pnpm -r test` 并发（5 个 vitest 进程）时会踩两个默认超时：
+  ① `beforeAll` 现场 `import('streamdown')` 超过 10 秒 hook 上限；
+  ② 语料用例 `headings-deep` 回放 1658 个增量超过 5 秒 test 上限。
+  **后果不是报一条错，而是整个文件失败后 73 条用例静默不跑**，输出看着像「81 passed / 73 skipped」那样绿着。
+  连跑 4 次复现：一次 154 全过、一次 1 条超时、一次 beforeAll 打穿导致 73 条被跳过。
+  修后**连续 4 次全部 154/154**。
+- 订正的文档错误：
+  - 「学习者端 e2e 仍走本地那条」**已过期**——实测学习者端能打线上（61 条）
+  - 新增：**三组凭据缺一不可**。`graph.spec.ts` 单独硬编码 `seed-admin` 作默认，线上没有这个账号
+    → 4 条报「管理员登录失败：夹具没法造」，补 `E2E_ADMIN_*` 后 6 条全过。**全仓只有它需要管理员身份**
+- 未做（用户选择）：e2e 并行化。`workers: 1` 的理由（后端有状态、多 worker 抢端口与数据）是对的，
+  改成并行需要每个 worker 独立数据隔离，属实质工程量。2 分 36 秒按 61 条串行叠加，不是某处浪费。
+- 依据：用户「前端是不是也要优化一下，尤其是 e2e 太慢了」
+- 验证：`pnpm -r test` 连续 4 次全绿（154/154 ui、总 284 条）；`graph.spec.ts` 补凭据后 6 passed
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-21 · e2e 改为文件级选择性运行（实测省 65–92%）
+
+- 类型：maintenance
+- 变更：
+  - `AGENTS.md`：e2e 规矩从「按端跑」细化为「先选文件，不要默认全量」，附 13 个 spec 与页面的对应关系
+  - `dev-workflow.md`：加一张选择性跑法的实测成本表
+- 依据：用户「为什么修改后要跑全部的呢，既然说没办法优化时间了，那不能说选择性的跑吗」——这个问题指出我漏了 Playwright 原生的选择能力（`--grep` / 文件 / `--last-failed` / `--shard`），一直默认跑 `test:e2e`
+- 实测（2026-10-21，全部打线上）：
+  | 跑法 | 实测 |
+  | --- | --- |
+  | 全量 61 条 | **2 分 36 秒** |
+  | 单文件 2 条（`identity.spec.ts`） | **27 秒** |
+  | 单文件 6 条（`notes.spec.ts`） | **54 秒** |
+  | `--grep "八股文"` 1 条 | **13 秒** |
+- 归因：**固定启动约 20 秒，单条边际约 2.4 秒**。所以"全量慢"的本质是 61 条叠加，而不是某处浪费；
+  这也解释了为什么"优化单条"无效、而"少跑几条"立刻见效（省 65–92%）
+- 建立对应关系（改哪里跑哪个）：`HomePage`→`home`、知识库→`knowledge`、笔记→`notes`、图谱→`graph`、
+  助手→`assistant`、markdown 渲染→`markdown-render`、简历→`resume`、身份/导航→`identity`、
+  MCP→`mcp-tokens`、源码解读→`source-reading`、移动端布局→`layout.mobile`、课程关卡→`learn`、PWA→`pwa`
+- 全量保留在两种场合：改了共享包（`@paideia/ui`/`core`/`auth`/`knowledge`）、发版前
+- 验证：三种跑法都实跑过（27s / 54s / 13s），结果与用例数一致
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-21 14:24:42 +0800 · WORK-030 · 建项：管理端优化（draft）
+
+- 类型：decision
+- 变更：新建 WORK-030-管理端优化/requirements.md（draft）：记录积分调整页应能搜索全部用户、新增用户管理页
+- 决策：建 WORK-030，范围由用户逐条口述，口述完成前不进入方案阶段
+- 依据：用户：积分调整这里应该是可以搜索到全部用户吧，你这个让人搜用户id干什么呢；我们要添加一个用户管理
+- 验证：validate 通过，无 WORK-030 相关错误或警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:28:34 +0800 · WORK-030 · 第二轮口述：删积分调整页、并入用户管理，管理端整体去简约
+
+- 类型：decision
+- 变更：requirements.md 补第二轮口述的九条用户决定、管理端十页现状表（筛选/分页/问题）、sub2api 参照形态、REQ-001..040 与四条质量要求
+- 决策：删掉独立积分调整页，积分配额并入新增的用户管理；用户管理可下钻单个用户的积分与 AI 消耗；后台列表页必须都有筛选；调用明细与整体观感照 sub2api 重做
+- 依据：用户：这个调整积分的功能都不需要，可以删掉；后台很多东西你都没有可以筛选的按钮；调用明细参考 sub2api 那样的方式，目前 UI 太简约了
+- 验证：逐页读码核实十页现状：条目管理是唯一同时有筛选与分页的页；举报与调用明细的后端已支持筛选但前端未用；validate 无 WORK-030 错误
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:31:50 +0800 · WORK-030 · 第三轮：参照物换成 new-api，用户管理补齐增删改与字段清单
+
+- 类型：decision
+- 变更：requirements.md 补字段清单（用户列表九列、详情两块、调用明细十一列）、三条实现约束（角色写进令牌故改角色需吊销 refresh；AccountDeletionService 需密码不可直接复用；UserMapper 三条 SELECT 写死列清单）、AC-001..015、非目标与假设；参照物章节改写
+- 决策：U-10 参照物由 sub2api 换为 new-api；U-12 用户管理基本操作全要（改角色/禁用/删除/调积分/看消耗）；U-13 管理员不能动自己；U-11 列表字段补密
+- 依据：用户：可以类似于newapi那种ui 也可以 不用sub2api了；主要我感觉字段也少；1.可以 2.管理员不能动自己 3.你换成newapi那种
+- 验证：读码核实：TokenService.issueWithin 把 role 写进 claim（改角色对旧令牌无效）；RefreshTokenMapper.deleteByUser 已存在；AccountDeletionService.delete 校验用户密码；UserMapper 三条 SELECT 无 created_at；validate 仅余文件体积警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:37:37 +0800 · WORK-030 · 调用明细：核实 AgentScope 事件流不适用，改为补步骤级信息（REQ-050..055）
+
+- 类型：decision
+- 变更：requirements.md 新增 U-14/U-15、实现选择章节（含八条技术选择）、REQ-050..055、AC-016..019、两条质量要求（内容限长与隐私边界）、待确认问题 6/7
+- 决策：不采用 streamEvents/Middleware（我们是手写工具循环 + agentscope-core 2.0.0，只用了 Model 与 accumulator，事件流的五类产出我们已有 e2e 记录）；改为补四项步骤级信息：首字延迟、模型与提示词版本、工具入参、工具返回预览
+- 依据：用户分享 AgentScope Java 事件流文章并问是否可用、作用是什么，诉求是调用明细信息更详细
+- 验证：逐行核实：pom 声明 agentscope-core 2.0.0；AgentScopeConversation:103 是手写 for 循环不是 ReActAgent；ai_run_spans 已记六列；SpanRecord.ttftMs 字段存在但 DefaultRunRecorder.close() 恒传 null；ALLOWED_ATTRS 仅 8 个请求级键；validate 无 WORK-030 错误，REQ 编号无重号
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:40:28 +0800 · WORK-030 · U-16/U-17 裁决：工具返回与完整 payload 都要存，新增 payload 表
+
+- 类型：decision
+- 变更：requirements.md 增 REQ-060..067、AC-020..025、质量要求两条（payload 与 attrs 的职责区分、payload 不得同步写阻塞对话）、待确认问题 8/9；修复上一轮误删的调用概览与总览两节
+- 决策：U-16 工具返回照存（隐私边界选 A）；U-17 完整 prompt 与模型原始返回也要存，落到新表 ai_run_payloads（独立保留期 7 天、独立开关、超 1MB 存占位、写入走既有异步队列）
+- 依据：用户：第一 第二我们都需要存的
+- 验证：validate 无 WORK-030 错误；REQ 共 40 条无重号；误删的 REQ-030/031/040 已复位并复核存在
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:42:20 +0800 · WORK-030 · 核实为何不用 ReActAgent，结论写入 references（不迁移）
+
+- 类型：decision
+- 变更：.agent/references/agentscope-and-deepseek-2026-10.md 新增第三节「为什么不用 ReActAgent」，含版本核实、五条迁移阻碍、四条重评触发条件、升级时必须连带升级 MCP SDK pin
+- 决策：不迁移到 ReActAgent：收益为零（五类事件的数据我们已有 ai_run_spans），成本落在全项目 bug 密度最高的 379 行；只在遇到能力墙（子 Agent／运行中干预／沙箱）时重评
+- 依据：用户：我们为什么不用 AgentScope 提供的 ReActAgent 呢？他们的应该是更加好用的吧？是不是可以新开一个 work 专门做这个事情
+- 验证：解包核实：2.0.0 的 jar 无 FinalAnswerFilterMiddleware，2.0.4 有；2.0.4 传递 mcp 0.17.2 而仓库 pin 0.17.0；Maven Central 最新稳定 2.0.4、另有 2.1.0-BETA1；代码核实 AgentScopeConversation:103 为手写循环、:300 有 NoteDraft 旁路、:303 有 find_tools 逐轮发现
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:53:58 +0800 · WORK-031 · 尖刺实测通过：建 WORK-031（ReActAgent 迁移），并修正上一轮的错误结论
+
+- 类型：decision
+- 变更：新建 WORK-031/requirements.md（12 REQ + 12 AC）；references/agentscope-and-deepseek-2026-10.md 第三节整节重写为实测结果
+- 决策：建 WORK-031「Agent运行时迁移到ReActAgent」（draft）：分三步——升 2.0.4 并连带升 MCP pin 到 0.17.2、用 ReActAgent 替换手写循环、用 MiddlewareBase 补齐观测。上一轮「程序化工具接不上、收益为零」的结论被实测推翻，已在 references 更正
+- 依据：用户：我们为什么不用 Agent Scope 提供的 ReActAgent 呢？是不是可以新开一个 work 专门做这个事情呢
+- 验证：真实 DeepSeek 跑通三个尖刺：Spike 5.9s（17 种事件、两轮工具调用、程序化 AgentTool 无需注解）；HookSpike 通过但 hook 包已标 removal；MiddlewareSpike 4.3s（ModelCallInput 给出 messages/tools/options/model，ChatUsage 给出 cached=256 与 reasoning）；validate 无 WORK-031 错误
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 14:57:46 +0800 · WORK-031 · 确定 WORK-030/031 顺序：031 先做，030 拆两阶段
+
+- 类型：decision
+- 变更：WORK-030 requirements 加 related_to WORK-031 与「分阶段与依赖」章节（逐条列出被阻塞与被放行的 REQ/AC）；WORK-031 requirements 加「本项与 WORK-030 的顺序」章节，指明 Middleware.onModelCall 与 AgentTool.callAsync 是 030 阶段 B 的落点
+- 决策：WORK-031 先做；WORK-030 拆为阶段 A（用户管理、筛选、分页、总览、删积分页，不依赖 031）与阶段 B（步骤级遥测与 payload 表，硬等 031）。不把 WORK-030 整项标 depends_on 031，否则用户管理会被引擎重写拖住
+- 依据：用户：ok可以的 那么既然这样 work30是不是要依赖这个31 这个31要先做了
+- 验证：逐条比对两项的代码落点：030 的遥测簇采集点在 runRound/execute（031 会替换），030 阶段 A 只碰 paideia-account、管理端前端与既有只读端点；迁移目录无冲突（031 不动 db/migration）；validate 仅余 WORK-030 体积警告
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-21 15:05:00 +0800 · 基础设施 · 建立架构图存档（mermaid + 生成 + 校验）
+
+- 类型：feature
+- 变更：新建 `docs/architecture/`（README 规则 + 01 模块依赖自动生成 + 02 请求链路 + 03 部署拓扑）；新增 `scripts/gen-arch-diagram.mjs`（从 pom 生成模块依赖图，`--check` 防漂移）与 `scripts/check-diagrams.mjs`（扫全仓 mermaid 图块做语法校验）；`AGENTS.md` 的「节奏」增加一条图与代码同提交的纪律；`frontend/` 根 devDeps 增加 `mermaid` 与 `jsdom`
+- 决策：图的权威副本用**纯文本 mermaid**，不用 draw.io/Excalidraw（画布格式 diff 全是噪声，模型只能整张重画、无法局部改）；分流规则是**能抽取的不让 AI 画**——模块依赖、表关系这类答案在 pom/schema 里的必须脚本生成，因为模型凭印象复述会漏会错；请求链路、时序、状态机这类抽取不出来的才由 AI 写
+- 依据：用户：其实我更想要的是那种能让AI生成的…就是能让AI生成的；以及：可以的 你看着怎么来实现一下，开始吧
+- 验证：`node scripts/check-diagrams.mjs` 扫 224 个文件 / 7 个图块全通过（6.5 秒）；`gen-arch-diagram.mjs --check` 与 pom 一致（11 模块 / 32 条依赖）；反向验证校验器：故意写坏图返回退出码 1 且定位到第 11 行；实测 mermaid 11 种图类型在 Node+jsdom 下均可 parse，且**不需要 chromium**（class/state/C4 在无 DOM 时会误报 DOMPurify 错误，故必须带 jsdom）
+- 已知限制：校验只做语法不做渲染，布局拥挤查不出来；`subgraph` 标题含全角括号必须加引号，否则词法错误
+- 本地提交：已提交（updates.md 本身未随本笔提交——文件里有其它会话的 WORK-030/031 未提交条目）
+- 远端推送：未推送
+
+## 2026-10-21 14:59:57 +0800 · WORK-031 · 签署 .agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
