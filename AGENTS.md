@@ -17,7 +17,13 @@
 细节、实测数字与踩过的坑统一记在 `.agent/notes/dev-workflow.md`，本节只留规则。
 
 - **提交**：每完成一轮能独立验证的工作就提交一次，按切片分笔，只提交本次范围的文件。本地提交是检查点，`push` 仍须单独授权。
-- **测试**：内环只跑受影响的用例，外环只跑**改动那一端**的 e2e，按端跑（`pnpm --filter @paideia/app test:e2e`、`--filter @paideia/admin test:e2e`、`--filter @paideia/ui-kit test:e2e`）。三端全量 `pnpm test:e2e:all` 只在改动跨端（动了共享包）时跑；桌面产物只在要更新桌面安装包时打。**不要用 `pnpm -r build`**——它连桌面壳一起打，近 20 分钟。
+- **测试**：内环只跑受影响的用例，外环只跑**改动那一端、且只到文件级**的 e2e（见下一条）。三端全量 `pnpm test:e2e:all` 只在改动跨端（动了共享包）时跑；桌面产物只在要更新桌面安装包时打。**不要用 `pnpm -r build`**——它连桌面壳一起打，近 20 分钟。
+- **e2e 先选文件，不要默认全量**（2026-10-21 实测）：学习者端全量 **61 条 / 2 分 36 秒**，但**单条边际成本只有约 2.4 秒、固定启动约 20 秒**——所以跑一个文件是 **13–54 秒**，全量是 156 秒。三种选法（都实测过）：
+  - `playwright test e2e/<名字>.spec.ts` —— 改哪个页面就跑对应文件
+  - `playwright test --grep "<测试名片段>"` —— 只验一条改动路径（**实测 13 秒**）
+  - `playwright test --last-failed` —— 修完失败后只重跑失败的
+  - 全量只在**改共享包**（`@paideia/ui` / `core` / `auth` / `knowledge`）或**发版前**跑
+  - 对应关系：`HomePage`→`home`；知识库→`knowledge`；笔记→`notes`；图谱→`graph`；助手→`assistant`；markdown 渲染→`markdown-render`；简历→`resume`；身份与导航→`identity`；MCP→`mcp-tokens`；源码解读→`source-reading`；移动端布局→`layout.mobile`；课程关卡→`learn`；PWA→`pwa`
 - **测试库是唯一入口**：任何碰数据库的验证都走 `scripts/test-db.sh`（或它包的 e2e），**不要直接 `mvn -B test` / `pnpm test:e2e` 连共用的 `paideia_test`**。这台机器上可能有别的会话同时在跑，共用库会让两轮测试互相删数据——单类跑全绿、全量跑红那种红**不是产品缺陷**，也不能当证据。脚本每次分配独占的 `paideia_run_<时间>_<pid>` 库，成功后自动删；失败时保留库名并打印出来。
 - **后端内环不要跑全量**：全量 543 条实测 **4 分 01 秒**，其中 `paideia-app`（集成测试模块）独占 2 分 15 秒。内环默认用 `scripts/test-db.sh mvn -B -T 1C -pl '!paideia-app' test`（**1 分 12 秒**，148 条）；只在提交、交接、改了跨模块契约时跑全量，且全量一律加 `-T 1C`（**3 分 30 秒**）。数据与分层见 `.agent/notes/dev-workflow.md` 的「实测基线」。
 - **并发会话各占一个工作区**：多个会话同时改这个仓库时，除主树 `F:\Paideia` 外，每个会话用 `git worktree add .worktrees/<名字> -b <分支>` 开自己的树（目录已忽略），互不踩 `target/`、`node_modules` 与工作区状态。主树保持在 `master`，只用于 review、落库和部署。并行 e2e 还要各挑一组端口：`PAIDEIA_BACKEND_PORT` / `PAIDEIA_APP_PORT` / `PAIDEIA_ADMIN_PORT` 都可覆写，否则 `reuseExistingServer` 会静默复用别人的服务、打到别人的库上。
