@@ -24,6 +24,7 @@
 @source '../../../../apps/ui-kit/src';
 @source '../../../../packages/auth/src';
 @source '../../../../packages/assistant/src';
+@source '../../../../packages/camp/src';
 @source '../../../../packages/knowledge/src';
 @source '../../../../packages/resume/src';
 /**

@@ -388,7 +388,7 @@ function UserEditor({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      className="bg-overlay fixed inset-0 z-50 grid place-items-center p-4"
       role="dialog"
       aria-modal="true"
       data-testid="admin-user-editor"
