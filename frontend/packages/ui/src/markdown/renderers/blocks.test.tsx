@@ -7,6 +7,7 @@ import { CodeMap } from './code-map'
 import { LearningPath } from './learning-path'
 import { CodeChallenge } from './code-challenge'
 import { Quiz } from './quiz'
+import { canonicalSha256, type SqlTable } from './sql-judge'
 
 /**
  * 五种块的交互行为（WORK-014）。
@@ -274,6 +275,77 @@ describe('CodeChallenge', () => {
     fireEvent.click(screen.getByTestId('challenge-bug-line-1'))
     fireEvent.click(screen.getByTestId('challenge-check'))
     expect(update).toHaveBeenCalledWith({ challenges: { 'bug-2': { score: 1, total: 1 } } })
+  })
+})
+
+describe('CodeChallenge · SQL 题', () => {
+  /**
+   * 判题口径本身由 `sql-judge.test.ts` 的语料覆盖；这里只验**关卡里的接线**：
+   * 跑出来的结果集比对之后，成绩真的写进了进度（WORK-032 TASK-010 的验收）。
+   *
+   * <p>哈希用 `canonicalSha256` 现算，不写死常量——否则格式一变这里就红，
+   * 而真正该红的是语料那条。
+   */
+  const TABLE = { columns: ['n'], rows: [['1']] }
+  const challenge = {
+    id: 'sql-1',
+    kind: 'sql-write',
+    title: '查出 1',
+    dataset: ['public'],
+    starter: 'SELECT 1 AS n;',
+    normalize: { types: { n: 'int' } },
+    expectHash: { public: canonicalSha256(TABLE, { types: { n: 'int' } }) },
+  }
+
+  function sqlSandbox(tables: SqlTable[]) {
+    return {
+      ready: async () => true,
+      run: async () => ({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+        durationMs: 10,
+        timedOut: false,
+        outOfMemory: false,
+        truncated: false,
+        tables,
+      }),
+    }
+  }
+
+  it('结果与期望一致：判定通过并写进进度', async () => {
+    const update = vi.fn()
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      progress: { read: () => null, update, reset: () => {} },
+      sandbox: sqlSandbox([TABLE]),
+    })
+    fireEvent.click(await screen.findByRole('button', { name: '运行' }))
+    await waitFor(() => expect(screen.getByTestId('sql-verdict').textContent).toContain('通过'))
+    expect(update).toHaveBeenCalledWith({ challenges: { 'sql-1': { score: 1, total: 1 } } })
+  })
+
+  it('结果不一致：判定失败，进度记 0 分而不是不记', async () => {
+    const update = vi.fn()
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      progress: { read: () => null, update, reset: () => {} },
+      sandbox: sqlSandbox([{ columns: ['n'], rows: [['2']] }]),
+    })
+    fireEvent.click(await screen.findByRole('button', { name: '运行' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('sql-verdict').textContent).toContain('结果与期望不一致'),
+    )
+    expect(update).toHaveBeenCalledWith({ challenges: { 'sql-1': { score: 0, total: 1 } } })
+  })
+
+  it('沙箱不可用：不渲染运行按钮，只说明只能阅读', async () => {
+    renderBlock(<CodeChallenge code={JSON.stringify(challenge)} isIncomplete={false} language="code-challenge" />, {
+      entryId: 1,
+      sandbox: { ready: async () => false, run: async () => { throw new Error('不该被调用') } },
+    })
+    await waitFor(() => expect(screen.getByText(/暂时只能阅读/)).toBeTruthy())
+    expect(screen.queryByRole('button', { name: '运行' })).toBeNull()
   })
 })
 

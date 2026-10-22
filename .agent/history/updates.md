@@ -5499,3 +5499,22 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   两种取令牌的路都实测 401
 - 本地提交：master 上 5 笔（含两次 merge）
 - 远端推送：**未执行**（需用户授权）
+
+## 2026-10-22 · WORK-032 TASK-010 收尾 + 两处遗留红测
+
+- 类型：implementation
+- 变更：
+  - TASK-010 的验收落到渲染层：`blocks.test.tsx` 新增三条 SQL 题用例（通过写 1 分 /
+    不一致写 0 分 / 沙箱不可用不渲染按钮），注入假 sandbox，不依赖真沙箱。
+    哈希用 `canonicalSha256` 现算而不是写死常量——格式变了该红的是语料那条。
+  - `tokens.test.ts` 红：`AdminUsersPage.tsx` 的弹窗底色 `bg-black/40` 改成已有的
+    `bg-overlay` 令牌（`AdminShell` 与 `ui/dialog.tsx` 都在用它）。WORK-030 遗留。
+  - `source-coverage.test.ts` 红：`globals.css` 补 `@source '../../../../packages/camp/src'`。
+    WORK-029 遗留，**是静默缺陷**——camp 包独有的 Tailwind 类名一直没生成。
+- 验证：
+  - `vitest run`（ui 包全量）→ **209 passed / 12 files**，无失败
+  - `blocks.test.tsx` 单跑 → 30 passed（原 27 + 新增 3）
+  - `tokens.test.ts` + `source-coverage.test.ts` 单跑 → 3 passed
+- 未做：TASK-010 的 e2e 级验收（关卡正文要真沙箱才有结果集），已在 tasks.md 写明
+- 本地提交：见下一笔
+- 远端推送：未执行

@@ -134,7 +134,7 @@ approver_role: CTO
   5. **绝不调用进度上报**。
 - 验证：e2e 打开页面、跑一条 SQL、看到结果；数据库断言 `learning_progress` 无新增（AC-011）；SQL 配额与 Java/Python 互不影响（AC-015）。
 
-### TASK-010 | pending | 关卡内题型渲染与进度
+### TASK-010 | done | 关卡内题型渲染与进度
 
 - 对应：REQ-011、REQ-012；AC-012
 - 依赖：TASK-009（共用编辑器组件）、TASK-008
@@ -143,7 +143,10 @@ approver_role: CTO
   1. schema 放开 `language: 'sql'`；新增 `sql-write` / `sql-fix` 的解析与判定接线。
   2. 判定结果按现有 `onGraded` 上报挑战分（沿用 `learning_progress`，不改服务端规则）。
   3. 沙箱不可用时降级为只读题面。
-- 验证：打线上的 `learn.spec.ts` 回归通过；新增一条"在关卡里做 SQL 题并计入进度"的用例。
+- 验证：`learn.spec.ts` 回归通过（2026-10-21 线上 16 passed / 1 skipped）；
+  "在关卡里做 SQL 题并计入进度"落在渲染层：`blocks.test.tsx` 的三条用例注入假沙箱，
+  分别验通过写 1 分、不一致写 0 分、沙箱不可用不渲染按钮。
+  **e2e 级别未覆盖**——关卡正文要真的跑起沙箱才有结果集，线上环境不保证开着。
 
 ## 依赖图
 
