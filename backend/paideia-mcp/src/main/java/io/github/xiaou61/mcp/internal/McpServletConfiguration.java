@@ -39,7 +39,12 @@ class McpServletConfiguration {
                 throws java.io.IOException, jakarta.servlet.ServletException {
             McpViewRegistry.McpView view;
             try {
-                view = registry.view(request.getPathInfo());
+                // 工具组的白名单来自已认证的凭据：工具清单是构建期固化的，必须按凭据分开建
+                java.util.Set<String> toolsets = request.getAttribute(McpViewRegistry.ATTR_TOOLSETS)
+                        instanceof java.util.Set<?> set
+                        ? set.stream().map(String::valueOf).collect(java.util.stream.Collectors.toSet())
+                        : java.util.Set.of();
+                view = registry.view(request.getPathInfo(), toolsets);
             } catch (McpViewRegistry.ViewNotFoundException missing) {
                 // 视图不存在与"端点不存在"给同一个响应，不告诉探测者哪些组存在
                 response.sendError(jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND);

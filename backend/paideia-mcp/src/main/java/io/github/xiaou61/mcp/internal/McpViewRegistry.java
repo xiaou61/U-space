@@ -43,6 +43,7 @@ class McpViewRegistry {
     static final String ATTR_USER_ID = "pd.pat.userId";
     static final String ATTR_TOKEN_ID = "pd.pat.tokenId";
     static final String ATTR_SCOPES = "pd.pat.scopes";
+    static final String ATTR_TOOLSETS = "pd.pat.toolsets";
 
     private final ToolCatalog catalog;
     private final McpToolInvoker invoker;
@@ -63,7 +64,16 @@ class McpViewRegistry {
      * <p>{@code computeIfAbsent} 保证并发下只构建一次：两个请求同时首次访问同一视图时，
      * 重复构建会留下一个没人引用的 server（它的 transport 还注册着会话清理任务）。
      */
-    McpView view(String path) {
+    /**
+     * 取（或首次构建）某个视图。
+     *
+     * <p><b>缓存键必须带上凭据的工具组</b>（2026-10-22）：MCP SDK 在构建 server 时固化工具清单，
+     * 而"能看见哪些工具"现在取决于凭据。只用视图名当键会让第一个请求的工具清单服务所有凭据——
+     * 表现为"勾了只授权知识库，清单里却仍是全部 11 个工具"（线上实测就是这样）。
+     *
+     * @param allowedToolsets 凭据的工具组白名单；空集合表示不限制
+     */
+    McpView view(String path, Set<String> allowedToolsets) {
         McpViews parsed = McpViews.parse(path)
                 .orElseThrow(() -> new ViewNotFoundException(path));
         // **形状合法不等于存在**：`/mcp/x/nope` 能解析出组名 `nope`，但目录里没有这个组。
@@ -72,11 +82,13 @@ class McpViewRegistry {
         if (!parsed.toolsets().isEmpty() && !catalog.toolsets().containsAll(parsed.toolsets())) {
             throw new ViewNotFoundException(path);
         }
-        return views.computeIfAbsent(parsed.name(), key -> build(parsed, pathOf(path)));
+        String key = parsed.name() + "|" + String.join(",", new java.util.TreeSet<>(allowedToolsets));
+        return views.computeIfAbsent(key, ignored -> build(parsed, pathOf(path), allowedToolsets));
     }
 
-    private McpView build(McpViews view, String endpoint) {
-        List<ToolDescriptor> descriptors = catalog.view(view.query());
+    private McpView build(McpViews view, String endpoint, Set<String> allowedToolsets) {
+        List<ToolDescriptor> descriptors = catalog.view(view.queryFor(
+                Set.of(ToolScope.READ, ToolScope.WRITE), allowedToolsets));
         HttpServletStreamableServerTransportProvider transport =
                 HttpServletStreamableServerTransportProvider.builder()
                         .mcpEndpoint(endpoint)
@@ -85,7 +97,8 @@ class McpViewRegistry {
                                 Map.of(
                                         ATTR_USER_ID, request.getAttribute(ATTR_USER_ID),
                                         ATTR_TOKEN_ID, request.getAttribute(ATTR_TOKEN_ID),
-                                        ATTR_SCOPES, request.getAttribute(ATTR_SCOPES))))
+                                        ATTR_SCOPES, request.getAttribute(ATTR_SCOPES),
+                                        ATTR_TOOLSETS, request.getAttribute(ATTR_TOOLSETS))))
                         .build();
 
         var specification = McpServer.sync(transport)
@@ -153,7 +166,11 @@ class McpViewRegistry {
         Set<ToolScope> scopes = rawScopes instanceof Set<?> set
                 ? (Set<ToolScope>) set
                 : Set.of();
-        PatCaller caller = new PatCaller(userId, tokenId, scopes);
+        @SuppressWarnings("unchecked")
+        Set<String> toolsets = context.get(ATTR_TOOLSETS) instanceof Set<?> set
+                ? (Set<String>) set
+                : Set.of();
+        PatCaller caller = new PatCaller(userId, tokenId, scopes, toolsets);
         ToolResult result = invoker.invoke(caller, view, toolName, arguments == null ? Map.of() : arguments);
         var builder = McpSchema.CallToolResult.builder().addTextContent(result.text());
         if (result.structured() != null) {
@@ -165,12 +182,8 @@ class McpViewRegistry {
         return builder.build();
     }
 
-    /** 调用者身份（来自 PAT 解析结果）。 */
-    record PatCaller(long userId, long tokenId, Set<ToolScope> scopes) {
-
-        ToolContext toContext() {
-            return new ToolContext(userId, null, scopes, ToolContext.Origin.EXTERNAL);
-        }
+    /** 调用者身份（来自 PAT 解析结果）。`toolsets` 为空表示不限制工具组。 */
+    record PatCaller(long userId, long tokenId, Set<ToolScope> scopes, Set<String> toolsets) {
     }
 
     /** 路径不是一个已知视图。 */

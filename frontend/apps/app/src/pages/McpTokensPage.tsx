@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   Input,
   Label,
   PageHeader,
@@ -22,6 +23,24 @@ import { createMcpTokensApi } from '../mcp-tokens-api'
 const tokens = createMcpTokensApi(api)
 
 const SCOPE_LABELS: Record<string, string> = { read: '只读', write: '写入' }
+
+/**
+ * 可选工具组。
+ *
+ * <p>**这是 2026-10-22 补的**：在此之前权限只有「只读/写入」两档，工具组只能靠改 URL 路径
+ * （`/mcp/x/knowledge`）挑，界面上没有任何入口。用户的原话是「可以控制的权限太少了」。
+ *
+ * <p>组名与后端 `ToolCatalog` 的工具组的 `toolset` 字段一一对应；新增组时这里补一条即可，
+ * 后端不校验组名（传错只会让凭据看起来什么都不能调，不会放大权限）。
+ */
+const TOOLSETS: ReadonlyArray<{ key: string; label: string; hint: string }> = [
+  { key: 'knowledge', label: '知识库', hint: '检索条目、读正文、列分类' },
+  { key: 'note', label: '笔记', hint: '列出、读取、新建、追加' },
+  { key: 'assessment', label: '自评', hint: '看标记、打「懂了/还不懂」' },
+  { key: 'learning', label: '学习进度', hint: '读到哪、下一站是哪' },
+  { key: 'account', label: '账号资料', hint: '身份与目标岗位' },
+  { key: 'assistant', label: '平台助手', hint: '把问题交给平台 AI 回答' },
+]
 
 /**
  * MCP 接入凭据（WORK-019）。
@@ -39,6 +58,8 @@ export function McpTokensPage() {
   const [name, setName] = useState('')
   const [write, setWrite] = useState(false)
   const [neverExpires, setNeverExpires] = useState(false)
+  /** 勾选了的工具组；**空集合 = 全部**（与改动前签发的凭据语义一致）。 */
+  const [toolsets, setToolsets] = useState<string[]>([])
   const [created, setCreated] = useState<string | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   const [createError, setCreateError] = useState<string | null>(null)
@@ -48,6 +69,7 @@ export function McpTokensPage() {
       tokens.create({
         name: name.trim(),
         scopes: write ? ['read', 'write'] : ['read'],
+        toolsets,
         expiresInDays: neverExpires ? 0 : 90,
       }),
     onSuccess: async (result) => {
@@ -91,6 +113,12 @@ export function McpTokensPage() {
     }
   }
 
+  const toggleToolset = (key: string, on: boolean) => {
+    setToolsets((previous) => (on ? [...previous, key] : previous.filter((item) => item !== key)))
+  }
+
+  const nameMissing = name.trim() === ''
+
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />}>
       <div className="mx-auto max-w-3xl space-y-6">
@@ -103,7 +131,7 @@ export function McpTokensPage() {
         {created === null ? null : (
           <Card className="border-primary/40">
             <CardContent className="space-y-3 pt-6">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">凭据已创建</p>
                   <p className="text-muted-foreground text-xs">
@@ -125,8 +153,12 @@ export function McpTokensPage() {
         )}
 
         <Card>
-          <CardContent className="space-y-4 pt-6">
-            <p className="text-sm font-medium">新建凭据</p>
+          <CardContent className="space-y-5 pt-6">
+            <div>
+              <p className="text-sm font-medium">新建凭据</p>
+              <p className="text-muted-foreground mt-1 text-xs">名称用于自己区分用途，不影响权限。</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="mcp-token-name">名称</Label>
               <Input
@@ -137,33 +169,71 @@ export function McpTokensPage() {
                 onChange={(event) => { setName(event.target.value) }}
               />
             </div>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+
+            {/* 工具组：不勾任何一项 = 全部工具组 */}
+            <div className="space-y-2">
+              <Label>可以访问</Label>
+              <div className="grid gap-2 sm:grid-cols-2" data-testid="mcp-token-toolsets">
+                {TOOLSETS.map((item) => {
+                  const checked = toolsets.includes(item.key)
+                  return (
+                    <label
+                      key={item.key}
+                      className="border-border hover:border-primary/40 flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors"
+                    >
+                      <Checkbox
+                        className="mt-0.5"
+                        data-testid={`mcp-toolset-${item.key}`}
+                        checked={checked}
+                        onCheckedChange={(value) => { toggleToolset(item.key, value === true) }}
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{item.label}</span>
+                        <span className="text-muted-foreground block text-xs">{item.hint}</span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {toolsets.length === 0
+                  ? '一项都不勾 = 全部工具组都能访问。'
+                  : `只允许 ${toolsets.length} 个组；其余组在外部助手的清单里根本不会出现。`}
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                <Checkbox
                   data-testid="mcp-token-write"
                   checked={write}
-                  onChange={(event) => { setWrite(event.target.checked) }}
+                  onCheckedChange={(value) => { setWrite(value === true) }}
                 />
                 允许写入（建笔记、打自评标记）
               </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                <Checkbox
                   data-testid="mcp-token-never-expires"
                   checked={neverExpires}
-                  onChange={(event) => { setNeverExpires(event.target.checked) }}
+                  onCheckedChange={(value) => { setNeverExpires(value === true) }}
                 />
                 永不过期（默认 90 天）
               </label>
             </div>
-            <Button
-              data-testid="mcp-token-create"
-              disabled={createToken.isPending || name.trim() === ''}
-              onClick={() => { createToken.mutate() }}
-            >
-              {createToken.isPending ? '创建中…' : '创建'}
-            </Button>
+
+            <div className="space-y-2">
+              <Button
+                data-testid="mcp-token-create"
+                disabled={createToken.isPending || nameMissing}
+                onClick={() => { createToken.mutate() }}
+              >
+                {createToken.isPending ? '创建中…' : '创建凭据'}
+              </Button>
+              {nameMissing ? (
+                <p className="text-muted-foreground text-xs">先填一个名称，下方的「创建凭据」才会亮起来。</p>
+              ) : null}
+            </div>
+
             {createError === null ? null : (
               <Alert variant="destructive">
                 <AlertTitle>没建成功</AlertTitle>
@@ -193,21 +263,34 @@ export function McpTokensPage() {
                 <li
                   key={token.id}
                   data-testid="mcp-token-row"
-                  className="border-border flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                  className="border-border hover:border-primary/30 flex flex-wrap items-start justify-between gap-3 rounded-lg border p-4 transition-colors"
                 >
-                  <div className="min-w-0 space-y-1">
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="truncate text-sm font-medium">{token.name}</span>
-                      {token.scopes.map((scope) => (
-                        <Badge key={scope} variant="secondary">{SCOPE_LABELS[scope] ?? scope}</Badge>
-                      ))}
                       {token.active ? (
-                        <Badge>有效</Badge>
+                        <Badge variant="success">有效</Badge>
                       ) : (
                         <Badge variant="destructive">已失效</Badge>
                       )}
                     </div>
                     <p className="text-muted-foreground font-mono text-xs">{token.prefix}…</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {token.scopes.map((scope) => (
+                        <Badge key={scope} variant="secondary">
+                          {SCOPE_LABELS[scope] ?? scope}
+                        </Badge>
+                      ))}
+                      {token.toolsets.length === 0 ? (
+                        <Badge variant="outline">全部工具组</Badge>
+                      ) : (
+                        token.toolsets.map((toolset) => (
+                          <Badge key={toolset} variant="outline">
+                            {TOOLSETS.find((item) => item.key === toolset)?.label ?? toolset}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
                     <p className="text-muted-foreground text-xs">
                       {token.expiresAt === null ? '永不过期' : `到期 ${formatDate(token.expiresAt)}`}
                       {' · '}
@@ -241,9 +324,8 @@ export function McpTokensPage() {
               {`{"type":"http","url":"<站点地址>/mcp","headers":{"Authorization":"Bearer <token>"}}`}
             </code>
             <p className="text-muted-foreground text-xs">
-              <code>/mcp</code> 是只读默认视图；<code>/mcp/x/knowledge</code> 单看知识库；
-              <code>/mcp/x/all</code> 是全部只读；写工具在 <code>/mcp/write</code> 或
-              <code>/mcp/x/{'{组}'}/write</code>，且需要上面勾过「允许写入」。
+              <code>/mcp</code> 是只读默认视图；<code>/mcp/x/all</code> 是全部只读；
+              写工具需要上面勾过「允许写入」。工具组已在凭据里限定，不必再改路径。
             </p>
           </CardContent>
         </Card>

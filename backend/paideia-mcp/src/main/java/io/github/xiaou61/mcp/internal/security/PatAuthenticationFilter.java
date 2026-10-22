@@ -36,6 +36,7 @@ class PatAuthenticationFilter extends OncePerRequestFilter {
     static final String ATTR_USER_ID = "pd.pat.userId";
     static final String ATTR_TOKEN_ID = "pd.pat.tokenId";
     static final String ATTR_SCOPES = "pd.pat.scopes";
+    static final String ATTR_TOOLSETS = "pd.pat.toolsets";
 
     private final PatService tokens;
 
@@ -60,6 +61,7 @@ class PatAuthenticationFilter extends OncePerRequestFilter {
         request.setAttribute(ATTR_USER_ID, found.userId());
         request.setAttribute(ATTR_TOKEN_ID, found.tokenId());
         request.setAttribute(ATTR_SCOPES, found.scopes());
+        request.setAttribute(ATTR_TOOLSETS, found.toolsets());
 
         var authentication = new UsernamePasswordAuthenticationToken(
                 String.valueOf(found.userId()), null,

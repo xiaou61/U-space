@@ -49,7 +49,7 @@ class McpStartupSmokeTest {
     @Test
     @DisplayName("initialize + tools/list：默认视图能回包，且清单里只有只读默认组工具")
     void streamableHttpRoundTrip() throws Exception {
-        PatService.CreatedToken created = tokens.create(7L, "冒烟", Set.of(ToolScope.READ), 1);
+        PatService.CreatedToken created = tokens.create(7L, "冒烟", Set.of(ToolScope.READ), Set.of(), 1);
 
         String sessionId = initialize("/mcp", created.plaintext());
         List<String> names = tools(("/mcp"), created.plaintext(), sessionId);
@@ -62,12 +62,38 @@ class McpStartupSmokeTest {
     @Test
     @DisplayName("子视图路由：/mcp/x/knowledge 只给知识组")
     void subViewRoutesToSingleToolset() throws Exception {
-        PatService.CreatedToken created = tokens.create(7L, "冒烟-知识", Set.of(ToolScope.READ), 1);
+        PatService.CreatedToken created = tokens.create(7L, "冒烟-知识", Set.of(ToolScope.READ), Set.of(), 1);
 
         String sessionId = initialize("/mcp/x/knowledge", created.plaintext());
         List<String> names = tools("/mcp/x/knowledge", created.plaintext(), sessionId);
 
         assertThat(names).isNotEmpty().allMatch(name -> name.startsWith("knowledge_"));
+    }
+
+    /**
+     * 凭据级工具组白名单（2026-10-22）。
+     *
+     * <p>线上实测踩到的真缺陷：工具清单在构建 server 时固化，而视图缓存键**只用了视图名**，
+     * 于是第一个请求的清单服务了所有凭据——勾了"只授权知识库"，清单里仍是全部 11 个工具。
+     * 现在缓存键带上工具组，这条钉死它。
+     */
+    @Test
+    @DisplayName("只授权 knowledge 的凭据看不到别的组的工具（清单按凭据分）")
+    void toolsetsLimitVisibleTools() throws Exception {
+        PatService.CreatedToken scoped = tokens.create(7L, "冒烟-限组",
+                Set.of(ToolScope.READ), Set.of("knowledge"), 1);
+        PatService.CreatedToken open = tokens.create(7L, "冒烟-不限组",
+                Set.of(ToolScope.READ), Set.of(), 1);
+
+        List<String> scopedNames = tools("/mcp", scoped.plaintext(),
+                initialize("/mcp", scoped.plaintext()));
+        List<String> openNames = tools("/mcp", open.plaintext(),
+                initialize("/mcp", open.plaintext()));
+
+        assertThat(scopedNames).isNotEmpty().allMatch(name -> name.startsWith("knowledge_"));
+        // 不限制的老凭据语义不变：仍然能看见别的组
+        assertThat(openNames).contains("note_list", "learning_progress");
+        assertThat(openNames.size()).isGreaterThan(scopedNames.size());
     }
 
     @Test
@@ -87,7 +113,7 @@ class McpStartupSmokeTest {
     @Test
     @DisplayName("未知视图 404，而不是 400——不告诉探测者哪些组存在")
     void unknownViewIsNotFound() throws Exception {
-        PatService.CreatedToken created = tokens.create(7L, "冒烟-路由", Set.of(ToolScope.READ), 1);
+        PatService.CreatedToken created = tokens.create(7L, "冒烟-路由", Set.of(ToolScope.READ), Set.of(), 1);
 
         HttpResponse<String> response = http.send(HttpRequest.newBuilder()
                 .uri(URI.create("http://127.0.0.1:" + port + "/mcp/x/nope"))

@@ -81,6 +81,23 @@ record McpViews(String name, Set<String> toolsets, boolean write, boolean defaul
         return ToolQuery.view(toolsets, write, null, scopes);
     }
 
+    /**
+     * 本视图对**这张凭据**的可调用集合：在视图自身的组过滤之上再交一次凭据的工具组白名单。
+     *
+     * <p>空白名单（老凭据）时保持原语义。两者取交集：视图说"只看 knowledge"、
+     * 凭据只准 `note` 时结果是空——这正是"缩小权限"该有的样子。
+     */
+    ToolQuery queryFor(Set<ToolScope> scopes, Set<String> allowedToolsets) {
+        if (allowedToolsets == null || allowedToolsets.isEmpty()) {
+            return queryFor(scopes);
+        }
+        Set<String> intersected = toolsets.isEmpty()
+                ? allowedToolsets
+                : toolsets.stream().filter(allowedToolsets::contains)
+                        .collect(java.util.stream.Collectors.toSet());
+        return ToolQuery.view(intersected, write, null, scopes);
+    }
+
     /** 构建视图时用的查询（服务端视角：按视图自身是否含写来决定 scope）。 */
     ToolQuery query() {
         Set<ToolScope> scopes = write

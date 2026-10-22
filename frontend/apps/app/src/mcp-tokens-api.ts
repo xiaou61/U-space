@@ -11,6 +11,8 @@ export interface McpToken {
   name: string
   prefix: string
   scopes: string[]
+  /** 工具组白名单；空数组 = 不限制（与改动前的凭据一致）。 */
+  toolsets: string[]
   expiresAt: string | null
   lastUsedAt: string | null
   revokedAt: string | null
@@ -23,12 +25,15 @@ export interface CreatedMcpToken {
   token: string
   prefix: string
   scopes: string[]
+  toolsets: string[]
   expiresAt: string | null
 }
 
 export interface McpTokenInput {
   name: string
   scopes: string[]
+  /** 工具组白名单；不传或空数组 = 全部工具组。 */
+  toolsets?: string[]
   /** 0 表示永不过期；不传走服务端默认（90 天）。 */
   expiresInDays?: number
 }

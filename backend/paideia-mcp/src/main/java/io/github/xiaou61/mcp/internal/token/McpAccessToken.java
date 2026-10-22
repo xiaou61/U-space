@@ -17,6 +17,8 @@ class McpAccessToken {
     private String tokenHash;
     /** "read" 或 "read,write"；解析在服务层。 */
     private String scopes;
+    /** 工具组白名单（逗号分隔）；**null = 不限制**，与本次改动前的语义一致。 */
+    private String toolsets;
     private Instant expiresAt;
     private Instant lastUsedAt;
     private Instant revokedAt;
@@ -68,6 +70,14 @@ class McpAccessToken {
 
     void setScopes(String scopes) {
         this.scopes = scopes;
+    }
+
+    String getToolsets() {
+        return toolsets;
+    }
+
+    void setToolsets(String toolsets) {
+        this.toolsets = toolsets;
     }
 
     Instant getExpiresAt() {

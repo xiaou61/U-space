@@ -68,7 +68,7 @@ class McpToolInvoker {
         ToolDescriptor descriptor = found.get().descriptor();
 
         // 视图校验：当前视图的清单是唯一权威（按调用者的 scope 过滤后仍须包含它）
-        boolean visible = catalog.view(view.queryFor(caller.scopes()))
+        boolean visible = catalog.view(view.queryFor(caller.scopes(), caller.toolsets()))
                 .stream().anyMatch(candidate -> candidate.name().equals(toolName));
         if (!visible) {
             return ToolResult.fail("没有名为「" + toolName + "」的工具");

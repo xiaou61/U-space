@@ -55,11 +55,13 @@ public class PatService {
     }
 
     /** 创建结果。**明文只在这里出现一次**。 */
-    public record CreatedToken(long id, String plaintext, String prefix, Set<ToolScope> scopes, Instant expiresAt) {
+    public record CreatedToken(long id, String plaintext, String prefix, Set<ToolScope> scopes,
+                               Set<String> toolsets, Instant expiresAt) {
     }
 
-    /** 列表项：不含 hash，也不含明文。 */
+    /** 列表项：不含 hash，也不含明文。`toolsets` 为空表示不限制工具组。 */
     public record TokenView(long id, String name, String prefix, Set<ToolScope> scopes,
+                            Set<String> toolsets,
                             Instant expiresAt, Instant lastUsedAt, Instant revokedAt, Instant createdAt) {
 
         public boolean active(Instant now) {
@@ -68,10 +70,26 @@ public class PatService {
     }
 
     /** 校验通过后的身份。**userId 只从这里来**。 */
-    public record PatPrincipal(long userId, long tokenId, Set<ToolScope> scopes) {
+    public record PatPrincipal(long userId, long tokenId, Set<ToolScope> scopes, Set<String> toolsets) {
+
+        /**
+         * 这张凭据是否允许某个工具组。
+         *
+         * <p>**空集合 = 不限制**：本次改动前签发的凭据没有这一列，语义必须与之前一致，
+         * 否则线上已有的十几把钥匙会突然只剩一个组。
+         */
+        public boolean allowsToolset(String toolset) {
+            return toolsets.isEmpty() || toolsets.contains(toolset);
+        }
+
+        /** 交给视图层的组过滤集合：不限制时返回空集合（`ToolQuery` 里空集合即"不按组过滤"）。 */
+        public Set<String> toolsetFilter() {
+            return toolsets;
+        }
     }
 
-    public CreatedToken create(long userId, String name, Set<ToolScope> scopes, Integer expiresInDays) {
+    public CreatedToken create(long userId, String name, Set<ToolScope> scopes,
+                               Set<String> toolsets, Integer expiresInDays) {
         String trimmedName = name == null ? "" : name.trim();
         if (trimmedName.isEmpty()) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "凭据名称不能为空");
@@ -99,11 +117,13 @@ public class PatService {
         token.setTokenPrefix(plaintext.substring(0, DISPLAY_PREFIX_LENGTH));
         token.setTokenHash(hash(plaintext));
         token.setScopes(join(scopes));
+        token.setToolsets(toolsets == null || toolsets.isEmpty() ? null : String.join(",", new java.util.TreeSet<>(toolsets)));
         token.setExpiresAt(expiresAt);
         token.setCreatedAt(now);
         tokens.insert(token);
 
-        return new CreatedToken(token.getId(), plaintext, token.getTokenPrefix(), Set.copyOf(scopes), expiresAt);
+        return new CreatedToken(token.getId(), plaintext, token.getTokenPrefix(), Set.copyOf(scopes),
+                parseToolsets(token.getToolsets()), expiresAt);
     }
 
     /**
@@ -136,7 +156,8 @@ public class PatService {
         if (row.getLastUsedAt() == null || row.getLastUsedAt().isBefore(now.minus(TOUCH_INTERVAL))) {
             tokens.touchLastUsed(row.getId(), now);
         }
-        return Optional.of(new PatPrincipal(row.getUserId(), row.getId(), parseScopes(row.getScopes())));
+        return Optional.of(new PatPrincipal(row.getUserId(), row.getId(), parseScopes(row.getScopes()),
+                parseToolsets(row.getToolsets())));
     }
 
     public List<TokenView> list(long userId) {
@@ -157,6 +178,7 @@ public class PatService {
 
     private static TokenView toView(McpAccessToken token) {
         return new TokenView(token.getId(), token.getName(), token.getTokenPrefix(), parseScopes(token.getScopes()),
+                parseToolsets(token.getToolsets()),
                 token.getExpiresAt(), token.getLastUsedAt(), token.getRevokedAt(), token.getCreatedAt());
     }
 
@@ -169,6 +191,21 @@ public class PatService {
             ToolScope scope = ToolScope.of(part);
             if (scope != null) {
                 result.add(scope);
+            }
+        }
+        return Set.copyOf(result);
+    }
+
+    /** `toolsets` 列 → 集合。空白与 null 都是"不限制"。 */
+    static Set<String> parseToolsets(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Set.of();
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (String part : raw.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
             }
         }
         return Set.copyOf(result);

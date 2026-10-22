@@ -38,14 +38,15 @@ class McpTokenController {
         this.tokens = tokens;
     }
 
-    record CreateRequest(String name, List<String> scopes, Integer expiresInDays) {
+    record CreateRequest(String name, List<String> scopes, List<String> toolsets, Integer expiresInDays) {
     }
 
-    /** 创建响应：**只此一次**带明文。 */
-    record CreatedView(long id, String token, String prefix, List<String> scopes, Instant expiresAt) {
+    /** 创建响应：**只此一次**带明文。`toolsets` 空表示不限制工具组。 */
+    record CreatedView(long id, String token, String prefix, List<String> scopes, List<String> toolsets,
+                       Instant expiresAt) {
     }
 
-    record TokenView(long id, String name, String prefix, List<String> scopes,
+    record TokenView(long id, String name, String prefix, List<String> scopes, List<String> toolsets,
                      Instant expiresAt, Instant lastUsedAt, Instant revokedAt, Instant createdAt, boolean active) {
     }
 
@@ -58,9 +59,12 @@ class McpTokenController {
         Integer days = request == null ? null : request.expiresInDays();
         Integer effectiveDays = Integer.valueOf(0).equals(days) ? null
                 : (days == null ? PatService.DEFAULT_EXPIRES_IN_DAYS : days);
-        var created = tokens.create(userId, request == null ? null : request.name(), scopes, effectiveDays);
+        Set<String> toolsets = parseToolsets(request == null ? null : request.toolsets());
+        var created = tokens.create(userId, request == null ? null : request.name(), scopes,
+                toolsets, effectiveDays);
         return ApiResponse.ok(new CreatedView(created.id(), created.plaintext(), created.prefix(),
-                created.scopes().stream().map(ToolScope::key).sorted().toList(), created.expiresAt()));
+                created.scopes().stream().map(ToolScope::key).sorted().toList(),
+                created.toolsets().stream().sorted().toList(), created.expiresAt()));
     }
 
     @GetMapping
@@ -69,9 +73,28 @@ class McpTokenController {
         return ApiResponse.ok(tokens.list(requester()).stream()
                 .map(view -> new TokenView(view.id(), view.name(), view.prefix(),
                         view.scopes().stream().map(ToolScope::key).sorted().toList(),
+                        view.toolsets().stream().sorted().toList(),
                         view.expiresAt(), view.lastUsedAt(), view.revokedAt(), view.createdAt(),
                         view.active(now)))
                 .toList());
+    }
+
+    /**
+     * 工具组白名单。**不校验组名是否存在**：组来自 `ToolCatalog`，而这是 account/mcp 之外的
+     * 装配期知识；传一个不存在的组只会让这张凭据看起来什么都不能调（安全侧失败），不会放大权限。
+     * 这样也避免让「新增一个工具组」必须改动这里。
+     */
+    private static Set<String> parseToolsets(List<String> raw) {
+        if (raw == null) {
+            return Set.of();
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (String value : raw) {
+            if (value != null && !value.isBlank()) {
+                result.add(value.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        return Set.copyOf(result);
     }
 
     @DeleteMapping("/{id}")

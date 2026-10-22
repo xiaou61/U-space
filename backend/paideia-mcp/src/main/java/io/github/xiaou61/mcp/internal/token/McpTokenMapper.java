@@ -20,21 +20,25 @@ import org.apache.ibatis.annotations.Update;
 interface McpTokenMapper {
 
     @Insert("""
-            INSERT INTO mcp_access_tokens (user_id, name, token_prefix, token_hash, scopes, expires_at, created_at)
-            VALUES (#{userId}, #{name}, #{tokenPrefix}, #{tokenHash}, #{scopes}, #{expiresAt}, #{createdAt})
+            INSERT INTO mcp_access_tokens (user_id, name, token_prefix, token_hash, scopes, toolsets,
+                                           expires_at, created_at)
+            VALUES (#{userId}, #{name}, #{tokenPrefix}, #{tokenHash}, #{scopes}, #{toolsets},
+                    #{expiresAt}, #{createdAt})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(McpAccessToken token);
 
     @Select("""
-            SELECT id, user_id, name, token_prefix, token_hash, scopes, expires_at, last_used_at, revoked_at, created_at
+            SELECT id, user_id, name, token_prefix, token_hash, scopes, toolsets,
+                   expires_at, last_used_at, revoked_at, created_at
             FROM mcp_access_tokens
             WHERE token_hash = #{tokenHash}
             """)
     McpAccessToken findByHash(@Param("tokenHash") String tokenHash);
 
     @Select("""
-            SELECT id, user_id, name, token_prefix, token_hash, scopes, expires_at, last_used_at, revoked_at, created_at
+            SELECT id, user_id, name, token_prefix, token_hash, scopes, toolsets,
+                   expires_at, last_used_at, revoked_at, created_at
             FROM mcp_access_tokens
             WHERE user_id = #{userId}
             ORDER BY created_at DESC

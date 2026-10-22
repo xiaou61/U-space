@@ -31,6 +31,40 @@ test('MCP 凭据：创建后明文只出现一次，刷新后只显示前缀', a
   await expect(page.getByTestId('mcp-token-row').filter({ hasText: name })).toContainText('pd_mcp_')
 })
 
+/**
+ * 2026-10-22：权限原来只有「只读/写入」两档，工具组只能靠改 URL 挑。
+ * 这条钉死"能按组勾选、且勾选结果回显在列表里"。
+ */
+test('MCP 凭据：可以只授权部分工具组，列表里回显勾了哪些', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/settings/mcp')
+
+  const name = `scoped-${String(Date.now())}`
+  await page.getByTestId('mcp-token-name').fill(name)
+  await page.getByTestId('mcp-toolset-knowledge').click()
+  await page.getByTestId('mcp-toolset-note').click()
+  await page.getByTestId('mcp-token-create').click()
+  await expect(page.getByTestId('mcp-token-plaintext')).toBeVisible()
+
+  const row = page.getByTestId('mcp-token-row').filter({ hasText: name })
+  await expect(row).toContainText('知识库')
+  await expect(row).toContainText('笔记')
+  // 没勾的组不该出现
+  await expect(row).not.toContainText('学习进度')
+})
+
+test('MCP 凭据：名称留空时创建按钮禁用并给出说明', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/settings/mcp')
+
+  const create = page.getByTestId('mcp-token-create')
+  await expect(create).toBeDisabled()
+  await expect(page.getByText('先填一个名称，下方的「创建凭据」才会亮起来。')).toBeVisible()
+
+  await page.getByTestId('mcp-token-name').fill('tmp')
+  await expect(create).toBeEnabled()
+})
+
 test('MCP 凭据：吊销后该行显示已失效', async ({ page }) => {
   await signIn(page)
   await page.goto('/#/settings/mcp')

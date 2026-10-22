@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 class McpToolInvokerTest {
 
     private static final McpViewRegistry.PatCaller READER =
-            new McpViewRegistry.PatCaller(7L, 1L, Set.of(ToolScope.READ));
+            new McpViewRegistry.PatCaller(7L, 1L, Set.of(ToolScope.READ), Set.of());
     private static final McpViewRegistry.PatCaller WRITER =
-            new McpViewRegistry.PatCaller(7L, 1L, Set.of(ToolScope.READ, ToolScope.WRITE));
+            new McpViewRegistry.PatCaller(7L, 1L, Set.of(ToolScope.READ, ToolScope.WRITE), Set.of());
 
     private final AtomicReference<ToolContext> lastContext = new AtomicReference<>();
     private final AtomicReference<Map<String, Object>> lastArguments = new AtomicReference<>();

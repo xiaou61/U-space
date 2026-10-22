@@ -32,6 +32,8 @@ test('壳常驻全站；不在条目页时说清"打开一条内容后可用"', 
 })
 
 test('记忆面板：能看到"它记住了什么"，并说明可逐条删除', async ({ page }) => {
+  // 断言的是"种子账号还没有记忆"这条空状态；线上验收账号有真实记忆，空态不成立
+  test.skip(REMOTE, '断言依赖种子账号没有记忆；部署实例上的账号有真实记忆')
   await signIn(page)
   await page.goto('/#/knowledge')
   await page.getByTestId('assistant-launcher').click()
@@ -89,6 +91,8 @@ test('积分不足时发送给出明确提示，而不是静默失败（也不�
 })
 
 test('打开条目后壳取到当前内容；不会偷偷发起生成，也不再出现"配置凭据"入口', async ({ page }) => {
+  // 依赖 db/devdata 的种子条目 id=3；线上库里没有这条数据
+  test.skip(REMOTE, '依赖种子条目 id=3，部署实例上没有')
   // 只盯 **POST**：壳打开时会发一个 GET 读已有结果，那是免费的读路径（命中缓存的意义就在这）。
   // 会花钱的只有 POST（生成），"打开条目不偷偷花钱"这条要验的正是没有 POST。
   const generateCalls: string[] = []
