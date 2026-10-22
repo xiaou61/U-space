@@ -51,7 +51,8 @@ LIMITS = {
     "id": 64,
     "title": 120,
     "steps": 20,
-    "pathSteps": 20,
+    # Java 从零开始已扩到 23 关；渲染器本身不限长，这个数只挡明显失控。
+    "pathSteps": 30,
     "quizQuestions": 10,
     "challengeLines": 60,
     "codeChars": 20_000,

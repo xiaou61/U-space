@@ -9,7 +9,7 @@ minutes: 30
 status: published
 ---
 
-# 19 · JVM 内存与垃圾回收入门
+# 23 · JVM 内存与垃圾回收入门
 
 ## 这一课你要会
 

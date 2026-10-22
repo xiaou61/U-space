@@ -9,7 +9,7 @@ minutes: 26
 status: published
 ---
 
-# 16 · Lambda 与函数式接口
+# 21 · Lambda 与函数式接口
 
 ## 这一课你要会
 

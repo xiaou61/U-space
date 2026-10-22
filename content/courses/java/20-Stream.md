@@ -9,7 +9,7 @@ minutes: 30
 status: published
 ---
 
-# 15 · Stream：把循环压成一条链
+# 20 · Stream：把循环压成一条链
 
 ## 这一课你要会
 
