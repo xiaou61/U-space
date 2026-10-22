@@ -2,13 +2,16 @@
 artifact: requirements
 work_id: WORK-033
 work: 题目知识点关联与掌握诊断
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增逐题作答数据与掌握度状态（数据归属与注销级联）；改变掌握度计算口径（用户可见判断）；跨 knowledge、ai、web 三个模块与课程内容源；影响推荐与复习调度（公共行为）；需要新的迁移与算法参数，出错会静默给出错误诊断
 workflow: full
 related_to: [WORK-020, WORK-021, WORK-024, WORK-029, WORK-032]
 created: 2026-10-22
 updated: 2026-10-22
+approved_by: xiaou61
+approved_at: 2026-10-22 16:27:49 +0800
+approver_role: CTO
 ---
 
 # 题目知识点关联与掌握诊断需求
