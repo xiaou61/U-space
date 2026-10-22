@@ -59,6 +59,10 @@ blob-report/
 # "工作区是否干净"判定弄脏 —— 于是验证报告会被判 stale（实测过一次）。
 .playwright-cli/
 coverage/
+# 设计原型截图与本地排查脚本（figcraft / playwright-cli 的产物，不是本项目内容）。
+# 与上面 .playwright-cli/ 同一理由：留着会把工作区判定弄脏，验证报告被判 drift。
+docs/design/
+output/
 
 # ---- IDE 与操作系统 ----
 .idea/
