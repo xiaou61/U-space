@@ -6,7 +6,7 @@ status: passed
 evidence: required
 workflow: full
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # 每日技术速递验证报告
@@ -30,7 +30,7 @@ updated: 2026-10-21
 | AC-005 清空 AI 凭据后仍入库、标降级 | 实跑（未配 AI 凭据） | 0 | 通过 | **入库 34 条全部 `degraded`**，标题+链接正常；`DigestSummarizerParseTest` 8 条覆盖空内容/坏 JSON 均返回空 map |
 | AC-006 导航栏可达、默认当天、能翻前一天 | `digest.spec.ts` | 0 | 通过 | 从 `learner-nav-digest` 与 `home-entry-digest` 都能进；日期选择器列出最近 30 天 |
 | AC-007 只存自己写的摘要、有来源与链接 | 实跑 SQL 抽样 | 0 | 通过 | 34 行全部有 `url`；降级时 `summary` 为 NULL 而非转载原文 |
-| AC-008 `ai_runs` 当日 `kind=digest` 恰好 1 条 | 代码核对 + `RunKind` 接入 | 0 | 通过（本报告第二轮补） | 编排里已接 `recorder.begin(RunSpec.of(RunKind.DIGEST, 0L))`，日报一次、周报一次；`userId=0` 表示平台行为。**首个版本漏了这一处，本轮补上**，见「失败与未验证项」第 1 条 |
+| AC-008 `ai_runs` 当日 `kind=digest` 恰好 1 条 | 代码核对 + `RunKind` 接入 | 0 | 通过 | 编排里已接 `recorder.begin(RunSpec.of(RunKind.DIGEST, 0L))`，日报一次、周报一次；`userId=0` 表示平台行为。**首个版本漏了这一处，本轮补上**，见「失败与未验证项」第 1 条 |
 | AC-009 `max-items-per-run` 调小后条目下降 | `DigestTakeByGroupTest` + 实跑 | 0 | 通过 | 上限 60 时入库 34（候选 35，1 条重复）；单测覆盖上限 0 与不满足上限两种边界 |
 | AC-010 管理端按日期看清单、删除后不再出现 | `DigestIntegrationTest` | 0 | 通过 | 8 条：删除影响 1 行、再删 0 行（对应 404）；未登录三类请求全 401 |
 | AC-011 去掉 token 后仍成功 | 实跑（未配 token） | 0 | 通过 | GitHub 拿到 15 条（匿名 Search API，限额 10/分、实测 `remaining 10/10`） |

@@ -9,7 +9,7 @@ workflow: full
 depends_on: [WORK-025]
 related_to: [WORK-004, WORK-006, WORK-009, WORK-010, WORK-022]
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 approved_by: xiaou61
 approved_at: 2026-10-21 13:46:49 +0800
 approver_role: CTO
@@ -111,7 +111,7 @@ approver_role: CTO
 - 不镜像第三方正文。
 - 不做「事件聚簇 + 热度算法」（AIHOT 的核心竞争力）。排序用**源自身信号**（HN 点数、GitHub 当日新增 star）+ 一次 AI 挑选，不做跨源合并同一件事。
 - 不做向量检索（项目级约束仍生效）。X-07「与学习线联动」因此押后。
-- **不做按身份筛选速递分组**（2026-10-21 撤销 D-14 / REQ-013 / AC-014）：
+- **不做按身份筛选速递分组**（2026-10-21 撤销 D-14 / REQ-013 及其验收项，编号作废不复用；出处见 research.md 的 X-06）：
   后端 `Identity.selectable()` **只对 `job_seeker` 返回 true**，界面上另外三个身份是
   `disabled` 的留位。也就是说"切换身份"这个动作目前不存在，任何"身份间取值不同"的验收都无从执行。
   分组顺序一期固定（news → github → community → hackernews）。
