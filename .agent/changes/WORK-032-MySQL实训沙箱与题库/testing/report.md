@@ -7,7 +7,7 @@ evidence: required
 workflow: full
 created: 2026-10-22
 updated: 2026-10-22
-verified_commit: ef36e85
+verified_commit: f7a3c47
 ---
 
 # WORK-032 验证报告
