@@ -147,9 +147,11 @@ static List<Suggestion> suggest(long failedConceptId, Map<Long, Double> mastery,
 | T-02 题目解析与指纹 | 完成 | `QuestionCatalogTest` 4 条全绿 |
 | T-03 BKT + Elo | 完成 | `MasteryAndDiagnosisTest` 6 条全绿（Elo 方向用例曾红，修正公式后转绿） |
 | T-04 作答端点 | 完成 | `QuestionAttemptIntegrationTest` 3 条全绿（答对/答错、越界、未知题） |
-| T-05 概念标注与候选 | **部分**：纯函数与三个端点已实现，`QuestionConceptSuggesterTest` 3 条全绿；两个管理端点尚无 HTTP 测试 |
+| T-05 概念标注与候选 | **部分**：纯函数与三个端点已实现，`QuestionConceptSuggesterTest` 3 条全绿；管理端点只经 `ApiWalkthroughTest` 覆盖（真实成功路径未测） |
 | T-06 前置诊断 | 完成（纯函数 + 端点），`MasteryAndDiagnosisTest` 覆盖前沿与继续回溯；HTTP 层未单独测 |
 | T-07 图谱接入 BKT | 完成，`ConceptGraphIntegrationTest` 通过（有状态走高概率、无状态回退） |
-| T-08 注销级联与前端上报 | **部分**：级联已进 `AccountDeletionCascadeIntegrationTest` 并全绿；前端已接 `recordAttempt`、typecheck 通过、UI 单测 209 全绿；逐题上报的 e2e 未跑 |
+| T-08 注销级联与前端上报 | **部分**：级联已进 `AccountDeletionCascadeIntegrationTest` 并全绿；前端已接 `recordAttempt`、typecheck 通过、UI 单测 209 全绿；线上已真作答验证端点；逐题上报的 e2e 仍未跑 |
+
+**全量与部署**：后端 276/0/4；线上迁移 `20261022170000` 已执行；部署后接口与真作答已验。
 
 **尚未实现**（下一轮）：REQ-008 信息增益选题、REQ-009 复习联动、REQ-010 批量 LLM 打标、REQ-012 评估导出。

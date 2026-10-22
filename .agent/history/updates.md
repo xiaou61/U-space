@@ -5726,3 +5726,22 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   T-05 两个管理端点与 T-08 的逐题上报 e2e 尚无测试。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-22 17:12:00 +08:00 · WORK-033 全量测试、推送与部署
+
+- 类型：verification
+- 变更：
+  - `ApiWalkthroughTest` 补 WORK-033 六个端点；接口结构快照随之更新（diff 里同时包含
+    之前两笔未登记的 `toolsets` 与 SQL 沙箱字段，属既有契约的真实形状）。
+- 验证：
+  - 后端全量：**276 运行 / 0 失败 / 4 跳过**（`scripts/test-db.sh mvn -B -T 1C test`）。
+  - 线上部署：`release.ps1` 成功（295 秒），`/actuator/health` UP。
+  - 线上迁移：`flyway_schema_history` 最新 `20261022170000`，success=1。
+  - 线上接口：`GET /learning/mastery` 200、`GET /learning/diagnosis` 200、
+    `GET /learning/admin/questions?entryId=45` 200（解析出 3 道题）；
+    学习者令牌访问 `/learning/admin/**` 返回 403。
+  - 线上真作答：e2e-learner 在 entry 45 的 `py-09-quiz#0` 选 1 → `correct=true`，
+    `question_attempts` 落一行且 `judged_by=server`；concepts 为空（题目尚未标注，预期）。
+- 本地提交：`9ed0132`
+- 远端推送：`origin/work-033-question-concept`（**分支**；master 未合并——主树有另一会话
+  未提交的 `WORK-034` 与 `updates.md` 改动，不能带着别人的改动合并）
