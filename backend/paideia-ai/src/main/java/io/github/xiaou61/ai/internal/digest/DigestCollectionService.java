@@ -193,10 +193,13 @@ public class DigestCollectionService {
                 degraded++;
             }
             try {
+                // 热度优先用源自己的信号（HN 点数 / GitHub 今日新增 star）；
+                // 没有信号的源（RSS 新闻、社区）用 AI 给的重要性分，这样每组都能排序。
+                Integer heat = item.heat() != null ? item.heat() : (ready ? result.heat() : null);
                 mapper.insert(today, item.groupKey(), item.sourceKey(), item.sourceName(),
                         ready && !result.title().isBlank() ? result.title() : item.title(),
                         ready ? result.summary() : null,
-                        item.url(), fingerprint, item.heat(), item.meta(), item.publishedAt(),
+                        item.url(), fingerprint, heat, item.meta(), item.publishedAt(),
                         ready ? STATE_READY : STATE_DEGRADED, now);
                 created++;
             } catch (RuntimeException exception) {

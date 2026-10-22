@@ -74,8 +74,8 @@ class DigestSummarizer {
         this.transport = transport;
     }
 
-    /** 一条 AI 写出的结果。 */
-    record Rewritten(String title, String summary) {
+    /** 一条 AI 写出的结果。`heat` 是 0-100 的重要性分，只给源本身没有热度信号的条目用。 */
+    record Rewritten(String title, String summary, Integer heat) {
     }
 
     /**
@@ -218,12 +218,25 @@ class DigestSummarizer {
                 if (title.isBlank() && summary.isBlank()) {
                     continue;
                 }
-                result.put(fingerprint, new Rewritten(title, summary));
+                result.put(fingerprint, new Rewritten(title, summary, heatOf(node)));
             }
             return result;
         } catch (java.io.IOException exception) {
             log.warn("速递 AI 返回的 JSON 解析失败：{}", exception.getClass().getSimpleName());
             return Map.of();
         }
+    }
+
+    /**
+     * 取模型给的重要性分。
+     *
+     * <p>越界与缺省都收敛成 null 或夹到 0-100：这个值会进 `heat` 排序，脏值比没有值更糟。
+     */
+    private static Integer heatOf(com.fasterxml.jackson.databind.JsonNode node) {
+        com.fasterxml.jackson.databind.JsonNode heat = node.path("heat");
+        if (!heat.isNumber()) {
+            return null;
+        }
+        return Math.max(0, Math.min(100, heat.asInt()));
     }
 }

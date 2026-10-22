@@ -177,15 +177,31 @@ export function DigestPage() {
                 if (items.length === 0) {
                   return null
                 }
+                const withHeat = items.filter((item) => item.heat !== null)
+                const highCut = Math.ceil(withHeat.length * 0.25)
+                const midCut = Math.ceil(withHeat.length * 0.6)
                 return (
                   <section key={group.key} data-testid={`digest-group-${group.key}`}>
                     <h2 className="mb-3 flex items-center gap-2 text-lg font-medium">
                       {group.title}
                       <Badge variant="secondary">{items.length}</Badge>
+                      <span className="text-muted-foreground text-xs font-normal">按热度排序</span>
                     </h2>
                     <div className="grid gap-3 md:grid-cols-2">
-                      {items.map((item) => (
-                        <DigestCard key={item.id} item={item} />
+                      {items.map((item, index) => (
+                        <DigestCard
+                          key={item.id}
+                          item={item}
+                          tier={
+                            item.heat === null
+                              ? null
+                              : index < highCut
+                                ? 'high'
+                                : index < midCut
+                                  ? 'mid'
+                                  : 'low'
+                          }
+                        />
                       ))}
                     </div>
                   </section>
@@ -229,8 +245,16 @@ export function DigestPage() {
  * <p>整卡可点（原文链接铺满卡片），「存成笔记」压在右下角并阻止冒泡——原来只有标题那行
  * 是链接，点卡片别处没反应。内容做三行截断，卡片高度才齐。
  */
-function DigestCard({ item }: { item: DigestItem }) {
+function DigestCard({
+  item,
+  tier,
+}: {
+  item: DigestItem
+  /** 组内热度档位：前 25% 高、40% 较高、其余不标。null = 这条没有热度信号。 */
+  tier: 'high' | 'mid' | 'low' | null
+}) {
   const degraded = item.summaryState === 'degraded'
+  const tierLabel = tier === 'high' ? '高热' : tier === 'mid' ? '较热' : null
   // 「存成笔记」是纯前端跳转（I-16）：把标题与摘要预填进新建笔记页，用户可改再存
   const noteLink = `/notes/new?title=${encodeURIComponent(item.title)}&content=${encodeURIComponent(
     (item.summary ?? '') + '\n\n> 来源：' + item.url,
@@ -249,6 +273,14 @@ function DigestCard({ item }: { item: DigestItem }) {
               <Flame className="size-3.5" />
               {item.heat}
             </span>
+          )}
+          {tierLabel === null ? null : (
+            <Badge
+              variant={tier === 'high' ? 'default' : 'secondary'}
+              data-testid="digest-heat-tier"
+            >
+              {tierLabel}
+            </Badge>
           )}
           {item.meta === null ? null : <span>{item.meta}</span>}
         </div>

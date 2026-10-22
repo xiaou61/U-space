@@ -106,4 +106,22 @@ class DigestSummarizerParseTest {
 
         assertThat(summarizer.parse(json, INPUT)).containsOnlyKeys("fp-b");
     }
+
+    @Test
+    @DisplayName("AI 给的重要性分被解析出来，越界值夹到 0-100，缺省为 null")
+    void parsesImportanceHeat() {
+        String json = """
+                {"items":[
+                  {"fingerprint":"fp-a","title":"A","summary":"a","heat":87},
+                  {"fingerprint":"fp-b","title":"B","summary":"b","heat":-5},
+                  {"fingerprint":"fp-c","title":"C","summary":"c"}
+                ]}
+                """;
+
+        Map<String, DigestSummarizer.Rewritten> result = summarizer.parse(json, INPUT);
+
+        assertThat(result.get("fp-a").heat()).isEqualTo(87);
+        assertThat(result.get("fp-b").heat()).isZero();
+        assertThat(result.get("fp-c").heat()).isNull();
+    }
 }

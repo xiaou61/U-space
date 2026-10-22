@@ -14,7 +14,7 @@ import java.util.List;
 final class DigestPrompt {
 
     /** 日报压缩提示词的版本号，写进 `ai_runs.prompt_version`。改规则必须改它。 */
-    static final String VERSION = "digest-v1";
+    static final String VERSION = "digest-v2";
 
     private DigestPrompt() {
     }
@@ -41,9 +41,12 @@ final class DigestPrompt {
                 4. **每一条都要写**，不要挑：输入的每一条都要在输出里出现一次，
                    也不得返回输入里没有的指纹。
                 5. 每条必须原样带回输入的 fingerprint 值，用于回填。
+                6. 给每条打一个 0-100 的重要性分（heat），用来在组内排序：
+                   90 以上 = 当天必看的大新闻，60 左右 = 值得一看，30 以下 = 可略过。
+                   不要给所有条目同一个分数，也不要按顺序递减。
 
                 只输出 JSON，不要 markdown 代码围栏，不要任何解释文字：
-                {"items":[{"fingerprint":"...","title":"中文标题","summary":"一句话摘要"}]}
+                {"items":[{"fingerprint":"...","title":"中文标题","summary":"一句话摘要","heat":0}]}
                 """;
     }
 

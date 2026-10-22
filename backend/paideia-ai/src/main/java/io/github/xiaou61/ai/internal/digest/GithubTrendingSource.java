@@ -12,12 +12,13 @@ import org.springframework.stereotype.Component;
 /**
  * GitHub 每日热榜（WORK-027）。
  *
- * <p><b>双通路，主次随 token 反转</b>（research.md 实测依据）：
+ * <p><b>双通路，页面优先</b>
  * <ul>
- *   <li><b>有 token → Search API 为主</b>：`search/repositories?q=created:>=<7天前> stars:>100&sort=stars`，
- *       稳定、限 30 次/分（带 token）。语义偏：量的是「新建且涨得快」，不等于官方 Trending。</li>
- *   <li><b>无 token → 页面解析为主</b>：`github.com/trending?since=daily`，匿名限 60 次/时。
- *       本机三次连接被拒、生产 200 且 12 行可解析——所以它是「能拿到更准」但「不稳」的那条。</li>
+ *   <li><b>主通路：页面解析</b>：`github.com/trending?since=daily`。2026-10-22 在部署机复测为
+ *       服务端渲染（12 行、每行带「stars today」），拿到的是真正的今日热榜。</li>
+ *   <li><b>兜底：Search API</b>：`search/repositories?q=created:>=<3天前> stars:>50&sort=stars`。
+ *       2026-10-22 线上实测：页面从部署机也会超时（curl 60 秒无响应），所以兜底是常态通路；
+ *       原先用 7 天窗口 + 100 星，同一批仓库被指纹去重后每天只剩 2 条——改成 3 天 + 50 星。</li>
  * </ul>
  * **任何通路失败都要留记录**（REQ-003），不静默整组为空；两条都坏时返回空列表并由编排层记日志。
  *
@@ -32,7 +33,7 @@ class GithubTrendingSource {
     private static final String TRENDING_URL = "https://github.com/trending?since=daily";
 
     private static final String SEARCH_URL =
-            "https://api.github.com/search/repositories?q=%s&sort=stars&per_page=15";
+            "https://api.github.com/search/repositories?q=%s&sort=stars&per_page=30";
 
     private static final String USER_AGENT = "PaideiaDigest/1.0";
 
@@ -59,19 +60,20 @@ class GithubTrendingSource {
         String token = properties.getGithubToken();
         boolean hasToken = token != null && !token.isBlank();
 
-        // 主通路：Search API
-        List<FetchedItem> viaSearch = searchApi(hasToken ? token : "", http, nowMillis);
-        if (!viaSearch.isEmpty()) {
-            return viaSearch;
-        }
-
-        // 补充通路：页面解析（当前是 SPA，正常不会命中；保留以防 GitHub 改回服务端渲染）
+        // 主通路：官方 Trending 页面。2026-10-22 在部署机上复测：服务端渲染、12 行可解析，
+        // 且带「stars today」——这才是真正的「今日热榜」。
         List<FetchedItem> viaPage = trendingPage(http, nowMillis);
         if (!viaPage.isEmpty()) {
-            log.info("GitHub Search API 无结果，页面解析拿到 {} 条", viaPage.size());
             return viaPage;
         }
-        log.warn("GitHub 热榜两条通路都没有结果（Search API 与页面解析），这一组本次为空");
+
+        // 兜底：Search API。给的是「一周内新建且星多」的项目，语义偏一些，但页面改版时仍有内容。
+        List<FetchedItem> viaSearch = searchApi(hasToken ? token : "", http, nowMillis);
+        if (!viaSearch.isEmpty()) {
+            log.info("GitHub 页面解析无结果，Search API 拿到 {} 条", viaSearch.size());
+            return viaSearch;
+        }
+        log.warn("GitHub 热榜两条通路都没有结果（页面解析与 Search API），这一组本次为空");
         return List.of();
     }
 
@@ -83,10 +85,11 @@ class GithubTrendingSource {
      * 这条通路静默返回空，而同一串用 curl 手打是正常的——只有实跑才暴露）。
      */
     private List<FetchedItem> searchApi(String token, DigestHttp http, long nowMillis) {
-        // 7 天前：GitHub 的 search 语法用日期而非时间戳
+        // 3 天窗口 + 50 星：7 天窗口的同一批仓库会被指纹去重掉，线上实测每天只剩 2 条；
+        // 3 天窗口每天都有新面孔，且 50 星仍能筛掉噪声（2026-10-22 实测 191 条候选）。
         String since = java.time.Instant.ofEpochMilli(nowMillis)
-                .atZone(java.time.ZoneOffset.UTC).toLocalDate().minusDays(7).toString();
-        String query = java.net.URLEncoder.encode("created:>=" + since + " stars:>100",
+                .atZone(java.time.ZoneOffset.UTC).toLocalDate().minusDays(3).toString();
+        String query = java.net.URLEncoder.encode("created:>=" + since + " stars:>50",
                 java.nio.charset.StandardCharsets.UTF_8);
         String url = SEARCH_URL.formatted(query);
         try {
