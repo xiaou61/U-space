@@ -35,6 +35,7 @@
 - **迁移文件名用 14 位时间戳**：`V20261021103045__描述.sql`，不要用 `V25__` 这种递增号。多个会话并行时递增号是**被争抢的共享命名空间**：实测两个分支都写 `V25` 会让应用直接起不来（`Found more than one migration with version 25`），不是某个迁移失败而是整个上下文中止。时间戳把这个概率降到"同一秒"，`MigrationVersionFormatTest` 会同时挡住纯数字号与同秒重复。**它治不了**"两个会话改同一张表的不同列、版本号不冲突但语义冲突"——那只能靠合并前协调：**动 schema 前先 `git log --all --oneline -- <迁移目录>` 看有没有人在改同一张表**。
 - **部署**：一条命令 `powershell -File scripts/release.ps1`（纯后端改动约 75 秒）。前端**按需重建**：`frontend/` 自上次发版以来没改动就自动跳过那 80 秒，要强制重建用 `-WithWeb`、强制只发后端用 `-SkipWeb`。部署形态、端口与服务器约定见 `.agent/rules/always.md` 的「部署」，耗时的实测拆解见 `.agent/notes/dev-workflow.md` 的「发版耗时」。本项目没有"发布"这个节点，改完随手部署即可，不需要攒批次。
 - **架构图存 `docs/architecture/`，一律 mermaid**：判据是**能不能从代码抽取**——能（模块依赖、表关系）写脚本生成、不许手画，因为模型凭印象复述一定会漏会错且错得很像真的；不能（请求链路、时序、状态机）才由 AI 写。改了模块边界、外部依赖、表结构或部署拓扑的，**在同一个提交里改对应的图**。改完跑 `node scripts/check-diagrams.mjs`（语法校验，6 秒扫全仓）与 `node scripts/gen-arch-diagram.mjs --check`（四张结构图与声明是否漂移）。`docs/architecture/README.md` 里写明了这份存档**不**包含什么（接口字段、路由、组件图），别以为它完整。规则与已知限制见该目录的 `README.md`。
+- **加了页面就必须加入口，否则等于没上线**：`router.tsx` 里每一条用户可见的路由，都必须在**导航栏**（`LearnerHeader` 的 `NAV`）或**账号菜单**里有对应入口；只在首页快捷卡里出现**不算**——首页那排卡片要往下滚才看得见，用户不会猜。2026-10-22 就是这条漏了：`/learn`（从零开始，54 篇文章）、`/graph`（知识图谱）、`/practice/sql`（SQL 自由练习）三个页面都能直达 URL、内容齐全，但导航栏里一个都没有，用户以为"线上内容少了一大半"。自查方法：把 `rg "path: '" frontend/apps/app/src/router.tsx` 的结果与 `NAV` + 账号菜单逐条对一遍；新增功能时同步给 `@paideia/identity` 的 `preferredNav` 补 key（该类型是联合字面量，不加会编译不过）。
 
 ## 保密规则（公开仓库，最重要）
 

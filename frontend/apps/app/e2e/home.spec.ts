@@ -104,9 +104,13 @@ test('登录后从页头就能进入知识库，不必手输地址', async ({ pa
   await expect(page).toHaveURL(/#\/knowledge\/entries\/\d+$/)
   await expect(page.getByTestId('learner-nav-knowledge')).toHaveAttribute('aria-current', 'page')
 
+  // 「我的自评」在「更多」菜单里（页头横排只放主干）。点完菜单会关闭，
+  // 所以激活态要看「更多」这个触发器本身——它在当前页属于「更多」那一档时被标成 current。
+  await page.getByTestId('learner-nav-more').click()
+  await expect(page.getByTestId('learner-nav-my-assessments')).toBeVisible()
   await page.getByTestId('learner-nav-my-assessments').click()
   await expect(page).toHaveURL(/#\/my-assessments$/)
-  await expect(page.getByTestId('learner-nav-my-assessments')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByTestId('learner-nav-more')).toHaveAttribute('aria-current', 'page')
 })
 
 /**

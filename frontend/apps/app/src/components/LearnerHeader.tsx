@@ -51,20 +51,33 @@ import { api } from '../api'
  * <p>**面试入口不是所有人都有**：它只在身份的配置包含 `interview` 时出现（一期就是求职者）。
  * 这是"按身份推荐"唯一一处会改变**入口集合**的地方——其余都只是顺序差别。
  */
+/**
+ * 导航项。**分两排**：`primary` 直接横排在页头，其余进「更多」菜单。
+ *
+ * <p>为什么不全部横排：2026-10-22 补上「从零开始 / 知识图谱 / SQL 练习」之后一共 10 项，
+ * 实测 1280 宽下每个标签都被挤成竖排断字（"每日速/递"），页头高度从 32 涨到 54。
+ * 全都在但全都读不出来，等于没加。
+ *
+ * <p>分档标准是**用户一天会点几次**：主干是每天进的（学、看、读），
+ * 更多里是阶段性才用的（自评、简历、图谱、SQL 随手练）。
+ * **两档都算"有入口"**——AGENTS.md 那条规则要的是"用户能找到"，不是"必须横排"。
+ */
 const NAV = [
-  { key: 'digest' as const, to: '/digest', label: '每日速递', testId: 'learner-nav-digest' },
-  { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge' },
-  { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes' },
-  { key: 'my-assessments' as const, to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments' },
+  { key: 'learn' as const, to: '/learn', label: '从零开始', testId: 'learner-nav-learn', primary: true },
+  { key: 'digest' as const, to: '/digest', label: '每日速递', testId: 'learner-nav-digest', primary: true },
+  { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge', primary: true },
+  { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes', primary: true },
+  // 训练营（WORK-029）：它是"还没有学习记录的人"的入口，与简历并列。
+  // 不进 preferredNav —— 身份排序只管那几个老入口，新入口固定排在后面。
+  { key: 'camp' as const, to: '/camp', label: '训练营', testId: 'learner-nav-camp', primary: false },
+  { key: 'interview' as const, to: '/interview', label: '模拟面试', testId: 'learner-nav-interview', primary: true },
   // 简历（WORK-018）：求职者面上每次投递都要用的入口。
   // **不复用 `interview` 这个 key**：身份排序按 key 匹配，复用会让"面试排第一"这条既有
   // 验收失去观察点（2026-10-18 实测：identity.spec 里首链接断言因此变红）。
-  // 它也不进 preferredNav —— 排序只覆盖那四个入口，简历固定排在它们之后。
-  { key: 'resume' as const, to: '/resume', label: '我的简历', testId: 'learner-nav-resume' },
-  // 训练营（WORK-029）：它是"还没有学习记录的人"的入口，与简历并列。
-  // 同样不进 preferredNav —— 身份排序只管那四个老入口，新入口固定排在后面。
-  { key: 'camp' as const, to: '/camp', label: '训练营', testId: 'learner-nav-camp' },
-  { key: 'interview' as const, to: '/interview', label: '模拟面试', testId: 'learner-nav-interview' },
+  { key: 'resume' as const, to: '/resume', label: '我的简历', testId: 'learner-nav-resume', primary: false },
+  { key: 'my-assessments' as const, to: '/my-assessments', label: '我的自评', testId: 'learner-nav-my-assessments', primary: false },
+  { key: 'graph' as const, to: '/graph', label: '知识图谱', testId: 'learner-nav-graph', primary: false },
+  { key: 'sql-practice' as const, to: '/practice/sql', label: 'SQL 练习', testId: 'learner-nav-sql-practice', primary: false },
 ]
 
 export function LearnerHeader() {
@@ -86,6 +99,12 @@ export function LearnerHeader() {
     // 配置里没提到的项追加在后面：配置只表达"谁排前面"，不表达"谁被藏起来"
     return [...ordered, ...NAV.filter((item) => !(config.preferredNav as readonly string[]).includes(item.key))]
   }, [profile?.identity])
+  const primaryNav = nav.filter((item) => item.primary)
+  const moreNav = nav.filter((item) => !item.primary)
+  /** 当前页在「更多」里吗？是的话把「更多」也标成激活态，否则用户看不出自己在哪。 */
+  const moreActive = moreNav.some(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  )
   const navigate = useNavigate()
   const [deleting, setDeleting] = useState(false)
   const [password, setPassword] = useState('')
@@ -199,8 +218,8 @@ export function LearnerHeader() {
         </DialogContent>
       </Dialog>
 
-      <nav aria-label="主导航" className="hidden items-center gap-0.5 md:flex">
-        {nav.map((item) => {
+      <nav aria-label="主导航" className="hidden items-center gap-0.5 whitespace-nowrap md:flex">
+        {primaryNav.map((item) => {
           // 条目页的地址是 /knowledge/entries/:id，所以前缀匹配也算在知识库里
           const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
           return (
@@ -219,6 +238,39 @@ export function LearnerHeader() {
             </Link>
           )
         })}
+
+        {moreNav.length === 0 ? null : (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              data-testid="learner-nav-more"
+              render={
+                <button
+                  type="button"
+                  aria-current={moreActive ? 'page' : undefined}
+                  className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    moreActive
+                      ? 'bg-accent text-accent-foreground border-border font-medium'
+                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground border-transparent'
+                  }`}
+                />
+              }
+            >
+              更多
+              <ChevronDown className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {moreNav.map((item) => (
+                <DropdownMenuItem
+                  key={item.to}
+                  data-testid={item.testId}
+                  onClick={() => { void navigate(item.to) }}
+                >
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </nav>
 
       <form onSubmit={submitSearch} className="ml-2 hidden md:block">

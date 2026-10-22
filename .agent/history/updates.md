@@ -5559,3 +5559,46 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     「硬编码在隐藏数据集上竟然判对了——隐藏集没有起作用」，恢复后转绿
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-22 20:45:00 +08:00 · 速递日期口径、MCP 权限粒度、导航入口三件修复
+
+- 类型：bugfix
+- 变更：
+  - **速递的「今天」改用业务时区**：新增 `paideia.ai.digest.zone`（默认 Asia/Shanghai）与
+    `cron`（默认 `0 0 7 * * *`）。原先 `edition_date` 与接口的今天都取 UTC，而用户在 UTC+8——
+    每天北京时间 08:00 日期就翻篇，采集却要到当晚才跑（`fixedDelay` 的锚点被每次部署推后，
+    实测漂到 19:04），于是**每天约 11 小时打开速递页必然是空的**。
+  - **调度改固定时刻 + 启动补跑**：`DigestJob` 从 `fixedDelay=24h` 改成 cron，另加
+    `catchUpOnStartup`（先查当天有没有内容，有就跳过，避免反复部署把上游抓十几次）。
+  - **速递页默认落到最近有内容的一天**，往日可翻（新增「更新 / 更早」），空态文案改成
+    指向日期按钮；卡片重排（整卡可点、摘要三行截断、热度带图标）。
+  - **MCP 权限从 read/write 两档扩成按工具组白名单**：迁移 `V20261022140000` 给
+    `mcp_access_tokens` 加可空 `toolsets` 列（NULL = 不限制，旧凭据语义不变、无需回填）。
+    `PatPrincipal.allowsToolset` 与 `McpViews.queryFor(scopes, toolsets)` 取交集。
+  - **修 MCP 视图缓存键**：原先只用视图名，而工具清单在构建 server 时固化 ⇒ 第一个请求的
+    清单服务了所有凭据（线上实测：勾了只授权知识库，清单里仍是全部 11 个工具）。缓存键改为
+    `视图名|工具组`。
+  - **修共享 `Tabs` / `Separator` 的方向变体**：组件写的是 `data-horizontal:`，
+    而 base-ui 输出的是 `data-orientation="horizontal"`，Tailwind 生成的 `[data-horizontal]`
+    永不匹配。后果不是"样式略糙"——速递页的 `TabsList` 被算成 90×18424px，页签竖成一条缝。
+  - **补三个缺失的导航入口**：`从零开始`（54 篇文章）、`知识图谱`、`SQL 练习` 原先只出现在
+    首页快捷卡里，导航栏一个都没有。页头横排收 6 个主干，其余进「更多」下拉
+    （10 项硬塞实测会把每个标签挤成竖排断字）。
+  - `AGENTS.md` 新增规则「加了页面就必须加入口」，含自查方法。
+  - `assistant.spec.ts` 两条依赖本地种子的用例补 `REMOTE` 守卫。
+- 决策：
+  - 工具组白名单用**可空列**而不是新表：判空即兼容旧凭据，不必停服、不必回填。
+  - 后端**不校验工具组名是否存在**：组来自 `ToolCatalog`，是装配期知识；传错只会让凭据
+    看起来什么都不能调（安全侧失败），不会放大权限。
+  - 导航分「主干 + 更多」两档，判据是**用户一天点几次**；两档都算"有入口"。
+- 验证：
+  - 后端 264 条单测全绿（`npm` 内环 `-pl '!paideia-app'`）；速递新增 `DigestZoneTest` 3 条
+  - `McpStartupSmokeTest` 5/5（新增工具组隔离一条：限组凭据只看到 knowledge_*，
+    不限制的老凭据仍能看到 note_list / learning_progress）
+  - 线上真验：只授权 knowledge 的凭据 `tools/list` → 5 个工具全是 knowledge_*；
+    越权调 `note_list` 回 `Tool not found`；`knowledge_search` 正常返回数据
+  - 线上真验：部署后启动补跑入库 60 条（`edition_date=2026-10-22`），四组齐全
+    （news 24 / github 2 / community 24 / hackernews 10）
+  - e2e：学习者端 **82 passed / 0 failed**，管理端 **25 passed / 0 failed**（都打线上）
+- 本地提交：见下一笔
+- 远端推送：未执行
