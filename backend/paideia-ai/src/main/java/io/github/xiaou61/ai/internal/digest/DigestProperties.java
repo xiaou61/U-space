@@ -1,5 +1,6 @@
 package io.github.xiaou61.ai.internal.digest;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -31,6 +32,24 @@ public class DigestProperties {
 
     /** 每周最多取多少条日报素材做周报。超了按天分段摘要。 */
     private int weeklyMaxItems = 150;
+
+    /**
+     * 业务时区。**「今天」的日期口径以它为准，不用 UTC**。
+     *
+     * <p>2026-10-22 线上实测的缺陷：`edition_date` 与接口的「今天」都取 UTC 日期，而用户在
+     * UTC+8——北京时间每天 08:00 日期就翻篇，可采集要到当晚才跑，于是**每天有约 11 小时
+     * 打开页面看到「这一天还没有速递」**，而昨天的满屏内容就在旁边一个按钮的距离。
+     */
+    private String zone = "Asia/Shanghai";
+
+    /**
+     * 采集时刻（Spring cron，按 {@link #zone} 解释）。默认每天 07:00。
+     *
+     * <p>**必须是固定时刻，不能用 fixedDelay**：后者的锚点是「上次跑完」，
+     * 部署重启时补跑一轮就把锚点推到那一刻，之后每天顺延漂移（线上实测漂到了 19:04，
+     * 正好落在「日期已翻篇、内容还没到」的那段空窗里）。
+     */
+    private String cron = "0 0 7 * * *";
 
     /** 抓多久以内的内容（小时）。30 覆盖「昨天至今」并留容错。 */
     private int lookbackHours = 30;
@@ -136,6 +155,36 @@ public class DigestProperties {
 
     public int getLookbackHours() {
         return lookbackHours;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
+    }
+
+    public String getCron() {
+        return cron;
+    }
+
+    public void setCron(String cron) {
+        this.cron = cron;
+    }
+
+    /** 业务时区。解析失败时退回系统默认而不是抛异常——一个配置笔误不该让整个应用起不来。 */
+    public java.time.ZoneId zoneId() {
+        try {
+            return java.time.ZoneId.of(zone);
+        } catch (RuntimeException invalid) {
+            return java.time.ZoneId.systemDefault();
+        }
+    }
+
+    /** 业务意义上的「今天」。**所有日期口径（入库、查库、接口）都必须走这里**。 */
+    public LocalDate today() {
+        return LocalDate.now(zoneId());
     }
 
     public void setLookbackHours(int lookbackHours) {

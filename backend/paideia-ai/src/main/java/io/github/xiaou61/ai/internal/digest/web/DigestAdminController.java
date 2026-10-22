@@ -32,9 +32,12 @@ import org.springframework.web.bind.annotation.RestController;
 class DigestAdminController {
 
     private final DigestMapper mapper;
+    private final io.github.xiaou61.ai.internal.digest.DigestProperties properties;
 
-    DigestAdminController(DigestMapper mapper) {
+    DigestAdminController(DigestMapper mapper,
+                          io.github.xiaou61.ai.internal.digest.DigestProperties properties) {
         this.mapper = mapper;
+        this.properties = properties;
     }
 
     /** 当日条目（含 fingerprint，便于排查为什么某条进来了）。 */
@@ -43,7 +46,7 @@ class DigestAdminController {
         LocalDate edition;
         try {
             edition = date == null || date.isBlank()
-                    ? LocalDate.now(java.time.ZoneOffset.UTC)
+                    ? properties.today()
                     : LocalDate.parse(date);
         } catch (DateTimeParseException exception) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "日期格式应为 YYYY-MM-DD");

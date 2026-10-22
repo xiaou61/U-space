@@ -5,7 +5,6 @@ import io.github.xiaou61.ai.internal.credential.CredentialService;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -93,7 +92,7 @@ public class DigestCollectionService {
         if (!properties.isEnabled()) {
             return RunResult.skipped("未启用");
         }
-        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate today = properties.today();
         long nowMillis = System.currentTimeMillis();
         long sinceMillis = nowMillis - Duration.ofHours(properties.getLookbackHours()).toMillis();
 
@@ -249,6 +248,11 @@ public class DigestCollectionService {
             }
         }
         return selected;
+    }
+
+    /** 某天有没有内容。启动补跑用它决定要不要真抓一轮。 */
+    public boolean hasContentFor(LocalDate date) {
+        return !mapper.findByDate(date).isEmpty();
     }
 
     /** 某天的条目，按 {@link #GROUP_ORDER} 分组。给读接口用。 */

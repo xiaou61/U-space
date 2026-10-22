@@ -2,6 +2,7 @@ package io.github.xiaou61.ai.internal.digest.web;
 
 import io.github.xiaou61.ai.internal.digest.DigestCollectionService;
 import io.github.xiaou61.ai.internal.digest.DigestMapper;
+import io.github.xiaou61.ai.internal.digest.DigestProperties;
 import io.github.xiaou61.ai.internal.digest.DigestWeeklyService;
 import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
@@ -29,10 +30,12 @@ class DigestController {
 
     private final DigestCollectionService collection;
     private final DigestMapper mapper;
+    private final DigestProperties properties;
 
-    DigestController(DigestCollectionService collection, DigestMapper mapper) {
+    DigestController(DigestCollectionService collection, DigestMapper mapper, DigestProperties properties) {
         this.collection = collection;
         this.mapper = mapper;
+        this.properties = properties;
     }
 
     /** 一条速递给前端的样子。 */
@@ -41,7 +44,7 @@ class DigestController {
                     String summaryState) {
     }
 
-    /** 某日的全部条目，按 groupKey 分组。不传 date 取今天（UTC）。 */
+    /** 某日的全部条目，按 groupKey 分组。不传 date 取业务时区的今天。 */
     @GetMapping
     ApiResponse<Map<String, List<ItemView>>> byDate(@RequestParam(value = "date", required = false) String date) {
         LocalDate edition = parseDate(date);
@@ -66,7 +69,7 @@ class DigestController {
     @GetMapping("/weekly")
     ApiResponse<WeeklyView> weekly(@RequestParam(value = "week", required = false) String week) {
         LocalDate weekStart = week == null || week.isBlank()
-                ? DigestWeeklyService.lastWeekStart()
+                ? DigestWeeklyService.lastWeekStart(properties.zoneId())
                 : parseDate(week);
         DigestMapper.WeeklyRow row = mapper.findWeekly(weekStart);
         return ApiResponse.ok(row == null ? null
@@ -76,9 +79,9 @@ class DigestController {
     record WeeklyView(LocalDate weekStart, String body, int itemCount) {
     }
 
-    private static LocalDate parseDate(String raw) {
+    private LocalDate parseDate(String raw) {
         if (raw == null || raw.isBlank()) {
-            return LocalDate.now(java.time.ZoneOffset.UTC);
+            return properties.today();
         }
         try {
             return LocalDate.parse(raw);

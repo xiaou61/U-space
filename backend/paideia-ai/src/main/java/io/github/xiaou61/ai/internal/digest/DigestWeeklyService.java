@@ -14,7 +14,6 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,9 +67,9 @@ public class DigestWeeklyService {
      */
     public WeeklyResult runWeekly() {
         if (!properties.isEnabled()) {
-            return WeeklyResult.skipped(lastWeekStart(), "未启用");
+            return WeeklyResult.skipped(lastWeekStart(properties.zoneId()), "未启用");
         }
-        LocalDate weekStart = lastWeekStart();
+        LocalDate weekStart = lastWeekStart(properties.zoneId());
         try {
             return generate(weekStart);
         } catch (RuntimeException exception) {
@@ -177,13 +176,13 @@ public class DigestWeeklyService {
     }
 
     /**
-     * **上一周**的周一（UTC）。
+     * **上一周**的周一（按业务时区）。
      *
      * <p>周报在周一凌晨跑、讲的是刚过去的那一周。若用"本周一"，素材会指向还没发生的那一周，
      * 生成出来的报告归属也会差一周。
      */
-    public static LocalDate lastWeekStart() {
-        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+    public static LocalDate lastWeekStart(java.time.ZoneId zone) {
+        LocalDate today = LocalDate.now(zone);
         return today.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 .minusWeeks(1);
     }

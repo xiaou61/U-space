@@ -20,8 +20,8 @@ class DigestConfiguration {
     static class SchedulingConfiguration {
 
         @Bean
-        DigestJob digestJob(DigestCollectionService service) {
-            return new DigestJob(service);
+        DigestJob digestJob(DigestCollectionService service, DigestProperties properties) {
+            return new DigestJob(service, properties);
         }
 
         @Bean
