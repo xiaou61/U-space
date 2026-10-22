@@ -33,6 +33,12 @@ $total = [System.Diagnostics.Stopwatch]::StartNew()
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $staging = Join-Path $repo 'backend\paideia-app\target\release-staging'
 $archive = Join-Path $repo 'backend\paideia-app\target\release.tar.gz'
+$jar = Join-Path $repo 'backend\paideia-app\target\paideia-app-0.0.1-SNAPSHOT.jar'
+$explodedLocal = Join-Path $repo 'backend\paideia-app\target\release-exploded'
+$manifestLocal = Join-Path $staging 'MANIFEST.MF'
+$manifestList = Join-Path $staging 'exploded.manifest'
+$patch = Join-Path $staging 'release-patch.tar.gz'
+$bsdtar = Join-Path $env:SystemRoot 'System32\tar.exe'
 # 上一次成功发版时的 git 提交。用来判断"前端到底改没改"——它放在 target 里，不进仓库。
 $lastReleaseMarker = Join-Path $repo 'backend\paideia-app\target\.last-release-commit'
 
@@ -48,6 +54,30 @@ function Step([string]$name, [scriptblock]$action) {
 function Remote([string]$command) {
     & powershell -ExecutionPolicy Bypass -File $QuickServerScript -Server $Server -Command $command | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "远端命令失败（退出码 $LASTEXITCODE）：$command" }
+}
+
+# 远端命令并取回输出（Remote 会把输出吞掉，增量清单需要返回值）。
+function RemoteOutput([string]$command) {
+    $out = & powershell -ExecutionPolicy Bypass -File $QuickServerScript -Server $Server -Command $command
+    if ($LASTEXITCODE -ne 0) { throw "远端命令失败（退出码 $LASTEXITCODE）：$command" }
+    return $out
+}
+
+# 每个文件的内容哈希：增量判断只看内容，不看时间戳。
+# 注：试过用 Git 的 sha256sum 批量加速，但 PowerShell 调原生 exe 的传参/输出解析反而更慢
+# （实测 18 秒且解析不到结果），所以保留 .NET 的 Get-FileHash——16 秒，稳定。
+function Get-FileManifest([string]$dir) {
+    $map = @{}
+    Get-ChildItem -LiteralPath $dir -Recurse -File | ForEach-Object {
+        $rel = $_.FullName.Substring($dir.Length + 1).Replace('\', '/')
+        $map[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    return $map
+}
+
+function Write-ManifestFile($map, [string]$path) {
+    ($map.Keys | Sort-Object | ForEach-Object { "$($map[$_])  $_" }) |
+        Set-Content -LiteralPath $path -Encoding utf8
 }
 
 function Upload([string]$local, [string]$remote) {
@@ -149,7 +179,7 @@ Step '打包 staging 并压缩 web' {
         Remove-Item $archive -Force -ErrorAction SilentlyContinue
         # 必须用 Windows 自带的 bsdtar：从 Git Bash 继承 PATH 时会拿到 GNU tar，
         # 它把 `F:\...` 当成"远程主机:路径"并报 Cannot connect to F: resolve failed。
-        $bsdtar = Join-Path $env:SystemRoot 'System32\tar.exe'
+$bsdtar = Join-Path $env:SystemRoot 'System32\tar.exe'
         if (-not (Test-Path $bsdtar)) { throw "找不到 $bsdtar" }
         # web 那 24 MB（325 个文本文件）压完只剩 4.9 MB，几乎不花时间。
         & $bsdtar --options "gzip:compression-level=1" -czf $archive -C $staging web
@@ -158,9 +188,57 @@ Step '打包 staging 并压缩 web' {
     }
 }
 
-# **jar 原样传、不压**（2026-10-19 实测）：fat jar 79 MB 本身就是 zip，再压一遍只掉到 72 MB
-# （9%），却要花 20~33 秒纯 CPU——那点体积换来的是整个发版最贵的一步。
-Step '上传 jar' { Upload (Join-Path $repo 'backend\paideia-app\target\paideia-app-0.0.1-SNAPSHOT.jar') "$RemoteDir/app.jar.new" }
+# **增量上传**（2026-10-22 实测）：82 MB 的 fat jar 里自家模块 + classes 只有 1.4 MB，
+# 其余 84 MB 是第三方依赖。链路约 3.2 MB/s，整包传要 32 秒；按内容哈希只传变化的文件，
+# 再在服务器上用 /opt/jdk25/bin/jar 重新打包，通常只需 1–2 MB。
+# 首次（服务器还没有基线）仍传整包，并在远端解包建立基点。
+Step '上传 jar' {
+    Remove-Item $explodedLocal -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $explodedLocal -Force | Out-Null
+    New-Item -ItemType Directory -Path $staging -Force | Out-Null
+
+    & $bsdtar -xf $jar -C $explodedLocal
+    if ($LASTEXITCODE -ne 0) { throw '解包 jar 失败' }
+    $mf = Join-Path $explodedLocal 'META-INF\MANIFEST.MF'
+    if (-not (Test-Path $mf)) { throw 'jar 里没有 MANIFEST.MF' }
+    Move-Item $mf $manifestLocal -Force
+
+    $local = Get-FileManifest $explodedLocal
+    Write-ManifestFile $local $manifestList
+
+    $remote = @{}
+    foreach ($line in (RemoteOutput "cat $RemoteDir/exploded.manifest 2>/dev/null || true")) {
+        if ($line -match '^([0-9a-f]{64})\s+(.+)$') { $remote[$matches[2]] = $matches[1] }
+    }
+    if ($remote.Count -eq 0) {
+        Write-Host '  （首次：整包上传，并在服务器建立增量基线）'
+        Upload $jar "$RemoteDir/app.jar.new"
+        Remote "cd $RemoteDir && rm -rf exploded && mkdir exploded && cd exploded && unzip -q ../app.jar.new && mv META-INF/MANIFEST.MF ../MANIFEST.MF && find . -type f | sed 's#^\./##' | sort | xargs sha256sum > ../exploded.manifest.tmp && mv ../exploded.manifest.tmp ../exploded.manifest"
+        return
+    }
+
+    $changed = @($local.Keys | Where-Object { $remote[$_] -ne $local[$_] })
+    $removed = @($remote.Keys | Where-Object { -not $local.ContainsKey($_) })
+    Write-Host ("  变化 {0} 个文件 / 删除 {1} 个（共 {2}）" -f $changed.Count, $removed.Count, $local.Count)
+
+    if ($changed.Count -gt 0) {
+        $listFile = Join-Path $staging 'changed-files.txt'
+        $changed | Set-Content -LiteralPath $listFile -Encoding utf8
+        Remove-Item $patch -Force -ErrorAction SilentlyContinue
+        & $bsdtar --options "gzip:compression-level=1" -czf $patch -C $explodedLocal -T $listFile
+        if ($LASTEXITCODE -ne 0) { throw '打包增量失败' }
+        Upload $patch "$RemoteDir/release-patch.tar.gz"
+        Upload $manifestList "$RemoteDir/exploded.manifest.new"
+    }
+    Upload $manifestLocal "$RemoteDir/MANIFEST.MF"
+
+    $removeCmd = if ($removed.Count -gt 0) {
+        "rm -f -- " + (($removed | ForEach-Object { "'$_'" }) -join ' ')
+    } else { 'true' }
+    $extract = if ($changed.Count -gt 0) { 'tar xzf release-patch.tar.gz -C exploded && rm -f release-patch.tar.gz' } else { 'true' }
+    $promote = if ($changed.Count -gt 0) { 'mv -f exploded.manifest.new exploded.manifest' } else { 'true' }
+    Remote "cd $RemoteDir && $extract && (cd exploded && $removeCmd) && $promote && /opt/jdk25/bin/jar c0fm app.jar.new MANIFEST.MF -C exploded . && echo repacked"
+}
 
 if ($buildWeb) {
     Step '上传 web 包' { Upload $archive "$RemoteDir/release.tar.gz" }

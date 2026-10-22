@@ -5745,3 +5745,29 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：`9ed0132`
 - 远端推送：`origin/work-033-question-concept`（**分支**；master 未合并——主树有另一会话
   未提交的 `WORK-034` 与 `updates.md` 改动，不能带着别人的改动合并）
+
+## 2026-10-22 17:55:00 +08:00 · 发版上传改为增量（WORK-033 分支）
+
+- 类型：maintenance
+- 背景：用户问「上传为什么这么慢」。实测链路约 **3.2 MB/s**，82 MB 的 fat jar 上传 32 秒；
+  jar 再压只省 8%（78 MB），不是压缩问题。
+- 变更（`scripts/release.ps1`）：
+  - **增量上传**：本地解开 jar、按内容哈希与服务器 `/opt/paideia-app/exploded.manifest` 比对，
+    只传变化的文件（自家模块 + classes 约 1.4 MB），服务器用 `/opt/jdk25/bin/jar` 重新打包。
+    fat jar 里 84 MB 是第三方依赖，正常发版不变。
+  - 首次仍整包上传并建立基线；之后靠清单判断增删。
+- 事故与修复（如实记录）：
+  - 第一版重打包用了 `jar cfm`，嵌套 jar 被 deflate，Boot 4 的嵌套 jar 加载器读不了，
+    启动报 `NoClassDefFoundError: org/springframework/boot/SpringApplication`，**线上中断约 6 分钟**。
+  - 先恢复历史备份（退到 10-21 的 jar），随即用 scp 传回本分支构建的 jar 并重启，服务恢复。
+  - 正确做法：**`jar c0fm`**（全部 STORED），已在服务器上用备用端口真启动验证健康后才重新发版。
+  - 另一处：试过用 Git 的 `sha256sum` 加速本地哈希，PowerShell 调原生 exe 实测 18 秒且解析不到
+    结果，已回退到 `Get-FileHash`（16 秒，稳定）。
+- 验证：
+  - 最终发版 `exit=0`，纯后端 **103.3 秒**（增量 0 个文件；上传步骤 26.7 秒，其中 16 秒是本地哈希、
+    4.3 秒是服务器重打包，真正传输接近 0）。
+  - 与优化前纯后端 ~115 秒相比省的不多，因为瓶颈从「传输」变成了「本地全量哈希」；
+    下一步若继续优化，应只哈希自家模块与 classes，第三方依赖用「文件名 + 大小」判断。
+  - 线上 `/actuator/health` UP，`/learning/mastery` 等 WORK-033 端点仍 200。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-question-concept`
