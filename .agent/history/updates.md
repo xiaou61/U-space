@@ -5518,3 +5518,24 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 未做：TASK-010 的 e2e 级验收（关卡正文要真沙箱才有结果集），已在 tasks.md 写明
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-22 · WORK-032 验证报告入库（status: partial）
+
+- 类型：verification
+- 变更：
+  - 新增 `testing/report.md`：16 条 AC 逐条映射到命令/退出码/结果/证据五列。
+    **14 条有实测证据，2 条只有结构保证**（AC-002 跨次隔离、AC-007 硬编码判错），
+    故 status 写 `partial` 而非 `passed`。
+  - 补跑并记录真实数字：后端内环 **261 / 0 失败 / 13 跳过**（61 秒）、模块边界与迁移
+    **9 / 0**（27 秒）、`SandboxIntegrationTest` **9 / 0**（22 秒）、ui 包 **209 passed**。
+  - 13 条跳过逐条核过，全部是「未配置真实上游凭据就跳过」的既有设计。
+  - 发现 AC-013 原本只有结构保证，**补成真断言** `sqlRunAuditsWithoutSource` 并做反向验证。
+- 决策：
+  - **AC-002 / AC-007 不补**：两条都要真跑沙箱，而本机 `docker: command not found`，
+    只能在服务器上跑。它们现在是"结构正确、断言缺失"，已在报告里登记为后续改动的前置阅读项。
+- 验证：
+  - `SandboxIntegrationTest` 反向验证：断言改成 `java` → 红（`expected: "java" but was: "sql"`），
+    恢复后 9/9 转绿
+  - `project_status.py --work WORK-032` → 结构化证据校验通过（不再报"证据不完整"）
+- 本地提交：`661e322`（AC-013 测试）+ 本笔（报告）
+- 远端推送：未执行
