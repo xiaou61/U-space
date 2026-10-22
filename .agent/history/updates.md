@@ -5771,3 +5771,21 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 线上 `/actuator/health` UP，`/learning/mastery` 等 WORK-033 端点仍 200。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-033-question-concept`
+
+## 2026-10-22 18:20:00 +08:00 · 增量上传进阶：清单 v2（自家文件哈希、依赖按大小）
+
+- 类型：maintenance
+- 变更（`scripts/release.ps1`）：
+  - 清单升到 `#v2`：只对 `BOOT-INF/classes/**` 与 `BOOT-INF/lib/paideia-*.jar`（69 个文件、1.4 MB）
+    算 SHA-256；第三方依赖只记「文件名 + 字节数」。本地清单 16 秒 → **0.72 秒**。
+  - 旧清单（无 `#v2` 头）自动走一次整包上传并重建基线，避免格式切换时误删依赖。
+  - 没有任何变化时不再重打包，服务器直接 `cp app.jar app.jar.new`。
+- 验证：
+  - 格式切换那一次：118.3 秒（整包上传 41.4 秒 + 建基线），健康检查通过。
+  - 之后连续两次：**64.0 秒**、**57.2 秒**；上传步骤 13.5 → 12.9 秒（其中本地清单 0.72 秒、
+    解包 1.3 秒，其余是 quick-server 每次起 PowerShell 的往返）。
+  - 线上 `/actuator/health` UP；WORK-033 的 `/learning/mastery` 仍 200。
+- 已知取舍：第三方依赖靠「同名 + 同大小」判断；若有人手工改写本地 `.m2` 里同坐标 jar，
+  服务器会保留旧依赖。正常 Maven 不会发生，已写进脚本注释。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-question-concept`

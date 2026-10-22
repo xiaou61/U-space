@@ -63,20 +63,24 @@ function RemoteOutput([string]$command) {
     return $out
 }
 
-# 每个文件的内容哈希：增量判断只看内容，不看时间戳。
-# 注：试过用 Git 的 sha256sum 批量加速，但 PowerShell 调原生 exe 的传参/输出解析反而更慢
-# （实测 18 秒且解析不到结果），所以保留 .NET 的 Get-FileHash——16 秒，稳定。
+# 清单格式 v2：自家模块与 classes 用内容哈希，第三方依赖用「文件名 + 字节数」。
+# 依赖升级会换版本号（文件名变），同坐标的内容 Maven 不会原地改写；这样本地清单
+# 从 16 秒降到 1 秒以内，代价是依赖同名同大小却被手工改写时会漏判。
 function Get-FileManifest([string]$dir) {
     $map = @{}
     Get-ChildItem -LiteralPath $dir -Recurse -File | ForEach-Object {
         $rel = $_.FullName.Substring($dir.Length + 1).Replace('\', '/')
-        $map[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($rel.StartsWith('BOOT-INF/classes/') -or $rel.StartsWith('BOOT-INF/lib/paideia-')) {
+            $map[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        } else {
+            $map[$rel] = 'size:' + $_.Length
+        }
     }
     return $map
 }
 
 function Write-ManifestFile($map, [string]$path) {
-    ($map.Keys | Sort-Object | ForEach-Object { "$($map[$_])  $_" }) |
+    @('#v2') + @($map.Keys | Sort-Object | ForEach-Object { "$($map[$_])  $_" }) |
         Set-Content -LiteralPath $path -Encoding utf8
 }
 
@@ -206,14 +210,19 @@ Step '上传 jar' {
     $local = Get-FileManifest $explodedLocal
     Write-ManifestFile $local $manifestList
 
+    $remoteLines = @(RemoteOutput "cat $RemoteDir/exploded.manifest 2>/dev/null || true")
     $remote = @{}
-    foreach ($line in (RemoteOutput "cat $RemoteDir/exploded.manifest 2>/dev/null || true")) {
-        if ($line -match '^([0-9a-f]{64})\s+(.+)$') { $remote[$matches[2]] = $matches[1] }
+    if ($remoteLines.Count -gt 0 -and $remoteLines[0].Trim() -eq '#v2') {
+        foreach ($line in $remoteLines) {
+            if ($line -match '^(size:\d+|[0-9a-f]{64})\s+(.+)$') { $remote[$matches[2]] = $matches[1] }
+        }
     }
     if ($remote.Count -eq 0) {
-        Write-Host '  （首次：整包上传，并在服务器建立增量基线）'
+        Write-Host '  （首次或清单格式升级：整包上传，并在服务器建立增量基线）'
         Upload $jar "$RemoteDir/app.jar.new"
-        Remote "cd $RemoteDir && rm -rf exploded && mkdir exploded && cd exploded && unzip -q ../app.jar.new && mv META-INF/MANIFEST.MF ../MANIFEST.MF && find . -type f | sed 's#^\./##' | sort | xargs sha256sum > ../exploded.manifest.tmp && mv ../exploded.manifest.tmp ../exploded.manifest"
+        Remote "cd $RemoteDir && rm -rf exploded && mkdir exploded && cd exploded && unzip -q ../app.jar.new && mv META-INF/MANIFEST.MF ../MANIFEST.MF && echo seeded"
+        Upload $manifestList "$RemoteDir/exploded.manifest"
+        Upload $manifestLocal "$RemoteDir/MANIFEST.MF"
         return
     }
 
@@ -237,7 +246,13 @@ Step '上传 jar' {
     } else { 'true' }
     $extract = if ($changed.Count -gt 0) { 'tar xzf release-patch.tar.gz -C exploded && rm -f release-patch.tar.gz' } else { 'true' }
     $promote = if ($changed.Count -gt 0) { 'mv -f exploded.manifest.new exploded.manifest' } else { 'true' }
-    Remote "cd $RemoteDir && $extract && (cd exploded && $removeCmd) && $promote && /opt/jdk25/bin/jar c0fm app.jar.new MANIFEST.MF -C exploded . && echo repacked"
+    # 没有任何变化时不必重打包：当前 app.jar 就是基线，直接复制成待切换文件
+    $buildCmd = if ($changed.Count -eq 0 -and $removed.Count -eq 0) {
+        'cp -f app.jar app.jar.new'
+    } else {
+        '/opt/jdk25/bin/jar c0fm app.jar.new MANIFEST.MF -C exploded .'
+    }
+    Remote "cd $RemoteDir && $extract && (cd exploded && $removeCmd) && $promote && $buildCmd && echo repacked"
 }
 
 if ($buildWeb) {
