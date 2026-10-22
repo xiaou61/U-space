@@ -5623,3 +5623,44 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - `project-lifecycle.py status` → 31 个工作项全部「完成沉淀 | 已完成」。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-22 15:55:00 +08:00 · 速递热度分级 + GitHub 热榜修复 + 从零开始补全 + 知识库扩容
+
+- 类型：feat / content
+- 变更：
+  - 速递（`paideia-ai/digest`）：提示词升到 `digest-v2`，一次 AI 调用同时给每条打 0-100 的
+    重要性分；源自身没有热度信号（RSS 新闻、社区）时用这个分填 `heat`，HN 点数 / GitHub
+    今日新增 star 仍用源自己的值。前端按组内排名标「高热（前 25%）/ 较热（到 60%）」，
+    组标题注明「按热度排序」。
+  - GitHub 热榜改为**页面优先、Search API 兜底**（部署机实测 trending 页可解析 12 行带
+    stars today）；兜底查询从「7 天 + 100 星 / 15 条」改为「3 天 + 50 星 / 30 条」——
+    旧窗口同一批仓库被指纹去重后每天只剩 2 条。
+  - 从零开始：Java 总览从「十二课」改为完整 23 关（单块 `learning-path`）；修正 13 篇正文
+    H1 编号错位（09 篇写「13 ·」、13 篇写「09 ·」等）。Python 新增 6 课（模块与包、类型注解、
+    迭代器与生成器、装饰器、上下文管理器、并发入门），原「小项目」移到第 18 课并更新总览为
+    18 关。`verify_course.py` 的 `pathSteps` 上限 20 → 30（渲染器本身不限长）。
+  - 知识库新增 18 个条目：`content/reading/os`（6）、`algorithms`（7）、`ai`（5），
+    均按 reading 线导入并登记为学习轨道；另把 5 条旧编号的重复条目（Java 09/10/11/12、
+    Python 12 小项目）改为草稿，避免同一篇内容在列表里出现两次。
+- 决策：
+  - **热度分只用于源自身没有信号的组**：AI 分 0-100 与 HN 点数、GitHub star 量纲不同，
+    跨组比较没有意义，所以档位按「组内排名」而不是绝对阈值。
+  - **AI 评分不额外调用**：与摘要合并进同一次调用，成本不变（一天一次是 WORK-027 的硬约束）。
+  - **页面优先而不是 Search 优先**：Search 的「新建且星多」不是热榜，且会连续几天重复。
+  - 旧重复条目**改草稿而不是删除**：删除不可逆且已有 1 条浏览记录，草稿可随时恢复。
+- 验证：
+  - 后端定向：`Digest*Test` + `GithubTrendingSourceTest` + `HackerNewsSourceTest`
+    **42 运行 / 0 失败 / 8 跳过**（跳过的都是需要真实上游的 live 用例）。
+  - 前端 `tsc -p tsconfig.json` 通过（`@paideia/app` typecheck）。
+  - 内容：`verify_course.py --dir content/courses/java`、`content/courses/python` 均通过；
+    新阅读内容的 `quiz` / `learning-path` 围栏 JSON 全部可解析（0 处失败）。
+  - 线上真验（导出今天数据后重跑）：速递入库 60 条，四组齐全
+    news 19 / github 13 / community 18 / hackernews 10；news/community 有 AI 热度（14–95），
+    github 热度 10–2079（今日新增 star）。
+  - 线上 e2e（`E2E_BASE_URL=http://36.212.5.130:8081`）：速递 **7/7**、从零开始 **6/6**。
+  - 线上轨道：`/api/v1/learn/tracks` 返回 8 条（新增 os 6 关 / algorithms 7 关 / ai 5 关），
+    Python 19 关、Java 24 关。
+  - 知识库条目 88 → 114；分类计数：Java 28、Python 20、八股文 16、MySQL 13、
+    算法 9、网络 11、操作系统 8、人工智能 7。
+- 本地提交：见下一笔
+- 远端推送：未执行
