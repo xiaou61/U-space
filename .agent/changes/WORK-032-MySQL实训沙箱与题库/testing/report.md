@@ -2,7 +2,7 @@
 artifact: test-report
 work_id: WORK-032
 work: MySQL 实训沙箱与题库
-status: partial
+status: passed
 evidence: required
 workflow: full
 created: 2026-10-22
@@ -12,10 +12,13 @@ verified_commit: ef36e85
 
 # WORK-032 验证报告
 
-**结论先说**：16 条验收标准里 **14 条有实测证据**，**2 条只有结构保证、没有断言**
-（AC-002 的跨次隔离、AC-007 的硬编码判错，见「失败与未验证项」）。所以本报告是 `partial` 而不是 `passed`。
+**结论先说**：**16 条验收标准全部有实测证据**。
 
-AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并做反向验证（见验收矩阵）。
+其中 AC-002 与 AC-007 只能在**真实沙箱**上验（本机没有 Docker，集成测试里的 `CodeRunner`
+是桩），因此写成 `scripts/verify_sql_live.py` 对着已部署实例跑，两条都通过并做了反向验证。
+详见验收矩阵与「验证环境」。
+
+AC-013 在写本报告时发现"只有结构保证"，已补成真断言并做反向验证。
 
 ## 验证环境
 
@@ -23,7 +26,7 @@ AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并�
 | --- | --- |
 | 后端 | 本机 JDK 25，`scripts/test-db.sh` 独占库（`paideia_run_1022110124_54221` / `paideia_run_1022110245_54284`，跑完自动删） |
 | 前端 | `frontend/packages/ui`，vitest 5.0.3 + happy-dom |
-| 线上 | 2026-10-21 部署三次（全量 / `--SkipWeb` / 全量），镜像 `paideia-sandbox-mysql:8.0@sha256:e2eafb6e…` |
+| 线上 | 2026-10-21 部署三次（全量 / `--SkipWeb` / 全量），镜像 `paideia-sandbox-mysql:8.0@sha256:e2eafb6e…`；2026-10-22 在服务器上确认 Docker `29.1.3` 与该镜像在位 |
 | 上游 | 真实 DeepSeek（线上判题链路实测，非桩） |
 
 ## 验证结果
@@ -42,6 +45,8 @@ AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并�
 - **令牌与扫描路径**（`vitest run src/tokens.test.ts src/styles/source-coverage.test.ts`）：退出码 0，3 passed。
 - **e2e 打线上**（`pnpm --filter @paideia/app test:e2e`，`E2E_BASE_URL` 指向部署实例）：退出码 0，
   **16 passed / 1 skipped**（2026-10-21）。
+- **AC-002 / AC-007 真实沙箱验证**（`python scripts/verify_sql_live.py`，指向部署实例）：
+  退出码 0，两条均通过（真容器，非桩）；反向验证见验收矩阵。
 
 **13 条跳过逐条核过**（跳过不等于通过）：`AgentLiveConversationTest` 2 条、
 `LayaContentClassifierLiveTest` 3 条、`DigestLiveProbeTest` 4 条、`DigestSummarizerLiveTest` 3 条、
@@ -53,12 +58,12 @@ AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并�
 | 检查项 | 命令 | 退出码 | 结果 | 证据 |
 | --- | --- | --- | --- | --- |
 | AC-001 `sql` 作为第三种语言，未知语言仍拒绝 | `scripts/test-db.sh mvn -B -pl paideia-sandbox -Dtest=DockerCommandTest test` | 0 | passed | 10 条全过，含「语言白名单按镜像可用性给出」「配置了 sql 镜像才出现 sql」；线上 `/api/v1/sandbox/status` 的 `languages` 含 `sql` |
-| AC-002 一次运行在干净实例里完成，前后不共享 | `scripts/test-db.sh mvn -B -pl paideia-sandbox -Dtest=DockerCommandTest test` | 0 | passed | 命令构造断言含 `--rm`（一次性容器）且 SQL 路径 `noneMatch` 任何宿主挂载；**但"跨次看不到上次建的表"没有独立断言**，见未验证项 |
+| AC-002 一次运行在干净实例里完成，前后不共享 | `python scripts/verify_sql_live.py`（真实沙箱） | 0 | passed | 第一次 `CREATE TABLE probe_zz` + 插入 42 → 读到 `[["42"]]`；第二次查同一张表 → `ERROR 1146 … Table 'practice.probe_zz' doesn't exist`，证明实例已销毁、状态未跨次保留 |
 | AC-003 返回结构化结果集（列名 + 行值） | `scripts/test-db.sh mvn -B -pl paideia-sandbox -Dtest=SqlResultCodecTest test` | 0 | passed | 7 条全过：单结果集含 NULL 与定点数尾零、多 XML 文档按 resultset 切段、空结果集零行、超行数上限整批作废 |
 | AC-004 三道上限（库层超时 / 墙钟硬杀 / 行数字节） | `scripts/test-db.sh mvn -B -pl paideia-sandbox -Dtest=DockerCommandTest test` | 0 | passed | `sql命令同样加固但资源上限单独一档`：`--memory=512m` `--cpus=1` `--pids-limit=128`；`sql脚本显式收紧文件读写开关`：`--secure-file-priv` + `--pid-file=/tmp/data/mysqld.pid` |
 | AC-005 允许多语句并返回多个结果集 | 线上手验（2026-10-21） | 人工 | passed | `BEGIN` 内读到 `1.00`，`ROLLBACK` 后回到 `199.00`；`SqlResultCodecTest#BEGIN与ROLLBACK不产生结果集所以序号连续但缺项` 覆盖序号口径 |
 | AC-006 结果按语句顺序排列 | `scripts/test-db.sh mvn -B -pl paideia-sandbox -Dtest=SqlResultCodecTest test` | 0 | passed | `多个XML文档首尾相接按resultset切段` 断言顺序；线上多语句实测顺序与语句一致 |
-| AC-007 硬编码答案在隐藏数据集上被判错 | `python scripts/sql_cases.py --check` | 0 | passed | 门禁强制每道题 ≥2 数据集（`fail(name, "至少要有 2 个数据集（1 公开 + 1 隐藏），否则硬编码答案也能过")`）且每个 `antiPatterns` 至少在一个数据集上结果不同；**但没有一条用例直接喂 `SELECT 487.50`**，见未验证项 |
+| AC-007 硬编码答案在隐藏数据集上被判错 | `python scripts/verify_sql_live.py`（真实沙箱） | 0 | passed | 取参考解在公开集的真实结果（ann=2 / bob=1 / cid=0）原样写成 `UNION ALL` 字面量，在隐藏集上算出的哈希与 `expectHash[orders-hidden-a]` **不一致**（判错）。反向验证：把目标数据集改成 `orders-public` → 脚本报「硬编码竟然判对了」，恢复后转绿 |
 | AC-008 每题至少 2 个数据集（1 公开 + 1 隐藏） | `python -c` 逐题读 `content/courses/mysql/*.md` 的 `dataset` 字段 | 0 | passed | 11 道可执行题全部为 `['orders-public','orders-hidden-a']` |
 | AC-009 12 关每关至少一道可执行题 | `python scripts/sql_cases.py --check` + `python scripts/verify_course.py --dir content/courses` | 0 | passed | 12 道题通过；50 个课程文件含代码执行全通过 |
 | AC-010 期望值由参考解真跑生成 | `python scripts/sql_cases.py --check` | 0 | passed | 门禁跑 reference 算哈希，题面只带 `expectHash`，无一处泄漏 reference/antiPatterns |
@@ -71,20 +76,31 @@ AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并�
 
 ## 失败与未验证项
 
-### 1. AC-002 / AC-007 只有结构保证，没有独立断言（本项实质缺口）
+### 1. AC-002 / AC-007 已在真实沙箱上验证（不再是缺口）
 
-这两条**没有被任何任务的「对应」栏认领**（其余 14 条都认领了）。逐条说清现状：
+这两条原本没有断言，原因很具体：**本机没有 Docker**（`docker: command not found`），
+而 `SandboxIntegrationTest` 里 `CodeRunner` 是桩——它验的是控制器那一层，验不了"容器真的起、
+真的销毁"和"隐藏数据集真的在服务端"。
 
-- **AC-002（跨次隔离）**：一次性容器这一点**有断言**（`DockerCommandTest` 的 `MANDATORY` 含
-  `--rm`，SQL 路径也验了不挂载宿主）。缺的是"同一用户连续跑两次，第二次看不到第一次建的表"——
-  没有用例真的跑两次去比。风险：将来若引入容器池化或复用，这条会静默失效。
-- **AC-007（硬编码被隐藏集判错）**：门禁强制每题 ≥2 数据集、且每个反模式至少在一个数据集上
-  结果不同，这在**结构上**排除了硬编码能过。但没有一条用例直接喂 `SELECT 487.50` 这种写法
-  去证明它被判错。
+补法是 `scripts/verify_sql_live.py`：对着**已部署实例**跑，两条都是真容器：
 
-**为什么不补**：两条都要真跑沙箱（Docker + MySQL 镜像），本机**没有 Docker**
-（`docker: command not found`），只能在服务器上跑。它们现在是"结构正确、断言缺失"，
-不是"行为错误"。已在此登记，后续改动容器生命周期或题目数据集结构的人必须先读这一节。
+- **AC-002**：第一次建 `probe_zz` 并读到 42，第二次查同一张表报
+  `Table 'practice.probe_zz' doesn't exist`。这条测的是"状态没跨次保留"，比"命令里有 `--rm`"
+  更接近要证明的事。
+- **AC-007**：把参考解在公开集的真实结果（ann=2 / bob=1 / cid=0）原样写成 `UNION ALL` 字面量，
+  在隐藏集上算出的哈希与 `expectHash` 不一致。**硬编码在隐藏集上判错，说明隐藏集真的起作用。**
+
+两条都做了反向验证：把 AC-007 的目标数据集改成 `orders-public`，脚本立刻报
+「硬编码在隐藏数据集上竟然判对了——隐藏集没有起作用」，恢复后转绿。
+
+**注意**：这个脚本要凭据、且要求沙箱开着，所以**不放进常规测试**，需要时手动跑：
+
+```
+PAIDEIA_BASE_URL=… PAIDEIA_LEARNER_IDENTIFIER=… PAIDEIA_LEARNER_PASSWORD=… \
+  python scripts/verify_sql_live.py
+```
+
+改容器生命周期、数据集内容或判题口径的人应当重跑它。
 
 ### 2. 部署后才暴露的两个真缺陷（已修 + 已加回归）
 
@@ -107,8 +123,9 @@ AC-013 在本次补报告时发现"只有结构保证"，已补成真断言并�
 
 ## 剩余风险
 
-1. **三条 partial 的 AC 是静默失效型的**：改动容器生命周期、审计写入、或题目数据集结构时，
-   它们不会有测试拦住。这是本项最该被记住的一条。
+1. **AC-002 / AC-007 的证据来自线上手动脚本，不在 CI 里**：`verify_sql_live.py` 要凭据、
+   要沙箱开着，所以不随常规测试跑。改动容器生命周期或数据集结构时**必须手动重跑**，
+   否则这两条会在无人察觉的情况下失效。
 2. **SQL 判题依赖客户端算哈希**：服务端不认识"正确答案"（这是刻意的设计），但代价是
    判题逻辑一旦被绕过（改前端），用户能自己给自己判对。当前判断是可接受——进度只影响
    自己的学习记录，不进任何对外统计。

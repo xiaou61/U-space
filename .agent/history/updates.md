@@ -5539,3 +5539,23 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - `project_status.py --work WORK-032` → 结构化证据校验通过（不再报"证据不完整"）
 - 本地提交：`661e322`（AC-013 测试）+ 本笔（报告）
 - 远端推送：未执行
+
+## 2026-10-22 · WORK-032 AC-002 / AC-007 在真实沙箱上验证通过
+
+- 类型：verification
+- 变更：
+  - 新增 `scripts/verify_sql_live.py`：对着已部署实例真跑两条本地验不了的验收标准。
+  - AC-002（跨次隔离）：第一次 `CREATE TABLE probe_zz` + 插入 42 → 读到 `[["42"]]`；
+    第二次查同一张表 → `ERROR 1146 … Table 'practice.probe_zz' doesn't exist`。
+  - AC-007（硬编码判错）：把参考解在公开集的真实结果（ann=2 / bob=1 / cid=0）写成
+    `UNION ALL` 字面量，在隐藏集上算出的哈希与 `expectHash` 不一致。
+  - 报告 status 由 `partial` 改为 `passed`，16 条 AC 全部有实测证据。
+- 决策：
+  - 脚本**不放进常规测试**：它要凭据、且要求沙箱开着。改容器生命周期、数据集内容或判题口径
+    的人必须手动重跑（已写进报告「剩余风险」第 1 条）。
+- 验证：
+  - `python scripts/verify_sql_live.py` → 退出码 0，两条均通过（真容器，非桩）
+  - 反向验证：把 AC-007 的目标数据集改成 `orders-public` → 脚本报
+    「硬编码在隐藏数据集上竟然判对了——隐藏集没有起作用」，恢复后转绿
+- 本地提交：见下一笔
+- 远端推送：未执行
