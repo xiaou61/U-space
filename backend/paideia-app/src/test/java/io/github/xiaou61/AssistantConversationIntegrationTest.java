@@ -131,7 +131,6 @@ class AssistantConversationIntegrationTest {
         // **注意要先删消息**：两张表之间没有外键（同样是有意为之），不会自动级联。
         jdbcTemplate.update("DELETE FROM ai_messages");
         jdbcTemplate.update("DELETE FROM ai_conversations");
-        jdbcTemplate.update("DELETE FROM ai_model_credentials");
         jdbcTemplate.update("DELETE FROM ai_memories_structured");
         jdbcTemplate.update("DELETE FROM ai_memories_text");
 
@@ -144,7 +143,6 @@ class AssistantConversationIntegrationTest {
     void cleanUp() {
         jdbcTemplate.update("DELETE FROM ai_messages");
         jdbcTemplate.update("DELETE FROM ai_conversations");
-        jdbcTemplate.update("DELETE FROM ai_model_credentials");
         jdbcTemplate.update("DELETE FROM ai_memories_structured");
         jdbcTemplate.update("DELETE FROM ai_memories_text");
     }

@@ -96,9 +96,7 @@ class AiSummaryIntegrationTest {
     void setUp() throws Exception {
         createdEntries.clear();
         clearInvocations(summarizer);
-        // 这两张表只有本模块在写，测试自己清干净就能做到用例间互不影响；
-        // 不清的话"未配置凭据"这类断言会被上一个用例留下的行打破。
-        jdbcTemplate.update("DELETE FROM ai_model_credentials");
+        // 这张表只有本模块在写，测试自己清干净就能做到用例间互不影响。
         jdbcTemplate.update("DELETE FROM ai_entry_summaries");
         String suffix = Long.toString(System.nanoTime() % 1_000_000L);
         userA = "91" + suffix;

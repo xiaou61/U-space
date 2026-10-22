@@ -89,7 +89,6 @@ class AssistantLiveUpstreamIntegrationTest {
     void setUp() {
         jdbcTemplate.update("DELETE FROM ai_messages");
         jdbcTemplate.update("DELETE FROM ai_conversations");
-        jdbcTemplate.update("DELETE FROM ai_model_credentials");
         user = Long.toString(5_000_000_000L + (System.nanoTime() % 1_000_000_000L));
         // 4 条用例各要一次真实调用，再加上工具循环可能的额外轮次；给足额度避免中途被闸拦下
         credits.adjust(Long.parseLong(user), 200_000, 1L, "真实上游用例发放");
