@@ -31,6 +31,14 @@ export function createLearningApi(client: ApiClient) {
     reset: (entryId: number) =>
       client.requestEnvelope<null>(`/api/v1/learning/entries/${entryId}`, { method: 'DELETE' }),
 
+    /** 逐题作答（WORK-033）：只发选择，判定与掌握度更新都在服务端。 */
+    attempt: (input: { entryId: number; blockKey: string; questionKey: string; choice: number }) =>
+      client.requestEnvelope<{ correct: boolean; fingerprint: string }>('/api/v1/learning/attempts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+
     /** 我的知识图谱（WORK-021）。掌握度是服务端现算的，前端不缓存也不推导。 */
     graph: () => client.requestEnvelope<ConceptGraph>('/api/v1/learning/graph'),
 

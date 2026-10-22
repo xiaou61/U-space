@@ -25,6 +25,9 @@ class KnowledgeUserDeletionListener {
             {"learning_progress", "user_id"},
             // 浏览记录（WORK-021）：同上，外键只指向 entry_id
             {"knowledge_entry_views", "user_id"},
+            // 逐题作答与掌握状态（WORK-033）：外键只指向条目/概念，注销不会级联到它们
+            {"question_attempts", "user_id"},
+            {"concept_mastery_state", "user_id"},
     };
 
     private final JdbcTemplate jdbcTemplate;

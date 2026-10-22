@@ -5692,3 +5692,37 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-22 16:30:26 +0800 · WORK-033 · 签署 .agent/changes/WORK-033-题目知识点关联与掌握诊断/requirements.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/proposal.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/design.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-033-题目知识点关联与掌握诊断/requirements.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/proposal.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/design.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-033-题目知识点关联与掌握诊断/requirements.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/proposal.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/design.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261022170000`：`question_attempts` / `question_concepts` / `concept_mastery_state` / `question_difficulty`。
+  - `QuestionCatalog`：从正文 quiz 围栏解析题目，身份 = 条目 + 块 + 题号 + 指纹（SHA-256）。
+  - `MasteryModel`（BKT）与 `ItemRating`（Elo）纯函数；Elo 方向在首轮测试里写反，已按
+    「答对 → 题目变容易 → rating 下调」修正。
+  - `QuestionAttemptService` + `POST /api/v1/learning/attempts`：服务端按正文判定，写作答、
+    更新难度与掌握度、返回补课建议；`GET /mastery`、`GET /diagnosis`。
+  - `QuestionConceptSuggester`（bigram + 结构加分）与管理端三个端点；
+    `/api/v1/learning/admin/**` 的 ADMIN 规则已排在更宽规则之前。
+  - `ConceptGraphService` 优先用 BKT 状态，没有则回退旧 `ConceptMastery`。
+  - 注销级联追加两张表；前端 quiz 首次选择时上报，`MarkdownBody` 增加 `recordAttempt` 端口。
+- 验证：
+  - `MasteryAndDiagnosisTest` 6、`QuestionCatalogTest` 4、`QuestionConceptSuggesterTest` 3 全绿。
+  - `QuestionAttemptIntegrationTest` 3/3；`AccountDeletionCascadeIntegrationTest` 与
+    `ConceptGraphIntegrationTest` 全绿。
+  - 前端 `tsc` 通过；`@paideia/ui` 单测 **209 passed / 12 files**。
+- 未完成：REQ-008 选题、REQ-009 复习联动、REQ-010 批量打标、REQ-012 评估导出；
+  T-05 两个管理端点与 T-08 的逐题上报 e2e 尚无测试。
+- 本地提交：见下一笔
+- 远端推送：未执行

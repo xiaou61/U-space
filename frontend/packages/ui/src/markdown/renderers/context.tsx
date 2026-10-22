@@ -96,12 +96,22 @@ export interface TraceResult {
 }
 
 /** 由页面注入的能力。缺哪一项，对应的交互就不渲染（而不是渲染一个坏掉的按钮）。 */
+/** 一次作答的上报形状（WORK-033）。对错由服务端判定，这里只有"选了第几个"。 */
+export interface AttemptInput {
+  blockKey: string
+  questionKey: string
+  choice: number
+  latencyMs?: number
+}
+
 export interface DocumentContextValue {
   entryId?: number
   entryTitle?: string
   onAskAssistant?: (prompt: string) => void
   onOpenEntry?: (entryId: number) => void
   progress?: ProgressPort
+  /** 逐题作答上报（WORK-033）。不传时只在本地判分，不上传。 */
+  recordAttempt?: (input: AttemptInput) => void
   /** 代码执行（WORK-015）。没有它时 `run` 题型只显示代码、不显示运行按钮。 */
   sandbox?: SandboxPort
 }

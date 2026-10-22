@@ -12,7 +12,7 @@ import { parseQuiz, scoreQuiz } from './schema'
  */
 export function Quiz({ code }: CustomRendererProps) {
   const parsed = useMemo(() => parseQuiz(code), [code])
-  const { progress, renderText } = useSourceReading()
+  const { progress, renderText, recordAttempt } = useSourceReading()
   const [answers, setAnswers] = useState<(number | null)[]>([])
 
   if (!parsed.ok) {
@@ -30,6 +30,14 @@ export function Quiz({ code }: CustomRendererProps) {
         return previous
       }
       next[questionIndex] = optionIndex
+      // 每次首次选择都上报一次；对错由服务端按正文判定，前端只发选择了哪个
+      if (quiz.id !== undefined) {
+        recordAttempt?.({
+          blockKey: quiz.id,
+          questionKey: `${quiz.id}#${questionIndex}`,
+          choice: optionIndex,
+        })
+      }
       const finished = next.filter((answer) => answer !== null && answer !== undefined).length === quiz.questions.length
       if (finished && quiz.id !== undefined) {
         const final = scoreQuiz(quiz, next)

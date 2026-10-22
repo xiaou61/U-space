@@ -10,7 +10,7 @@ related_to: [WORK-020, WORK-021, WORK-024, WORK-029, WORK-032]
 created: 2026-10-22
 updated: 2026-10-22
 approved_by: xiaou61
-approved_at: 2026-10-22 16:27:49 +0800
+approved_at: 2026-10-22 16:30:26 +0800
 approver_role: CTO
 ---
 

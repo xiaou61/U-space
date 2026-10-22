@@ -46,6 +46,7 @@ export function MarkdownBody({
   onOpenEntry,
   sandbox,
   progress: injectedProgress,
+  recordAttempt,
 }: {
   markdown: string
   className?: string
@@ -68,6 +69,8 @@ export function MarkdownBody({
    * 课程页会传一个"本地 + 服务端合并"的端口，管理端预览与笔记预览什么都不用改。
    */
   progress?: ProgressPort
+  /** 逐题作答上报（WORK-033）；不传就只在本地判分。 */
+  recordAttempt?: (input: { blockKey: string; questionKey: string; choice: number }) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   // 只依赖 markdown：同一份正文的标题序列是确定的
@@ -140,8 +143,8 @@ export function MarkdownBody({
   const progress = injectedProgress ?? localProgress
 
   const documentContext = useMemo(
-    () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox }),
-    [entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox],
+    () => ({ entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox, recordAttempt }),
+    [entryId, entryTitle, onAskAssistant, onOpenEntry, progress, sandbox, recordAttempt],
   )
 
   return (

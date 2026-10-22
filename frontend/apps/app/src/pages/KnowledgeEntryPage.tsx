@@ -59,6 +59,17 @@ export function KnowledgeEntryPage() {
    * <p>**只在条目页注入**——管理端预览、笔记预览都没有它，所以那些地方的「运行」按钮不会出现。
    * `ready` 每次都问一次（很轻），因为用户可能在别的标签页跑完了当天的额度。
    */
+  /**
+   * 逐题作答上报（WORK-033）。失败不弹错：小测的本地判分已经给了用户反馈，
+   * 上报失败只影响统计，不该打断阅读。
+   */
+  const recordAttempt = useCallback(
+    (input: { blockKey: string; questionKey: string; choice: number }) => {
+      void learning.attempt({ entryId, ...input }).catch(() => undefined)
+    },
+    [entryId],
+  )
+
   const sandbox = useMemo(
     () => ({
       ready: () => knowledge.sandboxStatus().then((status) => status.ready),
@@ -249,6 +260,7 @@ export function KnowledgeEntryPage() {
               onOpenEntry={openEntry}
               sandbox={sandbox}
               progress={progressPort}
+              recordAttempt={recordAttempt}
             />
 
             <div className="mt-10">

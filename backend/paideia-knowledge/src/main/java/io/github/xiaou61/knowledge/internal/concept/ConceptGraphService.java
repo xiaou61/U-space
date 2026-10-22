@@ -9,6 +9,8 @@ import io.github.xiaou61.knowledge.internal.entry.EntryMapper;
 import io.github.xiaou61.knowledge.internal.entry.EntryViewMapper;
 import io.github.xiaou61.knowledge.internal.learning.LearningProgressRules.BlockScore;
 import io.github.xiaou61.knowledge.internal.learning.LearningProgressService;
+import io.github.xiaou61.knowledge.internal.question.MasteryModel;
+import io.github.xiaou61.knowledge.internal.question.QuestionAttemptMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,6 +80,8 @@ public class ConceptGraphService {
      * 图谱退化为原来的三路，分数与改动前逐位相同。
      */
     private final MasteryEvidence masteryEvidence;
+    /** 逐题作答算出的掌握状态（WORK-033）；没有行时回退旧的加权平均。 */
+    private final QuestionAttemptMapper questionAttemptMapper;
 
     ConceptGraphService(ConceptMapper conceptMapper,
                         ConceptLinkMapper linkMapper,
@@ -86,7 +90,8 @@ public class ConceptGraphService {
                         CategoryMapper categoryMapper,
                         LearningProgressService progressService,
                         SelfAssessmentService assessmentService,
-                        MasteryEvidence masteryEvidence) {
+                        MasteryEvidence masteryEvidence,
+                        QuestionAttemptMapper questionAttemptMapper) {
         this.conceptMapper = conceptMapper;
         this.linkMapper = linkMapper;
         this.entryMapper = entryMapper;
@@ -95,6 +100,7 @@ public class ConceptGraphService {
         this.progressService = progressService;
         this.assessmentService = assessmentService;
         this.masteryEvidence = masteryEvidence;
+        this.questionAttemptMapper = questionAttemptMapper;
     }
 
     public Graph build(long userId) {
@@ -138,11 +144,25 @@ public class ConceptGraphService {
                 .collect(Collectors.toMap(Category::getId, Category::getName, (a, b) -> a));
 
         Instant now = Instant.now();
+        // BKT 状态优先：有逐题证据的概念用概率模型的分数与档位，其余回退旧公式
+        Map<Long, QuestionAttemptMapper.MasteryRow> bkt = new HashMap<>();
+        for (QuestionAttemptMapper.MasteryRow row : questionAttemptMapper.findMastery(userId)) {
+            bkt.put(row.conceptId(), row);
+        }
         List<Node> nodes = new ArrayList<>(concepts.size());
         for (Concept concept : concepts) {
-            nodes.add(toNode(concept, entriesByConcept.getOrDefault(concept.getId(), Set.of()),
+            Node base = toNode(concept, entriesByConcept.getOrDefault(concept.getId(), Set.of()),
                     titles, categoryNames, progress, assessments, views,
-                    campRatios.get(concept.getId()), now));
+                    campRatios.get(concept.getId()), now);
+            QuestionAttemptMapper.MasteryRow state = bkt.get(concept.getId());
+            if (state == null) {
+                nodes.add(base);
+                continue;
+            }
+            nodes.add(new Node(base.id(), base.name(), base.summary(), base.categoryId(),
+                    base.categoryName(), state.mastery(),
+                    MasteryModel.tier(state.mastery(), state.attempts()),
+                    base.reviewDue(), base.evidence(), base.entries()));
         }
 
         boolean truncated = nodes.size() > MAX_NODES;

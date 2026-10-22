@@ -84,6 +84,9 @@ class AccountDeletionCascadeIntegrationTest {
             // 学习记录与浏览记录（WORK-020 / WORK-021）：外键都只指向 entry_id，不靠级联
             {"learning_progress", "user_id"},
             {"knowledge_entry_views", "user_id"},
+            // 逐题作答与掌握状态（WORK-033）：同样只外键到条目/概念
+            {"question_attempts", "user_id"},
+            {"concept_mastery_state", "user_id"},
             {"refresh_tokens", "user_id"},
     };
 
@@ -323,6 +326,23 @@ class AccountDeletionCascadeIntegrationTest {
                         (user_id, entry_id, view_count, first_viewed_at, last_viewed_at)
                     VALUES (?, ?, 1, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
                     """, owner, entryId);
+            // WORK-033：作答与掌握状态也必须真种，否则新断言只会命中空表
+            jdbcTemplate.update("""
+                    INSERT INTO question_attempts
+                        (user_id, entry_id, block_key, question_key, fingerprint,
+                         choice_index, correct, latency_ms, judged_by, created_at)
+                    VALUES (?, ?, 'quiz-1', 'quiz-1#0', REPEAT('a', 64), 0, 1, 1000, 'server', UTC_TIMESTAMP(3))
+                    """, owner, entryId);
+            var conceptIds = jdbcTemplate.queryForList(
+                    "SELECT id FROM knowledge_concepts LIMIT 1", Long.class);
+            Long conceptId = conceptIds.isEmpty() ? null : conceptIds.get(0);
+            if (conceptId != null) {
+                jdbcTemplate.update("""
+                        INSERT INTO concept_mastery_state
+                            (user_id, concept_id, mastery, attempts, correct, updated_at)
+                        VALUES (?, ?, 0.5000, 1, 1, UTC_TIMESTAMP(3))
+                        """, owner, conceptId);
+            }
         }
     }
 
