@@ -5789,3 +5789,27 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   服务器会保留旧依赖。正常 Maven 不会发生，已写进脚本注释。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-033-question-concept`
+## 2026-10-22 18:17:22 +0800 · 过时技术核查与三项修复
+
+- 类型：fix
+- 变更：
+  - 合并 `work-033-question-concept` 到 master（快进 4 笔；线上早已部署，master 之前落后）。
+  - 重新生成三张漂移的结构图：前端包 15 个（补 camp）、表 48 张、端点 140 个。
+  - 删除死表 `ai_model_credentials`：新增 `V20261022180940__drop_ai_model_credentials.sql`，
+    移除注销级联清单 1 处、4 个集成测试里共 5 处引用。
+  - `scripts/verify_course.py` 增加沙箱运行时基线提醒（本机 JDK 25 vs 沙箱 Java 21）。
+  - 修正 `application.yml` 里「按 digest 钉住」这句与实际配置不符的注释。
+  - `always.md`：D-14 RabbitMQ 标注「尚未接入、零落地」；D-09 的「待尖刺验证」改为「已通过」。
+- 决策：
+  - 删密文表是安全的：`api_key_cipher` 的主密钥已随 WORK-009 从代码删除，行内容本就不可恢复。
+  - 沙箱基线仍取 Java 21 / Python 3.12（WORK-020 已定），不往上抬；只让不一致可见。
+- 依据：依赖版本核查结论是「没有过时版本」——Boot 4.1.1 为最新 GA（4.2 仅里程碑）、
+  MyBatis 3.5.19 最新、mybatis-spring-boot-starter 4.1.0 最新、前端 `pnpm outdated` 无输出。
+  真正过时的是「决策被推翻后的代码残留」与「生成物的漂移」，不是版本。
+- 验证：受影响测试 35 run / 0 失败 / 4 跳过（真实上游用例需 Key）；
+  `gen-arch-diagram.mjs --check` 四张一致；`check-diagrams.mjs` 10 图全部可解析；
+  `verify_course.py` 在 python 目录实测打出基线提醒。
+- 已知未修：Python 课程 12–17 六篇 `status: published` 却缺可运行示例，`verify_course.py` 判失败。
+- 本地提交：be3765b（架构图）/ 535a887（死表）/ 04c0973（课程基线）及本笔
+- 远端推送：未执行
+
