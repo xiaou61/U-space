@@ -285,6 +285,25 @@ class ApiWalkthroughTest {
         call("我的知识图谱", "GET", "/api/v1/learning/graph", bearer, null);
         call("重置本站", "DELETE", "/api/v1/learning/entries/" + entryId, bearer, null);
 
+        // ---- 题目知识点关联与掌握诊断（WORK-033）----
+        // 作答成功路径由 QuestionAttemptIntegrationTest 覆盖；这里只要求每个端点被真实打到。
+        call("我的掌握状态", "GET", "/api/v1/learning/mastery", bearer, null);
+        call("补课建议", "GET", "/api/v1/learning/diagnosis?conceptId=" + conceptId, bearer, null);
+        call("管理端题目清单", "GET", "/api/v1/learning/admin/questions?entryId=" + entryId,
+                adminToken(), null);
+        call("管理端替换标注（题目不存在 → 400）", "PUT",
+                "/api/v1/learning/admin/question-concepts", adminToken(),
+                json(Map.of("entryId", entryId, "blockKey", "smoke-missing",
+                        "questionKey", "smoke-missing#0", "concepts", List.of(),
+                        "source", "author")), 400);
+        call("概念候选（题目不存在 → 400）", "GET",
+                "/api/v1/learning/admin/question-concepts/suggestions?entryId=" + entryId
+                        + "&blockKey=smoke-missing&questionKey=smoke-missing%230",
+                adminToken(), null, 400);
+        call("逐题作答（题目不存在 → 400）", "POST", "/api/v1/learning/attempts", bearer,
+                json(Map.of("entryId", entryId, "blockKey", "smoke-missing",
+                        "questionKey", "smoke-missing#0", "choice", 0)), 400);
+
         // ---- 学习轨道（WORK-024）----
         // 轨道只有一个写入口：导入脚本用它 upsert。自查也走它，然后读列表与地图。
         call("导入学习轨道", "POST", "/api/v1/knowledge/admin/tracks", adminToken(),
