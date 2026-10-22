@@ -12,6 +12,7 @@ import io.github.xiaou61.sandbox.internal.run.CodeRun;
 import io.github.xiaou61.sandbox.internal.run.CodeRunner;
 import io.github.xiaou61.security.AuthPort;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -153,6 +154,28 @@ class SandboxIntegrationTest {
         assertThat(rows.getFirst().get("code_length")).isEqualTo("class Main{/* SECRET_MARKER */}".length());
         assertThat(String.valueOf(rows.getFirst().get("code_hash"))).hasSize(64).doesNotContain("SECRET_MARKER");
         assertThat(rows.getFirst().get("case_id")).isEqualTo("c1");
+    }
+
+    @Test
+    @DisplayName("SQL 运行同样写审计行：language='sql'，且不含源码（AC-013）")
+    void sqlRunAuditsWithoutSource() throws Exception {
+        when(runner.run(any())).thenReturn(new CodeRun.Result("", "", 0, 150, false, false, false, List.of()));
+
+        String sql = "SELECT note FROM customers WHERE note IS NULL";
+        MvcResult result = mockMvc.perform(post("/api/v1/sandbox/run")
+                        .header("Authorization", token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"language\":\"sql\",\"code\":\"" + sql + "\",\"dataset\":\"orders-public\"}"))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var rows = jdbcTemplate.queryForList(
+                "SELECT language, code_length, code_hash FROM code_runs WHERE user_id = ?",
+                Long.parseLong(user));
+        assertThat(rows).hasSize(1);
+        assertThat(rows.getFirst().get("language")).isEqualTo("sql");
+        assertThat(rows.getFirst().get("code_length")).isEqualTo(sql.length());
+        assertThat(String.valueOf(rows.getFirst().get("code_hash"))).hasSize(64).doesNotContain("customers");
     }
 
     @Test
