@@ -32,6 +32,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DIR = ROOT / "content" / "courses"
 
+# 学习者代码在沙箱里的运行时基线，必须与 `application.yml` 的
+# `paideia.sandbox.java-image` / `python-image` 一致。本机版本超前时，示例可能在这里跑过、
+# 却在沙箱里编译不过——沙箱才是学习者真正执行的地方。
+SANDBOX_JAVA_MAJOR = 21
+SANDBOX_PYTHON = (3, 12)
+
 FRONTMATTER_KEYS = ("title", "category", "order", "minutes", "status")
 # 总览另外要声明这条线是什么（WORK-020）：名字、类别、在清单里的顺序。
 # 放在内容里而不是代码里，是为了"新增一条线不改代码"。
@@ -431,6 +437,21 @@ def check_overview(path: Path, body: str) -> None:
             fail(path, f"学习路径第 {index + 1} 站缺少 title")
 
 
+def warn_if_runtime_ahead() -> None:
+    """本机运行时比沙箱基线新时提醒。只提醒不拦截：本机装得比沙箱新是常态。"""
+    try:
+        out = subprocess.run(["javac", "-version"], capture_output=True, text=True, timeout=20)
+        match = re.search(r"javac (\d+)", out.stdout + out.stderr)
+        if match and int(match.group(1)) > SANDBOX_JAVA_MAJOR:
+            print(f"  提醒：本机 javac {match.group(1)}，沙箱基线是 Java {SANDBOX_JAVA_MAJOR}——"
+                  f"用了更新版本的语法，示例在这里能过、在沙箱里会编译失败", file=sys.stderr)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    if sys.version_info[:2] > SANDBOX_PYTHON:
+        print(f"  提醒：本机 Python {sys.version_info.major}.{sys.version_info.minor}，"
+              f"沙箱基线是 {SANDBOX_PYTHON[0]}.{SANDBOX_PYTHON[1]}——同上", file=sys.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="校验课程源文件")
     parser.add_argument("--dir", default=str(DEFAULT_DIR), help="课程目录或某一门语言子目录")
@@ -449,6 +470,8 @@ def main() -> int:
         print(f"没有找到课程文件（{root}）——空目录视为通过")
         return 0
 
+    if not arguments.no_run:
+        warn_if_runtime_ahead()
     for path in files:
         verify_file(path, run=not arguments.no_run)
 

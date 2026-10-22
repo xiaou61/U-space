@@ -133,7 +133,10 @@ paideia:
     enabled: false
     # 留空 = Docker 默认 runtime（runc）。设成 runsc 即切到 gVisor（升级档）。
     runtime: ""
-    # 按 digest 钉住更稳：`docker image inspect <name> --format '{{index .RepoDigests 0}}'` 可查。
+    # **这两个镜像是学习者代码的运行时基线**：课程里的可运行示例必须能在这里的版本上跑通。
+    # `sql-image` 用 digest 钉住（它是本机构建的，没有上游 tag 可跟）；java/python 跟的是
+    # 上游 tag，`docker pull` 会带来漂移——`scripts/verify_course.py` 会比对"本机跑示例的
+    # 版本"与这里的基线，本机超前时提醒。改这里的版本要同步那个脚本的常量。
     java-image: eclipse-temurin:21-jdk-alpine
     python-image: python:3.12-alpine
     timeout-ms: 10000
