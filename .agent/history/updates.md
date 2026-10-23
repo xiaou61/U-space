@@ -6137,9 +6137,11 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 管理端新 bundle `assets/index-GNx8qcif.js` 里能找到「回答反馈」等新功能标识。
   - 生产库实测 upsert 语义：同一 `(user_id, trace_id)` 第二次写入后仍是 **1 行**，
     `rating` 由 down 变 up、`reason` 被清空。探针数据已清理。
-- **未做的验证**：没有用真实管理员账号跑线上 e2e。本机没有任何留存的管理端口令
-  （记忆里说的 `application-local.yml` 里现在只有数据库与 SMTP 两项），而登录有按账号/来源的
-  失败限流，不猜。于是"管理员看到的面板长什么样"这一层只有本地 e2e（27 passed）作证据，
-  线上只到"端点存在且鉴权正确 + 表结构与写入语义正确"。
+- **线上 e2e 补上了（同日追加）**：先前说"本机无管理端口令"是**错的**——口令一直在
+  `backend/config/application-local.yml` 末尾的注释块里，用 `rg -u` 才搜得到
+  （ripgrep 默认跳过 `.gitignore` 忽略的文件，而那个文件正是被忽略的）。
+  用 `E2E_BASE_URL=http://36.212.5.130:8081 E2E_ADMIN_PATH=/admin/` 打线上跑管理端 e2e：
+  **27 passed / 47.4 秒**，含管理员登录、知识库录入发布、积分调整、以及本项新增的趋势图与反馈页。
+  至此部署核验五层齐全（health / 启动日志 / 新端点 401 / bundle 标识 / 线上 e2e）。
 - 本地提交：见下一笔
 - 远端推送：未推送
