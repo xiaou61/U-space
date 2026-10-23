@@ -2,13 +2,16 @@
 artifact: requirements
 work_id: WORK-035
 work: SQL 工作台、数据集与 AI 联动
-status: draft
+status: approved
 mode: strict
 mode_reason: 跨 sandbox、knowledge、ai、web 四个模块；新增用户上传内容的存储、审核与公开读取（安全面）；新增 SQL 执行的并发与配额口径（影响全站可用性）；改变自由练习的定位与判题口径（用户可见行为）；出错会把别人的私人数据暴露给他人
 workflow: full
 related_to: [WORK-006, WORK-007, WORK-010, WORK-013, WORK-015, WORK-019, WORK-023, WORK-032, WORK-033]
 created: 2026-10-23
 updated: 2026-10-23
+approved_by: xiaou61
+approved_at: 2026-10-23 10:02:57 +0800
+approver_role: CTO
 ---
 
 # SQL 工作台、数据集与 AI 联动需求

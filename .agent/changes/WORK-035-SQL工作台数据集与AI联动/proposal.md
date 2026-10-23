@@ -2,12 +2,15 @@
 artifact: proposal
 work_id: WORK-035
 work: SQL 工作台、数据集与 AI 联动
-status: draft
+status: approved
 workflow: full
 depends_on: [requirements]
 related_to: [WORK-006, WORK-007, WORK-010, WORK-013, WORK-015, WORK-019, WORK-023, WORK-032, WORK-033]
 created: 2026-10-23
 updated: 2026-10-23
+approved_by: xiaou61
+approved_at: 2026-10-23 10:02:57 +0800
+approver_role: CTO
 ---
 
 # 提案 · SQL 工作台、数据集与 AI 联动
