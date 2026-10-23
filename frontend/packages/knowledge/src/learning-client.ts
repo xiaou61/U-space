@@ -1,6 +1,6 @@
 import type { ApiClient } from '@paideia/core'
 
-import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport, TrackMap, TrackSummary } from './learning-types'
+import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport, ReviewDueList, TrackMap, TrackSummary } from './learning-types'
 
 /**
  * 学习线 / 学习记录的客户端（WORK-020）。
@@ -30,6 +30,9 @@ export function createLearningApi(client: ApiClient) {
 
     reset: (entryId: number) =>
       client.requestEnvelope<null>(`/api/v1/learning/entries/${entryId}`, { method: 'DELETE' }),
+
+    /** 到期复习列表（WORK-034 S1）。空列表是正常结果。 */
+    reviews: () => client.requestEnvelope<ReviewDueList>('/api/v1/learning/reviews'),
 
     /** 逐题作答（WORK-033）：只发选择，判定与掌握度更新都在服务端。 */
     attempt: (input: { entryId: number; blockKey: string; questionKey: string; choice: number }) =>

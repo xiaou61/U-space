@@ -78,7 +78,7 @@ approver_role: CTO
   3. 用 `scripts/test-db.sh` 跑该测试类。
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=LearningReviewIntegrationTest test` → 期望 2 passed，0 skipped。
 
-### TASK-003 | pending | 复习页列表与路由
+### TASK-003 | done | 复习页列表与路由
 
 - 对应：`REQ-001`、`REQ-002`、`AC-001`、`AC-002`
 - 依赖：TASK-002
@@ -91,7 +91,7 @@ approver_role: CTO
   3. 跑两个 e2e 文件。
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/home.spec.ts e2e/review.spec.ts` → 期望全绿。
 
-### TASK-004 | pending | 零数据三步路径与训练营入口
+### TASK-004 | done | 零数据三步路径与训练营入口
 
 - 对应：`REQ-007`、`REQ-008`、`AC-007`、`AC-008`
 - 依赖：无

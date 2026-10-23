@@ -147,3 +147,18 @@ export interface TrackMap {
   stageCount: number
   passedCount: number
 }
+
+/** 到期复习（WORK-034 S1）。 */
+export interface ReviewDueItem {
+  entryId: number
+  title: string
+  conceptId: number | null
+  conceptName: string | null
+  reviewDueAt: string
+  stage: number
+}
+
+export interface ReviewDueList {
+  items: ReviewDueItem[]
+  total: number
+}

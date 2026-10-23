@@ -5562,3 +5562,18 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 说明：S1 的页面（TASK-003）与首页入口（TASK-004）尚未做，接口暂时只有测试消费。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-034-learning-loop`
+
+## 2026-10-23 10:15:00 +08:00 · WORK-034 S1 页面与入口完成
+
+- 类型：implementation
+- 变更：
+  - `ReviewPage` + `/review` 路由 + 导航「更多」里的「复习」；空态两个去处，列表显示概念与到期日。
+  - 首页「待复习」改指 `/review`；新增训练营固定卡片（不参与身份排序）。
+  - `HomeFirstRun`：零数据时显示三步（补身份 / 从零开始 / 第一关），关闭状态存
+    `paideia:first-run-dismissed`。
+- 验证：
+  - `@paideia/app` typecheck 通过。
+  - e2e（独占测试库）：`home.spec.ts` + `review.spec.ts` **10 passed**。
+- 未做：TASK-010 移动端/可访问性专项、TASK-011 验收报告；S2（TASK-005..009）未开始。
+- 本地提交：见下一笔
+- 远端推送：master（合并后）
