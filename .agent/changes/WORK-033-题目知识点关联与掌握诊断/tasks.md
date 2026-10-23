@@ -22,7 +22,7 @@ approver_role: CTO
 | T-05 | 概念标注与候选 | done |
 | T-06 | 前置诊断与接口 | done |
 | T-07 | 图谱接入 BKT | done |
-| T-08 | 注销级联与前端逐题上报 | in_progress |
+| T-08 | 注销级联与前端逐题上报 | done |
 | T-09 | 信息增益选题（REQ-008） | done |
 | T-10 | 答错联动复习（REQ-009） | done |
 | T-11 | 批量 AI 打标（REQ-010） | done |

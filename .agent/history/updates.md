@@ -5874,3 +5874,14 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
  ## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
  
  - 类型：implementation
+
+## 2026-10-23 09:45:00 +08:00 · WORK-033 T-08 逐题上报 e2e
+
+- 类型：verification
+- 变更：新增 `frontend/apps/app/e2e/question-attempt.spec.ts`：点第一个选项后断言
+  `POST /learning/attempts` 返回 200、指纹 64 位、请求体里的 `blockKey/questionKey/choice`
+  与正文一致。依赖 devdata 的 quiz 条目 id=10，线上自动跳过。
+- 验证：`scripts/test-db.sh` + Playwright 本地跑 **1 passed（1.1 分钟）**。
+- 至此 WORK-033 的 T-01..T-12 全部 done；仅 AC-004/AC-006 需要真实作答数据后才能验收。
+- 本地提交：见下一笔
+- 远端推送：master
