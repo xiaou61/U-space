@@ -282,6 +282,9 @@ class AssistantConversationController {
                             Map<String, Object> payload = new HashMap<>();
                             payload.put("usage", usagePayload(usage));
                             payload.put("empty", noContent);
+                            // 这一轮的标识（WORK-036）：界面用它把"点赞/点踩"挂到具体某一轮上。
+                            // 采集关闭时为 null——反馈仍可提交，只是挂不上去。
+                            payload.put("traceId", run.traceId());
                             send(emitter, "done", payload);
                             emitter.complete();
                             // 自动整理记忆的**触发点**（WORK-013）：刻意放在 emitter.complete()

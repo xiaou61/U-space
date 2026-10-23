@@ -69,6 +69,7 @@ function fakeApi(overrides: Partial<AssistantApi> = {}): AssistantApi {
     interviewEvaluations: unused,
     remember: unused,
     sendMessage: unused,
+    submitFeedback: unused,
     ...overrides,
   }
 }

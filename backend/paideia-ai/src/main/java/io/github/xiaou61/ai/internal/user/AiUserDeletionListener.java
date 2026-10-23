@@ -51,6 +51,8 @@ class AiUserDeletionListener {
             {"camp_attempts", "user_id"},
             {"camp_items", "user_id"},
             {"camp_programs", "user_id"},
+            // 助手回答的反馈（WORK-036）：这个人点过的赞与踩。**不给别人留他的评价记录**
+            {"ai_feedback", "user_id"},
             // AI 调用追踪（WORK-022）：轮次表有 user_id，步骤表没有（它随 trace 走），
             // 所以步骤在下面按子查询删。**先删步骤再删轮次**——顺序反过来就找不到 trace 了。
             {"ai_runs", "user_id"},

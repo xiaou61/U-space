@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle, Button, Markdown, Spinner } from '@paideia/ui'
-import { History, Plus, Send } from 'lucide-react'
+import { History, Plus, Send, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AssistantApi } from './client'
@@ -288,6 +288,7 @@ export function ConversationPanel({
               ...message,
               usage: event.usage ?? null,
               emptyHint: event.empty === true,
+              traceId: event.traceId ?? null,
             }))
           } else if (event.type === 'error') {
             setError(event.message ?? '生成失败，请稍后再试')
@@ -413,11 +414,27 @@ export function ConversationPanel({
                  * <p>`streaming` 只给**正在生成的这一条**：它的含义是"这段文字可能还没长完"，
                  * 于是会上未闭合补全。历史里的回答已经定稿，给它们开这个开关等于每帧白跑一遍补全。
                  */
-                <Markdown
-                  markdown={message.content}
-                  streaming={busy && index === messages.length - 1}
-                  className="text-sm leading-6"
-                />
+                <>
+                  <Markdown
+                    markdown={message.content}
+                    streaming={busy && index === messages.length - 1}
+                    className="text-sm leading-6"
+                  />
+                  {/* 生成中的那条不给反馈按钮：回答还没长完，评价它没有意义 */}
+                  {busy && index === messages.length - 1 ? null : (
+                    <FeedbackRow
+                      api={api}
+                      conversationId={conversationId}
+                      message={message}
+                      onRated={(traceId, rating, reason) => {
+                        // 状态放本地：一次会话里刷新页面的概率低，而多一次回读请求
+                        // 就多一个失败面。代价是刷新后看不出已反馈过，这是有意的取舍。
+                        setMessages((previous) => previous.map((item) =>
+                          item === message ? { ...item, feedback: { rating, reason } } : item))
+                      }}
+                    />
+                  )}
+                </>
               )}
               {message.usage === null ? null : (
                 <p className="text-muted-foreground mt-1 text-[11px]" data-testid="conversation-usage">
@@ -574,6 +591,84 @@ export function ConversationPanel({
           发送
         </Button>
       </form>
+    </div>
+  )
+}
+
+/** 点踩的原因。与后端的白名单**逐字对应**——多一个值会被服务端拒成 400。 */
+const REASONS = [
+  { value: 'off_topic', label: '答非所问' },
+  { value: 'too_verbose', label: '太啰嗦' },
+  { value: 'incorrect', label: '内容有错' },
+  { value: 'other', label: '其它' },
+] as const
+
+/**
+ * 一条回答下面的赞/踩（WORK-036）。
+ *
+ * <p>点踩才展开原因——不点踩的人不必先看到四个选项。**已评价后收起**并显示"已反馈"，
+ * 但按钮仍可点（改了主意要能改，后端是覆盖）。
+ *
+ * <p>提交失败不弹窗打断对话，只在本地回退——反馈是**次要动作**，它不该让用户正在读的回答变吵。
+ */
+function FeedbackRow({ api, conversationId, message, onRated }: {
+  api: AssistantApi
+  conversationId: number | null
+  message: ChatMessage
+  onRated: (traceId: string | null, rating: 'up' | 'down', reason?: string | null) => void
+}) {
+  const [picking, setPicking] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const rated = message.feedback
+
+  const submit = async (rating: 'up' | 'down', reason?: string) => {
+    setFailed(false)
+    setPicking(false)
+    try {
+      await api.submitFeedback({
+        conversationId,
+        traceId: message.traceId ?? null,
+        rating,
+        ...(reason === undefined ? {} : { reason: reason as 'off_topic' | 'too_verbose' | 'incorrect' | 'other' }),
+      })
+      onRated(message.traceId ?? null, rating, reason ?? null)
+    } catch {
+      setFailed(true)
+    }
+  }
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1.5" data-testid="conversation-feedback">
+      {rated === undefined ? (
+        <>
+          <Button variant="ghost" size="xs" aria-label="这个回答有用"
+            data-testid="feedback-up" onClick={() => { void submit('up') }}>
+            <ThumbsUp className="size-3.5" />
+          </Button>
+          <Button variant="ghost" size="xs" aria-label="这个回答不好"
+            data-testid="feedback-down" onClick={() => setPicking(picking !== true)}>
+            <ThumbsDown className="size-3.5" />
+          </Button>
+          {picking ? REASONS.map((reason) => (
+            <Button key={reason.value} variant="outline" size="xs"
+              data-testid={`feedback-reason-${reason.value}`}
+              onClick={() => { void submit('down', reason.value) }}>
+              {reason.label}
+            </Button>
+          )) : null}
+        </>
+      ) : (
+        <span className="text-muted-foreground text-[11px]" data-testid="feedback-done">
+          已反馈{rated.rating === 'down' && rated.reason !== null && rated.reason !== undefined
+            ? `：${REASONS.find((item) => item.value === rated.reason)?.label ?? rated.reason}`
+            : ''}
+        </span>
+      )}
+      {failed ? (
+        <span className="text-destructive text-[11px]" data-testid="feedback-failed">
+          没提交成功，稍后再试
+        </span>
+      ) : null}
     </div>
   )
 }

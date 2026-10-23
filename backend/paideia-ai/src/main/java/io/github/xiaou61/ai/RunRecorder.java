@@ -36,6 +36,14 @@ public interface RunRecorder {
     /** 一轮。实现必须幂等：`finish` 与 `close` 任意顺序、任意次数，只生效一次。 */
     interface RunScope extends AutoCloseable {
 
+        /**
+         * 这一轮的标识（WORK-036）。
+         *
+         * <p>给"用户对这条回答点踩"用：反馈要挂到具体某一轮上才能定位场景、模型与提示词版本。
+         * **关闭采集时为 null**——那时本来就没有轮次记录，反馈仍可提交，只是挂不上去。
+         */
+        String traceId();
+
         /** 开一步。没在 try-with-resources 里 close 的步按 interrupted 处理。 */
         StepScope step(SpanSpec spec);
 
