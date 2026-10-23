@@ -20,10 +20,18 @@
 | AC-003 会话创建/交卷主路径 | 通过 | `submitAdvancesStageAndIsIdempotent`（服务端判定、排期前进一档） |
 | AC-005 重复交卷 409 / 过期拒绝 / 他人会话 404 | 通过 | `expiredAndForeignSessionRejected`、重复交卷断言 |
 | AC-009 上游失败降级 | 通过 | `startFallsBackWhenGenerationFails`（端口打桩返回空 → fallback 列表） |
-| AC-004 真连上游出题质量 | **未验证** | 金标用录制样本跑结构校验（`ReviewGoldenTest` 20 条全过）；真连结果未记录 |
-| AC-010 会话页完成一轮 | **部分** | e2e 只断言「进入会话或降级」；未做整轮完成（需要确定性出题桩） |
+| AC-004 真连上游出题质量 | 通过 | 线上真连 3 场（deepseek-flash）：题目与概念一致、4 选项、解析非空；同概念第二次生成换了题干（历史去重生效）；金标 20 条结构校验全过 |
+| AC-010 会话页完成一轮 | 通过 | `review.spec.ts` 用接口打桩跑通「答题 → 交卷 → 解析 + 下次到期日」，5 passed |
 | AC-011 注销清理 | 通过 | `AccountDeletionCascadeIntegrationTest` 追加 `review_sessions` 并真种一行 |
 
 ## 后端全量
 
 `scripts/test-db.sh mvn -B -T 1C test` → **283 运行 / 0 失败 / 4 跳过**。
+
+## 线上真连发现并修复的两个缺陷
+
+1. **排期排错条目**：同一概念挂在多篇条目上时，交卷按「概念的第一条载体」排期，排到了用户没在复习的那篇。
+   已改为在会话题目里存 `entryId`，交卷按它更新；真连复查 `schedule.entryId` 与实际到期条目一致。
+2. **只预留不结算**：第一版只在生成前 `reserve`，生成后漏了 `settleReview` —— 每场静默多扣 1000 分且账本无记录。
+   已补结算；真连复查 `REVIEW -1`（273/322 token），余额与流水不变式恢复（99854 = 99854）。
+   修复前两次泄漏的 2000 分已回补到余额（不写流水，保持等式成立）。
