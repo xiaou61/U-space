@@ -41,6 +41,15 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <!--
+      第三方登录要解析平台的 JSON 响应（WORK-037）。用 Boot 4 自带的 Jackson 3
+      （tools.jackson.*），与 knowledge 模块同一口径：不引 Jackson 2，后者是 ai/mcp
+      那条链的传递依赖，在本模块里没有直接版本管理。
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jackson</artifactId>
+    </dependency>
     <!-- 密码哈希用 Spring Security 的 BCrypt，不引第三方库 -->
     <dependency>
       <groupId>org.springframework.security</groupId>
