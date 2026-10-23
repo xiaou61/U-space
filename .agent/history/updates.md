@@ -5577,3 +5577,29 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 未做：TASK-010 移动端/可访问性专项、TASK-011 验收报告；S2（TASK-005..009）未开始。
 - 本地提交：见下一笔
 - 远端推送：master（合并后）
+
+## 2026-10-23 · 新增「智能体」阅读线（content/reading/agents）
+
+- 类型：content
+- 变更：
+  - 新增 `content/reading/agents/`：1 篇总览 + 5 篇正文（Agent 是什么 / ReAct 与规划 /
+    工具与 MCP / 记忆与上下文 / 评测与上线），`line_kind=reading`、`line_sort=90`，
+    分类 slug `agents`，导入后自动登记为 6 关学习轨道。
+- 决策：
+  - **不按 hello-agents 原文改写**。该仓库许可证为 **CC BY-NC-SA 4.0**（非 MIT），
+    且 `content/reading/README.md` 已立规：不得以第三方文章为底稿做改写/缩写/换词/调序
+    （演绎作品仍需授权，本项目公开仓库 + 公开站点等于二次发布）。
+  - 借用的是**选题与章节顺序**（主题清单属思想，不受版权保护），正文独立撰写；
+    每篇末尾给一条「延伸阅读」指向原仓库，保留导流。
+  - 刻意与原文的详略取舍不同：hello-agents 偏完整教学（16 章，含低代码平台、框架实现、
+    Agentic RL、多智能体案例），本线只留「接功能前必须先想清楚」的部分，5 篇。
+- 验证：
+  - frontmatter 字段齐全、`status=published`、quiz 块 JSON 可解析且各 3 题（脚本校验 ALL OK）。
+  - `node scripts/import-course.mjs --dir content/reading/agents`：**created 6 / updated 0**；
+    重跑 **created 0 / updated 0**（幂等）。
+  - 线上（`http://<服务器>:8081`）以学习者账号查 `/api/v1/learn/tracks`：
+    `agents`（智能体，stageCount 6）已出现；`/api/v1/learn/tracks/agents` 六关顺序与
+    难度正确；条目正文与 `quiz` 块正常返回。
+- 未做：未跑 e2e（纯内容新增，无代码改动）；未提交。
+- 本地提交：未提交
+- 远端推送：未推送
