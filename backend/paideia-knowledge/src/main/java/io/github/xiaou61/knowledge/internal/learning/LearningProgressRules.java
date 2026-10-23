@@ -78,6 +78,18 @@ public final class LearningProgressRules {
         return from.plus(Duration.ofDays(intervalDays(stage)));
     }
 
+    /** 复习交卷后的新排期。答错档位不变、明天再来；全对才前进一档。 */
+    public record ReviewOutcome(int stage, java.time.Instant dueAt) {
+    }
+
+    public static ReviewOutcome afterReview(int currentStage, boolean allCorrect, java.time.Instant now) {
+        if (!allCorrect) {
+            return new ReviewOutcome(Math.max(currentStage, 0), now.plus(Duration.ofDays(1)));
+        }
+        int stage = nextStage(currentStage);
+        return new ReviewOutcome(stage, dueAt(now, stage));
+    }
+
     /** 复习阶梯的总档数，供测试与文档引用。 */
     public static int stageCount() {
         return INTERVAL_DAYS.length;

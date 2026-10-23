@@ -84,6 +84,17 @@ export { MarkdownBody } from './markdown-body'
 export { MarkdownField } from './markdown-field'
 export { KnowledgeNeighborhood } from './neighborhood'
 export type {
+  ReviewDueItem,
+  ReviewDueList,
+  ReviewFallback,
+  ReviewResult,
+  ReviewSchedule,
+  ReviewSession,
+  ReviewSessionItem,
+  ReviewSubmitResult,
+} from './learning-types'
+
+export type {
   AssessedItem,
   CategoryNode,
   EntryDetail,

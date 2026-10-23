@@ -1,0 +1,244 @@
+{
+  "items": [
+    {
+      "conceptId": 1,
+      "stem": "第 1 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 1 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 2 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 1,
+      "explanation": "第 2 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 3 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 2,
+      "explanation": "第 3 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 4 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 3,
+      "explanation": "第 4 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 5 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 5 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 6 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 1,
+      "explanation": "第 6 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 7 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 2,
+      "explanation": "第 7 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 8 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 3,
+      "explanation": "第 8 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 9 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 9 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 10 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 1,
+      "explanation": "第 10 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 11 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 2,
+      "explanation": "第 11 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 12 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 3,
+      "explanation": "第 12 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 13 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 13 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 14 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 1,
+      "explanation": "第 14 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 15 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 2,
+      "explanation": "第 15 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 16 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 3,
+      "explanation": "第 16 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 17 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 17 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 18 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 1,
+      "explanation": "第 18 题的解析。"
+    },
+    {
+      "conceptId": 1,
+      "stem": "第 19 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 2,
+      "explanation": "第 19 题的解析。"
+    },
+    {
+      "conceptId": 2,
+      "stem": "第 20 道复习题：这个概念的核心是什么？",
+      "options": [
+        "选项甲",
+        "选项乙",
+        "选项丙",
+        "选项丁"
+      ],
+      "answerIndex": 3,
+      "explanation": "第 20 题的解析。"
+    }
+  ]
+}

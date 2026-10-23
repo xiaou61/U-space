@@ -20,6 +20,28 @@ test.describe('复习', () => {
     ).toBeVisible({ timeout: 20_000 })
   })
 
+  test('点开始复习：要么进入会话，要么给降级入口', async ({ page }) => {
+    await signIn(page)
+    await page.goto('/#/review')
+    const start = page.getByTestId('review-start')
+    if (await start.isVisible()) {
+      await start.click()
+      await expect(
+        page.getByTestId('review-session').or(page.getByTestId('review-fallback')),
+      ).toBeVisible({ timeout: 40_000 })
+    }
+  })
+
+  test('375px 下复习页不横向溢出', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 })
+    await signIn(page)
+    await page.goto('/#/review')
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+  })
+
   test('空态给出两个去处', async ({ page }) => {
     await signIn(page)
     await page.goto('/#/review')

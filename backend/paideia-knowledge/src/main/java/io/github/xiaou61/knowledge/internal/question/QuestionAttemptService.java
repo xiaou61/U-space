@@ -191,6 +191,18 @@ public class QuestionAttemptService {
         return mapper.recentAttempts(Math.max(1, Math.min(5000, limit)));
     }
 
+    /** 复习会话用：按一次作答更新某个概念的 BKT 掌握度（WORK-034 TASK-005 冻结点）。 */
+    public void recordMastery(long userId, long conceptId, boolean correct, int optionCount) {
+        Instant now = Instant.now();
+        QuestionAttemptMapper.MasteryRow current = mapper.findMasteryOf(userId, conceptId).orElse(null);
+        double prior = current == null ? MasteryModel.PRIOR : current.mastery();
+        int attempts = current == null ? 0 : current.attempts();
+        int correctCount = current == null ? 0 : current.correct();
+        double mastery = MasteryModel.update(prior, correct, MasteryModel.guessFor(optionCount));
+        mapper.upsertMastery(userId, conceptId, mastery, attempts + 1,
+                correctCount + (correct ? 1 : 0), now);
+    }
+
     /** 我自己的全部掌握状态，按概念 id 升序。 */
     public List<ConceptMasteryView> mastery(long userId) {
         Map<Long, String> names = new HashMap<>();
