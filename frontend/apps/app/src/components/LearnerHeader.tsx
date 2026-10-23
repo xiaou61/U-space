@@ -83,7 +83,7 @@ const NAV = [
 ]
 
 export function LearnerHeader() {
-  const { user, logout } = useAuth()
+  const { user, logout, api: authApi } = useAuth()
   const { pathname } = useLocation()
   // 导航按身份重排（WORK-010 T-12）。读不到身份时退回默认配置、**不阻塞页头**：
   // 页头是每页都有的东西，不能因为一个推荐用的接口慢就整页转圈。
@@ -114,6 +114,12 @@ export function LearnerHeader() {
   const [error, setError] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const [navOpen, setNavOpen] = useState(false)
+  /**
+   * 这个账号有没有密码（WORK-037）。第三方注册的用户从来没有密码，
+   * 让他们填密码等于永远注销不了，所以要按实际情况切换确认方式。
+   * null = 还没查出来，此时按"有密码"处理（保守）。
+   */
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null)
 
   if (user === null) {
     return null
@@ -142,7 +148,9 @@ export function LearnerHeader() {
       await api.requestEnvelope<boolean>('/api/v1/me/deletion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        // 有密码的账号：密码就是确认；没有密码的账号：显式确认是唯一凭据。
+        // 两个字段都发，服务端按账号实际情况取用（confirmed 在有密码时被忽略）。
+        body: JSON.stringify({ password, confirmed: hasPassword === false }),
       })
       // 账号已经没了：登出只是一个本地收尾（服务端那条刷新记录也被删了，登出接口会失败，
       // 所以这里不 await 它的成败——本地令牌必须清掉，界面要回到登录门）
@@ -343,7 +351,18 @@ export function LearnerHeader() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {/* 注销与登出都收进菜单：它们是低频且危险的动作，摆在页头只会天天误点 */}
-          <DropdownMenuItem data-testid="account-deletion-open" onClick={() => setDeleting(true)}>
+          <DropdownMenuItem
+            data-testid="account-deletion-open"
+            onClick={() => {
+              setDeleting(true)
+              // 打开时现查：这个账号有没有密码决定对话框长什么样。
+              // 查不到时保持 null，按"有密码"处理——保守方向是让人多填一次，而不是少填。
+              void authApi
+                .oauthIdentities()
+                .then((result) => setHasPassword(result.hasPassword))
+                .catch(() => setHasPassword(null))
+            }}
+          >
             <UserX className="size-4" />
             注销账号
           </DropdownMenuItem>
@@ -366,14 +385,20 @@ export function LearnerHeader() {
                 你的会话、记忆、个人笔记与已发出的分享都会被删除，且无法找回。
               </AlertDescription>
             </Alert>
-            <Input
-              type="password"
-              value={password}
-              placeholder="输入当前密码确认"
-              aria-label="当前密码"
-              data-testid="account-deletion-password"
-              onChange={(event) => setPassword(event.target.value)}
-            />
+            {hasPassword === false ? (
+              <p className="text-sm" data-testid="account-deletion-no-password">
+                此账号未设置密码（第三方登录注册），确认后将直接注销。
+              </p>
+            ) : (
+              <Input
+                type="password"
+                value={password}
+                placeholder="输入当前密码确认"
+                aria-label="当前密码"
+                data-testid="account-deletion-password"
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            )}
             {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
           </div>
           <DialogFooter>
@@ -382,7 +407,7 @@ export function LearnerHeader() {
             </Button>
             <Button
               variant="destructive"
-              disabled={busy || password === ''}
+              disabled={busy || (hasPassword !== false && password === '')}
               data-testid="account-deletion-confirm"
               onClick={() => void confirmDeletion()}
             >

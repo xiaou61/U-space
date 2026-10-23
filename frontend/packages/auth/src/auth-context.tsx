@@ -22,6 +22,8 @@ export interface AuthContextValue {
     password: string
     code: string
   }): Promise<void>
+  /** 用第三方回调页给的一次性握手码完成登录（WORK-037）。 */
+  completeOAuth(handoff: string): Promise<void>
   logout(): Promise<void>
   /** 供 `createAuthorizedFetch` 使用：用 refresh 换新令牌，成功返回 true。 */
   refreshSession(): Promise<boolean>
@@ -128,6 +130,9 @@ export function AuthProvider({
       },
       register: async (input) => {
         apply(await api.register(input))
+      },
+      completeOAuth: async (handoff) => {
+        apply(await api.oauthExchange(handoff))
       },
       logout: async () => {
         const refreshToken = tokens.refresh()
