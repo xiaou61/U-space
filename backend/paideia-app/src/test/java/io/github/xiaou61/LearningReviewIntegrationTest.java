@@ -135,6 +135,7 @@ class LearningReviewIntegrationTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.results[0].correct").value(true))
+                .andExpect(jsonPath("$.data.schedule[0].entryId").value(secondEntry))
                 .andExpect(jsonPath("$.data.schedule[0].stage").value(3));
 
         Integer stage = jdbcTemplate.queryForObject("""
@@ -174,9 +175,9 @@ class LearningReviewIntegrationTest {
 
     private long insertSession(String expiresOffset) {
         String items = """
-                [{"itemId":0,"conceptId":%d,"stem":"这是一道复习题","options":["A","B","C","D"],
+                [{"itemId":0,"entryId":%d,"conceptId":%d,"stem":"这是一道复习题","options":["A","B","C","D"],
                   "answerIndex":1,"explanation":"选 B","fingerprint":"%s"}]
-                """.formatted(conceptId, "a".repeat(64));
+                """.formatted(secondEntry, conceptId, "a".repeat(64));
         long id = 9_900_000L + Math.abs(System.nanoTime() % 100_000);
         jdbcTemplate.update("""
                 INSERT INTO review_sessions

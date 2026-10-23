@@ -69,7 +69,7 @@ public class LearningReviewService {
     }
 
     /** 会话内存储的题（含答案，只在服务端存在）。 */
-    record StoredItem(long itemId, long conceptId, String stem, List<String> options,
+    record StoredItem(long itemId, long entryId, long conceptId, String stem, List<String> options,
                       int answerIndex, String explanation, String fingerprint) {
     }
 
@@ -117,11 +117,15 @@ public class LearningReviewService {
         }
         List<Long> conceptIds = new ArrayList<>();
         Map<Long, String> carrierTitles = new HashMap<>();
+        // 概念 → 这次实际到期的条目。排期必须落在它上面，而不是「概念的第一条载体」——
+        // 同一个概念可能挂在多篇条目上，用第一条会排到用户没在复习的那篇（2026-10-23 真连发现）。
+        Map<Long, Long> entryByConcept = new HashMap<>();
         for (LearningReviewMapper.DueRow row : chosen) {
             LearningReviewMapper.ConceptRow concept = firstConcepts.get(row.entryId());
             if (concept != null && !conceptIds.contains(concept.conceptId())) {
                 conceptIds.add(concept.conceptId());
                 carrierTitles.put(concept.conceptId(), row.title());
+                entryByConcept.put(concept.conceptId(), row.entryId());
             }
         }
         List<Fallback> fallback = chosen.stream()
@@ -146,9 +150,16 @@ public class LearningReviewService {
         List<StoredItem> items = new ArrayList<>();
         int index = 0;
         for (ReviewQuestionPort.Question question : generated.get().questions()) {
-            items.add(new StoredItem(index++, question.conceptId(), question.stem(),
+            Long entryId = entryByConcept.get(question.conceptId());
+            if (entryId == null) {
+                continue;
+            }
+            items.add(new StoredItem(index++, entryId, question.conceptId(), question.stem(),
                     question.options(), question.answerIndex(), question.explanation(),
                     question.fingerprint()));
+        }
+        if (items.isEmpty()) {
+            return new StartSession(0, List.of(), null, fallback);
         }
         Instant expiresAt = now.plusSeconds(SESSION_MINUTES * 60L);
         mapper.insertSession(userId, JSON.writeValueAsString(conceptIds),
@@ -182,6 +193,7 @@ public class LearningReviewService {
         }
         List<ResultView> results = new ArrayList<>();
         Map<Long, Boolean> allCorrectByConcept = new HashMap<>();
+        Map<Long, Boolean> allCorrectByEntry = new HashMap<>();
         for (StoredItem item : items) {
             Integer choice = choices.get(item.itemId());
             if (choice == null) {
@@ -193,21 +205,18 @@ public class LearningReviewService {
             boolean correct = choice == item.answerIndex();
             results.add(new ResultView(item.itemId(), item.conceptId(), correct, item.explanation()));
             allCorrectByConcept.merge(item.conceptId(), correct, (left, right) -> left && right);
+            allCorrectByEntry.merge(item.entryId(), correct, (left, right) -> left && right);
             mastery.recordMastery(userId, item.conceptId(), correct, item.options().size());
         }
         if (mapper.completeSession(sessionId, userId, JSON.writeValueAsString(answers), now) == 0) {
             throw new BizException(ErrorCode.CONFLICT, "这次复习已经交过了");
         }
         List<ScheduleView> schedule = new ArrayList<>();
-        for (var entry : allCorrectByConcept.entrySet()) {
-            Long carrier = mapper.carrierEntry(entry.getKey()).orElse(null);
-            if (carrier == null) {
-                continue;
-            }
-            int stage = mapper.progressStage(userId, carrier).orElse(0);
+        for (var entry : allCorrectByEntry.entrySet()) {
+            int stage = mapper.progressStage(userId, entry.getKey()).orElse(0);
             var outcome = LearningProgressRules.afterReview(stage, entry.getValue(), now);
-            mapper.updateSchedule(userId, carrier, outcome.stage(), outcome.dueAt());
-            schedule.add(new ScheduleView(carrier, outcome.stage(), outcome.dueAt()));
+            mapper.updateSchedule(userId, entry.getKey(), outcome.stage(), outcome.dueAt());
+            schedule.add(new ScheduleView(entry.getKey(), outcome.stage(), outcome.dueAt()));
         }
         return new SubmitResult(results, schedule);
     }

@@ -76,15 +76,6 @@ public interface LearningReviewMapper {
             """)
     java.util.List<String> recentItems(@Param("userId") long userId, @Param("limit") int limit);
 
-    /** 概念 → 承载条目（第一条已发布条目）；没有时为空。 */
-    @Select("""
-            SELECT ec.entry_id FROM knowledge_entry_concepts ec
-            JOIN knowledge_entries e ON e.id = ec.entry_id AND e.status = 'published'
-            WHERE ec.concept_id = #{conceptId}
-            ORDER BY ec.entry_id LIMIT 1
-            """)
-    java.util.Optional<Long> carrierEntry(@Param("conceptId") long conceptId);
-
     @Select("""
             <script>
             SELECT concept_id, name, summary FROM (
