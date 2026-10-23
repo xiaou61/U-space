@@ -53,4 +53,30 @@ test.describe('AI 调用统计', () => {
       await expect(page.getByTestId('run-spans').or(page.getByTestId('run-spans-empty'))).toBeVisible()
     }
   })
+
+  test('概览页：有数据时出趋势图，采集健康那一行也在', async ({ page }) => {
+    await signIn(page)
+    await page.goto(`${ADMIN_ENTRY}#/ai-runs/overview`)
+
+    // 采集健康是**无条件**要出的：它回答"这份统计可不可信"，没数据时更该能看到
+    await expect(page.getByTestId('runs-health-inline')).toBeVisible()
+
+    // 趋势图只在有调用时渲染（空数据走上面的空状态分支）
+    const trend = page.getByTestId('runs-trend')
+    const empty = page.getByTestId('runs-overview-empty')
+    await expect(trend.or(empty)).toBeVisible()
+  })
+
+  test('反馈页：侧栏能进，空状态与筛选都在', async ({ page }) => {
+    await signIn(page)
+    await page.goto(`${ADMIN_ENTRY}#/ai-runs/feedback`)
+
+    await expect(page.getByRole('heading', { name: '回答反馈' })).toBeVisible()
+    await expect(page.getByTestId('feedback-filter-rating')).toBeVisible()
+    await expect(page.getByTestId('feedback-filter-reason')).toBeVisible()
+
+    const table = page.getByTestId('feedback-table')
+    const empty = page.getByTestId('feedback-empty')
+    await expect(table.or(empty)).toBeVisible()
+  })
 })

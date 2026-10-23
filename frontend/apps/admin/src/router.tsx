@@ -3,6 +3,7 @@ import { Navigate, createHashRouter } from 'react-router'
 import { AdminHomePage } from './pages/AdminHomePage'
 import { AiCreditsAuditPage } from './pages/AiCreditsAuditPage'
 import { AiRunsListPage } from './pages/AiRunsListPage'
+import { AiFeedbackPage } from './pages/AiFeedbackPage'
 import { AiRunsOverviewPage } from './pages/AiRunsOverviewPage'
 import { KnowledgeCategoriesPage } from './pages/KnowledgeCategoriesPage'
 import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
@@ -112,6 +113,15 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <AiRunsListPage />
+      </RequireAdmin>
+    ),
+  },
+  // 回答反馈（WORK-036）：与本组其它页同属「AI 调用」。
+  {
+    path: '/ai-runs/feedback',
+    element: (
+      <RequireAdmin>
+        <AiFeedbackPage />
       </RequireAdmin>
     ),
   },

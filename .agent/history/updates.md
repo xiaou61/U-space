@@ -6066,6 +6066,85 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 集成 + 模块边界 + 三个迁移门禁 **24 运行 / 0 失败**。
   - `validate`：**通过**；WORK-033 状态进入「完成沉淀 / 已完成」。
 - 本地提交：见下一笔
+## 2026-10-23 14:30:00 +08:00 · WORK-036 全量实施：AI 观测面板优化
+
+- 类型：implementation
+- 建项依据：用户「参考 Langfuse 新开一个 work 优化我们的检测相关的，仔细想想都可以新增什么」，
+  随后「肯定是要全部做完的吗，就是有多少做多少的这种，给我起草吧，开始吧」——按 A/B/C/D 四组全做。
+- A 组（趋势与维度）：
+  - 新增 `Segmentation`（纯函数，9 条测试）：≤48h 小时桶、否则日桶，按 `Asia/Shanghai` 自然日/整点对齐；
+    空桶补零且**分位数给 null**（0ms 与没数据不是一回事）。
+  - `GET /ai/admin/runs/series`：计数与分位数分两次查询、在内存按桶合并；`overview` 接受与明细同一套四个筛选。
+  - 概览新增 `cacheReadTokens` / `cacheSavedRatio` / `nominalCredits`（按价目表折算），界面与实扣并列显示。
+- B 组（观测系统自己的可信度）：
+  - `GET /ai/admin/runs/health`：队列深度/容量、累计丢弃、写失败、最近成功时刻、采样率（读进程内存）。
+  - 界面在丢弃或写失败 > 0 时出**告警条**（"以下统计不完整"），采样 < 1 时出"成功率系统性偏低"提示。
+  - `GET /ai/admin/runs/reconcile`：按天对比 `ai_runs.credits` 与 `ai_credit_ledger` 消耗净额，
+    **排除 RESERVE 与 ADJUST**（前者不写流水行、后者是发分不是消耗）。
+  - 详情响应新增 `breakdown`（排队/LLM/工具/其它），`other` 夹到非负（并发工具会重叠）。
+- C 组（质量信号）：
+  - 迁移 `V20261023140000__create_ai_feedback.sql`：唯一键 `(user_id, trace_id)` 让改判变成覆盖；
+    `reason` 只收四个枚举，不收自由文本。
+  - `POST /api/v1/ai/feedback`（authenticated，不接受 userId）+ `GET /api/v1/ai/feedback/admin`
+    （新增安全规则 `hasRole("ADMIN")`，**排在 `/api/v1/ai/**` 之前**）。
+  - SSE `done` 事件新增 `traceId`（`RunScope.traceId()`，关闭采集时为 null），反馈靠它挂到具体一轮。
+  - 学习者端每条回答下加赞/踩，点踩展开四个原因；管理端新增「回答反馈」页，可展开看该轮完整请求响应。
+  - 注销级联加入 `ai_feedback`。
+- D 组（定位与层级）：
+  - 明细页加 traceId 前缀搜索（`LIKE CONCAT(x,'%')`，可走唯一键范围扫描）。
+  - `SpanSpec` 加 `parentSeq` 与 `child(...)`；详情页按层级缩进。**仓库里没有产生子步骤的真实调用点**
+    （`retrieval` 零使用、工具内部无二次模型调用），本期只做端口与渲染支持，未虚构埋点。
+- 实施中抓到两个只有跑真库才看得见的缺陷：
+  1. **日桶全被静默跳过**：`LocalDateTime.parse("2026-10-23")` 抛异常被 catch 成"跳过"，
+     于是任何 >48 小时的窗口返回全零折线。改为日桶走 `LocalDate.parse`。
+  2. **概览总数不受筛选影响**：`overview` 用了全量 `countByStatus`，四个筛选只传给 totals。
+     新增 `countByStatusFiltered` 并在 overview 使用。
+- 验证：后端 **291/0/13**；`AiObservabilityIntegrationTest` **11/0**；
+  `AccountDeletionCascadeIntegrationTest` **2/0**（新增 ai_runs 与 ai_feedback 的种子与断言）；
+  迁移与模块闸 **9/0**；assistant 包单测 **26/0**；管理端 e2e **27 passed**（含新加的趋势图与反馈页）。
+- 反向验证两条：把 `<=` 改成 `<` → 分桶边界 2 条红；把 RESERVE 从排除列表移除 → 对账 1 条红。
+- 未覆盖：学习者端 assistant e2e（要真调上游，本次无可用 AI Key）；AC-005/006/007/015 只验了字段与
+  代码路径，没有真改配置跑一轮；`EXPLAIN` 未人工核对。
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-23 14:34:03 +0800 · WORK-036 · 签署 .agent/changes/WORK-036-AI观测面板优化/requirements.md、.agent/changes/WORK-036-AI观测面板优化/proposal.md、.agent/changes/WORK-036-AI观测面板优化/design.md、.agent/changes/WORK-036-AI观测面板优化/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-036-AI观测面板优化/requirements.md、.agent/changes/WORK-036-AI观测面板优化/proposal.md、.agent/changes/WORK-036-AI观测面板优化/design.md、.agent/changes/WORK-036-AI观测面板优化/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-036-AI观测面板优化/requirements.md、.agent/changes/WORK-036-AI观测面板优化/proposal.md、.agent/changes/WORK-036-AI观测面板优化/design.md、.agent/changes/WORK-036-AI观测面板优化/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-23 14:45:00 +08:00 · WORK-036 签署与部署
+
+- 类型：deployment
+- 签署：用户要求「签署 然后部署」后执行 `approve --work WORK-036 --artifact all --by xiaou61 --role CTO`，
+  requirements / proposal / design / tasks 四件全部 approved；`validate --strict` 对 WORK-036 零警告。
+- 部署：`powershell -File scripts/release.ps1 -WithWeb`，**145.5 秒**（后端打包 8.3s / 前端构建 36.4s /
+  打包压缩 26.9s / 上传 jar 13.9s / 重启 34.0s / 健康检查 21.6s）。
+  前端也发了：管理端三个页面与助手面板都有改动，不能只发后端。
+- 线上核验：
+  - `/actuator/health` 200。
+  - 启动日志：Java 25.0.4、32 个迁移全部校验通过、`20261023140000 - create ai feedback`
+    成功执行（174ms）、Tomcat 8081、无异常。
+  - `flyway_schema_history` 中 `20261023140000` success=1；`ai_feedback` 表存在且 9 个列与设计一致。
+  - 五个新端点未认证均返回 **401**（不是 404），说明路由已注册且鉴权规则生效：
+    `/api/v1/ai/admin/runs/{series,health,reconcile}`、`/api/v1/ai/feedback/admin`、
+    `POST /api/v1/ai/feedback`。
+  - 管理端新 bundle `assets/index-GNx8qcif.js` 里能找到「回答反馈」等新功能标识。
+  - 生产库实测 upsert 语义：同一 `(user_id, trace_id)` 第二次写入后仍是 **1 行**，
+    `rating` 由 down 变 up、`reason` 被清空。探针数据已清理。
+- **线上 e2e 补上了（同日追加）**：先前说"本机无管理端口令"是**错的**——口令一直在
+  `backend/config/application-local.yml` 末尾的注释块里，用 `rg -u` 才搜得到
+  （ripgrep 默认跳过 `.gitignore` 忽略的文件，而那个文件正是被忽略的）。
+  用 `E2E_BASE_URL=http://36.212.5.130:8081 E2E_ADMIN_PATH=/admin/` 打线上跑管理端 e2e：
+  **27 passed / 47.4 秒**，含管理员登录、知识库录入发布、积分调整、以及本项新增的趋势图与反馈页。
+  至此部署核验五层齐全（health / 启动日志 / 新端点 401 / bundle 标识 / 线上 e2e）。
+- 本地提交：见下一笔
+- 远端推送：未推送
 
 ## 2026-10-23 15:40:00 +08:00 · AC-003 修复：Recall@3 0.396 → 0.830
 

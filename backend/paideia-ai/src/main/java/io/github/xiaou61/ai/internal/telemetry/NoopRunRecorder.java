@@ -29,6 +29,12 @@ public final class NoopRunRecorder implements RunRecorder {
 
     private static final class NoopScope implements RunScope {
 
+        /** 关闭采集时没有轮次记录，因此也没有 id。反馈仍能提交，只是挂不到轮次上。 */
+        @Override
+        public String traceId() {
+            return null;
+        }
+
         @Override
         public StepScope step(SpanSpec spec) {
             return STEP;

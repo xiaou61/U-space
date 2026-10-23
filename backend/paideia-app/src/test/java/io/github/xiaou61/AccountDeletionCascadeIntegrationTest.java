@@ -87,6 +87,10 @@ class AccountDeletionCascadeIntegrationTest {
             {"question_attempts", "user_id"},
             {"concept_mastery_state", "user_id"},
             {"review_sessions", "user_id"},
+            // 回答反馈（WORK-036）：这个人点过的赞与踩
+            {"ai_feedback", "user_id"},
+            // AI 调用追踪（WORK-022）：轮次行带 user_id，步骤与载荷随 trace 走（listener 里先删）
+            {"ai_runs", "user_id"},
             {"refresh_tokens", "user_id"},
     };
 
@@ -214,6 +218,15 @@ class AccountDeletionCascadeIntegrationTest {
                 VALUES (1, REPEAT('a', 64), 'm', 'v1', ?, 'private', '{}')
                 """, owner);
         jdbcTemplate.update("INSERT INTO notes (user_id, title, body) VALUES (?, '标题', '正文')", owner);
+        // 调用轮次与反馈（WORK-022 / WORK-036）：轮次行有 user_id，反馈也挂 user_id
+        jdbcTemplate.update("""
+                INSERT INTO ai_runs (trace_id, user_id, kind, status, started_at)
+                VALUES (REPLACE(UUID(), '-', ''), ?, 'chat', 'ok', UTC_TIMESTAMP(3))
+                """, owner);
+        jdbcTemplate.update("""
+                INSERT INTO ai_feedback (user_id, rating, reason, created_at)
+                VALUES (?, 'down', 'incorrect', UTC_TIMESTAMP(3))
+                """, owner);
         // 积分账户 + 一条流水（WORK-009）
         jdbcTemplate.update("INSERT INTO ai_credit_accounts (user_id, balance) VALUES (?, 123)", owner);
         jdbcTemplate.update("""

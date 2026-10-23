@@ -35,6 +35,8 @@ export interface AssistantEvent {
   usage?: TokenUsageWire | null
   /** `done` 且正文为空（服务端用可见提示兜底）时为 true。 */
   empty?: boolean
+  /** `done` 的这一轮轮次 id（WORK-036）；采集关闭时为 `null`。点赞/点踩靠它挂到具体一轮上。 */
+  traceId?: string | null
   /** `draft` 事件：助手提出的一条**待确认**笔记草稿（它还没落库）。 */
   draft?: { title: string; body: string }
 }

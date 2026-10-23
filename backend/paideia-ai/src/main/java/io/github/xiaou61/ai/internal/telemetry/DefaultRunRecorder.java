@@ -181,7 +181,8 @@ final class DefaultRunRecorder implements RunRecorder {
             }
         }
 
-        String traceId() {
+        @Override
+        public String traceId() {
             return traceId;
         }
 
@@ -292,7 +293,7 @@ final class DefaultRunRecorder implements RunRecorder {
                 return;
             }
             int millis = (int) Duration.between(startedAt, Instant.now()).toMillis();
-            run.addSpan(new SpanRecord(run.traceId(), null, seq, spec.kind(), spec.name(),
+            run.addSpan(new SpanRecord(run.traceId(), spec.parentSeq(), seq, spec.kind(), spec.name(),
                     status, errorType, startedAt, millis, ttftMs,
                     inputTokens, outputTokens, cacheReadTokens, attrs));
             // 完整载荷单独走一路：它可能几十 KB，不能跟着步骤一起进 attrs

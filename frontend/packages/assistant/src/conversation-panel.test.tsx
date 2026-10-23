@@ -107,3 +107,60 @@ describe('预填不发送', () => {
     expect(sent).toBe(0)
   })
 })
+
+/**
+ * 回答下方的赞/踩（WORK-036 AC-010 的前端一半）。
+ *
+ * <p>钉住三件事：点踩**先展开原因**而不是直接提交、选完原因才真正调接口、
+ * 提交后显示"已反馈"。这三件事任何一件错位，用户会以为"我点了但没记录"。
+ *
+ * <p>它会在什么时候红：有人把点踩改成直接提交（那会丢掉原因），
+ * 或者 `traceId` 没从 done 事件透传下来（反馈会挂不到任何一轮上，且不报错）。
+ */
+describe('回答反馈', () => {
+  it('点踩展开原因，选完才提交，并显示已反馈', async () => {
+    const submitted: unknown[] = []
+    const api = {
+      conversations: async () => [],
+      messages: async () => [],
+      createConversation: async () => ({ id: 1 }),
+      settings: async () => ({
+        memoryEnabled: true,
+        referenceSavedMemories: true,
+        referenceChatHistory: true,
+      }),
+      sendMessage: async (
+        _id: number, _text: string,
+        onEvent: (event: Record<string, unknown>) => void,
+      ) => {
+        onEvent({ type: 'content', delta: '这是一条回答' })
+        onEvent({ type: 'done', usage: null, empty: false, traceId: 'abc123' })
+      },
+      submitFeedback: async (input: unknown) => { submitted.push(input) },
+    } as unknown as AssistantApi
+
+    render(
+      <AssistantProvider>
+        <ConversationPanel api={api} />
+      </AssistantProvider>,
+    )
+    fireEvent.change(screen.getByTestId('conversation-input'), { target: { value: '问一句' } })
+    fireEvent.click(screen.getByTestId('conversation-send'))
+
+    const down = await screen.findByTestId('feedback-down')
+    // 还没选原因：一次都不该提交
+    expect(submitted).toHaveLength(0)
+
+    fireEvent.click(down)
+    fireEvent.click(await screen.findByTestId('feedback-reason-incorrect'))
+
+    await waitFor(() => expect(submitted).toHaveLength(1))
+    expect(submitted[0]).toMatchObject({
+      traceId: 'abc123',
+      rating: 'down',
+      reason: 'incorrect',
+    })
+    // 状态要落到这条消息上，否则用户看不出自己评过
+    expect(await screen.findByTestId('feedback-done')).toBeDefined()
+  })
+})

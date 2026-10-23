@@ -78,6 +78,18 @@ export interface AssistantApi {
     /** 页面场景（WORK-035）：已截断的一段文本，只进提示词不落库。 */
     pageContext?: string,
   ): Promise<void>
+  /**
+   * 对一条助手回答提交反馈（WORK-036）。
+   *
+   * <p>**重复提交是覆盖**：同一用户对同一轮再点一次会改写那一条，不会堆出两条。
+   * `traceId` 为 null 时（采集关闭）仍可提交，只是挂不到轮次上。
+   */
+  submitFeedback(input: {
+    conversationId: number | null
+    traceId: string | null
+    rating: 'up' | 'down'
+    reason?: 'off_topic' | 'too_verbose' | 'incorrect' | 'other'
+  }): Promise<void>
 }
 
 /**
@@ -157,6 +169,20 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         body: JSON.stringify({ type: 'text', text }),
       }),
 
+    submitFeedback: async (input) => {
+      await client.requestEnvelope(`${base}/feedback`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({
+          conversationId: input.conversationId,
+          traceId: input.traceId,
+          rating: input.rating,
+          reason: input.reason ?? null,
+        }),
+      })
+    },
+
+    // pageContext 来自 WORK-035（工作台把当前 SQL/数据集带进对话）；两边各加一个参数与方法，都要留
     sendMessage: async (conversationId, message, onEvent, signal, pageContext) => {
       const response = await client.stream(`${base}/conversations/${conversationId}/messages`, {
         method: 'POST',
@@ -183,6 +209,9 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
           // 草稿必须透传：界面靠 event.draft 收集"待确认草稿"，
           // 在这里漏掉会让"保存为笔记"整条链路静默失效且不报错
           draft: event.draft,
+          // 轮次 id 同理必须透传：漏掉它，点赞/点踩就挂不到任何一轮上，
+          // 而且不会报错——只是所有反馈都变成"未关联"
+          traceId: event.traceId,
           usage,
         })
       })    },

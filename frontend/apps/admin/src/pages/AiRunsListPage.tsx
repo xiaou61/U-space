@@ -81,12 +81,21 @@ interface RunPayload {
   truncated: boolean
 }
 
+interface Breakdown {
+  queueMs: number
+  llmMs: number
+  toolMs: number
+  otherMs: number
+  totalMs: number
+}
+
 interface RunDetail {
   run: RunSummary
   attrs: Record<string, unknown>
   spans: SpanView[]
   payloads: RunPayload[]
   payloadEnabled: boolean
+  breakdown: Breakdown
 }
 
 interface Page<T> {
@@ -158,6 +167,7 @@ export function AiRunsListPage() {
   const [kind, setKind] = useState('')
   const [status, setStatus] = useState('')
   const [userId, setUserId] = useState('')
+  const [traceId, setTraceId] = useState('')
   const [hour, setHour] = useState<string>('7d')
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -168,12 +178,13 @@ export function AiRunsListPage() {
   })
 
   const list = useQuery({
-    queryKey: ['ai-runs-list', kind, status, userId, hour, page],
+    queryKey: ['ai-runs-list', kind, status, userId, traceId, hour, page],
     queryFn: () => {
       const params = new URLSearchParams()
       if (kind !== '') params.set('kind', kind)
       if (status !== '') params.set('status', status)
       if (userId.trim() !== '') params.set('userId', userId.trim())
+      if (traceId.trim() !== '') params.set('traceId', traceId.trim())
       params.set('page', String(page))
       params.set('size', String(PAGE_SIZE))
       return api.requestEnvelope<Page<RunSummary>>(
@@ -271,6 +282,16 @@ export function AiRunsListPage() {
               placeholder="全部"
               value={userId}
               onChange={(event) => { setUserId(event.target.value) }}
+            />
+          </label>
+          <label className="space-y-1 text-xs">
+            <span className="text-muted-foreground block">轮次 id</span>
+            <Input
+              className="h-9 w-40 font-mono"
+              data-testid="runs-filter-trace"
+              placeholder="前缀即可"
+              value={traceId}
+              onChange={(event) => { setTraceId(event.target.value); setPage(1) }}
             />
           </label>
           {list.isSuccess ? (
@@ -390,8 +411,8 @@ function Row({ row, expanded, onToggle }: { row: RunSummary; expanded: boolean; 
   )
 }
 
-/** 展开后的步骤表。单独请求：列表不背这份数据。 */
-function RunSteps({ traceId }: { traceId: string }) {
+/** 展开后的步骤表。单独请求：列表不背这份数据。**导出**：反馈页也要复用它。 */
+export function RunSteps({ traceId }: { traceId: string }) {
   const detail = useQuery({
     queryKey: ['ai-run-detail', traceId],
     queryFn: () => api.requestEnvelope<RunDetail>(`/api/v1/ai/admin/runs/${traceId}`),
@@ -412,6 +433,7 @@ function RunSteps({ traceId }: { traceId: string }) {
   }
   return (
     <div className="space-y-2 py-1" data-testid="run-spans">
+      <BreakdownBar breakdown={detail.data.breakdown} />
       <Table>
         <TableHeader>
           <TableRow>
@@ -467,10 +489,14 @@ function StepRow({ span, payload, payloadEnabled }: {
 
   return (
     <>
-      <TableRow>
+      <TableRow data-testid={`run-span-${span.seq}`}>
         <TableCell className="text-xs tabular-nums">{span.seq}</TableCell>
         <TableCell className="text-xs">{span.kind}</TableCell>
-        <TableCell className="text-xs">{span.name}</TableCell>
+        {/* 子步骤按层级缩进（WORK-036 REQ-014）：parentSeq 非空就是挂在某条工具步下面 */}
+        <TableCell className={span.parentSeq === null ? 'text-xs' : 'pl-6 text-xs'}>
+          {span.parentSeq === null ? null : <span className="text-muted-foreground mr-1">└</span>}
+          {span.name}
+        </TableCell>
         <TableCell className="text-xs">
           {STATUS_LABEL[span.status] ?? span.status}
           {span.errorType === null ? null : (
@@ -561,4 +587,43 @@ function pretty(json: string | null): string {
   } catch {
     return json
   }
+}
+
+/**
+ * 耗时构成条（WORK-036 REQ-008）。
+ *
+ * <p>四段之和就是这轮的总耗时。看它的意义是**一眼定位慢在哪**：LLM 段长说明上游慢，
+ * 工具段长说明某个工具拖住了，"其它"大说明时间花在了我们没单独计量的地方
+ * （写库、序列化、SSE 推送）。"其它"为负已被服务端夹到 0，不会显示成负数。
+ */
+function BreakdownBar({ breakdown }: { breakdown: Breakdown }) {
+  const segments = [
+    { label: '排队', value: breakdown.queueMs, className: 'bg-muted-foreground/40' },
+    { label: 'LLM', value: breakdown.llmMs, className: 'bg-primary' },
+    { label: '工具', value: breakdown.toolMs, className: 'bg-chart-2' },
+    { label: '其它', value: breakdown.otherMs, className: 'bg-destructive/60' },
+  ]
+  const total = breakdown.totalMs === 0 ? 1 : breakdown.totalMs
+  return (
+    <div className="space-y-1" data-testid="run-breakdown">
+      <div className="bg-muted flex h-2 overflow-hidden rounded">
+        {segments.map((segment) => (
+          segment.value <= 0 ? null : (
+            <div
+              key={segment.label}
+              className={segment.className}
+              style={{ width: `${(segment.value / total) * 100}%` }}
+              title={`${segment.label} ${ms(segment.value)}`}
+            />
+          )
+        ))}
+      </div>
+      <p className="text-muted-foreground flex flex-wrap gap-3 text-[11px]">
+        {segments.map((segment) => (
+          <span key={segment.label}>{segment.label} {ms(segment.value)}</span>
+        ))}
+        <span>合计 {ms(breakdown.totalMs)}</span>
+      </p>
+    </div>
+  )
 }

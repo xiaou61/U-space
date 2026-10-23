@@ -34,6 +34,8 @@ class RunWriteQueue implements InitializingBean, DisposableBean {
     private final RunSink sink;
     private final AtomicLong dropped = new AtomicLong();
     private final AtomicLong writeFailures = new AtomicLong();
+    private final java.util.concurrent.atomic.AtomicReference<java.time.Instant> lastSuccessAt =
+            new java.util.concurrent.atomic.AtomicReference<>();
     private volatile boolean running = true;
     private Thread writer;
 
@@ -61,6 +63,27 @@ class RunWriteQueue implements InitializingBean, DisposableBean {
 
     long writeFailures() {
         return writeFailures.get();
+    }
+
+    /**
+     * 队列当前积压（WORK-036）。
+     *
+     * <p>**读内存、不读库**：这些数字描述的是"这个进程有没有在丢数据"，重启清零才是对的语义。
+     *
+     * <p>shortcut: 多实例部署时每个进程各有一份、彼此不可见；真变成多实例时这几项要经 sink 汇总。
+     */
+    int depth() {
+        return queue.size();
+    }
+
+    /** 队列容量。界面上要显示"积压 3 / 10000"，只给积压数看不出还有多少余量。 */
+    int getCapacity() {
+        return properties.getQueueCapacity();
+    }
+
+    /** 最近一次成功写入的时刻。**从没写成功过时是 null**——那不是"很久以前"，是"没有"。 */
+    java.time.Instant lastSuccessAt() {
+        return lastSuccessAt.get();
     }
 
     @Override
@@ -120,6 +143,7 @@ class RunWriteQueue implements InitializingBean, DisposableBean {
     private void write(RunPayload payload) {
         try {
             sink.accept(payload);
+            lastSuccessAt.set(java.time.Instant.now());
         } catch (RuntimeException failure) {
             writeFailures.incrementAndGet();
             log.warn("ai.telemetry.write-failed kind={} traceId={} cause={}",
