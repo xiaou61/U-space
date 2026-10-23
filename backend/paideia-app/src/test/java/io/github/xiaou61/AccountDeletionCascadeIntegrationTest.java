@@ -48,6 +48,9 @@ class AccountDeletionCascadeIntegrationTest {
      * <p>每加一张用户私有表都要加一行；不加，注销就会悄悄留下数据而没人知道。
      */
     private static final String[][] USER_DATA = {
+            // WORK-037：第三方登录绑定。它靠外键 ON DELETE CASCADE 跟着删，**不靠应用代码**——
+            // 但正因如此更需要断言：级联一旦被谁改成 SET NULL，这里第一个发现。
+            {"user_identities", "user_id"},
             {"ai_conversations", "user_id"},
             {"ai_messages", "conversation_id"}, // 单独按会话删，见断言处的说明
             {"ai_memories_structured", "user_id"},
@@ -358,6 +361,50 @@ class AccountDeletionCascadeIntegrationTest {
                         """, owner, conceptId);
             }
         }
+    }
+
+    /**
+     * WORK-037：第三方注册的用户从来没有密码。
+     *
+     * <p>如果注销必须给密码，这批人就永远注销不了自己的账号——而注销是「不可恢复」的，
+     * 两条叠加会造出一块删不掉的数据。这里验的是"能删掉"，以及"删得干净"。
+     */
+    @Test
+    @DisplayName("无密码账号可以注销，且显式确认是必需的")
+    void deletesPasswordlessUser() throws Exception {
+        long id = insertUser();
+        jdbcTemplate.update("UPDATE users SET password_hash = NULL WHERE id = ?", id);
+        String token = token(id);
+
+        // 只给令牌、不给任何确认：拒绝
+        assertThat(deletionStatusWithBody(token, "{}")).isEqualTo(400);
+        assertThat(countIn("users", "id", id)).as("被拒时不能删掉任何东西").isPositive();
+
+        // 显式确认：注销成功
+        assertThat(deletionStatusWithBody(token, "{\"confirmed\":true}")).isEqualTo(200);
+        assertThat(countIn("users", "id", id)).isZero();
+        userId = null;
+    }
+
+    @Test
+    @DisplayName("有密码的账号即使传了 confirmed 也要密码——不能因为多一个字段就降级确认")
+    void passwordStillRequiredEvenWithConfirmedFlag() throws Exception {
+        userId = insertUser();
+        String token = token(userId);
+
+        assertThat(deletionStatusWithBody(token, "{\"confirmed\":true}"))
+                .as("confirm 不该成为绕过密码的旁路")
+                .isEqualTo(400);
+        assertThat(countIn("users", "id", userId)).isPositive();
+    }
+
+    private int deletionStatusWithBody(String token, String body) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/me/deletion")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andReturn();
+        return result.getResponse().getStatus();
     }
 
     private int deletionStatus(String token, String password) throws Exception {
