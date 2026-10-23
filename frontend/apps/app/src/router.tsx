@@ -3,6 +3,7 @@ import { createHashRouter } from 'react-router'
 
 import { HomePage } from './pages/HomePage'
 import { GraphPage } from './pages/GraphPage'
+import { ReviewPage } from './pages/ReviewPage'
 import { KnowledgeEntryPage } from './pages/KnowledgeEntryPage'
 import { CampDetailPage } from './pages/CampDetailPage'
 import { CampListPage } from './pages/CampListPage'
@@ -65,6 +66,15 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <LearnPage />
+      </RequireAuth>
+    ),
+  },
+  // 复习（WORK-034）：到期列表；S1 只读，不生成新题。
+  {
+    path: '/review',
+    element: (
+      <RequireAuth>
+        <ReviewPage />
       </RequireAuth>
     ),
   },

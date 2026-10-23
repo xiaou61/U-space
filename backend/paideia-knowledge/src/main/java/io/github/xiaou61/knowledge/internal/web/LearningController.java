@@ -52,6 +52,24 @@ class LearningController {
         return ApiResponse.ok(reviews.due(CurrentUserId.require(), java.time.Instant.now()));
     }
 
+    /** 开始复习会话（WORK-034 S2）：同日重复调用返回同一份题。 */
+    @org.springframework.web.bind.annotation.PostMapping("/reviews/sessions")
+    ApiResponse<LearningReviewService.StartSession> startReviewSession() {
+        return ApiResponse.ok(reviews.start(CurrentUserId.require(), java.time.Instant.now()));
+    }
+
+    /** 交卷：判定、排期与掌握度都在服务端完成。 */
+    @org.springframework.web.bind.annotation.PostMapping("/reviews/sessions/{id}/answers")
+    ApiResponse<LearningReviewService.SubmitResult> submitReview(
+            @PathVariable("id") long id,
+            @RequestBody ReviewAnswers body) {
+        return ApiResponse.ok(reviews.submit(CurrentUserId.require(), id, body.answers(),
+                java.time.Instant.now()));
+    }
+
+    record ReviewAnswers(List<LearningReviewService.AnswerInput> answers) {
+    }
+
     /**
      * 线清单 + 本人的进度统计。`/learn` 页面与入口卡片都只读这一个端点。
      *

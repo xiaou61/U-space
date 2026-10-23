@@ -173,6 +173,12 @@ public class CreditService {
         return settleAs(userId, reserved, CreditLedger.KIND_CAMP, model, inputTokens, outputTokens, refMessageId);
     }
 
+    /** 复习出题的结算（WORK-034）：与训练营同一套预留/结算，只是流水种类分开。 */
+    public int settleReview(long userId, long reserved, String model,
+                            Integer inputTokens, Integer outputTokens) {
+        return settleAs(userId, reserved, CreditLedger.KIND_REVIEW, model, inputTokens, outputTokens, null);
+    }
+
     /**
      * 结算的公共实现。
      *

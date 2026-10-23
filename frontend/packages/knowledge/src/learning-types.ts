@@ -147,3 +147,55 @@ export interface TrackMap {
   stageCount: number
   passedCount: number
 }
+
+/** 到期复习（WORK-034 S1）。 */
+export interface ReviewDueItem {
+  entryId: number
+  title: string
+  conceptId: number | null
+  conceptName: string | null
+  reviewDueAt: string
+  stage: number
+}
+
+export interface ReviewDueList {
+  items: ReviewDueItem[]
+  total: number
+}
+
+export interface ReviewSessionItem {
+  itemId: number
+  conceptId: number
+  stem: string
+  options: string[]
+}
+
+export interface ReviewFallback {
+  entryId: number
+  title: string
+}
+
+export interface ReviewSession {
+  sessionId: number
+  items: ReviewSessionItem[]
+  expiresAt: string | null
+  fallback: ReviewFallback[]
+}
+
+export interface ReviewResult {
+  itemId: number
+  conceptId: number
+  correct: boolean
+  explanation: string
+}
+
+export interface ReviewSchedule {
+  entryId: number
+  stage: number
+  reviewDueAt: string
+}
+
+export interface ReviewSubmitResult {
+  results: ReviewResult[]
+  schedule: ReviewSchedule[]
+}

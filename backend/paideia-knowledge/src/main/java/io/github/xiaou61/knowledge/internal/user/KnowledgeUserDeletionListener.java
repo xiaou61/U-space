@@ -28,6 +28,8 @@ class KnowledgeUserDeletionListener {
             // 逐题作答与掌握状态（WORK-033）：外键只指向条目/概念，注销不会级联到它们
             {"question_attempts", "user_id"},
             {"concept_mastery_state", "user_id"},
+            // 复习会话（WORK-034）：含出题与作答，注销必须一并删
+            {"review_sessions", "user_id"},
     };
 
     private final JdbcTemplate jdbcTemplate;

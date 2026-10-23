@@ -9,11 +9,12 @@ import { configFor, createIdentityApi } from '@paideia/identity'
 import { AppShell, Button, Card, CardContent, Input, Section, Spinner } from '@paideia/ui'
 import { useAuth } from '@paideia/auth'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, BookOpen, Database, FileQuestion, GraduationCap, Layers, MessagesSquare, Network, Newspaper, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
+import { ArrowRight, BookOpen, Database, Dumbbell, FileQuestion, GraduationCap, Layers, MessagesSquare, Network, Newspaper, NotebookPen, Search, Sparkles, Target } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { api } from '../api'
+import { HomeFirstRun } from '../components/HomeFirstRun'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const knowledge = createKnowledgeApi(api)
@@ -53,6 +54,15 @@ const QUICK_LINKS: {
     icon: Database,
     title: 'SQL 自由练习',
     description: '写一段 SQL，在干净的数据库里立刻看到结果，不计分。',
+  },
+  {
+    // 训练营（WORK-034 D-09）：固定卡片，不参与身份排序，先保证可见。
+    key: null,
+    to: '/camp',
+    testId: 'home-entry-camp',
+    icon: Dumbbell,
+    title: 'AI 训练营',
+    description: '先诊断再练：按概念出题，练完复测看进步。',
   },
   {
     key: 'digest' as const,
@@ -174,6 +184,7 @@ export function HomePage() {
       }))
   }, [serverProgress.data])
 
+
   // 一次请求同时供"条目总数"与"最近更新"两块用：首页不该为两个数字打两次接口
   const entries = useQuery({
     queryKey: ['knowledge-entries', null, '', 'home'],
@@ -227,6 +238,25 @@ export function HomePage() {
     [assessments.data],
   )
 
+  const [firstRunDismissed, setFirstRunDismissed] = useState(
+    () => localStorage.getItem('paideia:first-run-dismissed') === '1',
+  )
+  const firstRun =
+    !firstRunDismissed &&
+    assessments.isSuccess &&
+    serverProgress.isSuccess &&
+    graph.isSuccess &&
+    (assessments.data?.length ?? 0) === 0 &&
+    continueLearning.length === 0 &&
+    (graph.data?.stats.touched ?? 0) === 0
+  const tracks = useQuery({
+    queryKey: ['learning-tracks', 'home-first-run'],
+    queryFn: () => learning.tracks(),
+    retry: false,
+    enabled: firstRun,
+  })
+  const firstEntryHref = tracks.data?.[0] === undefined ? '/learn' : `/learn/${tracks.data[0].slug}`
+
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
     const trimmed = keyword.trim()
@@ -237,6 +267,15 @@ export function HomePage() {
 
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />} wide>
+      {firstRun ? (
+        <HomeFirstRun
+          entryHref={firstEntryHref}
+          onDismiss={() => {
+            localStorage.setItem('paideia:first-run-dismissed', '1')
+            setFirstRunDismissed(true)
+          }}
+        />
+      ) : null}
       {/* hero：左边是"你要做什么"，右边是"最近有什么"——右侧放真实内容而不是插画，
           一屏之内既有行动也有去处，不会只剩一大片留白 */}
       <section className="border-border from-accent via-background to-background mb-8 grid gap-6 rounded-2xl border bg-gradient-to-br p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">
@@ -282,7 +321,7 @@ export function HomePage() {
               label="待复习"
               value={dueReview}
               hint={dueReview === 0 ? '暂时没有' : '过期的知识点'}
-              to="/graph"
+              to="/review"
             />
             <HeroStat
               label="学到一半"

@@ -5429,7 +5429,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：be3765b（架构图）/ 535a887（死表）/ 04c0973（课程基线）及本笔
 - 远端推送：未执行
 
-<<<<<<< HEAD
 ## 2026-10-23 09:19:31 +0800 · 推送并部署 master（死表删除上线）
 
 - 类型：deploy
@@ -5441,7 +5440,7 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 耗时 234 秒，含前端重建（`frontend/` 自上次发版有改动，脚本没跳过）。
 - 本地提交：无（本次只推送与部署）
 - 远端推送：已执行，`600d0a0..01c8eec  master -> master`
-=======
+
 ## 2026-10-23 09:25:00 +08:00 · WORK-033 第二轮：选题、复习联动、AI 打标、评估导出
 
 - 类型：implementation
@@ -5462,7 +5461,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 仍未做：T-08 的逐题上报 e2e；AC-004/006 需要真实作答数据。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-033-phase2`
->>>>>>> origin/work-033-phase2
 ## 2026-10-22 16:50:10 +0800 · 建项 WORK-034（学习闭环与复习入口）四件工件草案
 
 - 类型：docs
@@ -5565,6 +5563,138 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-034-learning-loop`
 
+## 2026-10-23 10:15:00 +08:00 · WORK-034 S1 页面与入口完成
+
+- 类型：implementation
+- 变更：
+  - `ReviewPage` + `/review` 路由 + 导航「更多」里的「复习」；空态两个去处，列表显示概念与到期日。
+  - 首页「待复习」改指 `/review`；新增训练营固定卡片（不参与身份排序）。
+  - `HomeFirstRun`：零数据时显示三步（补身份 / 从零开始 / 第一关），关闭状态存
+    `paideia:first-run-dismissed`。
+- 验证：
+  - `@paideia/app` typecheck 通过。
+  - e2e（独占测试库）：`home.spec.ts` + `review.spec.ts` **10 passed**。
+- 未做：TASK-010 移动端/可访问性专项、TASK-011 验收报告；S2（TASK-005..009）未开始。
+- 本地提交：见下一笔
+- 远端推送：master（合并后）
+
+## 2026-10-23 · 新增「智能体」阅读线（content/reading/agents）
+
+- 类型：content
+- 变更：
+  - 新增 `content/reading/agents/`：1 篇总览 + 5 篇正文（Agent 是什么 / ReAct 与规划 /
+    工具与 MCP / 记忆与上下文 / 评测与上线），`line_kind=reading`、`line_sort=90`，
+    分类 slug `agents`，导入后自动登记为 6 关学习轨道。
+- 决策：
+  - **不按 hello-agents 原文改写**。该仓库许可证为 **CC BY-NC-SA 4.0**（非 MIT），
+    且 `content/reading/README.md` 已立规：不得以第三方文章为底稿做改写/缩写/换词/调序
+    （演绎作品仍需授权，本项目公开仓库 + 公开站点等于二次发布）。
+  - 借用的是**选题与章节顺序**（主题清单属思想，不受版权保护），正文独立撰写；
+    每篇末尾给一条「延伸阅读」指向原仓库，保留导流。
+  - 刻意与原文的详略取舍不同：hello-agents 偏完整教学（16 章，含低代码平台、框架实现、
+    Agentic RL、多智能体案例），本线只留「接功能前必须先想清楚」的部分，5 篇。
+- 验证：
+  - frontmatter 字段齐全、`status=published`、quiz 块 JSON 可解析且各 3 题（脚本校验 ALL OK）。
+  - `node scripts/import-course.mjs --dir content/reading/agents`：**created 6 / updated 0**；
+    重跑 **created 0 / updated 0**（幂等）。
+  - 线上（`http://<服务器>:8081`）以学习者账号查 `/api/v1/learn/tracks`：
+    `agents`（智能体，stageCount 6）已出现；`/api/v1/learn/tracks/agents` 六关顺序与
+    难度正确；条目正文与 `quiz` 块正常返回。
+- 未做：未跑 e2e（纯内容新增，无代码改动）；未提交。
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-23 · 智能体线扩到 14 关 + 修复轨道关卡覆盖缺陷
+
+- 类型：content + bugfix
+- 变更：
+  - `content/reading/agents/` 从 6 篇扩到 14 篇：新增 系统提示词、检索与 RAG、上下文工程、
+    多智能体协作、框架选型、流式与交互、成本与限流、安全与护栏；原 5 篇按新顺序重编号
+    （ReAct→03、工具→04、记忆→05、评测→12）。
+  - **后端缺陷修复**：`KnowledgeAdminController.upsertTrack` 写关卡前先 `deleteStages`。
+- 决策：
+  - **不能只做 upsert**。`learning_track_stages` 的唯一键是 `(track_id, seq)`，重排时
+    新关卡按 seq 覆盖旧行、末尾那关被挤掉——实测 14 篇只落 13 关（缺「系统提示词」），
+    且「ReAct」的 level 被写成旧的 beginner。关卡是内容的投影不是用户数据：没有表引用
+    `stage.id`，学习进度按 `entry_id` 记，所以删了整体重建是安全的。
+  - 内容仍按「借用选题、正文自写」处理（原仓库 CC BY-NC-SA 4.0）。
+- 验证：
+  - 14 篇 frontmatter / order 连续 0–13 / quiz 各 3 题且 JSON 可解析。
+  - `paideia-knowledge` 模块 `mvn test`：**BUILD SUCCESS**，无失败无错误。
+  - 部署后端（`release.ps1 -SkipWeb`，135.3 秒）后重导：`created 0 / updated 0`；
+    线上 `/api/v1/learn/tracks/agents` **stageCount 14**，seq 0–13 连续、难度正确
+    （ReAct 已是 intermediate，安全与护栏 advanced）。
+- 未做：未跑前端 e2e（无前端改动）；未推送。
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-23 10:55:00 +08:00 · WORK-034 S2：复习会话、出题、交卷与金标
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261023120000__create_review_sessions.sql`：会话 + 答案 + 幂等闸 + 过期时间。
+  - `ReviewQuestionPort`（knowledge 定义、ai 实现）：一次调用给整场会话出 4 选 1，
+    校验选项数/下标/解析/题干长度/历史去重；失败返回空，走承载条目降级。
+  - `LearningReviewService.start/submit`：同日幂等返回同一份题；交卷服务端判定、
+    写 `learning_progress` 排期、调 033 的 `recordMastery` 更新掌握度；重复交卷 409。
+  - `GET/POST /learning/reviews/sessions*` 两个端点；注销级联加 `review_sessions`。
+  - 复习页加会话态与结果态；375px 不横向溢出；出题失败显示承载条目。
+  - 金标：20 条录制样本 + `ReviewGoldenTest`；掌握度契约写入
+    `.agent/notes/review-mastery-contract.md`。
+- 决策：
+  - 复习出题**不扣用户积分**（与速递同一条平台记账路径，只有 `ai_runs`）；若要按次收费，
+    接 WORK-009 的预留/结算即可，是一处调用点。
+  - 复习题没有条目身份，不写 `question_attempts`；掌握度通过 033 的 `recordMastery` 更新。
+- 验证：
+  - 后端全量 **283 运行 / 0 失败 / 4 跳过**；`ReviewScheduleTest` 3、`ReviewQuestionGeneratorTest` 4、
+    `ReviewGoldenTest` 20 条样本全过；`LearningReviewIntegrationTest` 5 条（含降级/409/404/过期）。
+  - e2e `review.spec.ts` **4 passed**；`home.spec.ts` 全绿。
+  - 顺手修正 `SandboxIntegrationTest` 一条过期断言（另一会话的隐藏数据集改动已提交，测试没跟上）。
+- 仍未做：真连上游出题的质量验证（金标只跑录制样本）；会话整轮完成的 e2e（缺确定性出题桩）。
+- 本地提交：见下一笔
+- 远端推送：master（合并后）
+
+## 2026-10-23 · 智能体线正文扩写（14 篇全量）
+
+- 类型：content
+- 变更：
+  - 14 篇正文全部扩写：总量 97.9 KB → 123.5 KB，每篇均 ~8.8 KB，与 `network` 线持平
+    （原 agents 线每篇 ~2.5 千字，比 network 的 ~3.2 千字薄三成）。线上合计约 5.3 万字。
+- 决策：
+  - **补的是信息密度，不是篇幅**。每篇新增的是可验证的机制细节、具体数字、可复制的代码/配置，
+    删掉了重复的过渡句；没有靠"多写几句"充数。
+  - 重点补充：01 的三次追问判据 + 22 倍成本账 + 最小循环代码；02 的提示词骨架与示例优先于规则；
+    03 的三种反馈对照表 + 沉没成本；04 的请求前后变化与归属校验反例；06 的 RRF 算法与召回率门槛；
+    07 的实测 token 占比；08 的成本倍率估算；11 的预扣结算状态机；13 的 SSRF 拦截清单。
+  - 各篇 `minutes` 同步上调（+2~4 分钟），与实际阅读量匹配。
+- 验证：
+  - 14 篇 frontmatter 齐全、order 0–13 连续、quiz 各 3 题且 JSON 可解析。
+  - 导入：`created 0 / updated 13`（总览正文未变，幂等跳过）。
+  - 线上 `/api/v1/learn/tracks/agents`：**stageCount 14**，逐关取正文确认已是新版本，
+    合计 53188 字。
+- 未做：未跑 e2e（纯内容）；未推送。
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-23 11:50:00 +08:00 · WORK-034 收口：积分结算修复 + 真连验收
+
+- 类型：verification
+- 变更：
+  - 复习出题接积分预留/结算：`CreditLedger.REVIEW` + `CreditService.settleReview`；
+    生成前 reserve（不足 402），成功按实际 token 结算，失败按用量结算或全退。
+  - 会话题目新增 `entryId`：排期落到本次实际到期的条目（多载体概念不再排错）。
+- 线上真连（e2e-learner）：
+  - 造一条到期记录 → 生成会话（deepseek-flash，题目与概念一致、4 选项、有解析）；
+    同一天第二次生成换了题干（历史去重生效）。
+  - 交卷：答错 → 档位 2 不变、明天到期；答对 → 前进到 3、7 天后到期；`schedule.entryId` 与到期条目一致。
+  - 积分：余额 97855 → 97854，流水 `REVIEW -1`（273/322 token）。
+- 修复的两个真缺陷（都由真连发现）：
+  1. 排期用「概念的第一条载体」而不是本次到期条目；
+  2. 只 reserve 未 settle，每场静默多扣 1000 分且无流水。
+     修复前两次泄漏的 2000 分已回补余额，余额=流水求和（99854）。
+- 验证：后端全量 **283/0/4**；e2e `review.spec.ts` **5 passed**（含打桩整轮会话）。
+- 本地提交：见下一笔
+- 远端推送：master
 ## 2026-10-23 10:25:00 +08:00 · WORK-035 S1 起步：编辑器实装 + 两个假设验证
 
 - 类型：implementation

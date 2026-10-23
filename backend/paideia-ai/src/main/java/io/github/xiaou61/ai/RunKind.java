@@ -53,6 +53,9 @@ public final class RunKind {
     /** 生成一个数据集（WORK-035 T-13）。与出题分开记：两者的成本差异很大。 */
     public static final String SQL_DATASET_GENERATE = "sql_dataset_generate";
 
+    /** 复习会话出题（WORK-034）。一次会话一次调用。 */
+    public static final String REVIEW_GENERATE = "review_generate";
+
     private RunKind() {
     }
 }

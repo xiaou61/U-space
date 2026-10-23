@@ -67,6 +67,8 @@ const NAV = [
   { key: 'digest' as const, to: '/digest', label: '每日速递', testId: 'learner-nav-digest', primary: true },
   { key: 'knowledge' as const, to: '/knowledge', label: '知识库', testId: 'learner-nav-knowledge', primary: true },
   { key: 'notes' as const, to: '/notes', label: '我的笔记', testId: 'learner-nav-notes', primary: true },
+  // 复习（WORK-034）：每天要看的入口，但页头已经很挤，放「更多」里仍然算有入口。
+  { key: 'review' as const, to: '/review', label: '复习', testId: 'learner-nav-review', primary: false },
   // 训练营（WORK-029）：它是"还没有学习记录的人"的入口，与简历并列。
   // 不进 preferredNav —— 身份排序只管那几个老入口，新入口固定排在后面。
   { key: 'camp' as const, to: '/camp', label: '训练营', testId: 'learner-nav-camp', primary: false },
