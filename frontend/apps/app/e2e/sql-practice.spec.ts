@@ -61,10 +61,16 @@ test.describe('SQL 自由练习', () => {
     await expect(page.getByRole('heading', { name: /写一段 SQL/ })).toBeVisible()
 
     // 编辑一下并等渲染稳定：这期间任何进度写入都该被上面那个监听抓到
+    //
+    // 编辑器在 WORK-035 起是 CodeMirror（contenteditable），**不再支持 `fill()` 与
+    // `toHaveValue()`**——那两个只对 textarea/input 有效。改用聚焦 + 键盘输入，
+    // 断言编辑区里出现了输入的文字。
     const editor = page.getByTestId('sql-practice-editor')
     if (await editor.isVisible()) {
-      await editor.fill('SELECT 1;')
-      await expect(editor).toHaveValue('SELECT 1;')
+      await editor.click()
+      await page.keyboard.press('ControlOrMeta+a')
+      await page.keyboard.type('SELECT 1;')
+      await expect(editor).toContainText('SELECT 1;')
     }
     await page.waitForTimeout(500)
 

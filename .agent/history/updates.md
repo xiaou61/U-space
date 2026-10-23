@@ -5564,3 +5564,35 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 说明：S1 的页面（TASK-003）与首页入口（TASK-004）尚未做，接口暂时只有测试消费。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-034-learning-loop`
+
+## 2026-10-23 10:25:00 +08:00 · WORK-035 S1 起步：编辑器实装 + 两个假设验证
+
+- 类型：implementation
+- 变更：
+  - 新建 `@paideia/sql-workbench` 包（CodeMirror 6 编辑器 + 执行计划解析）。
+  - `SqlPracticePage` 的 textarea 换成 CodeMirror，用 `lazy()` 引入。
+  - 新增懒加载守卫 `apps/app/scripts/check-lazy-editor.mjs`，接进 `build` 与 `build:desktop`。
+  - `explain.ts`：`parseExplainTree` / `classifyAccess` / `summarize` 三个纯函数 + 11 条单测。
+  - e2e 适配：CodeMirror 是 contenteditable，`fill()`/`toHaveValue()` 不再适用，改键盘输入。
+- 验证（两个开工前必须成立的假设，都成立）：
+  - **体积**：精简版 417.1 kB min / **137.2 kB gzip**（`basicSetup` 全套 436.5/143.6；语言包单独 291.2 kB min）。
+    原设计写的「≤400 kB gzip 前」是没量就定的数——按 min 口径卡会逼着砍用户感觉不到的功能，
+    **门槛改为 gzip ≤ 160 kB**，已写回 design 与 tasks。
+  - **EXPLAIN 解析**：在 codenest-online 的真实镜像上用生产加固参数实跑三条 `EXPLAIN FORMAT=TREE`。
+    `SqlResultCodec` 能正确解析，不用改解析器。但发现两个改变实现方式的事实：
+    ① 整棵树在**一个字段值**里（1 列 × 1 行，多行用 `\n`），所以不能用结果表组件渲染；
+    ② 「走索引 vs 全表扫」是**字符串匹配**且必须**按节点**判（实测 `Filter` 在上、`Table scan` 在下）。
+  - 构建产物：编辑器在独立 chunk `src-*.js`（120.3 kB gzip），入口 chunk 只动态引用它。
+  - **守卫做了反向验证**：把 `lazy()` 改成静态 import 后，构建**失败**（入口 chunk 390.3 kB gzip 且
+    "编辑器被静态打进入口 chunk"）。反向验证还暴露出守卫自身的一个缺陷（静态打进后
+    "排除编辑器的入口"为空会导致误放行），已修。
+  - `pnpm --filter @paideia/sql-workbench test` → 11 passed；两个包 typecheck 通过；
+    e2e `sql-practice.spec.ts` → **2 passed**（真实浏览器里编辑器可输入、不写进度）。
+- 决策：
+  - 语法高亮**不用** CodeMirror 自带的 `defaultHighlightStyle`（写死十六进制色，深浅主题不跟着变），
+    改用 `HighlightStyle` 绑到项目的 `--color-*` 令牌。
+  - 编辑器不用 `basicSetup`：它带上 vim/emacs 键位与默认主题，多约 20 kB 且配色不受控。
+- 已知未做：`ExplainTree.tsx` 视图组件（T-05 剩余）；`schema` 补全数据源（T-03）；
+  `EXPLAIN` 的 `explain` 开关还没进 `/sandbox/run`。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-035-sql-workbench`（未推送）

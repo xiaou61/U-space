@@ -10,7 +10,7 @@ import {
 } from '@paideia/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Play } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -18,16 +18,23 @@ import { LearnerHeader } from '../components/LearnerHeader'
 const knowledge = createKnowledgeApi(api)
 
 /**
- * SQL 自由练习（WORK-032）。
+ * 编辑器必须**懒加载**（WORK-035 T-01 / AC-001）：CodeMirror 精简版 gzip 后约 137 kB，
+ * 是本站唯一的重前端依赖。静态 import 会让每个进入首页的人为它付费。
+ */
+const SqlEditor = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.SqlEditor }
+})
+
+/**
+ * SQL 自由练习（WORK-032，WORK-035 起升级为工作台）。
  *
  * <p><b>与关卡的区别是"不计分"</b>：这里跑什么、跑对没跑对，都不写 `learning_progress`。
  * 关卡里的 SQL 题要判题、要计入这一关的通过与否；这里只是"随时打开、随便写"。
  *
- * <p>一期**只给一个示例库**（用户裁决 U-08）：有参照物才能判断"结果对不对"。所以没有数据集
- * 管理器，只有一个选择器，而且默认就选中它。
+ * <p>数据集仍只有服务端下发的那几个（隐藏集不下发，见 WORK-035 的修复）。
  *
- * <p>额度与关卡实训共用一份 SQL 配额（20 次/天，与 Java/Python 的 50 次分开算），
- * 顶部显示剩余次数。
+ * <p>额度与关卡实训共用一份 SQL 配额，顶部显示剩余次数。
  */
 export function SqlPracticePage() {
   const [code, setCode] = useState('SELECT * FROM customers;')
@@ -114,14 +121,23 @@ export function SqlPracticePage() {
             )}
           </div>
 
-          <textarea
-            aria-label="SQL 编辑器"
-            data-testid="sql-practice-editor"
-            className="border-border bg-muted/30 min-h-56 w-full rounded-lg border p-3 font-mono text-[13px] leading-6"
-            value={code}
-            spellCheck={false}
-            onChange={(event) => setCode(event.target.value)}
-          />
+          <Suspense
+            fallback={
+              <div
+                className="border-border bg-muted/30 flex min-h-56 w-full items-center justify-center rounded-lg border"
+                data-testid="sql-editor-loading"
+              >
+                <Spinner />
+              </div>
+            }
+          >
+            <SqlEditor
+              value={code}
+              onChange={setCode}
+              placeholder="写一段 SQL，按运行看结果"
+              ariaLabel="SQL 编辑器"
+            />
+          </Suspense>
 
           <div className="flex items-center gap-3">
             <Button
