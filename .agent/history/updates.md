@@ -5861,3 +5861,27 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 顺带发现（不在本项范围）：master 上 `concept-graph-layout.test.ts` 有 4 个既有类型错误，
   不是本项引入，未修。
 - 本地提交：见下一笔
+
+## 2026-10-23 13:50:00 +08:00 · WORK-035 T-18 完成，全项收尾
+
+- 类型：verification
+- 变更：
+  - 新增 `testing/report.md`（13 条 AC 逐条证据）。
+  - `requirements.md` 补 `## 目标` 与 `## 待确认问题`（校验器要求的章节）。
+  - `tasks.md` 18 个任务全部 done。
+- 结果：`status` 显示 **完成沉淀 / 已完成**，代码核对 `verified`、结算 `confirmed`；
+  `validate` 结果「通过」。
+- 验证规模（本轮实测）：
+  - 后端内环 **514 运行 / 0 失败 / 14 跳过**（模块级汇总）。
+  - 模块边界与三个迁移门禁 **9 运行 / 0 失败**。
+  - `paideia-sandbox` **70 运行 / 0 失败**。
+  - `@paideia/sql-workbench` **44 passed**、`@paideia/assistant` **40 passed**。
+  - e2e：学习者端 `sql-practice` **4 passed**、管理端 `admin` **8 passed**。
+  - 应用真实启动成功。
+- **如实记录的缺口**（写在报告「未覆盖与已知限制」里）：
+  - AC-001 的「断网补全」只做到"已加载后能补全"，**冷启动断网只有关键字补全**（schema 无持久化）。
+  - 干跑失败的真容器路径、AI 出题/造数据的真上游调用**都没有实测**（本机无 Docker、线上无 AI Key）。
+  - 补全弹窗本身没有自动化测试。
+  - 发布 → 举报 → 下架端到端链路没有 e2e（由两段单测拼起来覆盖）。
+- 本地提交：见下一笔
+- 远端推送：未执行（分支 `work-035-sql-workbench`）
