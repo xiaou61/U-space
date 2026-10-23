@@ -5603,3 +5603,27 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 未做：未跑 e2e（纯内容新增，无代码改动）；未提交。
 - 本地提交：未提交
 - 远端推送：未推送
+
+## 2026-10-23 · 智能体线扩到 14 关 + 修复轨道关卡覆盖缺陷
+
+- 类型：content + bugfix
+- 变更：
+  - `content/reading/agents/` 从 6 篇扩到 14 篇：新增 系统提示词、检索与 RAG、上下文工程、
+    多智能体协作、框架选型、流式与交互、成本与限流、安全与护栏；原 5 篇按新顺序重编号
+    （ReAct→03、工具→04、记忆→05、评测→12）。
+  - **后端缺陷修复**：`KnowledgeAdminController.upsertTrack` 写关卡前先 `deleteStages`。
+- 决策：
+  - **不能只做 upsert**。`learning_track_stages` 的唯一键是 `(track_id, seq)`，重排时
+    新关卡按 seq 覆盖旧行、末尾那关被挤掉——实测 14 篇只落 13 关（缺「系统提示词」），
+    且「ReAct」的 level 被写成旧的 beginner。关卡是内容的投影不是用户数据：没有表引用
+    `stage.id`，学习进度按 `entry_id` 记，所以删了整体重建是安全的。
+  - 内容仍按「借用选题、正文自写」处理（原仓库 CC BY-NC-SA 4.0）。
+- 验证：
+  - 14 篇 frontmatter / order 连续 0–13 / quiz 各 3 题且 JSON 可解析。
+  - `paideia-knowledge` 模块 `mvn test`：**BUILD SUCCESS**，无失败无错误。
+  - 部署后端（`release.ps1 -SkipWeb`，135.3 秒）后重导：`created 0 / updated 0`；
+    线上 `/api/v1/learn/tracks/agents` **stageCount 14**，seq 0–13 连续、难度正确
+    （ReAct 已是 intermediate，安全与护栏 advanced）。
+- 未做：未跑前端 e2e（无前端改动）；未推送。
+- 本地提交：见下一笔
+- 远端推送：未推送

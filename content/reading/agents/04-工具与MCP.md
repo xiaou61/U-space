@@ -1,7 +1,7 @@
 ---
 title: 工具与 MCP：模型怎么真的动手
 category: agents
-order: 3
+order: 4
 minutes: 24
 level: intermediate
 status: published

@@ -1,7 +1,7 @@
 ---
 title: ReAct 与规划：想一步、做一步
 category: agents
-order: 2
+order: 3
 minutes: 24
 level: intermediate
 status: published

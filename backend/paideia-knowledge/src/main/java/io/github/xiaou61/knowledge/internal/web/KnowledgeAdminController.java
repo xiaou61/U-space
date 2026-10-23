@@ -79,6 +79,8 @@ class KnowledgeAdminController {
             return ApiResponse.ok(null);
         }
         if (body.stages() != null) {
+            // 整体替换：先清空再重写。只做 upsert 会在重排时按 seq 互相覆盖、末尾被挤掉。
+            trackMapper.deleteStages(track.id());
             for (StageRequest stage : body.stages()) {
                 trackMapper.upsertStage(track.id(), stage.entryId(), stage.seq(),
                         stage.chapter() == null ? "" : stage.chapter(),

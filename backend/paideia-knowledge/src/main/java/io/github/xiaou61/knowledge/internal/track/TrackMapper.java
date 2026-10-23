@@ -2,6 +2,7 @@ package io.github.xiaou61.knowledge.internal.track;
 
 import java.time.Instant;
 import java.util.List;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -55,6 +56,16 @@ public interface TrackMapper {
     int upsertTrack(@Param("slug") String slug, @Param("name") String name,
                     @Param("summary") String summary, @Param("kind") String kind,
                     @Param("sortOrder") int sortOrder, @Param("now") Instant now);
+
+    /**
+     * 整体替换前清空一条轨道的关卡。
+     *
+     * <p>不能只靠 upsert：唯一键是 {@code (track_id, seq)}，重排时新关卡按 seq 覆盖掉别人、
+     * 末尾那关被挤掉（实测 14 篇只落 13 关）。关卡是内容的投影不是用户数据——没有表引用
+     * {@code stage.id}，学习进度按 {@code entry_id} 记，所以删了重建是安全的。
+     */
+    @Delete("DELETE FROM learning_track_stages WHERE track_id = #{trackId}")
+    int deleteStages(@Param("trackId") long trackId);
 
     @Insert("""
             INSERT INTO learning_track_stages
