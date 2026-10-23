@@ -6066,3 +6066,44 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 集成 + 模块边界 + 三个迁移门禁 **24 运行 / 0 失败**。
   - `validate`：**通过**；WORK-033 状态进入「完成沉淀 / 已完成」。
 - 本地提交：见下一笔
+## 2026-10-23 14:30:00 +08:00 · WORK-036 全量实施：AI 观测面板优化
+
+- 类型：implementation
+- 建项依据：用户「参考 Langfuse 新开一个 work 优化我们的检测相关的，仔细想想都可以新增什么」，
+  随后「肯定是要全部做完的吗，就是有多少做多少的这种，给我起草吧，开始吧」——按 A/B/C/D 四组全做。
+- A 组（趋势与维度）：
+  - 新增 `Segmentation`（纯函数，9 条测试）：≤48h 小时桶、否则日桶，按 `Asia/Shanghai` 自然日/整点对齐；
+    空桶补零且**分位数给 null**（0ms 与没数据不是一回事）。
+  - `GET /ai/admin/runs/series`：计数与分位数分两次查询、在内存按桶合并；`overview` 接受与明细同一套四个筛选。
+  - 概览新增 `cacheReadTokens` / `cacheSavedRatio` / `nominalCredits`（按价目表折算），界面与实扣并列显示。
+- B 组（观测系统自己的可信度）：
+  - `GET /ai/admin/runs/health`：队列深度/容量、累计丢弃、写失败、最近成功时刻、采样率（读进程内存）。
+  - 界面在丢弃或写失败 > 0 时出**告警条**（"以下统计不完整"），采样 < 1 时出"成功率系统性偏低"提示。
+  - `GET /ai/admin/runs/reconcile`：按天对比 `ai_runs.credits` 与 `ai_credit_ledger` 消耗净额，
+    **排除 RESERVE 与 ADJUST**（前者不写流水行、后者是发分不是消耗）。
+  - 详情响应新增 `breakdown`（排队/LLM/工具/其它），`other` 夹到非负（并发工具会重叠）。
+- C 组（质量信号）：
+  - 迁移 `V20261023140000__create_ai_feedback.sql`：唯一键 `(user_id, trace_id)` 让改判变成覆盖；
+    `reason` 只收四个枚举，不收自由文本。
+  - `POST /api/v1/ai/feedback`（authenticated，不接受 userId）+ `GET /api/v1/ai/feedback/admin`
+    （新增安全规则 `hasRole("ADMIN")`，**排在 `/api/v1/ai/**` 之前**）。
+  - SSE `done` 事件新增 `traceId`（`RunScope.traceId()`，关闭采集时为 null），反馈靠它挂到具体一轮。
+  - 学习者端每条回答下加赞/踩，点踩展开四个原因；管理端新增「回答反馈」页，可展开看该轮完整请求响应。
+  - 注销级联加入 `ai_feedback`。
+- D 组（定位与层级）：
+  - 明细页加 traceId 前缀搜索（`LIKE CONCAT(x,'%')`，可走唯一键范围扫描）。
+  - `SpanSpec` 加 `parentSeq` 与 `child(...)`；详情页按层级缩进。**仓库里没有产生子步骤的真实调用点**
+    （`retrieval` 零使用、工具内部无二次模型调用），本期只做端口与渲染支持，未虚构埋点。
+- 实施中抓到两个只有跑真库才看得见的缺陷：
+  1. **日桶全被静默跳过**：`LocalDateTime.parse("2026-10-23")` 抛异常被 catch 成"跳过"，
+     于是任何 >48 小时的窗口返回全零折线。改为日桶走 `LocalDate.parse`。
+  2. **概览总数不受筛选影响**：`overview` 用了全量 `countByStatus`，四个筛选只传给 totals。
+     新增 `countByStatusFiltered` 并在 overview 使用。
+- 验证：后端 **291/0/13**；`AiObservabilityIntegrationTest` **11/0**；
+  `AccountDeletionCascadeIntegrationTest` **2/0**（新增 ai_runs 与 ai_feedback 的种子与断言）；
+  迁移与模块闸 **9/0**；assistant 包单测 **26/0**；管理端 e2e **27 passed**（含新加的趋势图与反馈页）。
+- 反向验证两条：把 `<=` 改成 `<` → 分桶边界 2 条红；把 RESERVE 从排除列表移除 → 对账 1 条红。
+- 未覆盖：学习者端 assistant e2e（要真调上游，本次无可用 AI Key）；AC-005/006/007/015 只验了字段与
+  代码路径，没有真改配置跑一轮；`EXPLAIN` 未人工核对。
+- 本地提交：见下一笔
+- 远端推送：未推送

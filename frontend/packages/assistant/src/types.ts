@@ -125,6 +125,10 @@ export interface ChatMessage {
   usage: TokenUsage | null
   /** 正文为空、服务端给了可见提示时为 true——界面据此区别"这是提示，不是回答"。 */
   emptyHint: boolean
+  /** 这一轮的轮次 id（WORK-036）。反馈靠它挂到具体一轮上；采集关闭时为 null。 */
+  traceId?: string | null
+  /** 本次会话里已提交的评价（WORK-036）。**只在内存里**，刷新后不保留。 */
+  feedback?: { rating: 'up' | 'down'; reason?: string | null }
   /** 落库时间。**当次流式产生的消息没有它**（那时还没落库）；从服务端读回来的历史消息有。 */
   createdAt?: string | null
 }
@@ -154,6 +158,8 @@ export interface ChatEvent {
   message?: string
   usage?: TokenUsage | null
   empty?: boolean
+  /** `done` 的这一轮标识（WORK-036）；采集关闭时为 null。反馈靠它挂到具体一轮上。 */
+  traceId?: string | null
   /** 助手提出的一条**待确认**笔记草稿。落库要等用户点击。 */
   draft?: { title: string; body: string }
 }

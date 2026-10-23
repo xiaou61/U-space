@@ -52,6 +52,17 @@ public class TelemetryProperties {
      */
     private int payloadMaxBytes = 1_048_576;
 
+    /**
+     * 积分对账的异常阈值（WORK-036）：记录合计与流水净扣的差值绝对值超过它就标异常。
+     *
+     * <p>默认 10 而不是 0：缓存命中不计费、失败轮次不扣分、价目表变更都会造成小幅差异。
+     * 阈值设 0 会让对账页每天都红，而"天天报警"的页面等于没有页面。
+     */
+    private int reconcileThreshold = 10;
+
+    /** 分桶与"按天"的口径。与速递的"今天"一致；用 UTC 会让界面上的一天从早上 8 点开始。 */
+    private String zone = "Asia/Shanghai";
+
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public double getSampling() { return sampling; }
@@ -70,4 +81,17 @@ public class TelemetryProperties {
     public void setPayloadRetentionDays(int payloadRetentionDays) { this.payloadRetentionDays = payloadRetentionDays; }
     public int getPayloadMaxBytes() { return payloadMaxBytes; }
     public void setPayloadMaxBytes(int payloadMaxBytes) { this.payloadMaxBytes = payloadMaxBytes; }
+    public int getReconcileThreshold() { return reconcileThreshold; }
+    public void setReconcileThreshold(int reconcileThreshold) { this.reconcileThreshold = reconcileThreshold; }
+    public String getZone() { return zone; }
+    public void setZone(String zone) { this.zone = zone; }
+
+    /** 解析后的 zone；配错时退回系统默认，**不让一个拼错的时区把整个统计接口变成 500**。 */
+    public java.time.ZoneId zoneId() {
+        try {
+            return java.time.ZoneId.of(zone);
+        } catch (RuntimeException bad) {
+            return java.time.ZoneId.systemDefault();
+        }
+    }
 }

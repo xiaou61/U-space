@@ -8,6 +8,11 @@ import {
   EmptyMedia,
   EmptyTitle,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Table,
   TableBody,
@@ -18,14 +23,17 @@ import {
 } from '@paideia/ui'
 import { useQuery } from '@tanstack/react-query'
 import { Activity } from 'lucide-react'
+import { useState } from 'react'
 
 import { api } from '../api'
+import { TrendChart } from '../components/TrendChart'
 
 /**
- * AI 调用概览（WORK-022 REQ-008）。
+ * AI 调用概览（WORK-022 REQ-008，WORK-036 A/B 组）。
  *
  * <p>回答五个问题：调了多少次、成功多少、慢不慢、花了多少、错在哪。
- * 数据只有 `ai_runs` 一张表——轮次行本身就带状态、耗时、用量与扣分。
+ * WORK-036 追加三件：**趋势**（按桶的序列）、**这份统计可不可信**（丢弃/采样）、
+ * **缓存省了多少与名义成本**。
  *
  * <p>**分位数在服务端算**（窗口函数），这里不做任何统计——前端只负责显示。
  */
@@ -54,11 +62,50 @@ interface Overview {
   ttftP95: number | null
   inputTokens: number
   outputTokens: number
+  cacheReadTokens: number
   credits: number
+  nominalCredits: number
+  cacheSavedRatio: number
+  sampling: number
   byKind: CountBy[]
   byModel: CountBy[]
   errorTypes: CountBy[]
   tools: CountBy[]
+}
+
+interface SeriesPoint {
+  at: string
+  total: number
+  ok: number
+  failed: number
+  timeout: number
+  durationP50: number | null
+  durationP95: number | null
+  ttftP50: number | null
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  credits: number
+}
+
+interface Series {
+  from: string
+  to: string
+  clamped: boolean
+  bucket: 'hour' | 'day'
+  zone: string
+  sampling: number
+  points: SeriesPoint[]
+}
+
+interface Health {
+  enabled: boolean
+  sampling: number
+  queueDepth: number
+  queueCapacity: number
+  dropped: number
+  writeFailures: number
+  lastSuccessAt: string | null
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -91,25 +138,63 @@ function num(value: number): string {
   return value.toLocaleString('zh-CN')
 }
 
-const fetchOverview = (days: number) => {
+function ratio(value: number): string {
+  return `${(value * 100).toFixed(1)}%`
+}
+
+const WINDOWS = [
+  { value: '24h', label: '近 24 小时', hours: 24 },
+  { value: '7d', label: '近 7 天', hours: 24 * 7 },
+  { value: '30d', label: '近 30 天', hours: 24 * 30 },
+] as const
+
+const QUERY_KINDS = [
+  { value: '', label: '全部场景' },
+  ...Object.entries(KIND_LABEL).map(([value, label]) => ({ value, label })),
+]
+
+function windowParams(choice: string): string {
+  const chosen = WINDOWS.find((option) => option.value === choice) ?? WINDOWS[1]
   const to = new Date()
-  const from = new Date(to.getTime() - days * 24 * 3600 * 1000)
-  return api.requestEnvelope<Overview>(
-    `/api/v1/ai/admin/runs/overview?from=${from.toISOString()}&to=${to.toISOString()}`,
-  )
+  const from = new Date(to.getTime() - chosen.hours * 3600 * 1000)
+  return `from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`
 }
 
 export function AiRunsOverviewPage() {
-  const days = 7
-  const overview = useQuery({ queryKey: ['ai-runs-overview', days], queryFn: () => fetchOverview(days) })
+  const [window, setWindow] = useState<string>('7d')
+  const [kind, setKind] = useState('')
+  const filter = kind === '' ? '' : `&kind=${encodeURIComponent(kind)}`
+
+  const overview = useQuery({
+    queryKey: ['ai-runs-overview', window, kind],
+    queryFn: () => api.requestEnvelope<Overview>(
+      `/api/v1/ai/admin/runs/overview?${windowParams(window)}${filter}`,
+    ),
+  })
+  const series = useQuery({
+    queryKey: ['ai-runs-series', window, kind],
+    queryFn: () => api.requestEnvelope<Series>(
+      `/api/v1/ai/admin/runs/series?${windowParams(window)}${filter}`,
+    ),
+  })
+  const health = useQuery({
+    queryKey: ['ai-runs-health'],
+    queryFn: () => api.requestEnvelope<Health>('/api/v1/ai/admin/runs/health'),
+    // 队列积压答的是"现在有没有在丢"，隔太久才看一次就失去意义
+    refetchInterval: 60_000,
+  })
+
   const data = overview.data
+  const terminal = data === undefined
+    ? 0
+    : data.byStatus.ok + data.byStatus.failed + data.byStatus.timeout
+      + data.byStatus.cancelled + data.byStatus.interrupted
 
   const cards = [
     { label: '调用次数', value: data === undefined ? '—' : num(data.total), testId: 'runs-total' },
     {
       label: '成功率',
-      value: data === undefined ? '—' : percent(data.successRate, data.byStatus.ok + data.byStatus.failed
-        + data.byStatus.timeout + data.byStatus.cancelled + data.byStatus.interrupted),
+      value: data === undefined ? '—' : percent(data.successRate, terminal),
       testId: 'runs-success-rate',
     },
     { label: '耗时 p50', value: data === undefined ? '—' : ms(data.durationP50), testId: 'runs-p50' },
@@ -122,12 +207,77 @@ export function AiRunsOverviewPage() {
     },
   ]
 
+  const droppedNow = (health.data?.dropped ?? 0) > 0 || (health.data?.writeFailures ?? 0) > 0
+  const sampling = data?.sampling ?? health.data?.sampling ?? 1
+  const points = series.data?.points ?? []
+
   return (
     <div className="space-y-4">
       <PageHeader
         title="AI 调用"
-        description="近 7 天的调用情况。每次 AI 调用都会留下一行记录，步骤级明细可到「调用明细」下钻。"
+        description="每次 AI 调用都会留下一行记录，步骤级明细可到「调用明细」下钻。"
       />
+
+      {droppedNow ? (
+        <Card className="border-destructive/50">
+          <CardContent className="py-3 text-xs" data-testid="runs-health-alert">
+            <span className="text-destructive font-medium">以下统计不完整。</span>{' '}
+            采集队列累计丢弃 {num(health.data?.dropped ?? 0)} 条、写失败{' '}
+            {num(health.data?.writeFailures ?? 0)} 条。队列满时会丢数据以保证回答不被拖慢——
+            这是设计如此，但意味着这里的数字比实际少。
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {sampling < 1 ? (
+        <Card>
+          <CardContent className="py-3 text-xs" data-testid="runs-sampling-hint">
+            当前采样率 <span className="tabular-nums">{ratio(sampling)}</span>：
+            成功率按采样后的数据计算，而失败轮次全量保留，因此这个值会系统性偏低。
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardContent className="flex flex-wrap items-end gap-3 py-3">
+          <label className="space-y-1 text-xs">
+            <span className="text-muted-foreground block">时间区间</span>
+            <Select
+              items={WINDOWS.map((option) => ({ value: option.value, label: option.label }))}
+              value={window}
+              onValueChange={(value) => { setWindow(value as string) }}
+            >
+              <SelectTrigger size="sm" className="w-32" data-testid="overview-window">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WINDOWS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="space-y-1 text-xs">
+            <span className="text-muted-foreground block">场景</span>
+            <Select items={QUERY_KINDS} value={kind} onValueChange={(value) => { setKind(value as string) }}>
+              <SelectTrigger size="sm" className="w-36" data-testid="overview-kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {QUERY_KINDS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          {health.data === undefined ? null : (
+            <span className="text-muted-foreground ml-auto text-xs" data-testid="runs-health-inline">
+              队列 {health.data.queueDepth} / {num(health.data.queueCapacity)}
+              {health.data.enabled ? '' : '（采集已关闭）'}
+            </span>
+          )}
+        </CardContent>
+      </Card>
 
       {overview.isLoading ? <Spinner /> : null}
 
@@ -174,6 +324,33 @@ export function AiRunsOverviewPage() {
             </Card>
           ) : (
             <>
+              <Card data-testid="runs-trend">
+                <CardContent className="space-y-4 py-4">
+                  <h2 className="text-sm font-medium">
+                    趋势（{series.data?.bucket === 'hour' ? '按小时' : '按天'}）
+                  </h2>
+                  <TrendChart
+                    title="调用次数"
+                    testId="runs-trend-total"
+                    points={points.map((point) => ({ at: point.at, value: point.total }))}
+                    format={(value) => (value === null ? '—' : num(value))}
+                  />
+                  <TrendChart
+                    title="耗时 p95"
+                    testId="runs-trend-p95"
+                    points={points.map((point) => ({ at: point.at, value: point.durationP95 }))}
+                    format={ms}
+                  />
+                  <TrendChart
+                    title="失败数"
+                    tone="danger"
+                    testId="runs-trend-failed"
+                    points={points.map((point) => ({ at: point.at, value: point.failed }))}
+                    format={(value) => (value === null ? '—' : num(value))}
+                  />
+                </CardContent>
+              </Card>
+
               <div className="grid gap-4 lg:grid-cols-2">
                 <RankCard title="按场景" rows={data.byKind} label={(name) => KIND_LABEL[name] ?? name}
                   testId="runs-by-kind" />
@@ -196,8 +373,16 @@ export function AiRunsOverviewPage() {
                     <Badge variant="secondary">中断 {num(data.byStatus.interrupted)}</Badge>
                     <Badge variant="secondary">进行中 {num(data.byStatus.running)}</Badge>
                   </div>
+                  <p className="text-muted-foreground mt-3 text-xs" data-testid="runs-token-line">
+                    输入 {num(data.inputTokens)} / 输出 {num(data.outputTokens)} / 缓存命中{' '}
+                    {num(data.cacheReadTokens)} tokens，缓存节省{' '}
+                    <span className="tabular-nums">{ratio(data.cacheSavedRatio)}</span>。
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs" data-testid="runs-cost-line">
+                    实扣 {num(data.credits)} 分，按当前价目表应扣 {num(data.nominalCredits)} 分。
+                    两者不等通常来自缓存命中不计费，或时间窗内改过价目表——这不是计费错误。
+                  </p>
                   <p className="text-muted-foreground mt-3 text-xs">
-                    输入 {num(data.inputTokens)} / 输出 {num(data.outputTokens)} tokens。
                     「进行中」是仍在跑的轮次；长期停在这里说明有任务卡住或被进程以外的原因中断。
                   </p>
                 </CardContent>

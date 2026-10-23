@@ -86,6 +86,7 @@ public interface AiRunMapper {
             <if test="status != null">AND status = #{status}</if>
             <if test="userId != null">AND user_id = #{userId}</if>
             <if test="model != null">AND model = #{model}</if>
+            <if test="tracePrefix != null">AND trace_id LIKE CONCAT(#{tracePrefix}, '%')</if>
             ORDER BY started_at DESC, id DESC
             LIMIT #{limit} OFFSET #{offset}
             </script>
@@ -93,6 +94,7 @@ public interface AiRunMapper {
     List<AiRunRow> page(@Param("from") Instant from, @Param("to") Instant to,
                         @Param("kind") String kind, @Param("status") String status,
                         @Param("userId") Long userId, @Param("model") String model,
+                        @Param("tracePrefix") String tracePrefix,
                         @Param("limit") int limit, @Param("offset") long offset);
 
     @Select("""
@@ -103,11 +105,13 @@ public interface AiRunMapper {
             <if test="status != null">AND status = #{status}</if>
             <if test="userId != null">AND user_id = #{userId}</if>
             <if test="model != null">AND model = #{model}</if>
+            <if test="tracePrefix != null">AND trace_id LIKE CONCAT(#{tracePrefix}, '%')</if>
             </script>
             """)
     long countPage(@Param("from") Instant from, @Param("to") Instant to,
                    @Param("kind") String kind, @Param("status") String status,
-                   @Param("userId") Long userId, @Param("model") String model);
+                   @Param("userId") Long userId, @Param("model") String model,
+                   @Param("tracePrefix") String tracePrefix);
 
     /** 保留期清理：先取一批 trace（分批删，不锁全表）。 */
     @Select("""

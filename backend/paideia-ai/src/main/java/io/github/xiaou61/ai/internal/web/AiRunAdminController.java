@@ -34,17 +34,51 @@ class AiRunAdminController {
         this.service = service;
     }
 
-    /** 概览：调用量、成功率、分位耗时、token、扣分、分布与排行。 */
+    /** 概览：调用量、成功率、分位耗时、token、扣分、分布与排行。四个筛选与明细页同一套（WORK-036）。 */
     @GetMapping("/overview")
     ApiResponse<AiRunAdminService.Overview> overview(
             @RequestParam(name = "from", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(name = "to", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-        return ApiResponse.ok(service.overview(from, to));
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(name = "kind", required = false) String kind,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "model", required = false) String model,
+            @RequestParam(name = "userId", required = false) Long userId) {
+        return ApiResponse.ok(service.overview(from, to, kind, status, model, userId));
     }
 
-    /** 明细列表：按时间窗 + 场景 + 状态 + 用户 + 模型筛选，分页。 */
+    /** 按时间分桶的序列（WORK-036 REQ-001）。空桶补零，不跳段。 */
+    @GetMapping("/series")
+    ApiResponse<AiRunAdminService.Series> series(
+            @RequestParam(name = "from", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(name = "to", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(name = "kind", required = false) String kind,
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "model", required = false) String model,
+            @RequestParam(name = "userId", required = false) Long userId) {
+        return ApiResponse.ok(service.series(from, to, kind, status, model, userId));
+    }
+
+    /** 采集健康（WORK-036 REQ-005）：队列积压、丢弃、写失败、最近成功时刻、采样率。 */
+    @GetMapping("/health")
+    ApiResponse<AiRunAdminService.Health> health() {
+        return ApiResponse.ok(service.health());
+    }
+
+    /** 积分对账（WORK-036 REQ-007）：按天对比记录合计与流水净扣。 */
+    @GetMapping("/reconcile")
+    ApiResponse<AiRunAdminService.Reconcile> reconcile(
+            @RequestParam(name = "from", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(name = "to", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        return ApiResponse.ok(service.reconcile(from, to));
+    }
+
+    /** 明细列表：时间窗 + 场景 + 状态 + 用户 + 模型，另可给 traceId 前缀，分页。 */
     @GetMapping
     ApiResponse<PageResult<AiRunAdminService.RunSummary>> page(
             @RequestParam(name = "from", required = false)
@@ -55,9 +89,10 @@ class AiRunAdminController {
             @RequestParam(name = "status", required = false) String status,
             @RequestParam(name = "userId", required = false) Long userId,
             @RequestParam(name = "model", required = false) String model,
+            @RequestParam(name = "traceId", required = false) String traceId,
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
-        return ApiResponse.ok(service.page(from, to, kind, status, userId, model,
+        return ApiResponse.ok(service.page(from, to, kind, status, userId, model, traceId,
                 PageQuery.of(page, size, null)));
     }
 
