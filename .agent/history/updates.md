@@ -5812,3 +5812,22 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：`paideia-sandbox` **59 passed**（新增 RunSlotTest 6 条，含"全局满时用户标记被回滚"
   与"重复关闭不会多还槽"两条容易漏的）。
 - 本地提交：见下一笔
+
+## 2026-10-23 11:58:00 +08:00 · WORK-035 T-14 完成
+
+- 类型：implementation
+- 变更：
+  - `load-challenge.ts`：从条目正文按 `blockKey` 取 SQL 关卡题（只认 `sql-write`/`sql-fix`）。
+  - 工作台支持 `/practice/sql?entryId=&blockKey=`：载入题面与起始 SQL，切到它能用的数据集，
+    顶部横幅写明"这一题在关卡里是要计分的"。
+- 决策：
+  - **在客户端解析而不是新开后端接口**：题面就是条目正文里的围栏块，后端已有"取条目正文"的接口。
+    再开一个"按 blockKey 取题"等于把同一份内容解析两次，两处迟早不一致。
+  - **只在首次载入时填编辑器**：之后用户改了内容，不该因为后台重新拉了一次条目就冲掉。
+  - **优先选公开数据集**：隐藏集不该出现在选择器里，用户也不该手动选它。
+  - **取不到就返回 null，不抛**：调用方是"从关卡跳过来试一下"，拿不到题退回普通工作台即可。
+- 验证：
+  - `@paideia/sql-workbench` **44 passed**（新增 load-challenge 7 条，含坏 JSON 不抛、
+    非 SQL 题型返回 null、多块只取匹配的）。
+  - 构建 + 懒加载守卫通过；e2e `sql-practice` **4 passed**。
+- 本地提交：见下一笔

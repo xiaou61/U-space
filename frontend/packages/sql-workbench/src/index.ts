@@ -26,3 +26,4 @@ export {
 } from './dataset-schema'
 export { ErDiagram, SchemaSidebar } from './schema-views'
 export { ResultChart, numericColumns, toNumber } from './result-chart'
+export { findSqlChallenge, type LoadedChallenge } from './load-challenge'

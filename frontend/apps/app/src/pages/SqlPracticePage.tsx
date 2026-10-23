@@ -3,6 +3,7 @@ import { useAssistantContext } from '@paideia/assistant'
 // 只引 schema 子入口：它是纯函数、不含 CodeMirror，静态引入不会把编辑器带进主 chunk。
 // 编辑器/结果表/执行计划/侧栏都走下面的 lazy()。
 import { parseSchema, toCompletionSchema } from '@paideia/sql-workbench/schema'
+import { useSearchParams } from 'react-router'
 import {
   Alert,
   AlertDescription,
@@ -14,7 +15,7 @@ import {
 } from '@paideia/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Play, Search } from 'lucide-react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -74,6 +75,10 @@ export function SqlPracticePage() {
   const [dataset, setDataset] = useState<string | null>(null)
 
   const { setPageContext, pendingSql, clearPendingSql, ask } = useAssistantContext()
+  const [searchParams] = useSearchParams()
+  // 从关卡跳过来（WORK-035 T-14）：带 entryId + blockKey 就在工作台里打开那道题
+  const loadEntryId = Number(searchParams.get('entryId') ?? '')
+  const loadBlockKey = searchParams.get('blockKey') ?? ''
 
   const status = useQuery({
     queryKey: ['sandbox-status'],
@@ -87,6 +92,19 @@ export function SqlPracticePage() {
     status.data?.sqlDailyLimit === undefined || status.data?.sqlUsedToday === undefined
       ? null
       : status.data.sqlDailyLimit - status.data.sqlUsedToday
+
+  // 从关卡跳过来时载入那道题（T-14）：只在带参数时请求，普通访问不产生额外调用
+  const challengeQuery = useQuery({
+    queryKey: ['sql-challenge', loadEntryId, loadBlockKey],
+    queryFn: async () => {
+      const entry = await knowledge.entry(loadEntryId)
+      const { findSqlChallenge } = await import('@paideia/sql-workbench')
+      return findSqlChallenge(entry.body, loadBlockKey)
+    },
+    enabled: Number.isFinite(loadEntryId) && loadEntryId > 0 && loadBlockKey !== '',
+    staleTime: Infinity,
+  })
+  const challenge = challengeQuery.data ?? null
 
   // 结构快照只读、不占配额，所以选中数据集就拉一次；切数据集会重新拉。
   const schemaQuery = useQuery({
@@ -126,6 +144,26 @@ export function SqlPracticePage() {
     },
     onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
   })
+
+  /**
+   * 题目载入后填进编辑器、切到它能用的数据集（WORK-035 T-14）。
+   *
+   * <p>只在**首次**载入时填：之后用户改了编辑器，不该因为后台重新拉了一次条目
+   * 就把他写的东西冲掉。
+   */
+  const challengeApplied = useRef<string | null>(null)
+  useEffect(() => {
+    if (challenge === null || challengeApplied.current === challenge.id) {
+      return
+    }
+    challengeApplied.current = challenge.id
+    setCode(challenge.starter)
+    // 优先用公开数据集：隐藏集不该出现在选择器里，用户也不该手动选它
+    const pick = challenge.dataset.find((key) => key !== 'orders-hidden-a') ?? challenge.dataset[0]
+    if (pick !== undefined) {
+      setDataset(pick)
+    }
+  }, [challenge])
 
   /**
    * 上报页面场景给助手（WORK-035 T-15）。
@@ -189,6 +227,16 @@ export function SqlPracticePage() {
           </AlertDescription>
         </Alert>
       ) : null}
+
+      {challenge === null ? null : (
+        <Alert data-testid="sql-challenge-banner">
+          <AlertTitle>正在试做关卡题：{challenge.title}</AlertTitle>
+          <AlertDescription>
+            {challenge.goal === undefined ? null : <span>考的是：{challenge.goal}。 </span>}
+            <strong>这一题在关卡里是要计分的</strong>；在这里跑不会计入，随便改随便试。
+          </AlertDescription>
+        </Alert>
+      )}
 
       {sqlReady ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
