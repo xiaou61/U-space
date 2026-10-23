@@ -5895,3 +5895,19 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-23 09:58:00 +08:00 · WORK-034 开启：S1 前两件（排序纯函数、到期列表接口）
+
+- 类型：implementation
+- 变更：
+  - TASK-001：`frontend/packages/knowledge/src/home-ranking.ts` 首页排序纯函数
+    （到期 > 薄弱 > 进行中 > 身份偏好 > 最新；零信号保持输入顺序），3 条单测。
+  - TASK-002：`GET /api/v1/learning/reviews` + `LearningReviewService/Mapper`，
+    只返回到期项、按到期日升序、带第一个概念名；集成测试 2 条。
+  - `ApiWalkthroughTest` 覆盖新端点并更新接口结构快照。
+- 验证：
+  - 知识包 vitest：**51 passed / 7 files**。
+  - 后端全量：**280 运行 / 0 失败 / 4 跳过**。
+- 说明：S1 的页面（TASK-003）与首页入口（TASK-004）尚未做，接口暂时只有测试消费。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-034-learning-loop`

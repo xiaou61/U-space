@@ -69,6 +69,7 @@
   "GET /api/v1/learning/mastery" : [ "code: number", "data[]: empty", "message: string", "traceId: string" ],
   "GET /api/v1/learning/practice/next" : [ "code: number", "data: null", "message: string", "traceId: string" ],
   "GET /api/v1/learning/progress" : [ "code: number", "data[]: empty", "message: string", "traceId: string" ],
+  "GET /api/v1/learning/reviews" : [ "code: number", "data.items[]: empty", "data.total: number", "message: string", "traceId: string" ],
   "GET /api/v1/me" : [ "code: number", "data.role: string", "data.subject: string", "message: string", "traceId: string" ],
   "GET /api/v1/notes" : [ "code: number", "data[].entryId: null", "data[].excerpt: string", "data[].id: number", "data[].title: string", "data[].updatedAt: string", "message: string", "traceId: string" ],
   "GET /api/v1/notes/admin/reports" : [ "code: number", "data[].createdAt: string", "data[].id: number", "data[].noteTitle: string", "data[].reason: string", "data[].shareId: string", "data[].status: string", "message: string", "traceId: string" ],

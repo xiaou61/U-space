@@ -52,7 +52,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 首页排序纯函数
+### TASK-001 | done | 首页排序纯函数
 
 - 对应：`REQ-006`、`AC-006`
 - 依赖：无
@@ -65,7 +65,7 @@ approver_role: CTO
   3. 跑 `pnpm --filter @paideia/knowledge test`，全绿。
 - 验证：`cd frontend && pnpm --filter @paideia/knowledge test` → 期望新增用例全部通过，旧用例不回归。
 
-### TASK-002 | pending | 到期列表接口
+### TASK-002 | done | 到期列表接口
 
 - 对应：`REQ-002`、`AC-002`
 - 依赖：无
@@ -184,7 +184,7 @@ approver_role: CTO
   3. 修布局直到通过。
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/layout.mobile.spec.ts` → 全绿。
 
-### TASK-011 | pending | 验收报告
+### TASK-011 | in_progress | 验收报告
 
 - 对应：全部 `AC-*`
 - 依赖：TASK-001..010
