@@ -5803,3 +5803,13 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-23 16:40:05 +0800 · WORK-037 · 登记业务验收 .agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+
+- 类型：decision
+- 变更：登记业务验收：.agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+- 验证：回读 frontmatter：accepted_by=xiaou61
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行

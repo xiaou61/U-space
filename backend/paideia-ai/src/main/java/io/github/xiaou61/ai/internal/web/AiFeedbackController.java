@@ -3,15 +3,9 @@ package io.github.xiaou61.ai.internal.web;
 import io.github.xiaou61.ai.internal.feedback.AiFeedbackService;
 import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
-import io.github.xiaou61.platform.PageQuery;
-import io.github.xiaou61.platform.PageResult;
-import java.time.Instant;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -21,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
  * 学习者要用。用户 id 从令牌取，**请求体里不接受 userId**——与记忆控制面同一纪律，
  * 传不了别人的评价。
  *
- * <p>读取端点在 {@code /admin/feedback}，由既有的 {@code hasRole("ADMIN")} 兜住。
+ * <p>读取端点在 {@link AiFeedbackAdminController}，**单独一个控制器**：访问级别只能声明在
+ * 一处（{@code ApiSurfaceTest} 会拦），而它要的是 ADMIN、这个控制器是 AUTHENTICATED。
  */
 @ApiAccess(ApiAccess.Access.AUTHENTICATED)
 @RestController
@@ -42,22 +37,6 @@ class AiFeedbackController {
         service.submit(userId, body.conversationId(), body.messageId(), body.traceId(),
                 body.kind(), body.rating(), body.reason());
         return ApiResponse.ok(null);
-    }
-
-    /** 管理端列表。**走 {@code /feedback/admin/**}**：与知识库/速递同一约定（`<模块>/admin`）。 */
-    @GetMapping("/admin")
-    ApiResponse<PageResult<AiFeedbackService.FeedbackView>> page(
-            @RequestParam(name = "from", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(name = "to", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(name = "rating", required = false) String rating,
-            @RequestParam(name = "reason", required = false) String reason,
-            @RequestParam(name = "kind", required = false) String kind,
-            @RequestParam(name = "page", required = false) Integer page,
-            @RequestParam(name = "size", required = false) Integer size) {
-        return ApiResponse.ok(service.page(from, to, rating, reason, kind,
-                PageQuery.of(page, size, null)));
     }
 
     record SubmitRequest(Long conversationId, Long messageId, String traceId,

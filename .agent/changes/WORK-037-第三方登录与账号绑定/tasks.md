@@ -49,7 +49,7 @@ approver_role: CTO
 
 ## 任务
 
-### TASK-001 | pending | 迁移、可空性与无密码账号拒绝
+### TASK-001 | done | 迁移、可空性与无密码账号拒绝
 
 - 对应：`REQ-006`、`AC-006`（前置）、`AC-008`
 - 依赖：无
@@ -64,7 +64,7 @@ approver_role: CTO
   5. 反向验证：去掉第 3 步的分支，该用例必须变红
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=AccountAuthIntegrationTest,MigrationVersionFormatTest,MigrationSeedOverlapTest -Dsurefire.failIfNoSpecifiedTests=false test` → 全绿且 Skipped 为 0
 
-### TASK-002 | pending | provider 枚举与配置
+### TASK-002 | done | provider 枚举与配置
 
 - 对应：`REQ-009`、`AC-009`
 - 依赖：无
@@ -78,7 +78,7 @@ approver_role: CTO
   5. 在 `application-local.yml.example` 补占位
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-account test -Dtest=OAuthProviderTest` → 断言两个平台的授权 URL 含正确 host、scope、state
 
-### TASK-003 | pending | state 与 handoff 一次性存储
+### TASK-003 | done | state 与 handoff 一次性存储
 
 - 对应：`REQ-007`、`AC-007`
 - 依赖：TASK-002
@@ -92,7 +92,7 @@ approver_role: CTO
   5. 三条单测：重放、过期、用途不符
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-account test -Dtest='OAuthStateStoreTest,HandoffStoreTest'` → 5 passed
 
-### TASK-004 | pending | 授权码客户端与自动建号
+### TASK-004 | done | 授权码客户端与自动建号
 
 - 对应：`REQ-001`、`REQ-002`、`REQ-007`、`AC-001`、`AC-002`、`AC-003`
 - 依赖：TASK-001、TASK-002、TASK-003
@@ -107,7 +107,7 @@ approver_role: CTO
   6. 单测 + 集成测试
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=OAuthLoginIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` → 覆盖 AC-001/002/003
 
-### TASK-005 | pending | 登录/回调/交换端点
+### TASK-005 | done | 登录/回调/交换端点
 
 - 对应：`REQ-001`、`REQ-003`、`REQ-004`、`REQ-005`、`AC-004`、`AC-005`
 - 依赖：TASK-003、TASK-004
@@ -121,7 +121,7 @@ approver_role: CTO
   6. 绑定冲突用与"平台出错"同一文案
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest='OAuthLoginIntegrationTest,OAuthIdentityIntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false test`
 
-### TASK-006 | pending | 无密码用户注销
+### TASK-006 | done | 无密码用户注销
 
 - 对应：`REQ-006`、`AC-006`
 - 依赖：TASK-001
@@ -133,7 +133,7 @@ approver_role: CTO
   3. 级联里 `user_identities` 走 `ON DELETE CASCADE`，不额外写监听器
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=AccountDeletionCascadeIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`
 
-### TASK-007 | pending | 前端登录页与回调页
+### TASK-007 | done | 前端登录页与回调页
 
 - 对应：`REQ-001`、`REQ-007`、`AC-001`、`AC-002`
 - 依赖：TASK-005
@@ -147,7 +147,7 @@ approver_role: CTO
   5. e2e：`oauth.spec.ts` 三条（按钮可见、回调成功、回调失败）
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/oauth.spec.ts`
 
-### TASK-008 | pending | 账号与安全页
+### TASK-008 | done | 账号与安全页
 
 - 对应：`REQ-003`、`REQ-004`、`REQ-005`、`AC-004`、`AC-005`
 - 依赖：TASK-005、TASK-007
@@ -159,7 +159,7 @@ approver_role: CTO
   4. e2e 断言
 - 验证：同上 e2e 文件
 
-### TASK-009 | pending | 桌面协议接管
+### TASK-009 | done | 桌面协议接管
 
 - 对应：`REQ-010`、`AC-011`
 - 依赖：TASK-007
@@ -172,7 +172,7 @@ approver_role: CTO
   5. 后端补一个极简静态中转页（`/oauth/desktop`），把 `handoff` 转成 `paideia://`
 - 验证：手工在桌面产物里点 GitHub 登录 → 浏览器授权 → 应用被唤起并已登录
 
-### TASK-010 | pending | 管理端邮箱列与契约快照
+### TASK-010 | done | 管理端邮箱列与契约快照
 
 - 对应：`AC-010`、`AC-008`
 - 依赖：TASK-001、TASK-005
@@ -183,7 +183,7 @@ approver_role: CTO
   3. review 快照 diff，确认只有 `user.email` 可空 + 新端点
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=ApiWalkthroughTest,ApiSurfaceTest -Dsurefire.failIfNoSpecifiedTests=false test` → 绿
 
-### TASK-011 | pending | 全量验证与报告
+### TASK-011 | done | 全量验证与报告
 
 - 对应：全部 AC
 - 依赖：TASK-001..TASK-010
