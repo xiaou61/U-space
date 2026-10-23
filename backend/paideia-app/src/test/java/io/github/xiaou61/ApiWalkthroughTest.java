@@ -303,6 +303,12 @@ class ApiWalkthroughTest {
         call("逐题作答（题目不存在 → 400）", "POST", "/api/v1/learning/attempts", bearer,
                 json(Map.of("entryId", entryId, "blockKey", "smoke-missing",
                         "questionKey", "smoke-missing#0", "choice", 0)), 400);
+        call("练习选题", "GET", "/api/v1/learning/practice/next?conceptIds=" + conceptId,
+                bearer, null);
+        call("AI 概念候选", "POST",
+                "/api/v1/learning/admin/question-concepts/suggest-ai?entryId=" + entryId,
+                adminToken(), null);
+        call("评估导出", "GET", "/api/v1/learning/admin/evaluation/export", adminToken(), null);
 
         // ---- 学习轨道（WORK-024）----
         // 轨道只有一个写入口：导入脚本用它 upsert。自查也走它，然后读列表与地图。

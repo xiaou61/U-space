@@ -5813,3 +5813,23 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：be3765b（架构图）/ 535a887（死表）/ 04c0973（课程基线）及本笔
 - 远端推送：未执行
 
+## 2026-10-23 09:25:00 +08:00 · WORK-033 第二轮：选题、复习联动、AI 打标、评估导出
+
+- 类型：implementation
+- 变更：
+  - REQ-008 选题：`PracticeSelector` 纯函数（信息函数 + 未校准探索加分），
+    `GET /api/v1/learning/practice/next?conceptIds=`。
+  - REQ-009 复习联动：答错时把该条目的 `review_stage` 归零、`review_due_at` 设为明天
+    （只影响已有学习记录的条目）。
+  - REQ-010 AI 打标：`QuestionTaggingPort`（knowledge 定义、ai 实现），一次调用处理一篇条目，
+    新增 `RunKind.QUESTION_TAGGING` 记账；`POST /api/v1/learning/admin/question-concepts/suggest-ai`
+    **只返回候选不落库**，集合外的 id 直接丢弃。
+  - REQ-012 评估导出：`GET /api/v1/learning/admin/evaluation/export`（最近作答明细，上限 5000）。
+  - T-05 成功路径补齐：管理端题目清单、候选、覆盖标注（重复 PUT 仍只有一行）。
+- 验证：
+  - 新增 `PracticeSelectorTest` 3 条、`QuestionTaggingServiceTest` 3 条；
+    `QuestionAttemptIntegrationTest` 扩到 5 条（复习排期、管理端标注、选题、导出）。
+  - 后端全量：**278 运行 / 0 失败 / 4 跳过**；`ApiWalkthroughTest` 覆盖三个新端点并更新结构快照。
+- 仍未做：T-08 的逐题上报 e2e；AC-004/006 需要真实作答数据。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-phase2`
