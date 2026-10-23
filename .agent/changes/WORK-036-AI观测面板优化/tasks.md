@@ -85,7 +85,7 @@ updated: 2026-10-23
 - `POST /api/v1/ai/feedback`（authenticated，不接受 `userId`）。
 - **验收**：AC-010；非法枚举返回 400；`up` 传 reason 时 reason 被丢弃而不是报错。
 
-### TASK-012 | done 事件带 traceId
+### TASK-012 | done | done 事件带 traceId
 
 - `RunScope` 加 `String traceId()`；`DefaultRunScope` 返回真实 id，`Noop` 返回 `null`。
 - `AssistantConversationController.onCompleted` 的 done 负载加 `traceId`。
