@@ -2,7 +2,7 @@
 artifact: requirements
 work_id: WORK-036
 work: AI 观测面板优化
-status: draft
+status: approved
 mode: strict
 mode_reason: 新增一张用户反馈表与迁移（数据边界）；扩展现有管理端只读接口的入参与返回结构（公共接口）；采集端口新增子步骤能力（公共行为）；学习者端新增用户可见交互；注销级联表清单变更
 workflow: full
@@ -10,6 +10,9 @@ depends_on: [WORK-022]
 related_to: [WORK-028, WORK-030, WORK-006, WORK-009]
 created: 2026-10-23
 updated: 2026-10-23
+approved_by: xiaou61
+approved_at: 2026-10-23 14:34:03 +0800
+approver_role: CTO
 ---
 
 # AI 观测面板优化需求
