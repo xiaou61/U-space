@@ -184,7 +184,7 @@ approver_role: CTO
   3. 修布局直到通过。
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/layout.mobile.spec.ts` → 全绿。
 
-### TASK-011 | in_progress | 验收报告
+### TASK-011 | done | 验收报告
 
 - 对应：全部 `AC-*`
 - 依赖：TASK-001..010
