@@ -6300,3 +6300,22 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：线上 health=200、登录页 200、`/api/v1/auth/oauth/providers` 返回空列表（未配凭据）、
   回调带无效 state 时 302 到 `/#/login?oauthError=disabled`。
 - 未做：线上 e2e（需要线上账号口令，本次没有；不猜口令）。
+
+## 2026-10-23 18:05 +0800 · WORK-037 · 线上 e2e 验收（用户给出线上口令后）
+
+- 类型：verification
+- 学习者端全量：**89 passed / 0 failed / 29 skipped**（`E2E_BASE_URL=http://36.212.5.130:8081`，
+  账号 `e2e-learner` / `admin`，口令由用户内联给出、未落任何文件）。
+  29 条跳过全部是"只在本地跑"（依赖 devdata 种子内容）或"会真调上游并扣费"。
+- 管理端全量：**29 passed / 0 failed**。
+- WORK-037 相关 7 条：全过（含账号与安全页、回调页四条失败路径）。
+- **抓到并修掉一个线上真缺陷**：`/practice/sql` 整页崩（React error #31）。
+  WORK-035 把 `/sandbox/status` 的 `datasets` 从 `string[]` 改成 `{key,name,source}[]`，
+  前端类型声明与渲染两处都没跟，TypeScript 因为类型也错所以没拦住。
+  修法：类型改对象数组、渲染显示 `option.name`、默认选中取 `[0]?.key`。
+  连带修 `sql-practice.spec.ts` 两处过期 mock（仍是字符串数组）。
+- 线上实测：SQL 沙箱**真的能跑**（`SELECT 1` 返回 resultset，2576ms）；
+  `/sandbox/datasets/orders-public/schema` 返回 200 与真实表结构。
+- **一处配置与代码不一致（不是缺陷但要知道）**：服务器 `application.yml` 写着
+  `sql-daily-limit: 20`，覆盖了代码默认值 500。线上实际是 20/天。
+- 本地提交：`886ec91`、`23ac6e8`；已推送 `886ec91..23ac6e8`。
