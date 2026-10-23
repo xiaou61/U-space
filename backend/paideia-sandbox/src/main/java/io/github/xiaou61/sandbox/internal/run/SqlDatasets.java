@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,11 +32,25 @@ public class SqlDatasets {
             "orders-public", "orders-public.sql",
             "orders-hidden-a", "orders-hidden-a.sql");
 
+    /**
+     * **不下发给客户端的** key。
+     *
+     * <p>隐藏集的用途是让"把公开集上的答案硬编码进去"失败。它一旦出现在选择器里，
+     * 用户选中跑一句 `SELECT *` 就拿到了全部数据，隐藏的意义当场消失——所以能力探测
+     * 只报 {@link #publicKeys()}，运行仍然认全部 key（题面本来就明文写着它）。
+     */
+    private static final Set<String> HIDDEN = Set.of("orders-hidden-a");
+
     private final Map<String, String> cache = new ConcurrentHashMap<>();
 
-    /** 已知的 key。给能力探测与校验用。 */
+    /** 已知的 key。给运行与校验用——**不要拿它给客户端渲染选择器**。 */
     public Set<String> keys() {
         return REGISTRY.keySet();
+    }
+
+    /** 可以下发给客户端的 key（不含隐藏集）。顺序固定，避免选择器每次刷新都换位置。 */
+    public List<String> publicKeys() {
+        return REGISTRY.keySet().stream().filter(key -> !HIDDEN.contains(key)).sorted().toList();
     }
 
     public boolean exists(String key) {

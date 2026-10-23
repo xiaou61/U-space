@@ -75,7 +75,9 @@ class SandboxController {
                 quota.usedToday(userId),
                 properties.getSqlDailyLimit(),
                 quota.usedToday(userId, "sql"),
-                List.copyOf(datasets.keys()),
+                // 只报**公开**数据集：隐藏集进了选择器，用户跑一句 SELECT * 就拿到内容，
+                // 隐藏当场失效。运行端点仍认全部 key（题面本来就明文写着它）。
+                datasets.publicKeys(),
                 ready ? null : runner.unavailableReason()));
     }
 
