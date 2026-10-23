@@ -41,8 +41,18 @@ public final class OAuthStateStore {
      *                               state 等于把 CSRF 防线关掉
      */
     public String issue(OAuthProvider provider, OAuthPurpose purpose, Long userId) {
+        return issue(provider, purpose, userId, false);
+    }
+
+    /**
+     * 同 {@link #issue(OAuthProvider, OAuthPurpose, Long)}，但记下"这是桌面壳发起的"。
+     *
+     * <p>桌面壳的页面来源是 {@code http://127.0.0.1:5310}，回调落在远端服务器上，
+     * 令牌必须经自定义协议送回应用，而不是留在浏览器里。
+     */
+    public String issue(OAuthProvider provider, OAuthPurpose purpose, Long userId, boolean desktop) {
         String state = randomToken();
-        if (!store.put(state, new OAuthState(provider, purpose, userId), TTL)) {
+        if (!store.put(state, new OAuthState(provider, purpose, userId, desktop), TTL)) {
             throw new IllegalStateException("第三方登录 state 存储已满，拒绝继续发起授权");
         }
         return state;

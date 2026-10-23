@@ -8,6 +8,8 @@
  * 端口固定（RendererServer.PORT），因为来源一变，后端就得跟着改白名单。
  */
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
+// 自定义协议的解析单独成文件：main.cjs 一被 require 就启动 Electron，那段逻辑需要单测
+const { PROTOCOL, handoffFromUrl } = require('./oauth-protocol.cjs')
 const http = require('node:http')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -174,15 +176,64 @@ function createWindow(cacheSnapshot) {
   window.loadURL(`${RENDERER_ORIGIN}/`).catch((error) => console.error('加载渲染页面失败：', error))
 }
 
+/**
+ * 单实例锁：第二次启动（比如协议唤起）不该再开一个窗口，而应把参数交给已在跑的那个实例。
+ *
+ * <p>Windows/Linux 把协议 URL 放在 argv 里，macOS 走 `open-url` 事件。两条都要接。
+ */
+const gotLock = app.requestSingleInstanceLock()
+
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const handoff = argv.map(handoffFromUrl).find((value) => value !== null) ?? null
+    const window = BrowserWindow.getAllWindows()[0]
+    if (window === undefined) {
+      return
+    }
+    if (window.isMinimized()) {
+      window.restore()
+    }
+    window.focus()
+    if (handoff !== null) {
+      window.webContents.send('oauth:handoff', handoff)
+    }
+  })
+}
+
+// macOS：协议唤起走这个事件，不进 argv
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  const handoff = handoffFromUrl(url)
+  const window = BrowserWindow.getAllWindows()[0]
+  if (handoff !== null && window !== undefined) {
+    window.focus()
+    window.webContents.send('oauth:handoff', handoff)
+  }
+})
+
 app.whenReady().then(async () => {
   try {
+    // 注册协议。开发期（electron .）注册的是本地 electron 的路径，安装包里由 nsis 写注册表；
+    // 两种都要，否则 `pnpm start` 下这条链路永远测不到。
+    app.setAsDefaultProtocolClient(PROTOCOL)
     if (!fs.existsSync(path.join(RENDERER_DIR, 'index.html'))) {
       throw new Error(`找不到渲染产物：${RENDERER_DIR}。请先执行 pnpm --filter @paideia/desktop build`)
     }
     const cache = createCacheStore()
     registerCacheIpc(cache)
     await startRendererServer()
-    createWindow(cache.snapshot())
+    const window = createWindow(cache.snapshot())
+
+    // 冷启动时用户是"点了协议链接但应用没开"：参数在本次启动的 argv 里。
+    // 等页面加载完再发，否则渲染进程还没挂监听。
+    const initialHandoff = process.argv.map(handoffFromUrl).find((value) => value !== null) ?? null
+    if (initialHandoff !== null) {
+      window.webContents.once('did-finish-load', () => {
+        window.webContents.send('oauth:handoff', initialHandoff)
+      })
+    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

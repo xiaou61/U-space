@@ -64,8 +64,12 @@ export interface AuthApi {
   captcha(): Promise<CaptchaChallenge>
   /** 可用的第三方平台；没有任何平台配置时返回空数组。 */
   oauthProviders(): Promise<{ providers: OAuthProviderView[] }>
-  /** 拿平台的授权页地址，调用方负责跳转（不是 fetch——那是要用户操作的页面）。 */
-  oauthStart(provider: string): Promise<{ authorizeUrl: string }>
+  /**
+   * 拿平台的授权页地址，调用方负责跳转（不是 fetch——那是要用户操作的页面）。
+   *
+   * @param desktop 桌面壳里发起时传 true：成功后回到应用，而不是留在浏览器
+   */
+  oauthStart(provider: string, desktop?: boolean): Promise<{ authorizeUrl: string }>
   /** 用回调页给的一次性握手码换令牌。 */
   oauthExchange(handoff: string): Promise<AuthTokens>
   oauthIdentities(): Promise<OAuthIdentities>
@@ -90,9 +94,9 @@ export function createAuthApi(client: ApiClient): AuthApi {
     oauthProviders: () =>
       client.requestEnvelope<{ providers: OAuthProviderView[] }>('/api/v1/auth/oauth/providers'),
 
-    oauthStart: (provider) =>
+    oauthStart: (provider, desktop) =>
       client.requestEnvelope<{ authorizeUrl: string }>(
-        `/api/v1/auth/oauth/${provider}/start`,
+        `/api/v1/auth/oauth/${provider}/start${desktop === true ? '?desktop=true' : ''}`,
         { method: 'POST' },
       ),
 

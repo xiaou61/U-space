@@ -46,9 +46,13 @@ export function OAuthButtons({ mode = 'login' }: { mode?: 'login' | 'bind' }) {
     setBusy(provider)
     setError(null)
     try {
+      // 桌面壳里发起时要带 desktop：回调会回到应用而不是留在浏览器（WORK-037）。
+      // 这里不 import @paideia/platform-desktop——auth 包刻意不依赖任何宿主实现，
+      // 只探测 preload 注入的那个全局对象是否存在。
+      const desktop = 'paideiaDesktop' in window
       const { authorizeUrl } = mode === 'bind'
         ? await api.oauthBindStart(provider)
-        : await api.oauthStart(provider)
+        : await api.oauthStart(provider, desktop)
       window.location.assign(authorizeUrl)
     } catch (failure) {
       setError(messageOf(failure))

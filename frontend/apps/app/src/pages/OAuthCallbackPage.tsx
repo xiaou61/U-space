@@ -35,6 +35,14 @@ export function OAuthCallbackPage() {
       return
     }
 
+    // 桌面壳发起的登录（WORK-037）：把握手码交给自定义协议，由应用自己完成剩下的交换。
+    // 这里**不消费**它——消费了应用就拿不到。所以只跳转、不调 completeOAuth。
+    // 浏览器已在本页，说明用户是从应用外部的浏览器回来的；跳转会唤起应用。
+    if (params.get('desktop') === '1') {
+      window.location.assign(`paideia://oauth?handoff=${encodeURIComponent(handoff)}`)
+      return
+    }
+
     void completeOAuth(handoff)
       .then(() => {
         navigate('/', { replace: true })

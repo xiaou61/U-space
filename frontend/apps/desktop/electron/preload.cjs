@@ -34,6 +34,28 @@ function readCacheSnapshot() {
   }
 }
 
+/**
+ * 第三方登录的握手码（WORK-037）。
+ *
+ * <p>主进程从 `paideia://oauth?handoff=…` 取到码之后经这个频道送进来。
+ * **只暴露订阅，不暴露发送**：页面拿不到"模拟一次协议唤起"的能力。
+ *
+ * @returns 取消订阅的函数
+ */
+function onOauthHandoff(callback) {
+  // 只接受函数：否则 ipcRenderer 会把任意值当监听器存起来，之后每次发送都抛错
+  if (typeof callback !== 'function') {
+    return () => {}
+  }
+  const listener = (_event, handoff) => {
+    if (typeof handoff === 'string' && handoff !== '') {
+      callback(handoff)
+    }
+  }
+  ipcRenderer.on('oauth:handoff', listener)
+  return () => ipcRenderer.removeListener('oauth:handoff', listener)
+}
+
 contextBridge.exposeInMainWorld('paideiaDesktop', {
   rendererOrigin,
   cacheSnapshot: readCacheSnapshot(),
@@ -42,4 +64,5 @@ contextBridge.exposeInMainWorld('paideiaDesktop', {
     set: (key, value) => ipcRenderer.invoke('cache:set', String(key), String(value)),
     remove: (key) => ipcRenderer.invoke('cache:remove', String(key)),
   },
+  onOauthHandoff,
 })

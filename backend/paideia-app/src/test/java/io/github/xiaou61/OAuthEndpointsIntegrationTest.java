@@ -252,6 +252,56 @@ class OAuthEndpointsIntegrationTest {
     }
 
     @Test
+    @DisplayName("桌面端发起时回调带 desktop=1，由回调页转成 paideia:// 而不是留在浏览器")
+    void desktopStartMarksCallback() throws Exception {
+        stubUser(uniqueSubject(), "desktop");
+        String json = body(mvc.perform(post("/api/v1/auth/oauth/github/start")
+                .param("desktop", "true")).andReturn());
+        String url = JsonPath.read(json, "$.data.authorizeUrl");
+        String state = url.substring(url.indexOf("state=") + "state=".length());
+
+        MvcResult callback = mvc.perform(get("/api/v1/auth/oauth/github/callback")
+                .param("code", "c").param("state", state)).andReturn();
+
+        String location = callback.getResponse().getHeader("Location");
+        assertThat(location).contains("/#/oauth/callback").contains("desktop=1");
+        // 令牌仍然只在握手码里，desktop 这个标记不改变"URL 里没有令牌"这条
+        assertThat(location).doesNotContain("accessToken").doesNotContain("refreshToken");
+    }
+
+    @Test
+    @DisplayName("绑定用途的回调回到账号设置页，而不是回调页")
+    void bindPurposeReturnsToProfile() throws Exception {
+        stubUser(uniqueSubject(), "bindback");
+        // 先建一个账号拿到令牌
+        String startJson = body(mvc.perform(post("/api/v1/auth/oauth/github/start")).andReturn());
+        String startUrl = JsonPath.read(startJson, "$.data.authorizeUrl");
+        String loginState = startUrl.substring(startUrl.indexOf("state=") + "state=".length());
+        String loc = mvc.perform(get("/api/v1/auth/oauth/github/callback")
+                .param("code", "c").param("state", loginState)).andReturn()
+                .getResponse().getHeader("Location");
+        String handoff = loc.substring(loc.indexOf("handoff=") + "handoff=".length());
+        String tokens = body(mvc.perform(post("/api/v1/auth/oauth/exchange")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"handoff\":\"" + handoff + "\"}")).andReturn());
+        String bearer = "Bearer " + JsonPath.read(tokens, "$.data.accessToken").toString();
+
+        // 再发起绑定
+        String bindJson = body(mvc.perform(post("/api/v1/account/oauth/gitee/start")
+                .header("Authorization", bearer)).andReturn());
+        String bindUrl = JsonPath.read(bindJson, "$.data.authorizeUrl");
+        String bindState = bindUrl.substring(bindUrl.indexOf("state=") + "state=".length());
+        stubUser(uniqueSubject(), "bindback2");
+
+        MvcResult callback = mvc.perform(get("/api/v1/auth/oauth/gitee/callback")
+                .param("code", "c2").param("state", bindState)).andReturn();
+
+        assertThat(callback.getResponse().getHeader("Location"))
+                .contains("/#/profile")
+                .contains("oauthBound=1");
+    }
+
+    @Test
     @DisplayName("平台没配置时不渲染该平台：providers 里查不到它")
     void unconfiguredProviderIsInvisible() {
         // 本测试类两个平台都配了；用枚举覆盖来验"未配置=不可见"这条判断本身，

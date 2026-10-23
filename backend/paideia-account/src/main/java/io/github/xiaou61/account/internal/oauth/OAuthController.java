@@ -84,9 +84,12 @@ class OAuthController {
 
     /** 发起登录：返回要跳转的平台地址。 */
     @PostMapping("/{provider}/start")
-    ApiResponse<StartResponse> start(@PathVariable String provider) {
+    ApiResponse<StartResponse> start(@PathVariable String provider,
+                                    @RequestParam(required = false, defaultValue = "false") boolean desktop) {
         OAuthProvider resolved = requireProvider(provider);
-        String state = states.issue(resolved, OAuthPurpose.LOGIN, null);
+        // desktop 由请求方声明，但它只影响"成功后回哪儿"，不携带任何权限含义——
+        // 冒充它最多让用户在自己浏览器里看到一句"请在应用内完成登录"
+        String state = states.issue(resolved, OAuthPurpose.LOGIN, null, desktop);
         String url = resolved.authorizeUrl(
                 properties.provider(resolved).clientId(),
                 properties.redirectUri(resolved),
@@ -141,7 +144,7 @@ class OAuthController {
             AuthTokens issued = exchangeAndIssueTokens(resolved, pending, code);
             String handoff = handoffs.issue(Long.parseLong(issued.user().id()));
             // 令牌不进 URL：地址里只有一个 60 秒有效、一次性的握手码
-            redirect(response, successUrl(handoff, pending.purpose()));
+            redirect(response, successUrl(handoff, pending.purpose(), pending.desktop()));
         } catch (BizException exception) {
             log.info("第三方回调失败：provider={} reason={}", resolved.key(), exception.getMessage());
             redirect(response, errorUrl("failed"));
@@ -197,12 +200,22 @@ class OAuthController {
         return webBase() + "/#/login?oauthError=" + encode(reason);
     }
 
-    /** 绑定走的是同一个回调页，但回去的目标不同：一个是进首页，一个是回账号设置。 */
-    private String successUrl(String handoff, OAuthPurpose purpose) {
-        String target = purpose == OAuthPurpose.BIND
-                ? "/#/profile?oauthBound=1&handoff="
-                : "/#/oauth/callback?handoff=";
-        return webBase() + target + encode(handoff);
+    /**
+     * 成功后的去向。
+     *
+     * <p>绑定回账号设置页，登录回回调页；桌面壳发起的登录额外带 {@code desktop=1}，
+     * 由回调页把握手码转成 {@code paideia://} 交给应用。
+     *
+     * <p><b>为什么不直接 302 到 {@code paideia://}</b>：浏览器会把"从 http 跳到自定义协议"
+     * 当成不安全跳转拦掉，只有在真实页面里执行 {@code location.href} 才放行。
+     * 所以必须先回到我们自己的页面，再由页面发起跳转。
+     */
+    private String successUrl(String handoff, OAuthPurpose purpose, boolean desktop) {
+        if (purpose == OAuthPurpose.BIND) {
+            return webBase() + "/#/profile?oauthBound=1&handoff=" + encode(handoff);
+        }
+        String desktopFlag = desktop ? "&desktop=1" : "";
+        return webBase() + "/#/oauth/callback?handoff=" + encode(handoff) + desktopFlag;
     }
 
     private String webBase() {
