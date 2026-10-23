@@ -598,29 +598,32 @@ importers:
   packages/sql-workbench:
     dependencies:
       '@codemirror/autocomplete':
-        specifier: ^6.20.4
+        specifier: 6.20.4
         version: 6.20.4
       '@codemirror/commands':
-        specifier: ^6.11.1
+        specifier: 6.11.1
         version: 6.11.1
       '@codemirror/lang-sql':
-        specifier: ^6.10.0
+        specifier: 6.10.0
         version: 6.10.0
       '@codemirror/language':
-        specifier: ^6.13.1
+        specifier: 6.13.1
         version: 6.13.1
       '@codemirror/state':
-        specifier: ^6.7.6
+        specifier: 6.7.6
         version: 6.7.6
       '@codemirror/view':
-        specifier: ^6.43.15
+        specifier: 6.43.15
         version: 6.43.15
       '@lezer/highlight':
-        specifier: ^1.2.5
+        specifier: 1.2.5
         version: 1.2.5
       '@paideia/ui':
         specifier: workspace:*
         version: link:../ui
+      lucide-react:
+        specifier: 1.54.0
+        version: 1.54.0(@types/react@19.3.0)(react@19.3.0)
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.3

@@ -59,6 +59,12 @@ export interface RunCodeInput {
   stdin?: string
   /** SQL 专用：数据集 key，服务端按白名单取内容（WORK-032）。 */
   dataset?: string
+  /**
+   * SQL 专用（WORK-035）：为真时跑 `EXPLAIN FORMAT=TREE` 而不是执行语句。
+   *
+   * <p>**写操作在计划模式下不会真的落数据**——它不是"跑一遍看看"，是"看看会怎么跑"。
+   */
+  explain?: boolean
   entryId?: number
   caseId?: string
 }

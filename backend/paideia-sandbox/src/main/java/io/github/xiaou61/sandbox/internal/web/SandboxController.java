@@ -130,9 +130,16 @@ class SandboxController {
             throw rejected;
         }
 
+        // explain 只对 SQL 有意义（WORK-035 T-05）：别的语言没有"执行计划"这个概念，
+        // 静默忽略会让调用方以为拿到了计划而其实跑了一遍代码。
+        boolean explain = body.explain() != null && body.explain();
+        if (explain && !"sql".equals(language)) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "只有 SQL 支持查看执行计划");
+        }
+
         CodeRun.Result result;
         try (RunSlot.Slot ignored = slots.acquire()) {
-            result = runner.run(new CodeRun.Request(language, body.code(), stdin, body.caseId()));
+            result = runner.run(new CodeRun.Request(language, body.code(), stdin, body.caseId(), explain));
         } catch (BizException rejected) {
             // 并发被拒：写一条 rejected 审计（不计入次数，见 countSince）
             quota.record(userId, body.entryId(), body.caseId(), language,
@@ -235,7 +242,10 @@ class SandboxController {
             // code_runs.entry_id 是 BIGINT UNSIGNED：负数会让审计 INSERT 报 Out of range，
             // 而那时代码已经真的跑完了 —— 除了 500，countSince 还会漏记，等于送了一条免配额通道。
             @Positive Long entryId,
-            @Size(max = 64) String caseId) {
+            @Size(max = 64) String caseId,
+            // SQL 专用（WORK-035 T-05）：true 时跑 EXPLAIN FORMAT=TREE 而不是执行语句。
+            // 可空：老客户端不带这个字段时按 false 处理。
+            Boolean explain) {
     }
 
     /**

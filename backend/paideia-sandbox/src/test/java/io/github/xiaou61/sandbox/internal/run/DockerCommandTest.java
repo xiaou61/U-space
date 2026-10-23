@@ -125,6 +125,38 @@ class DockerCommandTest {
     }
 
     /**
+     * 执行计划模式（WORK-035 T-05）。
+     *
+     * <p>两条都要断：**加固参数不能因为"只是看计划"就放松**（它仍然起一个真容器、仍然读数据集），
+     * 以及**脚本确实换成了 EXPLAIN**（否则用户点"看执行计划"会真的把语句执行一遍，
+     * 写操作会落数据）。
+     */
+    @Test
+    void sql计划模式仍加固且脚本换成explain() {
+        SandboxProperties properties = props();
+        properties.setSqlImage("paideia-sandbox-mysql@sha256:abc");
+        List<String> command = DockerCommand.of("sql", properties, "/tmp/x.cid", true);
+
+        assertThat(command).contains("--rm", "--network=none", "--read-only",
+                "--cap-drop=ALL", "--security-opt=no-new-privileges", "--stop-timeout=0");
+        assertThat(command).contains("--memory=512m", "--user", "999:999");
+        assertThat(command).contains(DockerCommand.scriptFor("sql", true));
+        assertThat(DockerCommand.scriptFor("sql", true)).contains("EXPLAIN FORMAT=TREE");
+        assertThat(DockerCommand.scriptFor("sql", true))
+                .as("普通脚本不该带 EXPLAIN，否则所有查询都会被包成计划")
+                .isNotEqualTo(DockerCommand.scriptFor("sql"));
+    }
+
+    /** explain 只对 SQL 生效：别的语言传 true 也必须跑普通脚本，不能悄悄换掉。 */
+    @Test
+    void 非sql语言的explain被忽略() {
+        assertThat(DockerCommand.of("python", props(), "/tmp/x.cid", true))
+                .contains(DockerCommand.scriptFor("python"));
+        assertThat(DockerCommand.of("java", props(), "/tmp/x.cid", true))
+                .contains(DockerCommand.scriptFor("java"));
+    }
+
+    /**
      * 脚本里必须显式收紧两个危险开关（WORK-032）。
      *
      * <p>`secure_file_priv` 默认是 NULL（不限路径）；指向**不存在的目录**会让 mysqld

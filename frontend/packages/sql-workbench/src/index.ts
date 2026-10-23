@@ -7,3 +7,11 @@ export {
   type ExplainNode,
   type ExplainSummary,
 } from './explain'
+export { ExplainTree } from './explain-tree'
+export {
+  ResultTables,
+  NULL_MARKER,
+  looksNumeric,
+  toCsv,
+  type ResultTable,
+} from './result-tables'

@@ -14,8 +14,19 @@ public final class CodeRun {
     private CodeRun() {
     }
 
-    /** 一次运行请求。`caseId` 只进审计，不参与执行。 */
-    public record Request(String language, String code, String stdin, String caseId) {
+    /**
+     * 一次运行请求。`caseId` 只进审计，不参与执行。
+     *
+     * <p>`explain` 是 SQL 专用（WORK-035 T-05）：为真时不执行语句，而是把它包进
+     * `EXPLAIN FORMAT=TREE` 跑，回的是执行计划。**写操作在计划模式下不会真的落数据**，
+     * 所以调用方不能把它当成"跑一遍看看"。
+     */
+    public record Request(String language, String code, String stdin, String caseId, boolean explain) {
+
+        /** 不带 explain 的形态：Java/Python 与既有调用点用它。 */
+        public Request(String language, String code, String stdin, String caseId) {
+            this(language, code, stdin, caseId, false);
+        }
     }
 
     /**

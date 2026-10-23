@@ -5596,3 +5596,31 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   `EXPLAIN` 的 `explain` 开关还没进 `/sandbox/run`。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-035-sql-workbench`（未推送）
+
+## 2026-10-23 10:40:00 +08:00 · WORK-035 T-02 / T-05 完成
+
+- 类型：implementation
+- 变更：
+  - `result-tables.tsx`：多语句分卡、点表头排序（NULL 恒排最后）、数值列右对齐（按值判断
+    而非列名——SQL 结果集不带类型）、`NULL` 与空串视觉可区分（`NULL` 弱化斜体 / 空串显示 `∅`）、
+    100 行分页、复制为 CSV（NULL 导出为空单元格）。
+  - `explain-tree.tsx`：执行计划树，按节点标注「全表扫」/「索引」，顶部给汇总徽章。
+  - 后端 `/sandbox/run` 加 `explain` 字段；`DockerCommand` 新增 `SQL_EXPLAIN_SCRIPT`
+    （与普通脚本只差最后一行，加固参数完全一致）；非 SQL 语言传 explain 被拒（400）。
+  - 页面加「看执行计划」按钮，与「运行」并列。
+- 决策：
+  - **计划模式用独立脚本而不是同一脚本加开关**：两条路径的语义不同（计划模式不执行语句，
+    写操作不落数据），拼在一个变量里会让"到底跑了哪一种"变成运行时才确定的事。
+  - **不同一次运行里先跑 EXPLAIN 再跑 SQL**：两个结果集会拼在 stdout 上，而 `--xml` 的
+    `<resultset>` 长得一样，前端无法可靠区分"这是计划还是数据"。
+  - 计划模式**仍占一次配额**：它确实起了一个真容器。
+- 验证：
+  - `@paideia/sql-workbench` 单测 **23 passed**（explain 11 + result-tables 12）。
+  - `paideia-sandbox` **22 passed**（新增 2 条：计划模式仍加固且脚本换成 EXPLAIN、非 SQL 的 explain 被忽略）。
+  - 构建 + 懒加载守卫通过（编辑器 chunk 122.3 kB gzip）。
+  - e2e `sql-practice.spec.ts` **3 passed**，含新用例：拦截 `/sandbox/run` 确认请求体带
+    `"explain":true`，且计划里的 `Table scan` 被标成「全表扫」。
+    **这条用例原本会因为沙箱关闭而 skip**——把 status 与 run 都 mock 掉才真的验到请求体。
+- 已知未做：结果图表（T-06）、表结构侧栏与 ER 图（T-04）、schema 补全数据源（T-03）。
+- 本地提交：见下一笔
+- 远端推送：未执行

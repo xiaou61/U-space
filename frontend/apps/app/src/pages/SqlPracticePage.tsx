@@ -9,7 +9,7 @@ import {
   Spinner,
 } from '@paideia/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Play } from 'lucide-react'
+import { Play, Search } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
 
 import { api } from '../api'
@@ -18,27 +18,41 @@ import { LearnerHeader } from '../components/LearnerHeader'
 const knowledge = createKnowledgeApi(api)
 
 /**
- * 编辑器必须**懒加载**（WORK-035 T-01 / AC-001）：CodeMirror 精简版 gzip 后约 137 kB，
+ * 工作台组件必须**懒加载**（WORK-035 T-01 / AC-001）：CodeMirror 精简版 gzip 后约 137 kB，
  * 是本站唯一的重前端依赖。静态 import 会让每个进入首页的人为它付费。
+ *
+ * <p>懒加载由 `scripts/check-lazy-editor.mjs` 在构建时强制（已反向验证：改成静态 import 会让构建失败）。
  */
 const SqlEditor = lazy(async () => {
   const module = await import('@paideia/sql-workbench')
   return { default: module.SqlEditor }
 })
 
+const ResultTables = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.ResultTables }
+})
+
+const ExplainTree = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.ExplainTree }
+})
+
 /**
- * SQL 自由练习（WORK-032，WORK-035 起升级为工作台）。
+ * SQL 工作台（WORK-032 的自由练习，WORK-035 起升级）。
  *
  * <p><b>与关卡的区别是"不计分"</b>：这里跑什么、跑对没跑对，都不写 `learning_progress`。
  * 关卡里的 SQL 题要判题、要计入这一关的通过与否；这里只是"随时打开、随便写"。
  *
- * <p>数据集仍只有服务端下发的那几个（隐藏集不下发，见 WORK-035 的修复）。
+ * <p><b>执行计划是一次独立的运行</b>：点「看执行计划」会真的起一个容器跑 `EXPLAIN FORMAT=TREE`，
+ * 所以它同样占配额。这样做的理由是语义干净——计划与数据不会拼在同一个输出里让前端去猜。
  *
- * <p>额度与关卡实训共用一份 SQL 配额，顶部显示剩余次数。
+ * <p>数据集仍只有服务端下发的那些（隐藏集不下发，见 WORK-035 的修复）。
  */
 export function SqlPracticePage() {
   const [code, setCode] = useState('SELECT * FROM customers;')
-  const [tables, setTables] = useState<{ columns: string[]; rows: string[][] }[] | null>(null)
+  const [tables, setTables] = useState<{ statementIndex: number; columns: string[]; rows: string[][] }[] | null>(null)
+  const [explainOutput, setExplainOutput] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dataset, setDataset] = useState<string | null>(null)
 
@@ -50,23 +64,32 @@ export function SqlPracticePage() {
   const datasets = status.data?.datasets ?? []
   const selected = dataset ?? datasets[0] ?? null
   const sqlReady = status.data?.ready === true && (status.data?.languages ?? []).includes('sql')
-  const remaining = status.data?.sqlDailyLimit === undefined || status.data?.sqlUsedToday === undefined
-    ? null
-    : status.data.sqlDailyLimit - status.data.sqlUsedToday
+  const remaining =
+    status.data?.sqlDailyLimit === undefined || status.data?.sqlUsedToday === undefined
+      ? null
+      : status.data.sqlDailyLimit - status.data.sqlUsedToday
 
   const run = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (explain: boolean) => {
       if (selected === null) {
         throw new Error('没有可用的数据集')
       }
-      return knowledge.runCode({ language: 'sql', code, dataset: selected })
+      return knowledge.runCode({ language: 'sql', code, dataset: selected, explain })
     },
-    onSuccess: (result) => {
-      setError(result.exitCode === 0 && !result.timedOut && !result.outOfMemory
-        ? null
-        : describeFailure(result))
-      setTables(result.tables ?? [])
-      // 跑完刷新额度：服务端记了一条审计
+    onSuccess: (result, explain) => {
+      setError(
+        result.exitCode === 0 && !result.timedOut && !result.outOfMemory ? null : describeFailure(result),
+      )
+      if (explain) {
+        // 执行计划的树在**一个字段值**里（实测：1 列 × 1 行，多行用 \n）。
+        // 所以取第一个结果集的第一行第一列，而不是把 tables 交给结果表组件。
+        const first = result.tables?.[0]
+        setExplainOutput(first?.rows[0]?.[0] ?? null)
+        setTables(null)
+      } else {
+        setTables(result.tables ?? [])
+        setExplainOutput(null)
+      }
       status.refetch()
     },
     onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
@@ -75,7 +98,7 @@ export function SqlPracticePage() {
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />} wide>
       <PageHeader
-        eyebrow="自由练习"
+        eyebrow="SQL 工作台"
         title="写一段 SQL，立刻看到结果"
         description="不计分、不进学习进度。每次都在干净的数据库里跑，随便改随便试。"
       />
@@ -139,15 +162,25 @@ export function SqlPracticePage() {
             />
           </Suspense>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
               data-testid="sql-practice-run"
               disabled={run.isPending || selected === null}
-              onClick={() => run.mutate()}
+              onClick={() => run.mutate(false)}
             >
               <Play className="size-4" />
-              {run.isPending ? '正在运行…' : '运行'}
+              {run.isPending && run.variables === false ? '正在运行…' : '运行'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="sql-practice-explain"
+              disabled={run.isPending || selected === null}
+              onClick={() => run.mutate(true)}
+            >
+              <Search className="size-4" />
+              {run.isPending && run.variables === true ? '分析中…' : '看执行计划'}
             </Button>
             <span className="text-muted-foreground text-xs">
               每次运行约 4–5 秒（要起一个干净的数据库）
@@ -163,38 +196,13 @@ export function SqlPracticePage() {
             </Alert>
           )}
 
-          {tables === null ? null : tables.length === 0 ? (
-            <p className="text-muted-foreground text-sm">语句执行成功，没有返回结果集。</p>
-          ) : (
-            tables.map((table, index) => (
-              <div key={index} className="border-border overflow-x-auto rounded-lg border">
-                <table className="w-full text-left text-sm" data-testid="sql-practice-result">
-                  <thead className="bg-muted/40">
-                    <tr>
-                      {table.columns.map((column) => (
-                        <th key={column} className="px-3 py-2 font-medium">
-                          {column}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {table.rows.map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-border border-t">
-                        {row.map((cell, cellIndex) => (
-                          <td key={cellIndex} className="px-3 py-2 font-mono text-[12.5px]">
-                            {cell === '\u0000NULL'
-                              ? <span className="text-muted-foreground">NULL</span>
-                              : cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))
-          )}
+          <Suspense fallback={<Spinner />}>
+            {explainOutput === null ? null : <ExplainTree output={explainOutput} />}
+          </Suspense>
+
+          <Suspense fallback={<Spinner />}>
+            {tables === null ? null : <ResultTables tables={tables} />}
+          </Suspense>
         </div>
       ) : null}
     </AppShell>

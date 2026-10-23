@@ -30,10 +30,10 @@ approver_role: CTO
 | 任务 | 名称 | 阶段 | 状态 |
 | --- | --- | --- | --- |
 | T-01 | 编辑器实测与懒加载守卫 | S1 | done |
-| T-02 | 结果表增强 | S1 | pending |
+| T-02 | 结果表增强 | S1 | done |
 | T-03 | schema 接口与补全数据源 | S1 | pending |
 | T-04 | 表结构侧栏与 ER 图 | S1 | pending |
-| T-05 | 执行计划可视化（解析与判读已完成，视图待做） | S1 | in_progress |
+| T-05 | 执行计划可视化 | S1 | done |
 | T-06 | 结果图表 | S1 | pending |
 | T-07 | 数据集迁移与 Mapper | S2 | pending |
 | T-08 | 数据集解析改造（安全边界） | S2 | pending |
