@@ -6339,3 +6339,21 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：push-check: up_to_date
 - 本地提交：72f8c65
 - 远端推送：origin/master = 72f8c65（已核验）
+
+## 2026-10-23 18:40 +0800 · 测试可信度修复（未建项，用户指示直接修）
+
+- 类型：maintenance
+- **一、连接数问题的真因**：`application-test.yml` 没配 Hikari。默认 `maximum-pool-size=10`
+  且 `minimum-idle` 也等于 10 —— **每个 Spring 上下文一启动就预建 10 个连接**。
+  本模块 41 个 `@SpringBootTest` 产生多个上下文，15 个就占满 MySQL `max_connections=151`，
+  后面的测试类报 `Too many connections`。改为 `maximum-pool-size: 2 / minimum-idle: 1`。
+- 反向验证：改回 10/10 → `Too many connections` 出现 **30 次**；改回 2/1 →
+  **一条命令跑全量 322 执行 / 0 失败 / 0 错误 / 4 跳过**。这条路以前是断的。
+- **二、过期测试的系统性缺口**：根因是**手写 mock 不经过类型检查**。
+  e2e 本来就在 `tsconfig` 的 `include` 里，所以给 mock 加 `satisfies <真类型>`，
+  编译器就能拦住下次的形状变化：`sql-practice.spec.ts` 2 处 → `SandboxStatus`；
+  `review.spec.ts` 3 处 → `ReviewDueList` / `ReviewSession` / `ReviewSubmitResult`。
+- 反向验证：把 `datasets` 改回 `string[]`，tsc 立刻报 TS2322。
+- 验证：后端全量 322/0/0/4；前端全仓单测 0 失败；本地 e2e（review + sql-practice）9 passed；
+  线上全量 **89 passed / 0 failed**；线上 health=200，三条迁移 success=1。
+- 本地提交：`64621b4`；已推送 `72f8c65..64621b4`；已部署（73 秒）。
