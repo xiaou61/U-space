@@ -64,7 +64,8 @@ test.describe('SQL 自由练习', () => {
             usedToday: 0,
             sqlDailyLimit: 20,
             sqlUsedToday: 0,
-            datasets: ['orders-public'],
+            // WORK-035 起 datasets 是对象数组（多了 name 与 source），mock 必须跟着走
+            datasets: [{ key: 'orders-public', name: 'orders-public', source: 'builtin' }],
             reason: null,
           },
         }),
@@ -136,7 +137,8 @@ test.describe('SQL 自由练习', () => {
             usedToday: 0,
             sqlDailyLimit: 20,
             sqlUsedToday: 0,
-            datasets: ['orders-public'],
+            // WORK-035 起 datasets 是对象数组（多了 name 与 source），mock 必须跟着走
+            datasets: [{ key: 'orders-public', name: 'orders-public', source: 'builtin' }],
             reason: null,
           },
         }),
