@@ -6274,3 +6274,29 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 集成 + 模块边界 + 三个迁移门禁 **25 运行 / 0 失败**。
   - `validate` 通过；WORK-033 报告 10 条 AC 全部达标。
 - 本地提交：见下一笔
+
+## 2026-10-23 17:30:04 +0800 · WORK-037 · 合并、推送与部署（含一次启动失败与修复）
+
+- 类型：implementation
+- 变更：master 合并 WORK-037（16 笔）+ 远端 WORK-033 修复；推送 f880a4a..e915a8e；部署到线上
+- 决策：合并时修四处过期/漏配：sandbox/admin 漏 ADMIN 规则（真安全缺陷）、工具白名单缺 sql_describe_dataset、sandbox 测试断言 sqlDailyLimit=20 而实现已提到 500、globals.css 的 @source 漏 sql-workbench
+- 依据：跑测试与 e2e 发现；master 上 ApiContractTest 与 ApiWalkthroughTest 本就红
+- 验证：后端两批 68+254=322 条全过；前端全仓单测通过；本地 e2e 12 条通过；线上 health=200、providers 返回空、回调 302 到 oauthError=disabled
+- 本地提交：e915a8e
+- 远端推送：已推送 f880a4a..e915a8e
+
+## 2026-10-23 17:30 +0800 · WORK-037 · 部署时启动失败与修复（重要）
+
+- 类型：maintenance
+- 现象：`release.ps1` 上传后健康检查 60 秒超时，服务重启 6 次，**线上中断约 5 分钟**（health=000）。
+- 真因：`V20261023110000__create_sql_dataset_tables.sql`（WORK-035 的迁移）**从未在生产库执行过**。
+  它比已应用的 `20261023140000` 时间戳更早，Flyway 判定为 resolved-not-applied 并拒绝启动。
+  WORK-035 那次改动没有部署到线上，所以这个洞一直在。
+- 修法：服务器 `application.yml` 加 `spring.flyway.out-of-order: true`，重启后两条迁移都补上
+  （`20261023110000` 与 `20261023150000` 均 success=1），`user_identities` 表已建立。
+- 配置备份：`/opt/paideia-app/application.yml.bak-20261023172631`。
+- **这条要记住**：以后合并别人的分支前，先核对**生产库**的 `flyway_schema_history` 与仓库迁移集合是否一致。
+  仓库里"全绿"只能证明迁移在**新建的空库**上能跑通，证明不了生产库已应用过它们。
+- 验证：线上 health=200、登录页 200、`/api/v1/auth/oauth/providers` 返回空列表（未配凭据）、
+  回调带无效 state 时 302 到 `/#/login?oauthError=disabled`。
+- 未做：线上 e2e（需要线上账号口令，本次没有；不猜口令）。
