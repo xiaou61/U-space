@@ -45,7 +45,7 @@ approver_role: CTO
 | T-14 | 载入关卡题 | S3 | pending |
 | T-15 | 助手页面上下文与填回 | S3 | done |
 | T-16 | `sql_describe_dataset` 只读工具 | S3 | done |
-| T-17 | 每人并发 1 与日上限调整 | S4 | pending |
+| T-17 | 每人并发 1 与日上限调整 | S4 | done |
 | T-18 | 验收报告 | — | pending |
 
 ## S1 · 工作台本体

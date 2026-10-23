@@ -209,9 +209,13 @@ export function SqlPracticePage() {
                   </option>
                 ))}
               </select>
-              {remaining === null ? null : (
-                <span className="text-muted-foreground text-xs" data-testid="sql-practice-quota">
-                  今天还能跑 {remaining} 次
+              {/*
+                配额不常驻显示（WORK-035 T-17）：500 次是熔断器不是预算，把大数字挂在页面上
+                只会让人紧张。只在**快到上限**（≤20）时提示——那时它才是有用的信息。
+              */}
+              {remaining === null || remaining > 20 ? null : (
+                <span className="text-warning text-xs" data-testid="sql-practice-quota">
+                  今天还剩 {remaining} 次
                 </span>
               )}
             </div>

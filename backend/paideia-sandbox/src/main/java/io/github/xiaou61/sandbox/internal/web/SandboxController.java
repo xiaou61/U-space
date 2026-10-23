@@ -164,7 +164,7 @@ class SandboxController {
         }
 
         CodeRun.Result result;
-        try (RunSlot.Slot ignored = slots.acquire()) {
+        try (RunSlot.Slot ignored = slots.acquire(userId)) {
             result = runner.run(new CodeRun.Request(language, body.code(), stdin, body.caseId(), explain));
         } catch (BizException rejected) {
             // 并发被拒：写一条 rejected 审计（不计入次数，见 countSince）
@@ -226,7 +226,7 @@ class SandboxController {
         }
 
         SandboxTraceService.Trace result;
-        try (RunSlot.Slot ignored = slots.acquire()) {
+        try (RunSlot.Slot ignored = slots.acquire(userId)) {
             result = trace.trace(language, body.code(), stdin);
         } catch (UnsupportedOperationException unsupported) {
             // 降级不是错误：前端会退回"一次性运行"，所以给可读的原因而不是 500
