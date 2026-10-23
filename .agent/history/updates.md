@@ -5703,6 +5703,115 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
 
+## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261022170000`：`question_attempts` / `question_concepts` / `concept_mastery_state` / `question_difficulty`。
+  - `QuestionCatalog`：从正文 quiz 围栏解析题目，身份 = 条目 + 块 + 题号 + 指纹（SHA-256）。
+  - `MasteryModel`（BKT）与 `ItemRating`（Elo）纯函数；Elo 方向在首轮测试里写反，已按
+    「答对 → 题目变容易 → rating 下调」修正。
+  - `QuestionAttemptService` + `POST /api/v1/learning/attempts`：服务端按正文判定，写作答、
+    更新难度与掌握度、返回补课建议；`GET /mastery`、`GET /diagnosis`。
+  - `QuestionConceptSuggester`（bigram + 结构加分）与管理端三个端点；
+    `/api/v1/learning/admin/**` 的 ADMIN 规则已排在更宽规则之前。
+  - `ConceptGraphService` 优先用 BKT 状态，没有则回退旧 `ConceptMastery`。
+  - 注销级联追加两张表；前端 quiz 首次选择时上报，`MarkdownBody` 增加 `recordAttempt` 端口。
+- 验证：
+  - `MasteryAndDiagnosisTest` 6、`QuestionCatalogTest` 4、`QuestionConceptSuggesterTest` 3 全绿。
+  - `QuestionAttemptIntegrationTest` 3/3；`AccountDeletionCascadeIntegrationTest` 与
+    `ConceptGraphIntegrationTest` 全绿。
+  - 前端 `tsc` 通过；`@paideia/ui` 单测 **209 passed / 12 files**。
+- 未完成：REQ-008 选题、REQ-009 复习联动、REQ-010 批量打标、REQ-012 评估导出；
+  T-05 两个管理端点与 T-08 的逐题上报 e2e 尚无测试。
+- 本地提交：见下一笔
+- 远端推送：未执行
+
+## 2026-10-22 17:12:00 +08:00 · WORK-033 全量测试、推送与部署
+
+- 类型：verification
+- 变更：
+  - `ApiWalkthroughTest` 补 WORK-033 六个端点；接口结构快照随之更新（diff 里同时包含
+    之前两笔未登记的 `toolsets` 与 SQL 沙箱字段，属既有契约的真实形状）。
+- 验证：
+  - 后端全量：**276 运行 / 0 失败 / 4 跳过**（`scripts/test-db.sh mvn -B -T 1C test`）。
+  - 线上部署：`release.ps1` 成功（295 秒），`/actuator/health` UP。
+  - 线上迁移：`flyway_schema_history` 最新 `20261022170000`，success=1。
+  - 线上接口：`GET /learning/mastery` 200、`GET /learning/diagnosis` 200、
+    `GET /learning/admin/questions?entryId=45` 200（解析出 3 道题）；
+    学习者令牌访问 `/learning/admin/**` 返回 403。
+  - 线上真作答：e2e-learner 在 entry 45 的 `py-09-quiz#0` 选 1 → `correct=true`，
+    `question_attempts` 落一行且 `judged_by=server`；concepts 为空（题目尚未标注，预期）。
+- 本地提交：`9ed0132`
+- 远端推送：`origin/work-033-question-concept`（**分支**；master 未合并——主树有另一会话
+  未提交的 `WORK-034` 与 `updates.md` 改动，不能带着别人的改动合并）
+
+## 2026-10-22 17:55:00 +08:00 · 发版上传改为增量（WORK-033 分支）
+
+- 类型：maintenance
+- 背景：用户问「上传为什么这么慢」。实测链路约 **3.2 MB/s**，82 MB 的 fat jar 上传 32 秒；
+  jar 再压只省 8%（78 MB），不是压缩问题。
+- 变更（`scripts/release.ps1`）：
+  - **增量上传**：本地解开 jar、按内容哈希与服务器 `/opt/paideia-app/exploded.manifest` 比对，
+    只传变化的文件（自家模块 + classes 约 1.4 MB），服务器用 `/opt/jdk25/bin/jar` 重新打包。
+    fat jar 里 84 MB 是第三方依赖，正常发版不变。
+  - 首次仍整包上传并建立基线；之后靠清单判断增删。
+- 事故与修复（如实记录）：
+  - 第一版重打包用了 `jar cfm`，嵌套 jar 被 deflate，Boot 4 的嵌套 jar 加载器读不了，
+    启动报 `NoClassDefFoundError: org/springframework/boot/SpringApplication`，**线上中断约 6 分钟**。
+  - 先恢复历史备份（退到 10-21 的 jar），随即用 scp 传回本分支构建的 jar 并重启，服务恢复。
+  - 正确做法：**`jar c0fm`**（全部 STORED），已在服务器上用备用端口真启动验证健康后才重新发版。
+  - 另一处：试过用 Git 的 `sha256sum` 加速本地哈希，PowerShell 调原生 exe 实测 18 秒且解析不到
+    结果，已回退到 `Get-FileHash`（16 秒，稳定）。
+- 验证：
+  - 最终发版 `exit=0`，纯后端 **103.3 秒**（增量 0 个文件；上传步骤 26.7 秒，其中 16 秒是本地哈希、
+    4.3 秒是服务器重打包，真正传输接近 0）。
+  - 与优化前纯后端 ~115 秒相比省的不多，因为瓶颈从「传输」变成了「本地全量哈希」；
+    下一步若继续优化，应只哈希自家模块与 classes，第三方依赖用「文件名 + 大小」判断。
+  - 线上 `/actuator/health` UP，`/learning/mastery` 等 WORK-033 端点仍 200。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-question-concept`
+
+## 2026-10-22 18:20:00 +08:00 · 增量上传进阶：清单 v2（自家文件哈希、依赖按大小）
+
+- 类型：maintenance
+- 变更（`scripts/release.ps1`）：
+  - 清单升到 `#v2`：只对 `BOOT-INF/classes/**` 与 `BOOT-INF/lib/paideia-*.jar`（69 个文件、1.4 MB）
+    算 SHA-256；第三方依赖只记「文件名 + 字节数」。本地清单 16 秒 → **0.72 秒**。
+  - 旧清单（无 `#v2` 头）自动走一次整包上传并重建基线，避免格式切换时误删依赖。
+  - 没有任何变化时不再重打包，服务器直接 `cp app.jar app.jar.new`。
+- 验证：
+  - 格式切换那一次：118.3 秒（整包上传 41.4 秒 + 建基线），健康检查通过。
+  - 之后连续两次：**64.0 秒**、**57.2 秒**；上传步骤 13.5 → 12.9 秒（其中本地清单 0.72 秒、
+    解包 1.3 秒，其余是 quick-server 每次起 PowerShell 的往返）。
+  - 线上 `/actuator/health` UP；WORK-033 的 `/learning/mastery` 仍 200。
+- 已知取舍：第三方依赖靠「同名 + 同大小」判断；若有人手工改写本地 `.m2` 里同坐标 jar，
+  服务器会保留旧依赖。正常 Maven 不会发生，已写进脚本注释。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-question-concept`
+## 2026-10-22 18:17:22 +0800 · 过时技术核查与三项修复
+
+- 类型：fix
+- 变更：
+  - 合并 `work-033-question-concept` 到 master（快进 4 笔；线上早已部署，master 之前落后）。
+  - 重新生成三张漂移的结构图：前端包 15 个（补 camp）、表 48 张、端点 140 个。
+  - 删除死表 `ai_model_credentials`：新增 `V20261022180940__drop_ai_model_credentials.sql`，
+    移除注销级联清单 1 处、4 个集成测试里共 5 处引用。
+  - `scripts/verify_course.py` 增加沙箱运行时基线提醒（本机 JDK 25 vs 沙箱 Java 21）。
+  - 修正 `application.yml` 里「按 digest 钉住」这句与实际配置不符的注释。
+  - `always.md`：D-14 RabbitMQ 标注「尚未接入、零落地」；D-09 的「待尖刺验证」改为「已通过」。
+- 决策：
+  - 删密文表是安全的：`api_key_cipher` 的主密钥已随 WORK-009 从代码删除，行内容本就不可恢复。
+  - 沙箱基线仍取 Java 21 / Python 3.12（WORK-020 已定），不往上抬；只让不一致可见。
+- 依据：依赖版本核查结论是「没有过时版本」——Boot 4.1.1 为最新 GA（4.2 仅里程碑）、
+  MyBatis 3.5.19 最新、mybatis-spring-boot-starter 4.1.0 最新、前端 `pnpm outdated` 无输出。
+  真正过时的是「决策被推翻后的代码残留」与「生成物的漂移」，不是版本。
+- 验证：受影响测试 35 run / 0 失败 / 4 跳过（真实上游用例需 Key）；
+  `gen-arch-diagram.mjs --check` 四张一致；`check-diagrams.mjs` 10 图全部可解析；
+  `verify_course.py` 在 python 目录实测打出基线提醒。
+- 已知未修：Python 课程 12–17 六篇 `status: published` 却缺可运行示例，`verify_course.py` 判失败。
+- 本地提交：be3765b（架构图）/ 535a887（死表）/ 04c0973（课程基线）及本笔
+- 远端推送：未执行
 
 ## 2026-10-23 09:19:31 +0800 · 推送并部署 master（死表删除上线）
 
