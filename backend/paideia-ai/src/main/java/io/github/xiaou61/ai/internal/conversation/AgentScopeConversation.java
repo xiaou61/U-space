@@ -162,6 +162,11 @@ class AgentScopeConversation implements AssistantConversation {
         if (request.hasEntryContext()) {
             prompt.append("\n\n").append(ConversationPrompt.entryContext(request.entryTitle(), request.entryBody()));
         }
+        // 页面场景排在条目上下文之后、学情之前：它是"此刻屏幕上的东西"，
+        // 比条目正文更具体，但不如学情那种跨会话的结论稳定
+        if (request.hasPageContext()) {
+            prompt.append("\n\n").append(ConversationPrompt.pageContext(request.pageContext()));
+        }
         if (request.harness() == Harness.TUTOR && request.learningSummary() != null
                 && !request.learningSummary().isBlank()) {
             prompt.append("\n\n").append(TutorPrompt.learningContext(request.learningSummary()));

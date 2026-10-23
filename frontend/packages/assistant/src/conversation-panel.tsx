@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AssistantApi } from './client'
 import { useAssistantContext } from './context'
+import { extractSqlBlock, serializePageContext } from './page-context'
 import { readStoredConversation, storeConversation } from './session-store'
 import type { ChatMessage, ConversationView, NoteDraftInput } from './types'
 
@@ -33,7 +34,8 @@ export function ConversationPanel({
   api: AssistantApi
   onSaveNote?: (note: NoteDraftInput, entryId: number | null) => Promise<unknown>
 }) {
-  const { entryId, entryTitle, harness, pendingPrompt, clearPendingPrompt } = useAssistantContext()
+  const { entryId, entryTitle, harness, pageContext, applySql, pendingPrompt, clearPendingPrompt } =
+    useAssistantContext()
   const [conversationId, setConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessions, setSessions] = useState<ConversationView[]>([])
@@ -295,6 +297,8 @@ export function ConversationPanel({
           }
         },
         controller.signal,
+        // 页面场景：只在这一轮进提示词，不落库（WORK-035 T-15）
+        serializePageContext(pageContext),
       )
       // 这一轮落库了，列表里的更新时间跟着变——顺手刷新，免得列表显示的时间是旧的
     } catch (cause) {
@@ -445,6 +449,29 @@ export function ConversationPanel({
               {/* 只对"真正的回答"给这两个入口：空正文的提示不该被存成笔记或记忆 */}
               {message.role !== 'assistant' || message.content === '' || message.emptyHint ? null : (
                 <div className="border-border/70 mt-2 flex flex-wrap items-center gap-1 border-t pt-1.5">
+                  {/*
+                    填入 SQL 编辑器（WORK-035 T-15）：只在 SQL 工作台出现。
+                    它把回答里**第一个 sql 代码块**填回编辑器；没有代码块就提示，不猜。
+                    **不执行**——用户点"运行"才算数，与"自主只建议不动作"一致。
+                  */}
+                  {pageContext?.kind !== 'sql-workbench' ? null : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-testid="conversation-apply-sql"
+                      onClick={() => {
+                        const sql = extractSqlBlock(message.content)
+                        if (sql === null) {
+                          setError('这条回答里没有 SQL 代码块，没法填入编辑器')
+                          return
+                        }
+                        setError(null)
+                        applySql(sql)
+                      }}
+                    >
+                      填入编辑器
+                    </Button>
+                  )}
                   {onSaveNote === undefined ? null : (
                     <Button
                       variant="ghost"

@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -75,10 +76,33 @@ class SandboxController {
                 quota.usedToday(userId),
                 properties.getSqlDailyLimit(),
                 quota.usedToday(userId, "sql"),
-                // 只报**公开**数据集：隐藏集进了选择器，用户跑一句 SELECT * 就拿到内容，
-                // 隐藏当场失效。运行端点仍认全部 key（题面本来就明文写着它）。
-                datasets.publicKeys(),
+                // 选择器要的清单：内置公开集 + 自己的私人集 + 已发布的社区集。
+                // **隐藏集不在这里**——它进了选择器，用户跑一句 SELECT * 就拿到内容。
+                // 运行端点仍认全部内置 key（题面本来就明文写着它）。
+                datasets.options(userId),
                 ready ? null : runner.unavailableReason()));
+    }
+
+    /**
+     * 数据集的结构（WORK-035 T-03）。
+     *
+     * <p>给编辑器补全与「表结构」侧栏用。**只读、不含数据行**，所以它不占配额、不起容器。
+     *
+     * <p>**隐藏集在这里也被拒**：返回 404 而不是空对象。虽然 key 在课程题面里是明文，
+     * 但这个端点的用途是"渲染一个选择器里的结构"，隐藏集不在选择器里，给它结构没有意义，
+     * 而返回结构等于确认了 key 有效。
+     */
+    @GetMapping("/datasets/{key}/schema")
+    ApiResponse<String> datasetSchema(@PathVariable String key) {
+        if (datasets.publicKeys().contains(key) == false
+                && datasets.options(currentUserId()).stream().noneMatch(option -> option.key().equals(key))) {
+            throw new BizException(ErrorCode.NOT_FOUND, "没有这个数据集");
+        }
+        String schema = datasets.schema(currentUserId(), key);
+        if (schema == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "这个数据集还没有结构快照");
+        }
+        return ApiResponse.ok(schema);
     }
 
     @PostMapping("/run")
@@ -102,7 +126,9 @@ class SandboxController {
             if (dataset == null || dataset.isBlank()) {
                 throw new BizException(ErrorCode.INVALID_ARGUMENT, "SQL 运行必须指定数据集");
             }
-            stdin = datasets.sql(dataset);
+            // 必须带 userId：私人集只有本人能跑（WORK-035 的安全边界）。
+            // 无权访问与不存在都返回同一句文案——区分了就给出一个可枚举的 oracle。
+            stdin = datasets.sql(userId, dataset);
             if (stdin == null) {
                 throw new BizException(ErrorCode.INVALID_ARGUMENT, "未知数据集：" + dataset);
             }
@@ -130,9 +156,16 @@ class SandboxController {
             throw rejected;
         }
 
+        // explain 只对 SQL 有意义（WORK-035 T-05）：别的语言没有"执行计划"这个概念，
+        // 静默忽略会让调用方以为拿到了计划而其实跑了一遍代码。
+        boolean explain = body.explain() != null && body.explain();
+        if (explain && !"sql".equals(language)) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "只有 SQL 支持查看执行计划");
+        }
+
         CodeRun.Result result;
-        try (RunSlot.Slot ignored = slots.acquire()) {
-            result = runner.run(new CodeRun.Request(language, body.code(), stdin, body.caseId()));
+        try (RunSlot.Slot ignored = slots.acquire(userId)) {
+            result = runner.run(new CodeRun.Request(language, body.code(), stdin, body.caseId(), explain));
         } catch (BizException rejected) {
             // 并发被拒：写一条 rejected 审计（不计入次数，见 countSince）
             quota.record(userId, body.entryId(), body.caseId(), language,
@@ -193,7 +226,7 @@ class SandboxController {
         }
 
         SandboxTraceService.Trace result;
-        try (RunSlot.Slot ignored = slots.acquire()) {
+        try (RunSlot.Slot ignored = slots.acquire(userId)) {
             result = trace.trace(language, body.code(), stdin);
         } catch (UnsupportedOperationException unsupported) {
             // 降级不是错误：前端会退回"一次性运行"，所以给可读的原因而不是 500
@@ -221,8 +254,8 @@ class SandboxController {
                       int dailyLimit, int usedToday,
                       // SQL 单独一档（WORK-032 U-09）：额度不与其它语言共用
                       int sqlDailyLimit, int sqlUsedToday,
-                      // 已知数据集 key：客户端据此渲染选择器，内容仍由服务端持有
-                      List<String> datasets,
+                      // 可选数据集（WORK-035）：key + 名字 + 来源。内容仍由服务端持有。
+                      List<SqlDatasets.DatasetOption> datasets,
                       String reason) {
     }
 
@@ -235,7 +268,10 @@ class SandboxController {
             // code_runs.entry_id 是 BIGINT UNSIGNED：负数会让审计 INSERT 报 Out of range，
             // 而那时代码已经真的跑完了 —— 除了 500，countSince 还会漏记，等于送了一条免配额通道。
             @Positive Long entryId,
-            @Size(max = 64) String caseId) {
+            @Size(max = 64) String caseId,
+            // SQL 专用（WORK-035 T-05）：true 时跑 EXPLAIN FORMAT=TREE 而不是执行语句。
+            // 可空：老客户端不带这个字段时按 false 处理。
+            Boolean explain) {
     }
 
     /**

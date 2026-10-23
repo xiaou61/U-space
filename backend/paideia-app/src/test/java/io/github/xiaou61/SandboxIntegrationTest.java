@@ -252,9 +252,14 @@ class SandboxIntegrationTest {
         // 不是写死的常量。所以只断言"包含 java 与 python"，sql 允许在配置了镜像时出现。
         assertThat(JsonPath.<java.util.List<String>>read(json, "$.data.languages"))
                 .contains("java", "python");
-        assertThat(JsonPath.<Integer>read(json, "$.data.sqlDailyLimit")).isEqualTo(20);
-        assertThat(JsonPath.<java.util.List<String>>read(json, "$.data.datasets"))
+        // WORK-035 T-17 把 SQL 日配额从 20 提到 500：500 次按每次 3 秒算也是 25 分钟
+        // 不间断地跑，正常人碰不到，但脚本刷有个天花板。断言跟着实现走。
+        assertThat(JsonPath.<Integer>read(json, "$.data.sqlDailyLimit")).isEqualTo(500);
+        // 数据集清单在 WORK-035 从"字符串数组"变成"对象数组"（多了 name 与 source），
+        // 因为选择器要显示来源。这里断言的是语义不变：公开集在、隐藏集不在。
+        assertThat(JsonPath.<java.util.List<java.util.Map<String, Object>>>read(json, "$.data.datasets"))
                 .as("只下发公开数据集；隐藏数据集由服务端持有（2026-10-23 起不再下发）")
+                .extracting(entry -> entry.get("key"))
                 .contains("orders-public")
                 .doesNotContain("orders-hidden-a");
     }

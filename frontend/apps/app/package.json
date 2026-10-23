@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:desktop": "vite build --mode desktop",
+    "build": "vite build && node scripts/check-lazy-editor.mjs",
+    "build:desktop": "vite build --mode desktop && node scripts/check-lazy-editor.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:lazy": "node scripts/check-lazy-editor.mjs"
   },
   "dependencies": {
     "3d-force-graph": "1.80.1",
@@ -22,6 +23,7 @@
     "@paideia/platform-desktop": "workspace:*",
     "@paideia/platform-web": "workspace:*",
     "@paideia/resume": "workspace:*",
+    "@paideia/sql-workbench": "workspace:*",
     "@paideia/ui": "workspace:*",
     "@tanstack/react-query": "5.104.1",
     "graphology": "0.26.0",

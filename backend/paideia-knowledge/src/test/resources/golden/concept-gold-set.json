@@ -1,0 +1,2498 @@
+{
+ "concepts": [
+  {
+   "id": 1,
+   "name": "总览",
+   "summary": "",
+   "course": "mysql",
+   "lesson": "00-总览.md"
+  },
+  {
+   "id": 2,
+   "name": "第一张表",
+   "summary": "建一个库、建一张表，说清表和库的区别",
+   "course": "mysql",
+   "lesson": "01-第一张表.md"
+  },
+  {
+   "id": 3,
+   "name": "SELECT与WHERE",
+   "summary": "用比较、逻辑组合、`IN`、`LIKE`、`BETWEEN` 把需要的行挑出来",
+   "course": "mysql",
+   "lesson": "02-SELECT与WHERE.md"
+  },
+  {
+   "id": 4,
+   "name": "排序分页与去重",
+   "summary": "用 `ORDER BY` 排序，知道多列排序是从左到右逐级生效的",
+   "course": "mysql",
+   "lesson": "03-排序分页与去重.md"
+  },
+  {
+   "id": 5,
+   "name": "聚合与分组",
+   "summary": "用 `COUNT` / `SUM` / `AVG` / `MIN` / `MAX` 把多行压成一个数",
+   "course": "mysql",
+   "lesson": "04-聚合与分组.md"
+  },
+  {
+   "id": 6,
+   "name": "多表连接",
+   "summary": "分清 `INNER JOIN` 与 `LEFT JOIN` 各自保留哪些行",
+   "course": "mysql",
+   "lesson": "05-多表连接.md"
+  },
+  {
+   "id": 7,
+   "name": "数据类型",
+   "summary": "说清为什么金额必须用 `DECIMAL`，`FLOAT`/`DOUBLE` 错在哪",
+   "course": "mysql",
+   "lesson": "06-数据类型.md"
+  },
+  {
+   "id": 8,
+   "name": "索引与约束",
+   "summary": "说清主键、唯一索引、普通索引三者各自约束什么",
+   "course": "mysql",
+   "lesson": "07-索引与约束.md"
+  },
+  {
+   "id": 9,
+   "name": "范式与表设计",
+   "summary": "说清第一、二、三范式各自禁止什么",
+   "course": "mysql",
+   "lesson": "08-范式与表设计.md"
+  },
+  {
+   "id": 10,
+   "name": "事务与ACID",
+   "summary": "用 `BEGIN` / `COMMIT` / `ROLLBACK` 控制边界",
+   "course": "mysql",
+   "lesson": "09-事务与ACID.md"
+  },
+  {
+   "id": 11,
+   "name": "隔离级别与锁",
+   "summary": "说清脏读、不可重复读、幻读各是什么现象",
+   "course": "mysql",
+   "lesson": "10-隔离级别与锁.md"
+  },
+  {
+   "id": 12,
+   "name": "执行计划与慢查询",
+   "summary": "用 `EXPLAIN` 看出一句查询是走索引还是全表扫",
+   "course": "mysql",
+   "lesson": "11-执行计划与慢查询.md"
+  },
+  {
+   "id": 13,
+   "name": "小项目订单系统",
+   "summary": "把需求拆成四张表，并说清每张表为什么存在",
+   "course": "mysql",
+   "lesson": "12-小项目订单系统.md"
+  },
+  {
+   "id": 14,
+   "name": "总览",
+   "summary": "",
+   "course": "java",
+   "lesson": "00-总览.md"
+  },
+  {
+   "id": 15,
+   "name": "编译运行与变量",
+   "summary": "用 `javac` 编译、用 `java` 运行一个 `.java` 文件",
+   "course": "java",
+   "lesson": "01-编译运行与变量.md"
+  },
+  {
+   "id": 16,
+   "name": "运算符与条件",
+   "summary": "分清 `==` 在基本类型和 `String` 上的两种含义",
+   "course": "java",
+   "lesson": "02-运算符与条件.md"
+  },
+  {
+   "id": 17,
+   "name": "循环与方法",
+   "summary": "用 `for`、`while`、`for-each` 三种循环，知道各自适合什么",
+   "course": "java",
+   "lesson": "03-循环与方法.md"
+  },
+  {
+   "id": 18,
+   "name": "数组与字符串",
+   "summary": "建数组、取长度、遍历、用 `Arrays` 工具类",
+   "course": "java",
+   "lesson": "04-数组与字符串.md"
+  },
+  {
+   "id": 19,
+   "name": "类与对象",
+   "summary": "写带字段、构造器、方法的类，并用 `new` 创建对象",
+   "course": "java",
+   "lesson": "05-类与对象.md"
+  },
+  {
+   "id": 20,
+   "name": "static与值传递",
+   "summary": "分清 `static` 成员与实例成员，知道为什么 `static` 方法里没有 `this`",
+   "course": "java",
+   "lesson": "06-static与值传递.md"
+  },
+  {
+   "id": 21,
+   "name": "继承多态与接口",
+   "summary": "写子类、用 `super()` 调父类构造器、重写方法",
+   "course": "java",
+   "lesson": "07-继承多态与接口.md"
+  },
+  {
+   "id": 22,
+   "name": "集合与泛型",
+   "summary": "用 `List`、`Map`、`Set` 三种集合，知道各自按什么找东西",
+   "course": "java",
+   "lesson": "08-集合与泛型.md"
+  },
+  {
+   "id": 23,
+   "name": "字符串深入",
+   "summary": "说清 `String` 为什么不可变，以及\"不可变\"到底省了你什么事",
+   "course": "java",
+   "lesson": "09-字符串深入.md"
+  },
+  {
+   "id": 24,
+   "name": "包装类与装箱",
+   "summary": "说清八种基本类型对应的包装类，以及为什么要有它们",
+   "course": "java",
+   "lesson": "10-包装类与装箱.md"
+  },
+  {
+   "id": 25,
+   "name": "equals与hashCode",
+   "summary": "说清 `equals` 与 `hashCode` 各自的契约，以及为什么两者必须一起重写",
+   "course": "java",
+   "lesson": "11-equals与hashCode.md"
+  },
+  {
+   "id": 26,
+   "name": "集合选型",
+   "summary": "按\"要不要顺序、要不要去重、要不要排序、要不要按 key 查\"四问选对集合",
+   "course": "java",
+   "lesson": "12-集合选型.md"
+  },
+  {
+   "id": 27,
+   "name": "异常",
+   "summary": "分清**受检异常**与**非受检异常**，知道为什么只有前者必须处理",
+   "course": "java",
+   "lesson": "13-异常.md"
+  },
+  {
+   "id": 28,
+   "name": "文件IO",
+   "summary": "用 `Files` 读写文本文件，并显式声明 UTF-8",
+   "course": "java",
+   "lesson": "14-文件IO.md"
+  },
+  {
+   "id": 29,
+   "name": "测试与构建",
+   "summary": "说清一个 JUnit 测试文件长什么样，`@Test` 与断言各做什么",
+   "course": "java",
+   "lesson": "15-测试与构建.md"
+  },
+  {
+   "id": 30,
+   "name": "小项目与并发入门",
+   "summary": "把一个程序拆成\"数据 / 逻辑 / 入口\"三层，并说清每层不该做什么",
+   "course": "java",
+   "lesson": "16-小项目与并发入门.md"
+  },
+  {
+   "id": 31,
+   "name": "泛型",
+   "summary": "读懂 `List<String>`、`Map<K, V>`、`<T extends Comparable<T>>` 这些写法",
+   "course": "java",
+   "lesson": "17-泛型.md"
+  },
+  {
+   "id": 32,
+   "name": "Optional",
+   "summary": "说清 `Optional` 解决的到底是什么问题",
+   "course": "java",
+   "lesson": "18-Optional.md"
+  },
+  {
+   "id": 33,
+   "name": "日期时间",
+   "summary": "分清 `LocalDate` / `LocalTime` / `LocalDateTime` / `Instant` / `ZonedDateTime` 各自代表什么",
+   "course": "java",
+   "lesson": "19-日期时间.md"
+  },
+  {
+   "id": 34,
+   "name": "Stream",
+   "summary": "把\"遍历 → 判断 → 收集\"三段循环改写成一条 Stream 链",
+   "course": "java",
+   "lesson": "20-Stream.md"
+  },
+  {
+   "id": 35,
+   "name": "Lambda与函数式接口",
+   "summary": "读懂 `(a, b) -> a + b` 这种写法，知道它的类型从哪来",
+   "course": "java",
+   "lesson": "21-Lambda与函数式接口.md"
+  },
+  {
+   "id": 36,
+   "name": "并发入门",
+   "summary": "用 `Runnable` 提交任务，知道为什么**不要自己 `new Thread()`**",
+   "course": "java",
+   "lesson": "22-并发入门.md"
+  },
+  {
+   "id": 37,
+   "name": "JVM内存与GC",
+   "summary": "说清 Java 内存的几块区域，以及对象到底分配在哪",
+   "course": "java",
+   "lesson": "23-JVM内存与GC.md"
+  },
+  {
+   "id": 38,
+   "name": "总览",
+   "summary": "",
+   "course": "python",
+   "lesson": "00-总览.md"
+  },
+  {
+   "id": 39,
+   "name": "环境与第一行代码",
+   "summary": "在自己的电脑上把一段 Python 代码跑起来，看到输出",
+   "course": "python",
+   "lesson": "01-环境与第一行代码.md"
+  },
+  {
+   "id": 40,
+   "name": "运算与条件",
+   "summary": "分清 `/`、`//`、`%` 各自干什么",
+   "course": "python",
+   "lesson": "02-运算与条件.md"
+  },
+  {
+   "id": 41,
+   "name": "循环",
+   "summary": "用 `for ... in range(...)` 重复固定次数、用 `while` 重复到条件不成立",
+   "course": "python",
+   "lesson": "03-循环.md"
+  },
+  {
+   "id": 42,
+   "name": "函数",
+   "summary": "定义带参数、带返回值的函数，并知道什么时候该抽成函数",
+   "course": "python",
+   "lesson": "04-函数.md"
+  },
+  {
+   "id": 43,
+   "name": "列表与元组",
+   "summary": "建列表、按位置取、切片、增删改",
+   "course": "python",
+   "lesson": "05-列表与元组.md"
+  },
+  {
+   "id": 44,
+   "name": "字典与集合",
+   "summary": "用字典按\"名字\"取数据，知道取不到时该用 `get` 还是直接下标",
+   "course": "python",
+   "lesson": "06-字典与集合.md"
+  },
+  {
+   "id": 45,
+   "name": "字符串与格式化",
+   "summary": "用 f-string 把变量拼进句子，并控制小数位",
+   "course": "python",
+   "lesson": "07-字符串与格式化.md"
+  },
+  {
+   "id": 46,
+   "name": "文件读写",
+   "summary": "用 `with open(...)` 读、写文本文件，并说明为什么必须用 `with`",
+   "course": "python",
+   "lesson": "08-文件读写.md"
+  },
+  {
+   "id": 47,
+   "name": "异常",
+   "summary": "用 `try / except` 接住**具体**的异常，而不是一把抓",
+   "course": "python",
+   "lesson": "09-异常.md"
+  },
+  {
+   "id": 48,
+   "name": "类与对象",
+   "summary": "定义带 `__init__` 的类，说清 `self` 是什么",
+   "course": "python",
+   "lesson": "10-类与对象.md"
+  },
+  {
+   "id": 49,
+   "name": "继承与多态",
+   "summary": "写一个子类，用 `super()` 复用父类的初始化",
+   "course": "python",
+   "lesson": "11-继承与多态.md"
+  },
+  {
+   "id": 50,
+   "name": "模块与包",
+   "summary": "分清 `import x`、`from x import y`、`import x as z` 三种写法的后果",
+   "course": "python",
+   "lesson": "12-模块与包.md"
+  },
+  {
+   "id": 51,
+   "name": "类型注解",
+   "summary": "给变量、函数参数、返回值写类型标注，并知道它们**运行时不起检查作用**",
+   "course": "python",
+   "lesson": "13-类型注解.md"
+  },
+  {
+   "id": 52,
+   "name": "迭代器与生成器",
+   "summary": "说清\"可迭代对象\"和\"迭代器\"的区别",
+   "course": "python",
+   "lesson": "14-迭代器与生成器.md"
+  },
+  {
+   "id": 53,
+   "name": "装饰器",
+   "summary": "解释\"函数也是对象\"，并把它当参数传、当返回值用",
+   "course": "python",
+   "lesson": "15-装饰器.md"
+  },
+  {
+   "id": 54,
+   "name": "上下文管理器",
+   "summary": "说清 `with open(...) as f` 里的 `f` 从哪来、关闭发生在什么时候",
+   "course": "python",
+   "lesson": "16-上下文管理器.md"
+  },
+  {
+   "id": 55,
+   "name": "并发入门",
+   "summary": "分清 CPU 密集与 I/O 密集，并说清它们分别该用什么方案",
+   "course": "python",
+   "lesson": "17-并发入门.md"
+  },
+  {
+   "id": 56,
+   "name": "小项目",
+   "summary": "把一个脚本拆成\"数据层 / 逻辑层 / 入口\"，知道为什么这么拆",
+   "course": "python",
+   "lesson": "18-小项目.md"
+  }
+ ],
+ "questions": [
+  {
+   "course": "mysql",
+   "lesson": "01-第一张表.md",
+   "quizId": "my-01-quiz",
+   "index": 0,
+   "stem": "DECIMAL(5,2) 能存下 999.99 吗？",
+   "options": [
+    "能",
+    "不能，总共 5 位里已经含了 2 位小数，整数部分最多 3 位",
+    "不能，只能存正数",
+    "只能存整数"
+   ],
+   "correctConceptId": 2
+  },
+  {
+   "course": "mysql",
+   "lesson": "01-第一张表.md",
+   "quizId": "my-01-quiz",
+   "index": 1,
+   "stem": "为什么推荐 INSERT 时写列名？",
+   "options": [
+    "因为写得更短",
+    "因为表结构变化时，不写列名的写法会全部错位",
+    "因为不写列名会慢十倍",
+    "因为 MySQL 不支持不写列名"
+   ],
+   "correctConceptId": 2
+  },
+  {
+   "course": "mysql",
+   "lesson": "01-第一张表.md",
+   "quizId": "my-01-quiz",
+   "index": 2,
+   "stem": "主键这一列可以是什么状态？",
+   "options": [
+    "可以为空",
+    "可以重复",
+    "不允许为空、不允许重复",
+    "只能是字符串"
+   ],
+   "correctConceptId": 2
+  },
+  {
+   "course": "mysql",
+   "lesson": "02-SELECT与WHERE.md",
+   "quizId": "my-02-quiz",
+   "index": 0,
+   "stem": "WHERE note = NULL 会返回什么？",
+   "options": [
+    "所有 note 为空的行",
+    "一行都没有，因为比较结果是未知"
+   ],
+   "correctConceptId": 3
+  },
+  {
+   "course": "mysql",
+   "lesson": "02-SELECT与WHERE.md",
+   "quizId": "my-02-quiz",
+   "index": 1,
+   "stem": "WHERE a OR b AND c 的实际含义是？",
+   "options": [
+    "(a OR b) AND c",
+    "a OR (b AND c)",
+    "a AND b OR c",
+    "取决于数据库版本"
+   ],
+   "correctConceptId": 3
+  },
+  {
+   "course": "mysql",
+   "lesson": "02-SELECT与WHERE.md",
+   "quizId": "my-02-quiz",
+   "index": 2,
+   "stem": "LIKE '%线' 为什么用不上普通索引？",
+   "options": [
+    "因为字符串比较慢",
+    "因为索引按前缀排序，以通配符开头时无法定位起点",
+    "因为 LIKE 不支持索引",
+    "因为数据量太大"
+   ],
+   "correctConceptId": 3
+  },
+  {
+   "course": "mysql",
+   "lesson": "03-排序分页与去重.md",
+   "quizId": "my-03-quiz",
+   "index": 0,
+   "stem": "ORDER BY salary DESC 时 NULL 会出现在哪？",
+   "options": [
+    "最前面，因为 NULL 被当作最小值，降序排在末尾",
+    "最末尾",
+    "不出现在结果里",
+    "随机"
+   ],
+   "correctConceptId": 4
+  },
+  {
+   "course": "mysql",
+   "lesson": "03-排序分页与去重.md",
+   "quizId": "my-03-quiz",
+   "index": 1,
+   "stem": "分页查询为什么排序键末尾要加主键？",
+   "options": [
+    "为了更快",
+    "因为排序键有重复值时顺序不稳定，翻页会重复或漏行",
+    "因为 MySQL 语法要求",
+    "为了减少内存"
+   ],
+   "correctConceptId": 4
+  },
+  {
+   "course": "mysql",
+   "lesson": "03-排序分页与去重.md",
+   "quizId": "my-03-quiz",
+   "index": 2,
+   "stem": "SELECT DISTINCT dept, salary 是按什么去重？",
+   "options": [
+    "只按 dept",
+    "只按 salary",
+    "按 (dept, salary) 这个组合",
+    "按行号"
+   ],
+   "correctConceptId": 4
+  },
+  {
+   "course": "mysql",
+   "lesson": "04-聚合与分组.md",
+   "quizId": "my-04-quiz",
+   "index": 0,
+   "stem": "表中 10 行，其中 3 行的 score 是 NULL。COUNT(*) 与 COUNT(score) 分别是多少？",
+   "options": [
+    "10 与 10",
+    "10 与 7",
+    "7 与 7",
+    "10 与 3"
+   ],
+   "correctConceptId": 5
+  },
+  {
+   "course": "mysql",
+   "lesson": "04-聚合与分组.md",
+   "quizId": "my-04-quiz",
+   "index": 1,
+   "stem": "AVG(score) 时，NULL 那一行会被怎么处理？",
+   "options": [
+    "当作 0 参与计算",
+    "分子分母都不计入",
+    "只计入分子",
+    "导致整个结果为 NULL"
+   ],
+   "correctConceptId": 5
+  },
+  {
+   "course": "mysql",
+   "lesson": "04-聚合与分组.md",
+   "quizId": "my-04-quiz",
+   "index": 2,
+   "stem": "为什么能把条件写在 WHERE 就不要写在 HAVING？",
+   "options": [
+    "因为 HAVING 语法更严格",
+    "因为 WHERE 在分组前执行，能更早减少行数，后面的分组代价更小",
+    "因为 HAVING 不支持索引",
+    "两者等价"
+   ],
+   "correctConceptId": 5
+  },
+  {
+   "course": "mysql",
+   "lesson": "05-多表连接.md",
+   "quizId": "my-05-quiz",
+   "index": 0,
+   "stem": "LEFT JOIN 后统计「每人订单数」，为什么用 COUNT(o.id) 而不是 COUNT(*)？",
+   "options": [
+    "因为更快",
+    "因为没订单的用户连接后右列是 NULL，COUNT(*) 会数成 1，而 COUNT(o.id) 正确得到 0",
+    "两者结果相同",
+    "因为 COUNT(*) 不支持 GROUP BY"
+   ],
+   "correctConceptId": 6
+  },
+  {
+   "course": "mysql",
+   "lesson": "05-多表连接.md",
+   "quizId": "my-05-quiz",
+   "index": 1,
+   "stem": "LEFT JOIN 的右表条件写在 ON 和写在 WHERE，结果有什么差别？",
+   "options": [
+    "没有差别",
+    "写在 ON 是过滤匹配、左表全保留；写在 WHERE 会把空匹配行筛掉，退化成内连接",
+    "写在 WHERE 更快",
+    "写在 ON 会报错"
+   ],
+   "correctConceptId": 6
+  },
+  {
+   "course": "mysql",
+   "lesson": "05-多表连接.md",
+   "quizId": "my-05-quiz",
+   "index": 2,
+   "stem": "两张一对多的表都 JOIN 进来做 COUNT，为什么会得到偏大的数？",
+   "options": [
+    "因为索引没建",
+    "因为行数交叉相乘（笛卡尔积），每条都被重复计数",
+    "因为 COUNT 有 bug",
+    "因为没加 ORDER BY"
+   ],
+   "correctConceptId": 6
+  },
+  {
+   "course": "mysql",
+   "lesson": "06-数据类型.md",
+   "quizId": "my-06-quiz",
+   "index": 0,
+   "stem": "为什么金额不能用 DOUBLE？",
+   "options": [
+    "因为 DOUBLE 存不下大数",
+    "因为二进制浮点无法精确表示大多数十进制小数，累加与比较会产生误差",
+    "因为 DOUBLE 不支持负数",
+    "因为 DOUBLE 不能建索引"
+   ],
+   "correctConceptId": 7
+  },
+  {
+   "course": "mysql",
+   "lesson": "06-数据类型.md",
+   "quizId": "my-06-quiz",
+   "index": 1,
+   "stem": "VARCHAR(20) 在 utf8mb4 下能存多少个汉字？",
+   "options": [
+    "20 字节，约 5 个汉字",
+    "20 个字符，最多占 80 字节",
+    "20 个字节，约 20 个汉字",
+    "取决于表的排序规则"
+   ],
+   "correctConceptId": 7
+  },
+  {
+   "course": "mysql",
+   "lesson": "06-数据类型.md",
+   "quizId": "my-06-quiz",
+   "index": 2,
+   "stem": "DATETIME 与 TIMESTAMP 的关键区别是什么？",
+   "options": [
+    "精度不同",
+    "DATETIME 不带时区转换，TIMESTAMP 存 UTC 并按会话时区转换",
+    "TIMESTAMP 不能存日期",
+    "DATETIME 有 2038 限制"
+   ],
+   "correctConceptId": 7
+  },
+  {
+   "course": "mysql",
+   "lesson": "07-索引与约束.md",
+   "quizId": "my-07-quiz",
+   "index": 0,
+   "stem": "复合索引 (city, age) 能加速 WHERE age = 20 吗？",
+   "options": [
+    "能",
+    "不能，违反最左前缀原则",
+    "只能加速一部分",
+    "取决于数据量"
+   ],
+   "correctConceptId": 8
+  },
+  {
+   "course": "mysql",
+   "lesson": "07-索引与约束.md",
+   "quizId": "my-07-quiz",
+   "index": 1,
+   "stem": "唯一索引上可以有多个 NULL 吗？",
+   "options": [
+    "不可以，最多一个",
+    "可以，因为 NULL 不等于 NULL，唯一约束不触发",
+    "只能在 MySQL 8 上",
+    "取决于存储引擎"
+   ],
+   "correctConceptId": 8
+  },
+  {
+   "course": "mysql",
+   "lesson": "07-索引与约束.md",
+   "quizId": "my-07-quiz",
+   "index": 2,
+   "stem": "WHERE YEAR(created_at) = 2026 为什么用不上 created_at 上的索引？",
+   "options": [
+    "因为 YEAR 函数不支持索引",
+    "因为列被函数包住，索引里存的是原始值，无法直接比对",
+    "因为年份太新",
+    "因为数据量小"
+   ],
+   "correctConceptId": 8
+  },
+  {
+   "course": "mysql",
+   "lesson": "08-范式与表设计.md",
+   "quizId": "my-08-quiz",
+   "index": 0,
+   "stem": "一个字段里存「键盘, 鼠标」违反哪一范式？",
+   "options": [
+    "第一范式：每格只放一个值",
+    "第二范式",
+    "第三范式",
+    "不违反任何范式"
+   ],
+   "correctConceptId": 9
+  },
+  {
+   "course": "mysql",
+   "lesson": "08-范式与表设计.md",
+   "quizId": "my-08-quiz",
+   "index": 1,
+   "stem": "订单明细里冗余存下单时的商品价格，是不是设计错误？",
+   "options": [
+    "是，违反范式必须拆出去",
+    "不是，商品当前价格与下单时价格是两个不同的事实，这是快照",
+    "是，应该只存商品 id",
+    "取决于是否建外键"
+   ],
+   "correctConceptId": 9
+  },
+  {
+   "course": "mysql",
+   "lesson": "08-范式与表设计.md",
+   "quizId": "my-08-quiz",
+   "index": 2,
+   "stem": "customer_city 存在订单表里，同时 customer_name 也在，这属于什么问题？",
+   "options": [
+    "第一范式",
+    "第二范式",
+    "第三范式的传递依赖",
+    "没有问题"
+   ],
+   "correctConceptId": 9
+  },
+  {
+   "course": "mysql",
+   "lesson": "09-事务与ACID.md",
+   "quizId": "my-09-quiz",
+   "index": 0,
+   "stem": "UPDATE ... WHERE id=1 AND qty>0 返回影响行数 0，说明什么？",
+   "options": [
+    "语句出错了",
+    "条件不满足（库存不足），什么都没改",
+    "已经扣成功",
+    "连接断了"
+   ],
+   "correctConceptId": 10
+  },
+  {
+   "course": "mysql",
+   "lesson": "09-事务与ACID.md",
+   "quizId": "my-09-quiz",
+   "index": 1,
+   "stem": "为什么事务里不该调第三方接口？",
+   "options": [
+    "因为接口不支持事务语法",
+    "因为网络延迟会拉长事务、长时间占着锁与连接",
+    "因为接口会回滚数据库",
+    "因为会影响统计"
+   ],
+   "correctConceptId": 10
+  },
+  {
+   "course": "mysql",
+   "lesson": "09-事务与ACID.md",
+   "quizId": "my-09-quiz",
+   "index": 2,
+   "stem": "回滚能撤销下面哪一项？",
+   "options": [
+    "事务里发出的一封邮件",
+    "事务里的一条 INSERT",
+    "事务里写的一个本地文件",
+    "事务里调用的一次外部接口"
+   ],
+   "correctConceptId": 10
+  },
+  {
+   "course": "mysql",
+   "lesson": "10-隔离级别与锁.md",
+   "quizId": "my-10-quiz",
+   "index": 0,
+   "stem": "MySQL InnoDB 默认的隔离级别是什么？",
+   "options": [
+    "READ COMMITTED",
+    "REPEATABLE READ",
+    "SERIALIZABLE",
+    "READ UNCOMMITTED"
+   ],
+   "correctConceptId": 11
+  },
+  {
+   "course": "mysql",
+   "lesson": "10-隔离级别与锁.md",
+   "quizId": "my-10-quiz",
+   "index": 1,
+   "stem": "普通 SELECT 与 SELECT ... FOR UPDATE 的关键区别？",
+   "options": [
+    "前者更快",
+    "前者是快照读不加锁，后者是当前读并加行锁",
+    "前者不能用于事务",
+    "后者不能用于 MySQL"
+   ],
+   "correctConceptId": 11
+  },
+  {
+   "course": "mysql",
+   "lesson": "10-隔离级别与锁.md",
+   "quizId": "my-10-quiz",
+   "index": 2,
+   "stem": "不可重复读与幻读的区别是什么？",
+   "options": [
+    "没有区别",
+    "前者是同一行的值变了，后者是结果集多了或少了行",
+    "前者发生在 RR，后者发生在 RC",
+    "前者只在 MySQL 里出现"
+   ],
+   "correctConceptId": 11
+  },
+  {
+   "course": "mysql",
+   "lesson": "11-执行计划与慢查询.md",
+   "quizId": "my-11-quiz",
+   "index": 0,
+   "stem": "EXPLAIN 结果里 type=ALL 意味着什么？",
+   "options": [
+    "用了全部索引",
+    "全表扫描",
+    "使用了主键",
+    "查询有错误"
+   ],
+   "correctConceptId": 12
+  },
+  {
+   "course": "mysql",
+   "lesson": "11-执行计划与慢查询.md",
+   "quizId": "my-11-quiz",
+   "index": 1,
+   "stem": "下面哪种写法会让 created 上的索引用不上？",
+   "options": [
+    "created >= '2026-01-01'",
+    "created BETWEEN '2026-01-01' AND '2026-12-31'",
+    "YEAR(created) = 2026",
+    "created IS NULL"
+   ],
+   "correctConceptId": 12
+  },
+  {
+   "course": "mysql",
+   "lesson": "11-执行计划与慢查询.md",
+   "quizId": "my-11-quiz",
+   "index": 2,
+   "stem": "EXPLAIN 里的 rows 是什么？",
+   "options": [
+    "真实扫描行数",
+    "优化器根据统计信息给出的预估扫描行数",
+    "返回结果的行数",
+    "表的行数"
+   ],
+   "correctConceptId": 12
+  },
+  {
+   "course": "mysql",
+   "lesson": "12-小项目订单系统.md",
+   "quizId": "my-12-quiz",
+   "index": 0,
+   "stem": "order_items 里为什么要额外存 unit_price？",
+   "options": [
+    "为了减少连接",
+    "因为商品当前价格会变，历史订单必须显示下单时的价格",
+    "为了省空间",
+    "因为范式要求"
+   ],
+   "correctConceptId": 13
+  },
+  {
+   "course": "mysql",
+   "lesson": "12-小项目订单系统.md",
+   "quizId": "my-12-quiz",
+   "index": 1,
+   "stem": "统计每个客户的订单数时，为什么要 COUNT(DISTINCT o.id)？",
+   "options": [
+    "为了更快",
+    "因为一个订单有多条明细，JOIN 后订单会被放大成多行",
+    "因为 ORDER BY 需要",
+    "因为 COUNT(*) 不算空行"
+   ],
+   "correctConceptId": 13
+  },
+  {
+   "course": "mysql",
+   "lesson": "12-小项目订单系统.md",
+   "quizId": "my-12-quiz",
+   "index": 2,
+   "stem": "UPDATE ... WHERE id=1 AND qty>=2 返回影响行数 0，应用应该怎么处理？",
+   "options": [
+    "继续插入订单",
+    "回滚事务并返回库存不足",
+    "重试三次",
+    "睡一会儿再试"
+   ],
+   "correctConceptId": 13
+  },
+  {
+   "course": "java",
+   "lesson": "01-编译运行与变量.md",
+   "quizId": "java-01-quiz",
+   "index": 0,
+   "stem": "运行编译好的类，正确的命令是？",
+   "options": [
+    "java Main.class",
+    "java Main",
+    "javac Main"
+   ],
+   "correctConceptId": 15
+  },
+  {
+   "course": "java",
+   "lesson": "01-编译运行与变量.md",
+   "quizId": "java-01-quiz",
+   "index": 1,
+   "stem": "int a = 7; int b = 2; a / b 的结果是？",
+   "options": [
+    "3.5",
+    "3",
+    "4"
+   ],
+   "correctConceptId": 15
+  },
+  {
+   "course": "java",
+   "lesson": "01-编译运行与变量.md",
+   "quizId": "java-01-quiz",
+   "index": 2,
+   "stem": "String 属于哪一类？",
+   "options": [
+    "八种基本类型之一",
+    "引用类型（它是一个类）",
+    "数组"
+   ],
+   "correctConceptId": 15
+  },
+  {
+   "course": "java",
+   "lesson": "02-运算符与条件.md",
+   "quizId": "java-02-quiz",
+   "index": 0,
+   "stem": "为什么 \"abc\" == new String(\"abc\") 是 false？",
+   "options": [
+    "因为内容不同",
+    "因为 == 比较引用，new 造出的是另一个对象",
+    "因为 Java 不允许这样写"
+   ],
+   "correctConceptId": 16
+  },
+  {
+   "course": "java",
+   "lesson": "02-运算符与条件.md",
+   "quizId": "java-02-quiz",
+   "index": 1,
+   "stem": "判断一个可能为 null 的字符串是否等于 \"abc\"，哪种写法安全？",
+   "options": [
+    "name.equals(\"abc\")",
+    "\"abc\".equals(name)",
+    "两者一样安全"
+   ],
+   "correctConceptId": 16
+  },
+  {
+   "course": "java",
+   "lesson": "02-运算符与条件.md",
+   "quizId": "java-02-quiz",
+   "index": 2,
+   "stem": "switch 的箭头形式有什么好处？",
+   "options": [
+    "运行更快",
+    "不会贯穿到下一个分支，不需要 break",
+    "支持所有类型"
+   ],
+   "correctConceptId": 16
+  },
+  {
+   "course": "java",
+   "lesson": "03-循环与方法.md",
+   "quizId": "java-03-quiz",
+   "index": 0,
+   "stem": "for (int i = 0; i < 3; i++) 循环体执行几次？",
+   "options": [
+    "2 次",
+    "3 次",
+    "4 次"
+   ],
+   "correctConceptId": 17
+  },
+  {
+   "course": "java",
+   "lesson": "03-循环与方法.md",
+   "quizId": "java-03-quiz",
+   "index": 1,
+   "stem": "两个方法只有返回类型不同（int vs double），能算重载吗？",
+   "options": [
+    "能",
+    "不能，参数列表必须不同",
+    "只要方法名不同就行"
+   ],
+   "correctConceptId": 17
+  },
+  {
+   "course": "java",
+   "lesson": "03-循环与方法.md",
+   "quizId": "java-03-quiz",
+   "index": 2,
+   "stem": "为什么循环里要用 StringBuilder 而不是 String 相加？",
+   "options": [
+    "String 不能相加",
+    "String 不可变，每次相加都造新串，循环里开销随规模放大",
+    "StringBuilder 能自动去重"
+   ],
+   "correctConceptId": 17
+  },
+  {
+   "course": "java",
+   "lesson": "04-数组与字符串.md",
+   "quizId": "java-04-quiz",
+   "index": 0,
+   "stem": "数组的长度用哪个？",
+   "options": [
+    "numbers.length",
+    "numbers.length()",
+    "numbers.size()"
+   ],
+   "correctConceptId": 18
+  },
+  {
+   "course": "java",
+   "lesson": "04-数组与字符串.md",
+   "quizId": "java-04-quiz",
+   "index": 1,
+   "stem": "Object[] objects = new String[]{\"a\"}; objects[0] = 1; 会怎样？",
+   "options": [
+    "编译失败",
+    "编译通过，运行期抛 ArrayStoreException",
+    "正常运行，objects[0] 变成 1"
+   ],
+   "correctConceptId": 18
+  },
+  {
+   "course": "java",
+   "lesson": "04-数组与字符串.md",
+   "quizId": "java-04-quiz",
+   "index": 2,
+   "stem": "text.split(\".\") 为什么切不对？",
+   "options": [
+    "因为点号是保留字符",
+    "因为 split 的参数是正则，点号在其中表示任意字符",
+    "因为空字符串不能 split"
+   ],
+   "correctConceptId": 18
+  },
+  {
+   "course": "java",
+   "lesson": "05-类与对象.md",
+   "quizId": "java-05-quiz",
+   "index": 0,
+   "stem": "private final List<String> tags 里的 final 保证了什么？",
+   "options": [
+    "列表内容不能改",
+    "字段的引用不能再指向别的列表，但列表内容仍可增删",
+    "列表变成只读"
+   ],
+   "correctConceptId": 19
+  },
+  {
+   "course": "java",
+   "lesson": "05-类与对象.md",
+   "quizId": "java-05-quiz",
+   "index": 1,
+   "stem": "重写了 equals 没重写 hashCode 会怎样？",
+   "options": [
+    "编译报错",
+    "内容相同的对象放进 HashSet 时可能找不到",
+    "没什么影响"
+   ],
+   "correctConceptId": 19
+  },
+  {
+   "course": "java",
+   "lesson": "05-类与对象.md",
+   "quizId": "java-05-quiz",
+   "index": 2,
+   "stem": "字段设为 private 的主要目的是什么？",
+   "options": [
+    "让代码更短",
+    "把合法性校验收在一处，外部无法绕过",
+    "提高运行速度"
+   ],
+   "correctConceptId": 19
+  },
+  {
+   "course": "java",
+   "lesson": "06-static与值传递.md",
+   "quizId": "java-06-quiz",
+   "index": 0,
+   "stem": "static 方法里为什么不能用 this？",
+   "options": [
+    "因为语法不允许写",
+    "因为 static 属于类，没有「当前对象」这个东西",
+    "因为 this 只能用在构造器里"
+   ],
+   "correctConceptId": 20
+  },
+  {
+   "course": "java",
+   "lesson": "06-static与值传递.md",
+   "quizId": "java-06-quiz",
+   "index": 1,
+   "stem": "方法里 s = new Student(...) 之后，调用方的变量会变吗？",
+   "options": [
+    "会，因为传的是引用",
+    "不会，方法拿到的是引用的副本，重新赋值只改副本",
+    "取决于对象大小"
+   ],
+   "correctConceptId": 20
+  },
+  {
+   "course": "java",
+   "lesson": "06-static与值传递.md",
+   "quizId": "java-06-quiz",
+   "index": 2,
+   "stem": "static 适合用来做什么？",
+   "options": [
+    "存全局可变状态",
+    "工具方法与常量",
+    "每个对象独有的数据"
+   ],
+   "correctConceptId": 20
+  },
+  {
+   "course": "java",
+   "lesson": "07-继承多态与接口.md",
+   "quizId": "java-07-quiz",
+   "index": 0,
+   "stem": "一个类能同时继承几个类、实现几个接口？",
+   "options": [
+    "继承 1 个类，实现多个接口",
+    "继承多个类，实现 1 个接口",
+    "都只能 1 个"
+   ],
+   "correctConceptId": 21
+  },
+  {
+   "course": "java",
+   "lesson": "07-继承多态与接口.md",
+   "quizId": "java-07-quiz",
+   "index": 1,
+   "stem": "@Override 注解删掉会怎样？",
+   "options": [
+    "程序无法运行",
+    "能跑，但拼错方法名时不会报错，变成悄悄新增了一个方法",
+    "父类方法会失效"
+   ],
+   "correctConceptId": 21
+  },
+  {
+   "course": "java",
+   "lesson": "07-继承多态与接口.md",
+   "quizId": "java-07-quiz",
+   "index": 2,
+   "stem": "需要共享部分实现和状态时，优先选哪个？",
+   "options": [
+    "接口",
+    "抽象类",
+    "两者一样"
+   ],
+   "correctConceptId": 21
+  },
+  {
+   "course": "java",
+   "lesson": "08-集合与泛型.md",
+   "quizId": "java-08-quiz",
+   "index": 0,
+   "stem": "为什么不能写 new T()？",
+   "options": [
+    "因为 T 是关键字",
+    "因为泛型在运行期被擦除，编译器不知道 T 的真实类型",
+    "因为构造器必须 public"
+   ],
+   "correctConceptId": 22
+  },
+  {
+   "course": "java",
+   "lesson": "08-集合与泛型.md",
+   "quizId": "java-08-quiz",
+   "index": 1,
+   "stem": "List<String> 能赋值给 List<Object> 吗？",
+   "options": [
+    "能",
+    "不能，因为泛型不会随元素类型协变",
+    "只有 ArrayList 能"
+   ],
+   "correctConceptId": 22
+  },
+  {
+   "course": "java",
+   "lesson": "08-集合与泛型.md",
+   "quizId": "java-08-quiz",
+   "index": 2,
+   "stem": "遍历 List 时调用 remove 会怎样？",
+   "options": [
+    "正常删除",
+    "抛 ConcurrentModificationException",
+    "静默跳过元素"
+   ],
+   "correctConceptId": 22
+  },
+  {
+   "course": "java",
+   "lesson": "09-字符串深入.md",
+   "quizId": "java-13-quiz",
+   "index": 0,
+   "stem": "String s = \"a\"; s.toUpperCase(); 之后 System.out.println(s) 输出什么？",
+   "options": [
+    "A",
+    "a",
+    "编译错误"
+   ],
+   "correctConceptId": 23
+  },
+  {
+   "course": "java",
+   "lesson": "09-字符串深入.md",
+   "quizId": "java-13-quiz",
+   "index": 1,
+   "stem": "String a = \"x\"; String b = new String(\"x\"); 下列哪个为 true？",
+   "options": [
+    "a == b",
+    "a.equals(b)",
+    "两个都是 true"
+   ],
+   "correctConceptId": 23
+  },
+  {
+   "course": "java",
+   "lesson": "09-字符串深入.md",
+   "quizId": "java-13-quiz",
+   "index": 2,
+   "stem": "循环里 result += i 的主要问题是什么？",
+   "options": [
+    "语法不允许",
+    "每轮都新建字符串并复制全部旧内容，总代价是平方级",
+    "结果会少一个字符"
+   ],
+   "correctConceptId": 23
+  },
+  {
+   "course": "java",
+   "lesson": "10-包装类与装箱.md",
+   "quizId": "java-10-quiz",
+   "index": 0,
+   "stem": "Integer a = 127; Integer b = 127; a == b 的结果是？",
+   "options": [
+    "true",
+    "false",
+    "编译错误"
+   ],
+   "correctConceptId": 24
+  },
+  {
+   "course": "java",
+   "lesson": "10-包装类与装箱.md",
+   "quizId": "java-10-quiz",
+   "index": 1,
+   "stem": "Integer a = 200; Integer b = 200; a == b 的结果是？",
+   "options": [
+    "true",
+    "false",
+    "看 JVM 实现"
+   ],
+   "correctConceptId": 24
+  },
+  {
+   "course": "java",
+   "lesson": "10-包装类与装箱.md",
+   "quizId": "java-10-quiz",
+   "index": 2,
+   "stem": "Integer x = null; if (x == 0) 会怎样？",
+   "options": [
+    "正常执行，条件为 false",
+    "抛 NullPointerException",
+    "编译错误"
+   ],
+   "correctConceptId": 24
+  },
+  {
+   "course": "java",
+   "lesson": "11-equals与hashCode.md",
+   "quizId": "java-11-quiz",
+   "index": 0,
+   "stem": "两个对象 equals 相等但 hashCode 不同，放进 HashSet 会怎样？",
+   "options": [
+    "正常去重",
+    "都能放进去，且 contains 找不到应有的那个",
+    "抛异常"
+   ],
+   "correctConceptId": 25
+  },
+  {
+   "course": "java",
+   "lesson": "11-equals与hashCode.md",
+   "quizId": "java-11-quiz",
+   "index": 1,
+   "stem": "hashCode 相同的两个对象，equals 一定相等吗？",
+   "options": [
+    "一定",
+    "不一定，这叫哈希碰撞",
+    "取决于 JVM"
+   ],
+   "correctConceptId": 25
+  },
+  {
+   "course": "java",
+   "lesson": "11-equals与hashCode.md",
+   "quizId": "java-11-quiz",
+   "index": 2,
+   "stem": "为什么 equals 方法必须写 @Override？",
+   "options": [
+    "为了性能",
+    "不加会把参数写成自己的类型，变成重载而不是覆盖，HashMap 调不到",
+    "没有原因，可写可不写"
+   ],
+   "correctConceptId": 25
+  },
+  {
+   "course": "java",
+   "lesson": "12-集合选型.md",
+   "quizId": "java-18-quiz",
+   "index": 0,
+   "stem": "要在 LinkedList 上按下标 for 循环遍历，性能如何？",
+   "options": [
+    "与 ArrayList 相同",
+    "每次 get(i) 都要从头走，总代价 O(n²)",
+    "比 ArrayList 快"
+   ],
+   "correctConceptId": 26
+  },
+  {
+   "course": "java",
+   "lesson": "12-集合选型.md",
+   "quizId": "java-18-quiz",
+   "index": 1,
+   "stem": "需要按 key 自动排序的 Map，该用哪个？",
+   "options": [
+    "HashMap",
+    "LinkedHashMap",
+    "TreeMap"
+   ],
+   "correctConceptId": 26
+  },
+  {
+   "course": "java",
+   "lesson": "12-集合选型.md",
+   "quizId": "java-18-quiz",
+   "index": 2,
+   "stem": "循环里 if (list.contains(x)) 的主要问题是什么？",
+   "options": [
+    "contains 会抛异常",
+    "ArrayList.contains 是线性扫描，循环里用就是 O(n²)",
+    "没有 null 检查"
+   ],
+   "correctConceptId": 26
+  },
+  {
+   "course": "java",
+   "lesson": "13-异常.md",
+   "quizId": "java-09-quiz",
+   "index": 0,
+   "stem": "哪些异常是编译器强制处理的？",
+   "options": [
+    "RuntimeException 及其子类",
+    "受检异常（Exception 中除 RuntimeException 之外的部分）",
+    "所有 Exception"
+   ],
+   "correctConceptId": 27
+  },
+  {
+   "course": "java",
+   "lesson": "13-异常.md",
+   "quizId": "java-09-quiz",
+   "index": 1,
+   "stem": "try-with-resources 解决什么问题？",
+   "options": [
+    "让异常不再抛出",
+    "自动关闭资源，即使中途抛异常",
+    "把受检异常变成非受检"
+   ],
+   "correctConceptId": 27
+  },
+  {
+   "course": "java",
+   "lesson": "13-异常.md",
+   "quizId": "java-09-quiz",
+   "index": 2,
+   "stem": "catch 分支的顺序应该怎么排？",
+   "options": [
+    "从宽泛到具体",
+    "从具体到宽泛",
+    "顺序无所谓"
+   ],
+   "correctConceptId": 27
+  },
+  {
+   "course": "java",
+   "lesson": "14-文件IO.md",
+   "quizId": "java-10-quiz",
+   "index": 0,
+   "stem": "Files.writeString 不传选项时是什么行为？",
+   "options": [
+    "追加",
+    "覆盖（文件存在则清空）",
+    "只在文件不存在时写"
+   ],
+   "correctConceptId": 28
+  },
+  {
+   "course": "java",
+   "lesson": "14-文件IO.md",
+   "quizId": "java-10-quiz",
+   "index": 1,
+   "stem": "为什么不写 StandardCharsets.UTF_8 会出问题？",
+   "options": [
+    "会让文件变大",
+    "默认编码随平台变化，中文可能乱码或抛异常",
+    "不写会编译失败"
+   ],
+   "correctConceptId": 28
+  },
+  {
+   "course": "java",
+   "lesson": "14-文件IO.md",
+   "quizId": "java-10-quiz",
+   "index": 2,
+   "stem": "Path.of(\"data.txt\") 相对的是谁？",
+   "options": [
+    "类文件所在目录",
+    "当前工作目录",
+    "项目根目录"
+   ],
+   "correctConceptId": 28
+  },
+  {
+   "course": "java",
+   "lesson": "15-测试与构建.md",
+   "quizId": "java-11-quiz",
+   "index": 0,
+   "stem": "断言失败时会发生什么？",
+   "options": [
+    "打印一行日志然后继续",
+    "抛 AssertionFailedError，测试被判定失败",
+    "程序直接退出码 0"
+   ],
+   "correctConceptId": 29
+  },
+  {
+   "course": "java",
+   "lesson": "15-测试与构建.md",
+   "quizId": "java-11-quiz",
+   "index": 1,
+   "stem": "Maven 的 src/main/java 与 src/test/java 有什么区别？",
+   "options": [
+    "没区别，随便放",
+    "前者是生产代码，后者是测试代码，分别编译到不同目录",
+    "后者会被打包进最终 jar"
+   ],
+   "correctConceptId": 29
+  },
+  {
+   "course": "java",
+   "lesson": "15-测试与构建.md",
+   "quizId": "java-11-quiz",
+   "index": 2,
+   "stem": "依赖作用域 test 意味着什么？",
+   "options": [
+    "只测试时需要，不会进入最终产物",
+    "只在测试环境运行",
+    "必须由用户自己安装"
+   ],
+   "correctConceptId": 29
+  },
+  {
+   "course": "java",
+   "lesson": "16-小项目与并发入门.md",
+   "quizId": "java-12-quiz",
+   "index": 0,
+   "stem": "为什么把业务逻辑写成不碰文件的方法？",
+   "options": [
+    "运行更快",
+    "不用造文件就能直接测，换存储实现也不用改它",
+    "Java 禁止方法里读写文件"
+   ],
+   "correctConceptId": 30
+  },
+  {
+   "course": "java",
+   "lesson": "16-小项目与并发入门.md",
+   "quizId": "java-12-quiz",
+   "index": 1,
+   "stem": "两个线程各对同一个 int 执行一次 i++，最坏结果是什么？",
+   "options": [
+    "一定是 2",
+    "可能是 1",
+    "一定是 0"
+   ],
+   "correctConceptId": 30
+  },
+  {
+   "course": "java",
+   "lesson": "16-小项目与并发入门.md",
+   "quizId": "java-12-quiz",
+   "index": 2,
+   "stem": "解决共享计数最省事的顺序是什么？",
+   "options": [
+    "先加锁再说",
+    "先想能不能不共享 / 用不可变，再考虑同步",
+    "直接把字段改 public"
+   ],
+   "correctConceptId": 30
+  },
+  {
+   "course": "java",
+   "lesson": "17-泛型.md",
+   "quizId": "java-12-quiz",
+   "index": 0,
+   "stem": "为什么 List<int> 编译不过？",
+   "options": [
+    "int 太短",
+    "泛型类型参数只能是引用类型，基本类型要换成 Integer",
+    "List 不支持基本类型是 bug"
+   ],
+   "correctConceptId": 31
+  },
+  {
+   "course": "java",
+   "lesson": "17-泛型.md",
+   "quizId": "java-12-quiz",
+   "index": 1,
+   "stem": "List<? extends Number> 类型的参数，能往里 add(1) 吗？",
+   "options": [
+    "能",
+    "不能，编译错误",
+    "运行时才报错"
+   ],
+   "correctConceptId": 31
+  },
+  {
+   "course": "java",
+   "lesson": "17-泛型.md",
+   "quizId": "java-12-quiz",
+   "index": 2,
+   "stem": "以下哪个方法签名既能从列表读、也能往列表写？",
+   "options": [
+    "void copy(List<? extends T> from)",
+    "void copy(List<? super T> to)",
+    "void copy(List<T> items)"
+   ],
+   "correctConceptId": 31
+  },
+  {
+   "course": "java",
+   "lesson": "18-Optional.md",
+   "quizId": "java-13-quiz",
+   "index": 0,
+   "stem": "为什么不该把 Optional 用作类的字段？",
+   "options": [
+    "语法不允许",
+    "它不可序列化、每字段多一个对象，而且字段可空用文档表达更轻",
+    "字段里放 Optional 会编译报错"
+   ],
+   "correctConceptId": 32
+  },
+  {
+   "course": "java",
+   "lesson": "18-Optional.md",
+   "quizId": "java-13-quiz",
+   "index": 1,
+   "stem": "orElse 与 orElseGet 的区别是？",
+   "options": [
+    "没有区别",
+    "orElse 的参数总会求值，orElseGet 的 lambda 只在没有值时执行",
+    "orElseGet 只能返回 null"
+   ],
+   "correctConceptId": 32
+  },
+  {
+   "course": "java",
+   "lesson": "18-Optional.md",
+   "quizId": "java-13-quiz",
+   "index": 2,
+   "stem": "Optional.of(null) 会怎样？",
+   "options": [
+    "返回空 Optional",
+    "抛 NullPointerException",
+    "编译错误"
+   ],
+   "correctConceptId": 32
+  },
+  {
+   "course": "java",
+   "lesson": "19-日期时间.md",
+   "quizId": "java-14-quiz",
+   "index": 0,
+   "stem": "记录「用户注册时刻」该用哪个类型？",
+   "options": [
+    "LocalDate",
+    "LocalDateTime",
+    "Instant"
+   ],
+   "correctConceptId": 33
+  },
+  {
+   "course": "java",
+   "lesson": "19-日期时间.md",
+   "quizId": "java-14-quiz",
+   "index": 1,
+   "stem": "LocalDate.of(2026, 10, 20) 里的 10 表示？",
+   "options": [
+    "十月",
+    "十一月（月份从 0 开始）",
+    "第 10 周"
+   ],
+   "correctConceptId": 33
+  },
+  {
+   "course": "java",
+   "lesson": "19-日期时间.md",
+   "quizId": "java-14-quiz",
+   "index": 2,
+   "stem": "为什么新代码不该用 SimpleDateFormat？",
+   "options": [
+    "性能太差",
+    "它不是线程安全的，多线程共用会得到错乱结果",
+    "它不支持年份"
+   ],
+   "correctConceptId": 33
+  },
+  {
+   "course": "java",
+   "lesson": "20-Stream.md",
+   "quizId": "java-15-quiz",
+   "index": 0,
+   "stem": "stream().filter(...) 之后不接终结操作会发生什么？",
+   "options": [
+    "正常执行筛选",
+    "什么都不执行",
+    "编译错误"
+   ],
+   "correctConceptId": 34
+  },
+  {
+   "course": "java",
+   "lesson": "20-Stream.md",
+   "quizId": "java-15-quiz",
+   "index": 1,
+   "stem": "toList() 与 collect(Collectors.toList()) 的区别是？",
+   "options": [
+    "完全一样",
+    "toList() 返回不可变列表，往里面 add 会抛异常",
+    "toList() 更慢"
+   ],
+   "correctConceptId": 34
+  },
+  {
+   "course": "java",
+   "lesson": "20-Stream.md",
+   "quizId": "java-15-quiz",
+   "index": 2,
+   "stem": "想判断「是否有成年人」，哪种写法在大数据集合上更快？",
+   "options": [
+    "filter(u -> u.age() >= 18).count() > 0",
+    "anyMatch(u -> u.age() >= 18)",
+    "两种一样快"
+   ],
+   "correctConceptId": 34
+  },
+  {
+   "course": "java",
+   "lesson": "21-Lambda与函数式接口.md",
+   "quizId": "java-16-quiz",
+   "index": 0,
+   "stem": "lambda 的类型由什么决定？",
+   "options": [
+    "箭头后表达式的类型",
+    "赋值目标必须是函数式接口，类型由它决定",
+    "必须是 Runnable"
+   ],
+   "correctConceptId": 35
+  },
+  {
+   "course": "java",
+   "lesson": "21-Lambda与函数式接口.md",
+   "quizId": "java-16-quiz",
+   "index": 1,
+   "stem": "为什么 lambda 里不能修改外部局部变量？",
+   "options": [
+    "性能问题",
+    "lambda 可能被延迟或多线程执行，改外部变量的语义不明确，Java 直接禁止",
+    "语法没实现"
+   ],
+   "correctConceptId": 35
+  },
+  {
+   "course": "java",
+   "lesson": "21-Lambda与函数式接口.md",
+   "quizId": "java-16-quiz",
+   "index": 2,
+   "stem": "以下哪个不是内置函数式接口？",
+   "options": [
+    "Function",
+    "Consumer",
+    "Transformer"
+   ],
+   "correctConceptId": 35
+  },
+  {
+   "course": "java",
+   "lesson": "22-并发入门.md",
+   "quizId": "java-17-quiz",
+   "index": 0,
+   "stem": "为什么生产代码不建议用 Executors.newFixedThreadPool？",
+   "options": [
+    "它已被删除",
+    "它用无界队列，任务堆积会 OOM",
+    "它不能复用线程"
+   ],
+   "correctConceptId": 36
+  },
+  {
+   "course": "java",
+   "lesson": "22-并发入门.md",
+   "quizId": "java-17-quiz",
+   "index": 1,
+   "stem": "volatile int count = 0; 之后 count++ 是线程安全的吗？",
+   "options": [
+    "是，volatile 保证原子性",
+    "不是，volatile 只保证可见性，count++ 仍是三步操作",
+    "取决于 JVM"
+   ],
+   "correctConceptId": 36
+  },
+  {
+   "course": "java",
+   "lesson": "22-并发入门.md",
+   "quizId": "java-17-quiz",
+   "index": 2,
+   "stem": "纯计算任务（CPU 密集）把线程数开到 CPU 核数的 10 倍会怎样？",
+   "options": [
+    "快 10 倍",
+    "反而更慢，多出来的是上下文切换开销",
+    "没有影响"
+   ],
+   "correctConceptId": 36
+  },
+  {
+   "course": "java",
+   "lesson": "23-JVM内存与GC.md",
+   "quizId": "java-19-quiz",
+   "index": 0,
+   "stem": "java.lang.OutOfMemoryError: unable to create native thread 通常说明什么？",
+   "options": [
+    "堆内存不够",
+    "线程数太多，创建不了新的操作系统线程",
+    "磁盘满了"
+   ],
+   "correctConceptId": 37
+  },
+  {
+   "course": "java",
+   "lesson": "23-JVM内存与GC.md",
+   "quizId": "java-19-quiz",
+   "index": 1,
+   "stem": "ThreadLocal 用完不 remove 会怎样？",
+   "options": [
+    "没影响，线程结束就回收了",
+    "线程池的线程不销毁，值一直留着，既泄漏又会串数据",
+    "编译报错"
+   ],
+   "correctConceptId": 37
+  },
+  {
+   "course": "java",
+   "lesson": "23-JVM内存与GC.md",
+   "quizId": "java-19-quiz",
+   "index": 2,
+   "stem": "怎么判断是不是真的内存泄漏？",
+   "options": [
+    "内存占用高就是泄漏",
+    "做几次 Full GC，看堆是否回落；GC 后不回落才是泄漏",
+    "看 CPU 占用"
+   ],
+   "correctConceptId": 37
+  },
+  {
+   "course": "python",
+   "lesson": "01-环境与第一行代码.md",
+   "quizId": "py-01-quiz",
+   "index": 0,
+   "stem": "在文件模式里运行 hello.py，正确的命令是哪一个？",
+   "options": [
+    "python hello.py",
+    "python hello",
+    "run hello.py"
+   ],
+   "correctConceptId": 39
+  },
+  {
+   "course": "python",
+   "lesson": "01-环境与第一行代码.md",
+   "quizId": "py-01-quiz",
+   "index": 1,
+   "stem": "type(\"18\") 的结果是什么？",
+   "options": [
+    "int",
+    "str",
+    "number"
+   ],
+   "correctConceptId": 39
+  },
+  {
+   "course": "python",
+   "lesson": "01-环境与第一行代码.md",
+   "quizId": "py-01-quiz",
+   "index": 2,
+   "stem": "报错信息里最该先看的是哪一部分？",
+   "options": [
+    "最后一行的错误类型与原因",
+    "第一行的 Traceback",
+    "文件名"
+   ],
+   "correctConceptId": 39
+  },
+  {
+   "course": "python",
+   "lesson": "02-运算与条件.md",
+   "quizId": "py-02-quiz",
+   "index": 0,
+   "stem": "17 / 3 的结果是什么？",
+   "options": [
+    "5",
+    "5.666666666666667",
+    "2"
+   ],
+   "correctConceptId": 40
+  },
+  {
+   "course": "python",
+   "lesson": "02-运算与条件.md",
+   "quizId": "py-02-quiz",
+   "index": 1,
+   "stem": "为什么 0.1 + 0.2 == 0.3 是 False？",
+   "options": [
+    "Python 的加法有 bug",
+    "小数在二进制里存不精确，两个近似值相加会露误差",
+    "因为两边类型不同"
+   ],
+   "correctConceptId": 40
+  },
+  {
+   "course": "python",
+   "lesson": "02-运算与条件.md",
+   "quizId": "py-02-quiz",
+   "index": 2,
+   "stem": "if 和 elif 的顺序写反了会怎样？",
+   "options": [
+    "语法错误，跑不起来",
+    "不报错，但落入先满足的那个分支，后面的条件永远看不到",
+    "自动按范围从大到小排序"
+   ],
+   "correctConceptId": 40
+  },
+  {
+   "course": "python",
+   "lesson": "03-循环.md",
+   "quizId": "py-03-quiz",
+   "index": 0,
+   "stem": "range(2, 6) 会产出哪些数？",
+   "options": [
+    "2, 3, 4, 5",
+    "2, 3, 4, 5, 6",
+    "3, 4, 5, 6"
+   ],
+   "correctConceptId": 41
+  },
+  {
+   "course": "python",
+   "lesson": "03-循环.md",
+   "quizId": "py-03-quiz",
+   "index": 1,
+   "stem": "continue 做了什么？",
+   "options": [
+    "结束整个循环",
+    "跳过本轮剩余语句，进入下一轮",
+    "重新从一开始循环"
+   ],
+   "correctConceptId": 41
+  },
+  {
+   "course": "python",
+   "lesson": "03-循环.md",
+   "quizId": "py-03-quiz",
+   "index": 2,
+   "stem": "为什么遍历列表时直接 remove 会漏删？",
+   "options": [
+    "因为 remove 只删最后一个",
+    "因为删除后后面的元素前移，遍历的索引会跳过元素",
+    "因为 Python 禁止在循环里修改列表"
+   ],
+   "correctConceptId": 41
+  },
+  {
+   "course": "python",
+   "lesson": "04-函数.md",
+   "quizId": "py-04-quiz",
+   "index": 0,
+   "stem": "函数没有写 return，调用它得到什么？",
+   "options": [
+    "0",
+    "None",
+    "空字符串"
+   ],
+   "correctConceptId": 42
+  },
+  {
+   "course": "python",
+   "lesson": "04-函数.md",
+   "quizId": "py-04-quiz",
+   "index": 1,
+   "stem": "def f(x, items=[]) 会有什么问题？",
+   "options": [
+    "语法错误",
+    "items 在定义时创建一次，所有调用共用同一个列表",
+    "每次调用都会新建一个空列表，没有问题"
+   ],
+   "correctConceptId": 42
+  },
+  {
+   "course": "python",
+   "lesson": "04-函数.md",
+   "quizId": "py-04-quiz",
+   "index": 2,
+   "stem": "在函数里对参数列表做 append，外面的列表会变吗？",
+   "options": [
+    "会，因为传的是同一个列表对象",
+    "不会，参数是副本",
+    "取决于列表长度"
+   ],
+   "correctConceptId": 42
+  },
+  {
+   "course": "python",
+   "lesson": "05-列表与元组.md",
+   "quizId": "py-05-quiz",
+   "index": 0,
+   "stem": "items = [\"a\",\"b\",\"c\",\"d\"]，items[1:3] 是什么？",
+   "options": [
+    "[\"b\", \"c\"]",
+    "[\"b\", \"c\", \"d\"]",
+    "[\"a\", \"b\"]"
+   ],
+   "correctConceptId": 43
+  },
+  {
+   "course": "python",
+   "lesson": "05-列表与元组.md",
+   "quizId": "py-05-quiz",
+   "index": 1,
+   "stem": "b = a 之后修改 b 里的元素，a 会变吗？",
+   "options": [
+    "不会，b 是副本",
+    "会，两者指向同一个列表对象",
+    "只有当列表为空时才会"
+   ],
+   "correctConceptId": 43
+  },
+  {
+   "course": "python",
+   "lesson": "05-列表与元组.md",
+   "quizId": "py-05-quiz",
+   "index": 2,
+   "stem": "什么时候必须用 deepcopy 而不是浅拷贝？",
+   "options": [
+    "列表里有列表/字典，而且你要改内层",
+    "列表很长的时候",
+    "列表元素是字符串的时候"
+   ],
+   "correctConceptId": 43
+  },
+  {
+   "course": "python",
+   "lesson": "06-字典与集合.md",
+   "quizId": "py-06-quiz",
+   "index": 0,
+   "stem": "d = {}，访问 d[\"x\"] 会怎样？",
+   "options": [
+    "得到 None",
+    "抛 KeyError",
+    "得到空字符串"
+   ],
+   "correctConceptId": 44
+  },
+  {
+   "course": "python",
+   "lesson": "06-字典与集合.md",
+   "quizId": "py-06-quiz",
+   "index": 1,
+   "stem": "为什么列表不能当字典的键？",
+   "options": [
+    "因为列表太长了",
+    "因为列表可变，内容一变哈希就变，存进去的位置就找不回来",
+    "因为列表里只能放数字"
+   ],
+   "correctConceptId": 44
+  },
+  {
+   "course": "python",
+   "lesson": "06-字典与集合.md",
+   "quizId": "py-06-quiz",
+   "index": 2,
+   "stem": "既要按原顺序去重，该用哪个？",
+   "options": [
+    "list(set(items))",
+    "list(dict.fromkeys(items))",
+    "items.sort()"
+   ],
+   "correctConceptId": 44
+  },
+  {
+   "course": "python",
+   "lesson": "07-字符串与格式化.md",
+   "quizId": "py-07-quiz",
+   "index": 0,
+   "stem": "text.upper() 之后 text 本身会变吗？",
+   "options": [
+    "会",
+    "不会，要接住返回值",
+    "只有全小写时会"
+   ],
+   "correctConceptId": 45
+  },
+  {
+   "course": "python",
+   "lesson": "07-字符串与格式化.md",
+   "quizId": "py-07-quiz",
+   "index": 1,
+   "stem": "\"、\".join([\"a\",\"b\"]) 的结果是什么？",
+   "options": [
+    "a、b",
+    "、ab",
+    "[\"a\",\"b\"]"
+   ],
+   "correctConceptId": 45
+  },
+  {
+   "course": "python",
+   "lesson": "07-字符串与格式化.md",
+   "quizId": "py-07-quiz",
+   "index": 2,
+   "stem": "为什么读写文件要显式写 encoding=\"utf-8\"？",
+   "options": [
+    "为了让文件更小",
+    "因为默认编码随系统变化，中文可能乱码",
+    "不写会报语法错误"
+   ],
+   "correctConceptId": 45
+  },
+  {
+   "course": "python",
+   "lesson": "08-文件读写.md",
+   "quizId": "py-08-quiz",
+   "index": 0,
+   "stem": "用 \"w\" 打开一个已有内容的文件，旧内容什么时候消失？",
+   "options": [
+    "写入第一个字符时",
+    "打开文件的那一刻",
+    "关闭文件时"
+   ],
+   "correctConceptId": 46
+  },
+  {
+   "course": "python",
+   "lesson": "08-文件读写.md",
+   "quizId": "py-08-quiz",
+   "index": 1,
+   "stem": "为什么推荐 for line in file 而不是 file.readlines()？",
+   "options": [
+    "前者语法更短",
+    "前者一次读一行，后者把整个文件读进内存",
+    "前者会自动去掉换行符"
+   ],
+   "correctConceptId": 46
+  },
+  {
+   "course": "python",
+   "lesson": "08-文件读写.md",
+   "quizId": "py-08-quiz",
+   "index": 2,
+   "stem": "with 语句的作用是什么？",
+   "options": [
+    "让文件读得更快",
+    "保证代码块结束时一定关闭文件，即使中途抛异常",
+    "自动创建不存在的文件"
+   ],
+   "correctConceptId": 46
+  },
+  {
+   "course": "python",
+   "lesson": "09-异常.md",
+   "quizId": "py-09-quiz",
+   "index": 0,
+   "stem": "为什么不要写裸 except:？",
+   "options": [
+    "因为语法已经废弃",
+    "因为它会吞掉包括键盘中断在内的所有异常，掩盖真正的 bug",
+    "因为它比 except Exception 慢"
+   ],
+   "correctConceptId": 47
+  },
+  {
+   "course": "python",
+   "lesson": "09-异常.md",
+   "quizId": "py-09-quiz",
+   "index": 1,
+   "stem": "finally 块什么时候执行？",
+   "options": [
+    "只在没出错时",
+    "只在出错时",
+    "无论是否出错都执行"
+   ],
+   "correctConceptId": 47
+  },
+  {
+   "course": "python",
+   "lesson": "09-异常.md",
+   "quizId": "py-09-quiz",
+   "index": 2,
+   "stem": "int(\"abc\") 抛的是哪种异常？",
+   "options": [
+    "TypeError",
+    "ValueError",
+    "KeyError"
+   ],
+   "correctConceptId": 47
+  },
+  {
+   "course": "python",
+   "lesson": "10-类与对象.md",
+   "quizId": "py-10-quiz",
+   "index": 0,
+   "stem": "self 是什么？",
+   "options": [
+    "类的名字",
+    "调用方法时自动传入的那个对象",
+    "Python 的关键字，必须叫 self"
+   ],
+   "correctConceptId": 48
+  },
+  {
+   "course": "python",
+   "lesson": "10-类与对象.md",
+   "quizId": "py-10-quiz",
+   "index": 1,
+   "stem": "类属性是可变列表时会发生什么？",
+   "options": [
+    "每个实例各有一份",
+    "所有实例共用同一份，一个改全改",
+    "会报错"
+   ],
+   "correctConceptId": 48
+  },
+  {
+   "course": "python",
+   "lesson": "10-类与对象.md",
+   "quizId": "py-10-quiz",
+   "index": 2,
+   "stem": "什么时候不该用类？",
+   "options": [
+    "需要创建很多个同结构对象时",
+    "只是把一段无状态逻辑算个结果时",
+    "需要保存多次调用间的状态时"
+   ],
+   "correctConceptId": 48
+  },
+  {
+   "course": "python",
+   "lesson": "11-继承与多态.md",
+   "quizId": "py-11-quiz",
+   "index": 0,
+   "stem": "子类重写了父类的方法，调用走哪一份？",
+   "options": [
+    "父类的",
+    "子类的",
+    "两份都执行"
+   ],
+   "correctConceptId": 49
+  },
+  {
+   "course": "python",
+   "lesson": "11-继承与多态.md",
+   "quizId": "py-11-quiz",
+   "index": 1,
+   "stem": "多态最直接的好处是什么？",
+   "options": [
+    "代码更短",
+    "调用方只依赖方法名，不依赖具体类型，新增类型不必改调用方",
+    "运行更快"
+   ],
+   "correctConceptId": 49
+  },
+  {
+   "course": "python",
+   "lesson": "11-继承与多态.md",
+   "quizId": "py-11-quiz",
+   "index": 2,
+   "stem": "Car 和 Engine 该用继承还是组合？",
+   "options": [
+    "继承，因为 Engine 是 Car 的一部分",
+    "组合，因为车'有一个'引擎，不是'是一种'引擎"
+   ],
+   "correctConceptId": 49
+  },
+  {
+   "course": "python",
+   "lesson": "12-模块与包.md",
+   "quizId": "py-12-quiz",
+   "index": 0,
+   "stem": "a.py 被 b.py import 时，a.py 里的 __name__ 是什么？",
+   "options": [
+    "\"__main__\"",
+    "\"a\"",
+    "None"
+   ],
+   "correctConceptId": 50
+  },
+  {
+   "course": "python",
+   "lesson": "12-模块与包.md",
+   "quizId": "py-12-quiz",
+   "index": 1,
+   "stem": "为什么不该用 from module import *？",
+   "options": [
+    "语法不合法",
+    "会把模块里所有名字倒进当前命名空间，容易互相覆盖且看不出出处",
+    "比普通 import 慢十倍"
+   ],
+   "correctConceptId": 50
+  },
+  {
+   "course": "python",
+   "lesson": "12-模块与包.md",
+   "quizId": "py-12-quiz",
+   "index": 2,
+   "stem": "pip install 之后仍提示 ModuleNotFoundError，最可能的原因是？",
+   "options": [
+    "包名写错",
+    "装到了另一个 Python 环境",
+    "需要重启电脑"
+   ],
+   "correctConceptId": 50
+  },
+  {
+   "course": "python",
+   "lesson": "13-类型注解.md",
+   "quizId": "py-13-quiz",
+   "index": 0,
+   "stem": "写了 def f(x: int) -> int，运行时传字符串会怎样？",
+   "options": [
+    "抛 TypeError",
+    "照常执行，类型标注不检查运行时",
+    "自动转成 int"
+   ],
+   "correctConceptId": 51
+  },
+  {
+   "course": "python",
+   "lesson": "13-类型注解.md",
+   "quizId": "py-13-quiz",
+   "index": 1,
+   "stem": "list[int] 这种写法从哪个版本起可用？",
+   "options": [
+    "Python 3.6",
+    "Python 3.9",
+    "Python 4"
+   ],
+   "correctConceptId": 51
+  },
+  {
+   "course": "python",
+   "lesson": "13-类型注解.md",
+   "quizId": "py-13-quiz",
+   "index": 2,
+   "stem": "dataclass 最适合什么场景？",
+   "options": [
+    "字段为主、行为很少的数据载体",
+    "需要复杂继承的类",
+    "只用来存全局变量的类"
+   ],
+   "correctConceptId": 51
+  },
+  {
+   "course": "python",
+   "lesson": "14-迭代器与生成器.md",
+   "quizId": "py-14-quiz",
+   "index": 0,
+   "stem": "同一个生成器对象被遍历两次，第二次得到什么？",
+   "options": [
+    "和第一次一样",
+    "空",
+    "抛 TypeError"
+   ],
+   "correctConceptId": 52
+  },
+  {
+   "course": "python",
+   "lesson": "14-迭代器与生成器.md",
+   "quizId": "py-14-quiz",
+   "index": 1,
+   "stem": "read_lines 用 yield 逐行返回，相比 readlines() 的主要好处是？",
+   "options": [
+    "语法更短",
+    "内存占用与文件大小无关",
+    "能自动去重"
+   ],
+   "correctConceptId": 52
+  },
+  {
+   "course": "python",
+   "lesson": "14-迭代器与生成器.md",
+   "quizId": "py-14-quiz",
+   "index": 2,
+   "stem": "下面哪个不是可迭代对象？",
+   "options": [
+    "列表",
+    "文件对象",
+    "生成器函数本身（还没调用）"
+   ],
+   "correctConceptId": 52
+  },
+  {
+   "course": "python",
+   "lesson": "15-装饰器.md",
+   "quizId": "py-15-quiz",
+   "index": 0,
+   "stem": "@logged 放在 def add 上面，等价于哪句？",
+   "options": [
+    "add = logged(add)",
+    "logged(add)",
+    "add = add(logged)"
+   ],
+   "correctConceptId": 53
+  },
+  {
+   "course": "python",
+   "lesson": "15-装饰器.md",
+   "quizId": "py-15-quiz",
+   "index": 1,
+   "stem": "不写 @functools.wraps 会导致什么？",
+   "options": [
+    "装饰器不生效",
+    "__name__ 变成 wrapper，日志与自动文档里的函数名都错",
+    "原函数无法调用"
+   ],
+   "correctConceptId": 53
+  },
+  {
+   "course": "python",
+   "lesson": "15-装饰器.md",
+   "quizId": "py-15-quiz",
+   "index": 2,
+   "stem": "def retry(times): 这种三层结构，最外层接收的是？",
+   "options": [
+    "被装饰的函数",
+    "装饰器的参数",
+    "函数的返回值"
+   ],
+   "correctConceptId": 53
+  },
+  {
+   "course": "python",
+   "lesson": "16-上下文管理器.md",
+   "quizId": "py-16-quiz",
+   "index": 0,
+   "stem": "with 块里抛异常时，__exit__ 还会执行吗？",
+   "options": [
+    "不会",
+    "会，这正是它保证的",
+    "只在不写 try 时执行"
+   ],
+   "correctConceptId": 54
+  },
+  {
+   "course": "python",
+   "lesson": "16-上下文管理器.md",
+   "quizId": "py-16-quiz",
+   "index": 1,
+   "stem": "__exit__ 返回 True 表示什么？",
+   "options": [
+    "收尾成功",
+    "吞掉异常，外面收不到",
+    "继续抛异常"
+   ],
+   "correctConceptId": 54
+  },
+  {
+   "course": "python",
+   "lesson": "16-上下文管理器.md",
+   "quizId": "py-16-quiz",
+   "index": 2,
+   "stem": "用 @contextmanager 时，收尾代码必须放在哪里？",
+   "options": [
+    "yield 之后随便放",
+    "try/finally 的 finally 里",
+    "函数最前面"
+   ],
+   "correctConceptId": 54
+  },
+  {
+   "course": "python",
+   "lesson": "17-并发入门.md",
+   "quizId": "py-17-quiz",
+   "index": 0,
+   "stem": "多线程做纯 CPU 计算，通常会发生什么？",
+   "options": [
+    "按核数线性加速",
+    "受 GIL 限制，基本不加速",
+    "必然报错"
+   ],
+   "correctConceptId": 55
+  },
+  {
+   "course": "python",
+   "lesson": "17-并发入门.md",
+   "quizId": "py-17-quiz",
+   "index": 1,
+   "stem": "asyncio 最适合哪类任务？",
+   "options": [
+    "图像压缩",
+    "大量网络请求等待",
+    "排序大数组"
+   ],
+   "correctConceptId": 55
+  },
+  {
+   "course": "python",
+   "lesson": "17-并发入门.md",
+   "quizId": "py-17-quiz",
+   "index": 2,
+   "stem": "进程池的主要代价不包括哪一项？",
+   "options": [
+    "启动比线程慢",
+    "参数与返回值要可序列化",
+    "无法使用多核"
+   ],
+   "correctConceptId": 55
+  },
+  {
+   "course": "python",
+   "lesson": "18-小项目.md",
+   "quizId": "py-12-quiz",
+   "index": 0,
+   "stem": "为什么把业务规则写成不碰文件的纯函数？",
+   "options": [
+    "为了跑得更快",
+    "因为不依赖文件和数据就能直接测，换存储也不用改它",
+    "因为 Python 不允许函数里读写文件"
+   ],
+   "correctConceptId": 56
+  },
+  {
+   "course": "python",
+   "lesson": "18-小项目.md",
+   "quizId": "py-12-quiz",
+   "index": 1,
+   "stem": "虚拟环境解决什么问题？",
+   "options": [
+    "让 Python 跑得更快",
+    "隔离不同项目的依赖版本，避免互相覆盖",
+    "自动安装所需的包"
+   ],
+   "correctConceptId": 56
+  },
+  {
+   "course": "python",
+   "lesson": "18-小项目.md",
+   "quizId": "py-12-quiz",
+   "index": 2,
+   "stem": "一个测试最本质的要求是什么？",
+   "options": [
+    "用 pytest 写",
+    "有断言，能自动判断对错",
+    "输出好看"
+   ],
+   "correctConceptId": 56
+  }
+ ]
+}

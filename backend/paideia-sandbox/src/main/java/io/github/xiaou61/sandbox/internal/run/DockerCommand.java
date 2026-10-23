@@ -114,6 +114,42 @@ final class DockerCommand {
             mysql --socket=/tmp/m.sock -uroot practice --xml \
               --max-allowed-packet=16m < /tmp/user.sql""";
 
+    /**
+     * SQL 执行计划脚本（WORK-035 T-05）。
+     *
+     * <p>与 {@link #SQL_SCRIPT} 只差最后一行：把用户 SQL 包进 `EXPLAIN FORMAT=TREE`。
+     *
+     * <p>**为什么不复用同一个脚本加个开关**：两条路径的"用户 SQL"在语义上不同——
+     * 计划模式不执行语句（写操作不会真的写），普通模式会执行。用一个变量拼命令行会让
+     * "到底跑的是哪一种"变成运行时才确定的事，而这个区别对用户是可观察的（`INSERT` 在
+     * 计划模式下不落数据）。两个脚本各自完整，读代码时一眼能看清。
+     *
+     * <p>**为什么不在同一次运行里先跑 EXPLAIN 再跑 SQL**：两个结果集会拼在 stdout 上，
+     * 而 `--xml` 的每个 `<resultset>` 都长得一样，前端无法可靠区分"这是计划还是数据"。
+     * 一次只跑一种，语义干净。
+     */
+    private static final String SQL_EXPLAIN_SCRIPT = """
+            read -r dlen
+            dd bs=1 count="$dlen" of=/tmp/dataset.sql 2>/dev/null
+            read -r clen
+            dd bs=1 count="$clen" of=/tmp/user.sql 2>/dev/null
+            mkdir -p /tmp/nofiles
+            cp -a /opt/datadir-base /tmp/data && chmod -R u+w /tmp/data
+            mysqld --skip-networking --socket=/tmp/m.sock --datadir=/tmp/data --user=mysql \
+              --secure-file-priv=/tmp/nofiles --local-infile=0 --skip-log-bin \
+              --mysqlx=0 --pid-file=/tmp/data/mysqld.pid --log-error=/tmp/mysqld.log &
+            for i in $(seq 1 900); do
+              mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 && break
+              sleep 0.02
+            done
+            mysqladmin --socket=/tmp/m.sock -uroot ping >/dev/null 2>&1 || {
+              tail -5 /tmp/mysqld.log >&2; exit 8; }
+            mysql --socket=/tmp/m.sock -uroot -e "CREATE DATABASE practice"
+            mysql --socket=/tmp/m.sock -uroot practice < /tmp/dataset.sql >/dev/null 2>/tmp/ds.err || {
+              cat /tmp/ds.err >&2; exit 9; }
+            { printf 'EXPLAIN FORMAT=TREE '; cat /tmp/user.sql; } \\
+              | mysql --socket=/tmp/m.sock -uroot practice --xml --max-allowed-packet=16m""";
+
     /** mysqld 起不来时的退出码（与用户 SQL 自身失败区分）。 */
     static final int SQL_BOOT_FAILED = 8;
 
@@ -129,6 +165,15 @@ final class DockerCommand {
      * @param cidFile  容器 id 落到哪个文件（超时兜底删容器用）
      */
     static List<String> of(String language, SandboxProperties props, String cidFile) {
+        return of(language, props, cidFile, false);
+    }
+
+    /**
+     * @param explain SQL 专用（WORK-035 T-05）：跑执行计划而不是执行语句。
+     *                加固参数与普通运行**完全一致**——计划模式仍然启动一个真实容器，
+     *                仍然要读数据集，隔离要求没有降低。
+     */
+    static List<String> of(String language, SandboxProperties props, String cidFile, boolean explain) {
         String image = props.imageFor(language);
         if (image == null) {
             throw new IllegalArgumentException("不支持的语言：" + language);
@@ -177,7 +222,8 @@ final class DockerCommand {
 
         command.add(image);
         command.add("-c");
-        command.add(scriptFor(normalized));
+        // explain 只对 SQL 有意义：其它语言传进来也不该悄悄换成"普通运行"以外的东西
+        command.add(scriptFor(normalized, explain && sql));
         return List.copyOf(command);
     }
 
@@ -227,10 +273,18 @@ final class DockerCommand {
      * 容器内的脚本常量（测试与文档共用，避免两处各写一份）。
      */
     static String scriptFor(String language) {
+        return scriptFor(language, false);
+    }
+
+    /**
+     * @param explain SQL 专用：跑执行计划而不是执行语句。其它语言忽略此参数
+     *                （它们的"计划"没有对应的 SQL 概念，调用方在入口就该拒掉）。
+     */
+    static String scriptFor(String language, boolean explain) {
         String normalized = language.trim().toLowerCase(Locale.ROOT);
         return switch (normalized) {
             case "java" -> JAVA_SCRIPT;
-            case "sql" -> SQL_SCRIPT;
+            case "sql" -> explain ? SQL_EXPLAIN_SCRIPT : SQL_SCRIPT;
             default -> PYTHON_SCRIPT;
         };
     }

@@ -64,7 +64,11 @@ class AssistantConversationController {
     record CreateRequest(Long entryId, String harness) {
     }
 
-    record MessageRequest(String message) {
+    /**
+     * @param pageContext 页面场景（WORK-035 T-15）：前端已截断的一段文本。
+     *                    **只进提示词，不落库**；`null` 表示当前页面没有场景。
+     */
+    record MessageRequest(String message, String pageContext) {
     }
 
     /**
@@ -149,7 +153,9 @@ class AssistantConversationController {
         long userId = AiRequester.require();
         // 同步阶段：这里抛出的错误会走全局异常处理，得到正常的 400/404 状态码与 ApiResponse 体
         ConversationService.TurnPreparation turn =
-                conversations.prepare(userId, conversationId, request == null ? null : request.message());
+                conversations.prepare(userId, conversationId,
+                        request == null ? null : request.message(),
+                        request == null ? null : request.pageContext());
 
         SseEmitter emitter = new SseEmitter((long) 100_000);
         // **begin 在提交线程池之前**：这样 started_at 就是"用户按下发送"的时刻，
@@ -221,7 +227,7 @@ class AssistantConversationController {
             assistant.stream(
                     new AssistantConversation.Request(userId, turn.history(), turn.userMessage(),
                             turn.entryTitle(), turn.entryBody(), turn.learningSummary(),
-                            turn.memorySnippets(), turn.harness()),
+                            turn.memorySnippets(), turn.harness(), turn.pageContext()),
                     turn.access(),
                     run,
                     new AssistantConversation.Listener() {

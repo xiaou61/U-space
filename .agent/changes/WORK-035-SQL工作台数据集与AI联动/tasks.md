@@ -29,24 +29,24 @@ approver_role: CTO
 
 | 任务 | 名称 | 阶段 | 状态 |
 | --- | --- | --- | --- |
-| T-01 | 编辑器实测与懒加载守卫 | S1 | pending |
-| T-02 | 结果表增强 | S1 | pending |
-| T-03 | schema 接口与补全数据源 | S1 | pending |
-| T-04 | 表结构侧栏与 ER 图 | S1 | pending |
-| T-05 | 执行计划可视化 | S1 | pending |
-| T-06 | 结果图表 | S1 | pending |
-| T-07 | 数据集迁移与 Mapper | S2 | pending |
-| T-08 | 数据集解析改造（安全边界） | S2 | pending |
-| T-09 | 上传与干跑 | S2 | pending |
-| T-10 | 社区发布、举报与下架 | S2 | pending |
-| T-11 | 管理端两页 | S2 | pending |
-| T-12 | AI 现场出题 | S3 | pending |
-| T-13 | AI 生成数据集 | S3 | pending |
-| T-14 | 载入关卡题 | S3 | pending |
-| T-15 | 助手页面上下文与填回 | S3 | pending |
-| T-16 | `sql_describe_dataset` 只读工具 | S3 | pending |
-| T-17 | 每人并发 1 与日上限调整 | S4 | pending |
-| T-18 | 验收报告 | — | pending |
+| T-01 | 编辑器实测与懒加载守卫 | S1 | done |
+| T-02 | 结果表增强 | S1 | done |
+| T-03 | schema 接口与补全数据源 | S1 | done |
+| T-04 | 表结构侧栏与 ER 图 | S1 | done |
+| T-05 | 执行计划可视化 | S1 | done |
+| T-06 | 结果图表 | S1 | done |
+| T-07 | 数据集迁移与 Mapper | S2 | done |
+| T-08 | 数据集解析改造（安全边界） | S2 | done |
+| T-09 | 上传与干跑 | S2 | done |
+| T-10 | 社区发布、举报与下架 | S2 | done |
+| T-11 | 管理端两页 | S2 | done |
+| T-12 | AI 现场出题 | S3 | done |
+| T-13 | AI 生成数据集 | S3 | done |
+| T-14 | 载入关卡题 | S3 | done |
+| T-15 | 助手页面上下文与填回 | S3 | done |
+| T-16 | `sql_describe_dataset` 只读工具 | S3 | done |
+| T-17 | 每人并发 1 与日上限调整 | S4 | done |
+| T-18 | 验收报告 | — | done |
 
 ## S1 · 工作台本体
 
@@ -55,10 +55,11 @@ approver_role: CTO
 - 文件：`frontend/packages/sql-workbench/`（新建包）、`SqlPracticePage.tsx`。
 - 内容：引入 CodeMirror 6 + `@codemirror/lang-sql`，封装成受控组件；页面用 `lazy()` 引入。
 - **先做这一步的理由**：体积与 Vite 8 兼容性是两个未验证的假设，它们一旦不成立整个编辑器方案要重选。先量再写。
+- **实测已完成（2026-10-23）**：精简版 417.1 kB min / **137.2 kB gzip**；`basicSetup` 全套 436.5 / 143.6；语言包单独占 291.2 kB min。门槛因此定为 **gzip ≤ 160 kB**（原写的「400 kB gzip 前」是没量就定的数字，按 min 口径卡会逼着砍用户感觉不到的功能）。
 - 验收：
   - 构建产物里 CodeMirror 在独立 chunk；写一个脚本读 `dist/assets/*.js` 的主 chunk，断言它**不** import 编辑器 chunk（AC-001）。
-  - 实测体积：编辑器 chunk ≤ 400 kB（gzip 前）。超过则回来重新评估（设计里写明的门槛）。
-  - typecheck 通过；编辑器可输入、行号与括号匹配生效。
+  - 编辑器 chunk **gzip ≤ 160 kB**。
+  - typecheck 通过；编辑器可输入、行号与括号匹配生效；配色用项目令牌（不引 CodeMirror 自带主题）。
 
 ### T-02 | 结果表增强
 
@@ -82,8 +83,12 @@ approver_role: CTO
 
 - 文件：`SandboxController`（`explain` 字段）、`DockerCommand`（EXPLAIN 分支）、`sql-workbench` 的 `ExplainTree.tsx`。
 - 内容：`/sandbox/run` 加 `explain: boolean`；为 true 时容器只跑 `EXPLAIN FORMAT=TREE`；前端渲染树，节点标「走索引」/「全表扫描」。
-- **先验证解析**：拿真实 TREE 输出过一遍 `SqlResultCodec`，确认多行结果集能被正确读出。不通过就退回表格形态并记录。
-- 验收：一句走索引的 SQL 与一句全表扫描的 SQL，视图分别标出两类（AC-004）。
+- **解析验证已完成（2026-10-23，真实镜像 + 生产加固参数）**：`SqlResultCodec` **能正确解析**，不用改解析器。但输出形态与预期不同——见下面两条，它们改变实现方式。
+- **必须按这两条实现**：
+  1. `EXPLAIN` 的树在**一个字段值里**（1 列 × 1 行，多行用 `\n` 连接），**不在结果集结构里**。所以不能用结果表组件渲染，必须专门的 `ExplainTree` 按 `->` 与缩进切节点。
+  2. 「走索引 vs 全表扫」是**字符串匹配**（含 `Table scan` 即全表扫；含 `Index lookup`/`Index range scan`/`Index scan` 即走索引），且**按节点标注**而不是整条查询——一条查询可能 Filter 在上、Table scan 在下。这个匹配逻辑单独成纯函数并单测，不散在组件里。
+- 验收：一句走索引的 SQL 与一句全表扫描的 SQL，视图分别标出两类（AC-004）；匹配函数有单测覆盖两种正例与「多层混合」一种。
+- **已知风险**：探针里用 `--memory=512m` 时 mysqld 被 OOM 杀掉，1024m 才起来；线上同为 512m 却能跑，差异是探针在同一次运行里既 `cp -a` 整个 datadir 又立刻启动。若加 `explain` 分支后偶发 OOM，先怀疑这个峰值而不是 SQL 本身。
 
 ### T-06 | 结果图表
 

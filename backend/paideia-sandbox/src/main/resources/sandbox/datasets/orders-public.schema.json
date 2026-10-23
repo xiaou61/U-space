@@ -1,0 +1,92 @@
+{
+  "tables": [
+    {
+      "name": "customers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(20)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "city",
+          "type": "varchar(20)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "note",
+          "type": "varchar(20)",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ]
+    },
+    {
+      "name": "order_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "order_id",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "product",
+          "type": "varchar(20)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "unit_price",
+          "type": "decimal(10,2)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "qty",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ]
+    },
+    {
+      "name": "orders",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "customer_id",
+          "type": "int",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created",
+          "type": "datetime",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ]
+    }
+  ],
+  "relations": []
+}

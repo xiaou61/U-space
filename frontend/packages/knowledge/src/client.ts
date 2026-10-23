@@ -32,9 +32,29 @@ export interface KnowledgeApi {
   sandboxStatus(): Promise<SandboxStatus>
   /** 执行一次练习代码。**服务端只回实际输出，判定在客户端**。 */
   runCode(input: RunCodeInput): Promise<RunCodeResult>
+  /**
+   * 数据集的结构快照（WORK-035）。只读、不含数据行、不占配额。
+   *
+   * <p>返回的是**原始 JSON 字符串**——服务端不解析它，前端拿到再 `JSON.parse`。
+   * 这样两端不必维护同一份结构定义的序列化逻辑。
+   */
+  datasetSchema(key: string): Promise<string>
+  /** 在数据集上现场出一道题（WORK-035 T-12）。期望结果集来自**真跑参考解**。 */
+  generateSqlQuestion(key: string, goal?: string): Promise<GeneratedSqlQuestion>
+  /** 让 AI 造一个数据集并保存为私人数据集（WORK-035 T-13）。 */
+  generateSqlDataset(topic?: string): Promise<{ key: string }>
   traceCode(input: RunCodeInput): Promise<TraceCodeResult>
   /** 记一次浏览（WORK-021）。旁路数据：失败不影响阅读。 */
   recordView(entryId: number): Promise<null>
+}
+
+/** AI 生成的一道题。**期望结果集随题下发**，判题在客户端。 */
+export interface GeneratedSqlQuestion {
+  stem: string
+  criteria: string
+  explain: string
+  columns: string[]
+  rows: string[][]
 }
 
 /** 沙箱能力。`reason` 在不可用时说明原因（未开启 / Docker 不在 / 镜像缺失）。 */
@@ -59,6 +79,12 @@ export interface RunCodeInput {
   stdin?: string
   /** SQL 专用：数据集 key，服务端按白名单取内容（WORK-032）。 */
   dataset?: string
+  /**
+   * SQL 专用（WORK-035）：为真时跑 `EXPLAIN FORMAT=TREE` 而不是执行语句。
+   *
+   * <p>**写操作在计划模式下不会真的落数据**——它不是"跑一遍看看"，是"看看会怎么跑"。
+   */
+  explain?: boolean
   entryId?: number
   caseId?: string
 }
@@ -152,6 +178,29 @@ export function createKnowledgeApi(client: ApiClient): KnowledgeApi {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
+      }),
+
+    /** 数据集结构（WORK-035 T-03）：只读，不占配额。 */
+    datasetSchema: (key) =>
+      client.requestEnvelope<string>(`/api/v1/sandbox/datasets/${encodeURIComponent(key)}/schema`),
+
+    /** AI 现场出题（WORK-035 T-12）。它会在沙箱里真跑一次参考解。 */
+    generateSqlQuestion: (key, goal) =>
+      client.requestEnvelope<GeneratedSqlQuestion>(
+        `/api/v1/sql-datasets/${encodeURIComponent(key)}/question`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goal === undefined ? {} : { goal }),
+        },
+      ),
+
+    /** AI 造数据集（WORK-035 T-13）：生成的 SQL 走与手动上传相同的检查。 */
+    generateSqlDataset: (topic) =>
+      client.requestEnvelope<{ key: string }>('/api/v1/sql-datasets/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(topic === undefined ? {} : { topic }),
       }),
 
     /** 逐步录制（WORK-023）。不支持的语言由后端给可读原因，前端据此降级。 */

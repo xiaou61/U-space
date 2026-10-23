@@ -129,6 +129,26 @@ POST /api/v1/sql-datasets（multipart）
 
 **降级**：`EXPLAIN FORMAT=TREE` 在 MySQL 8.0 才有（5.7 要 `EXPLAIN FORMAT=JSON` 或默认表格）。镜像钉的是 8.0，所以直接可用；若将来降版本，退回默认 `EXPLAIN` 表格形态并标注。
 
+### 实测结论（2026-10-23，在 codenest-online 的真实镜像上跑过）
+
+在 `paideia-sandbox-mysql@sha256:e2eafb6e…` 上，用与生产完全相同的加固参数（`--read-only`、`--tmpfs /tmp:size=768m`、`--user 999:999`、`--memory=512m`）实跑了三条 `EXPLAIN FORMAT=TREE`，走 `--xml`（应用真实走的路径）：
+
+```
+走二级索引：-> Index lookup on customers using idx_customers_city (city='北京')  (cost=0.7 rows=2)
+全表扫描：  -> Filter: (customers.`name` like '%a%')  (cost=0.55 rows=1)
+              -> Table scan on customers  (cost=0.55 rows=3)
+```
+
+**结论一：现有 `SqlResultCodec` 能正确解析，不用改解析器。** XML 里 `EXPLAIN` 是**单列单行**（`<field name="EXPLAIN">`），整棵树被塞进**一个字段值**，多行之间是真实换行（XML 里是 `&#10;`，解析后变 `\n`）。所以拿到的是「1 列 × 1 行」，前端按 `\n` 与缩进自己还原成树。
+
+**结论二（必须写进实现）：`EXPLAIN` 的树在字段值里，不在结果集结构里。** 因此：
+
+- 前端不能用「结果表」组件渲染它，必须用专门的 `ExplainTree`（按 `->` 与缩进切节点）。
+- **判读「走索引 vs 全表扫」是字符串匹配，不是结构化字段**：含 `Table scan` 即全表扫，含 `Index lookup` / `Index range scan` / `Index scan` 即走索引。这个匹配逻辑要单独成一个纯函数并单测（AC-004 靠它），不能散在组件里。
+- 一个查询可能有**多层节点混合**（如上面全表扫描那条：Filter 在上、Table scan 在下）。所以节点级标注，不是整条查询级标注。
+
+**结论三：容器内存下限比配置里写的高。** 第一次用 `--memory=512m` 跑时 mysqld 被 OOM 杀掉（`Killed`），改用 1024m 才起来。但线上 `sql-memory` 就是 `512m` 且线上能正常跑——差异在于线上是**冷启动后的稳定态**，而我的探针在同一次运行里既 `cp -a` 整个 datadir 又立刻启动 mysqld，峰值更高。**这条不改配置**，但要记进 T-05 的验收：如果加 `explain` 分支后发现偶发 OOM，第一个怀疑对象是这个峰值而不是 SQL 本身。
+
 ## 前端结构
 
 ### 包划分
@@ -139,6 +159,23 @@ POST /api/v1/sql-datasets（multipart）
 | `frontend/apps/app/src/pages/SqlPracticePage.tsx` | 组合根：拿数据、接路由、接助手上下文 |
 
 **为什么独立包**：CodeMirror 与图表库是本项目唯一的重前端依赖，放 `@paideia/ui` 会让管理端与桌面端也带上它们（`ui` 是所有应用的共享包）。独立包只在 `@paideia/app` 里被引用，且用 `lazy()` 引入。
+
+### 体积实测（2026-10-23）
+
+在隔离目录用 esbuild 按生产同等的 minify 设置量了三种组合：
+
+| 组合 | min | gzip |
+| --- | --- | --- |
+| `basicSetup` 全套（含 vim/emacs 键位与默认主题） | 436.5 kB | 143.6 kB |
+| 精简版（逐件挑选扩展，去掉 vim/emacs 与主题） | 417.1 kB | 137.2 kB |
+| 仅编辑器核心（不含 SQL 语言包） | 318.3 kB | 103.7 kB |
+| 仅 `@codemirror/lang-sql` | 291.2 kB | 96.9 kB |
+
+**结论：门槛按 gzip 口径定，取 160 kB。** 原先写的「400 kB gzip 前」是个没量就定的数字，量完发现精简版 417 kB 已经超了——但 gzip 后只有 137 kB，而网络传的是 gzip 后的。按 min 口径卡门槛会逼着人去砍功能换一个用户根本感觉不到的数字。
+
+**因此 T-01 的验收改成**：编辑器 chunk **gzip ≤ 160 kB**，且**不进主 chunk**。用精简版（`basicSetup` 里 `vim()`/`emacs()` 与主题都不需要——我们用项目自己的令牌配色）。
+
+**这两个数也说明 SQL 语言包占了 2/3**（291 kB of 417 kB）。如果将来还要再瘦，第一步是看能不能只保留补全与高亮、砍掉 Lezer 的完整语法树——但那会牺牲括号匹配精度，不值得，记在这里备查。
 
 ### 懒加载
 

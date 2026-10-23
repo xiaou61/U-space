@@ -66,7 +66,8 @@ class DockerCodeRunner implements CodeRunner {
         }
         Path cidFile = cidDir.resolve("container.cid");
         try {
-            return execute(request, DockerCommand.of(request.language(), properties, cidFile.toString()));
+            return execute(request, DockerCommand.of(
+                    request.language(), properties, cidFile.toString(), request.explain()));
         } finally {
             try {
                 Files.deleteIfExists(cidFile);

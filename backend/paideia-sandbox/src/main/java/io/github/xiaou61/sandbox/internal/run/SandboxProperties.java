@@ -45,8 +45,14 @@ public class SandboxProperties {
     private String sqlCpus = "1";
     private int sqlPidsLimit = 128;
     private long sqlTimeoutMs = 20_000;
-    /** SQL 的日配额单独一档：一次运行起一个容器，成本是其它语言的数倍。 */
-    private int sqlDailyLimit = 20;
+    /**
+     * SQL 的日配额（WORK-035 T-17 从 20 提到 500）。
+     *
+     * <p>**它的角色是熔断器，不是预算**：SQL 跑在自己的服务器上、不花 AI 积分，
+     * 所以"每天 20 次"没有成本依据，只是让人紧张。真正的保护是 {@code RunSlot} 的每人并发 1。
+     * 500 次按每次 3 秒算是 25 分钟不间断地跑，正常人碰不到；真有人写脚本刷，至少有个天花板。
+     */
+    private int sqlDailyLimit = 500;
 
     /** 墙钟上限（毫秒）。超时即 `destroyForcibly`。 */
     private long timeoutMs = 10_000;

@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   Coins,
+  Database,
   FileText,
   Flag,
   FolderTree,
@@ -50,6 +51,16 @@ const MENU: MenuItem[] = [
   },
   // 举报处理是学习者端分享出去的内容的**唯一治理入口**（用户裁决 11：由管理员处理）
   { to: '/reports', label: '举报处理', icon: Flag },
+  // SQL 数据集（WORK-035）：社区数据集的治理。只能下架/恢复，不能编辑（内容属于作者）。
+  {
+    to: '/sql-datasets',
+    label: 'SQL 数据集',
+    icon: Database,
+    children: [
+      { to: '/sql-datasets/list', label: '数据集管理', icon: Database },
+      { to: '/sql-datasets/reports', label: '举报处理', icon: Flag },
+    ],
+  },
   // 用户管理（WORK-030）：调积分、改角色、删号都在这里。原先独立的「积分调整」页
   // 已按用户裁决删除（U-04）——那页让人手敲内部主键，敲错一位就给另一个人发分。
   { to: '/users', label: '用户管理', icon: Users },
@@ -85,6 +96,8 @@ const CRUMBS: Record<string, string[]> = {
   '/knowledge/entries': ['知识库', '条目管理'],
   '/knowledge/concepts': ['知识库', '概念'],
   '/reports': ['举报处理'],
+  '/sql-datasets/list': ['SQL 数据集', '数据集管理'],
+  '/sql-datasets/reports': ['SQL 数据集', '举报处理'],
   '/users': ['用户管理'],
   '/ai-credits/audit': ['AI 积分', '用量审计'],
   '/ai-runs/overview': ['AI 调用', '调用概览'],

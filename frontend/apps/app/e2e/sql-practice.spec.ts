@@ -37,6 +37,148 @@ test.describe('SQL 自由练习', () => {
     await expect(editor.or(unavailable)).toBeVisible({ timeout: 15_000 })
   })
 
+  /**
+   * 执行计划入口（WORK-035 T-05）。
+   *
+   * <p>只断"按钮在、且它发的是 explain 请求"——真跑一次要起容器，线上沙箱不一定开着。
+   * 用请求拦截确认 `explain: true` 真的发出去了：这一条比"按钮可见"有意义得多，
+   * 因为按钮可见而请求没带 explain 时，用户会拿到一份数据结果却以为是执行计划。
+   */
+  test('「看执行计划」发出的是 explain 请求', async ({ page }) => {
+    // 连能力探测一起 mock：本地/线上的沙箱开关是环境状态，不开时按钮根本不渲染，
+    // 这条用例就会变成"跳过"——而跳过证明不了任何事。mock 掉才能真的验到请求体。
+    await page.route('**/api/v1/sandbox/status', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 0,
+          message: 'ok',
+          traceId: null,
+          data: {
+            enabled: true,
+            ready: true,
+            runtime: null,
+            languages: ['sql'],
+            dailyLimit: 50,
+            usedToday: 0,
+            sqlDailyLimit: 20,
+            sqlUsedToday: 0,
+            datasets: ['orders-public'],
+            reason: null,
+          },
+        }),
+      })
+    })
+
+    const bodies: string[] = []
+    await page.route('**/api/v1/sandbox/run', async (route) => {
+      bodies.push(route.request().postData() ?? '')
+      // 回一个最小的合法结果，避免真的起容器
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 0,
+          message: 'ok',
+          traceId: null,
+          data: {
+            stdout: '',
+            stderr: '',
+            exitCode: 0,
+            durationMs: 1,
+            timedOut: false,
+            outOfMemory: false,
+            truncated: false,
+            tables: [
+              {
+                statementIndex: 0,
+                columns: ['EXPLAIN'],
+                rows: [['-> Table scan on customers  (cost=0.55 rows=3)']],
+              },
+            ],
+          },
+        }),
+      })
+    })
+
+    await page.goto('/#/practice/sql')
+    await page.getByTestId('sql-practice-explain').click()
+
+    await expect.poll(() => bodies.length).toBeGreaterThan(0)
+    expect(bodies[0]).toContain('"explain":true')
+    // 计划里的全表扫必须被标出来（节点级标记；汇总徽章写的是"有全表扫描"，故用精确匹配）
+    await expect(page.getByTestId('explain-tree')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('全表扫', { exact: true })).toBeVisible()
+  })
+
+  /**
+   * 表结构侧栏与 ER 图（WORK-035 T-04 / AC-003）。
+   *
+   * <p>结构来自构建期快照，所以这里也 mock 掉 schema 端点——真实快照的表名必须与断言一致
+   * （`customers` / `orders` / `order_items` 是 `orders-public.sql` 里真实存在的三张表）。
+   */
+  test('表结构侧栏列出真实的表，可切到关系图', async ({ page }) => {
+    await page.route('**/api/v1/sandbox/status', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 0,
+          message: 'ok',
+          traceId: null,
+          data: {
+            enabled: true,
+            ready: true,
+            runtime: null,
+            languages: ['sql'],
+            dailyLimit: 50,
+            usedToday: 0,
+            sqlDailyLimit: 20,
+            sqlUsedToday: 0,
+            datasets: ['orders-public'],
+            reason: null,
+          },
+        }),
+      })
+    })
+    await page.route('**/api/v1/sandbox/datasets/*/schema', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 0,
+          message: 'ok',
+          traceId: null,
+          data: JSON.stringify({
+            tables: [
+              {
+                name: 'customers',
+                columns: [
+                  { name: 'id', type: 'int', nullable: false, primaryKey: true },
+                  { name: 'name', type: 'varchar(20)', nullable: false, primaryKey: false },
+                ],
+              },
+              { name: 'orders', columns: [{ name: 'id', type: 'int', nullable: false, primaryKey: true }] },
+            ],
+            relations: [],
+          }),
+        }),
+      })
+    })
+
+    await page.goto('/#/practice/sql')
+    const sidebar = page.getByTestId('schema-sidebar')
+    await expect(sidebar).toBeVisible({ timeout: 10_000 })
+    await expect(sidebar).toContainText('customers')
+    await expect(sidebar).toContainText('orders')
+
+    // 切到关系图：没有关联时必须给说明，而不是画一张空图
+    await page.getByTestId('sql-toggle-er').click()
+    await expect(page.getByTestId('er-diagram')).toBeVisible()
+    await expect(page.getByText(/没有标注表间关联/)).toBeVisible()
+  })
+
   test('练习不写学习进度（AC-011）', async ({ page }) => {
     /**
      * **用网络层证据，不用数据库条数**。
@@ -61,10 +203,16 @@ test.describe('SQL 自由练习', () => {
     await expect(page.getByRole('heading', { name: /写一段 SQL/ })).toBeVisible()
 
     // 编辑一下并等渲染稳定：这期间任何进度写入都该被上面那个监听抓到
+    //
+    // 编辑器在 WORK-035 起是 CodeMirror（contenteditable），**不再支持 `fill()` 与
+    // `toHaveValue()`**——那两个只对 textarea/input 有效。改用聚焦 + 键盘输入，
+    // 断言编辑区里出现了输入的文字。
     const editor = page.getByTestId('sql-practice-editor')
     if (await editor.isVisible()) {
-      await editor.fill('SELECT 1;')
-      await expect(editor).toHaveValue('SELECT 1;')
+      await editor.click()
+      await page.keyboard.press('ControlOrMeta+a')
+      await page.keyboard.type('SELECT 1;')
+      await expect(editor).toContainText('SELECT 1;')
     }
     await page.waitForTimeout(500)
 

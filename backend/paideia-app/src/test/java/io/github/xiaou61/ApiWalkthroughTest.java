@@ -627,6 +627,27 @@ class ApiWalkthroughTest {
         bestEffort("POST", "/api/v1/ai/feedback", bearer);
         call("管理端回答反馈", "GET", "/api/v1/ai/feedback/admin", adminToken(), null);
 
+        // ---- SQL 数据集（WORK-035）----
+        // 上传需要真文件与白名单校验，自查不打这条路；其余端点用一个不存在的 key
+        // 走 404 分支——端点被走到、鉴权生效、错误语义正确，这就是覆盖要的东西。
+        call("我的数据集", "GET", "/api/v1/sql-datasets/mine", bearer, null);
+        bestEffort("POST", "/api/v1/sql-datasets", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/generate", bearer);
+        bestEffort("DELETE", "/api/v1/sql-datasets/__nonexistent__", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/publish", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/report", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/question", bearer);
+        call("数据集表结构", "GET", "/api/v1/sandbox/datasets/__nonexistent__/schema", bearer, null,
+                org.springframework.http.HttpStatus.OK.value(),
+                org.springframework.http.HttpStatus.NOT_FOUND.value());
+        call("管理端数据集", "GET", "/api/v1/sandbox/admin/sql-datasets", adminToken(), null);
+        call("管理端数据集举报", "GET", "/api/v1/sandbox/admin/sql-datasets/reports",
+                adminToken(), null);
+        bestEffort("POST", "/api/v1/sandbox/admin/sql-datasets/__nonexistent__/take-down",
+                adminToken());
+        bestEffort("POST", "/api/v1/sandbox/admin/sql-datasets/__nonexistent__/restore",
+                adminToken());
+
         // ---- 沙箱 ----
         call("沙箱状态", "GET", "/api/v1/sandbox/status", bearer, null);
         // 逐步录制（WORK-023）：本地测试里沙箱通常没开，这条走的是"不可用"分支——

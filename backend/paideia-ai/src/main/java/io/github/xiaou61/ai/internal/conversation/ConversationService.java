@@ -94,6 +94,14 @@ public class ConversationService {
     private static final int MAX_EXTRACTION_MESSAGES = 60;
 
     /**
+     * 页面场景的长度兜底（WORK-035 T-15）。
+     *
+     * <p>前端按 `PAGE_CONTEXT_LIMITS`（草稿 2000 + 结果 800）截过，这里留 1.5 倍余量。
+     * **存在这一层的唯一理由是防绕过**：有人直接调接口塞 100 KB 进来，提示词会被撑爆。
+     */
+    private static final int MAX_PAGE_CONTEXT_CHARS = 4000;
+
+    /**
      * 该不该自动整理？该就**当场抢下来**并返回这一段（WORK-013）。
      *
      * <p>三步都在这里，因为"攒了几轮"与"游标"都是会话自己的事：
@@ -153,7 +161,18 @@ public class ConversationService {
                                   List<String> memorySnippets,
                                   ModelAccess access,
                                   long reservedCredits,
-                                  Harness harness) {
+                                  Harness harness,
+                                  /** 页面场景（WORK-035 T-15）。只进提示词，不落库。 */
+                                  String pageContext) {
+
+        /** 不带页面场景的形态：既有调用点与测试用它。 */
+        public TurnPreparation(long conversationId, List<ConversationTurn> history, String userMessage,
+                               String entryTitle, String entryBody, String learningSummary,
+                               List<String> memorySnippets, ModelAccess access, long reservedCredits,
+                               Harness harness) {
+            this(conversationId, history, userMessage, entryTitle, entryBody, learningSummary,
+                    memorySnippets, access, reservedCredits, harness, null);
+        }
     }
 
     public long create(long userId, Long entryId) {
@@ -198,6 +217,19 @@ public class ConversationService {
      * 账上。所以下面所有读操作（历史、条目、记忆召回）都排在它前面。
      */
     public TurnPreparation prepare(long userId, long conversationId, String prompt) {
+        return prepare(userId, conversationId, prompt, null);
+    }
+
+    /**
+     * 带页面场景的版本（WORK-035 T-15）。
+     *
+     * <p>`pageContext` 是**前端已截断的一段文本**（SQL 工作台的草稿与最近报错）。
+     * 它只进提示词，不落库——会话历史里不该出现"某次页面上写了什么"。
+     *
+     * <p>**服务端不再截断**：前端按 `PAGE_CONTEXT_LIMITS` 截过了，服务端再截一次会让
+     * "到底哪边生效"变成两处都要看的事。这里只做长度上限的兜底（防有人绕过前端直接调接口）。
+     */
+    public TurnPreparation prepare(long userId, long conversationId, String prompt, String pageContext) {
         String trimmed = prompt == null ? "" : prompt.trim();
         if (trimmed.isEmpty()) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "消息内容不能为空");
@@ -242,8 +274,14 @@ public class ConversationService {
         // 预扣在**调模型之前**同步做完：余额不足时一个上游请求都不会发出去（REQ-006）。
         // 放在限流之后：被限流的那一轮本来就不该占用户的额度。**它的后面不能再有会抛的动作。**
         long reserved = credits.reserve(userId, credits.estimate());
+        // 页面场景只做长度兜底（前端已按自己的上限截过）：防有人绕过前端直接调接口塞一大段
+        String context = pageContext == null || pageContext.isBlank()
+                ? null
+                : pageContext.length() > MAX_PAGE_CONTEXT_CHARS
+                        ? pageContext.substring(0, MAX_PAGE_CONTEXT_CHARS)
+                        : pageContext;
         return new TurnPreparation(conversationId, history, trimmed, entry.title(), entry.body(),
-                learning, snippets, access.get(), reserved, harness);
+                learning, snippets, access.get(), reserved, harness, context);
     }
 
     /**

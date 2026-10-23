@@ -160,8 +160,9 @@ paideia:
     sql-pids-limit: 128
     # 20 s = 启动实测 3.3 s 的 6 倍余量（冷缓存、宿主机负载波动）。
     sql-timeout-ms: 20000
-    # 一次 SQL 运行起一个容器，成本是其它语言的数倍，所以单独一档（用户裁决 U-09）。
-    sql-daily-limit: 20
+    # WORK-035 T-17 从 20 提到 500：SQL 跑在自己服务器上、不花 AI 积分，20 次没有成本依据，
+    # 只是让人紧张。真正的保护是 RunSlot 的**每人并发 1**；这个数字是熔断器（写脚本刷的天花板）。
+    sql-daily-limit: 500
 
 management:
   # 运维监控（WORK-028）：多暴露一个 prometheus 端点给本机 Prometheus 抓取。

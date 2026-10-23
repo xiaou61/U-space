@@ -16,6 +16,49 @@ export interface AssistantContextValue {
   harness: AssistantHarness
   /** 只影响显示范围（把别人的公开结果折叠掉），**不是权限**：私有结果由服务端的查询拦。 */
   onlyMine: boolean
+  /**
+   * 页面场景（WORK-035 T-15）。**只给真正有私有草稿的页面用**。
+   *
+   * <p>判据不是"页面多"，是"模型自己查不到、而用户此刻正看着"。SQL 工作台的草稿与报错
+   * 就是典型：没有任何工具能读到它。
+   *
+   * <p>**为什么单独一个字段而不是塞进 entryTitle**：`entryId` 那套是"正在读哪条知识"，
+   * 语义完全不同；混用会让条目页的清理逻辑（`setEntry(null)`）把 SQL 上下文一起清掉。
+   */
+  pageContext: PageContext | null
+}
+
+/** 页面场景。目前只有 SQL 工作台一种；加新的时按 kind 扩展。 */
+export interface SqlWorkbenchPageContext {
+  kind: 'sql-workbench'
+  /** 当前选中的数据集 key。 */
+  datasetKey: string
+  /** 编辑器里的草稿。**已截断**（见 {@link PAGE_CONTEXT_LIMITS}）。 */
+  draftSql: string
+  /** 最近一次运行的错误或结果摘要。**不含数据行**。 */
+  lastResult: string
+}
+
+export type PageContext = SqlWorkbenchPageContext
+
+/**
+ * 页面上下文的长度上限。
+ *
+ * <p>**必须有上限**：草稿可能几千行，结果摘要可能是一整段 stderr。整段塞进提示词既贵
+ * 又可能把用户没想分享的内容送进模型。截断而不是报错——上下文是"锦上添花"，
+ * 超长不该让对话失败。
+ */
+export const PAGE_CONTEXT_LIMITS = {
+  draftSql: 2000,
+  lastResult: 800,
+} as const
+
+/** 按上限截断，并在尾部标明"还有多少没显示"。 */
+export function truncateContext(text: string, limit: number): string {
+  if (text.length <= limit) {
+    return text
+  }
+  return `${text.slice(0, limit)}\n…（后面还有 ${text.length - limit} 个字符没显示）`
 }
 
 /**
@@ -32,10 +75,19 @@ export interface PendingPrompt {
 interface AssistantContextApi extends AssistantContextValue {
   setEntry: (entry: { id: number; title: string; harness?: AssistantHarness } | null) => void
   setOnlyMine: (onlyMine: boolean) => void
+  /** 设置/清除页面场景。传 null 清除（离开页面时调）。 */
+  setPageContext: (context: PageContext | null) => void
   pendingPrompt: PendingPrompt | null
   /** 打开助手并把这句话填进输入框；**不发送**。 */
   ask: (text: string) => void
   clearPendingPrompt: (id: number) => void
+  /**
+   * 助手建议的 SQL 填回编辑器（WORK-035 T-15）。与 `ask` 同形：写一个待消费对象，
+   * 页面消费一次就清。**不是工具**——助手只是正常回答，按钮是前端的渲染能力。
+   */
+  pendingSql: PendingPrompt | null
+  applySql: (text: string) => void
+  clearPendingSql: (id: number) => void
 }
 
 const AssistantContext = createContext<AssistantContextApi | null>(null)
@@ -55,7 +107,9 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   const [entryTitle, setEntryTitle] = useState<string | null>(null)
   const [harness, setHarness] = useState<AssistantHarness>('assistant')
   const [onlyMine, setOnlyMine] = useState(false)
+  const [pageContext, setPageContext] = useState<PageContext | null>(null)
   const [pendingPrompt, setPendingPrompt] = useState<PendingPrompt | null>(null)
+  const [pendingSql, setPendingSql] = useState<PendingPrompt | null>(null)
 
   // setEntry 必须**稳定**：调用方（条目页）把它放进 useEffect 的依赖里，
   // 每次渲染都换一个新函数会让那个 effect 反复跑。
@@ -78,19 +132,49 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     setPendingPrompt((current) => (current?.id === id ? null : current))
   }, [])
 
+  const applySql = useCallback((text: string) => {
+    const trimmed = text.trim()
+    if (trimmed === '') {
+      return
+    }
+    setPendingSql({ id: Date.now(), text: trimmed })
+  }, [])
+
+  const clearPendingSql = useCallback((id: number) => {
+    setPendingSql((current) => (current?.id === id ? null : current))
+  }, [])
+
   const value = useMemo<AssistantContextApi>(
     () => ({
       entryId,
       entryTitle,
       harness,
       onlyMine,
+      pageContext,
       setEntry,
       setOnlyMine,
+      setPageContext,
       pendingPrompt,
       ask,
       clearPendingPrompt,
+      pendingSql,
+      applySql,
+      clearPendingSql,
     }),
-    [entryId, entryTitle, harness, onlyMine, setEntry, pendingPrompt, ask, clearPendingPrompt],
+    [
+      entryId,
+      entryTitle,
+      harness,
+      onlyMine,
+      pageContext,
+      setEntry,
+      pendingPrompt,
+      ask,
+      clearPendingPrompt,
+      pendingSql,
+      applySql,
+      clearPendingSql,
+    ],
   )
 
   return <AssistantContext.Provider value={value}>{children}</AssistantContext.Provider>

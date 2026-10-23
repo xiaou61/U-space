@@ -26,6 +26,9 @@ const PRIMARY_NAV = [
  * 不是"必须横排"。10 项硬塞进横排实测会把每个标签挤成竖排断字（2026-10-22 实测）。
  */
 const MORE_NAV = [
+  // 复习（WORK-034）。它也在「更多」里——清单要跟着 NAV 走，加了页面就得加一条，
+  // 否则"入口存在"这件事没有测试盯着。
+  { testId: 'learner-nav-review', label: '复习' },
   { testId: 'learner-nav-graph', label: '知识图谱' },
   { testId: 'learner-nav-sql-practice', label: 'SQL 练习' },
   { testId: 'learner-nav-camp', label: '训练营' },
@@ -55,11 +58,25 @@ test.describe('导航覆盖', () => {
     }
   })
 
-  test('「从零开始」点进去能看到学习轨道', async ({ page }) => {
+  /**
+   * 「从零开始」入口有效（不是"必须有课程数据"）。
+   *
+   * <p>**原来断的是 `learn-tracks` 可见**，而它只在库里有学习轨道时才渲染——
+   * `paideia_test` 是共享测试库，有没有课程取决于谁在里面跑过什么。于是这条用例会
+   * 因为**与产品无关的数据状态**变红，而红的人会以为入口坏了。
+   *
+   * <p>改成断"落到了正确的页、且页面给了确定的结论"：有轨道就显示轨道，没有就显示空状态。
+   * 两者都能证明入口是通的，而两者都不依赖库里恰好有什么。
+   */
+  test('「从零开始」点进去落到学习页，且有轨道或明确空状态', async ({ page }) => {
     await page.goto('/#/')
     await page.getByTestId('learner-nav-learn').click()
     await expect(page).toHaveURL(/#\/learn/)
-    await expect(page.getByTestId('learn-tracks')).toBeVisible()
+
+    const tracks = page.getByTestId('learn-tracks')
+    const empty = page.getByTestId('learn-empty')
+    // 加载中（learn-state）不算结论，所以等到两者之一出现为止
+    await expect(tracks.or(empty)).toBeVisible({ timeout: 15_000 })
   })
 
   test('「SQL 练习」从「更多」点进去能到达自由练习页', async ({ page }) => {
