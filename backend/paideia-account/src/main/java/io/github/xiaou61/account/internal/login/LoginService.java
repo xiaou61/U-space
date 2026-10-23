@@ -70,6 +70,15 @@ public class LoginService {
         }
 
         User user = found.get();
+        // 第三方注册的账号没有密码（WORK-037）。`matches` 对 null 摘要本就返回 false，
+        // 但那条路径不跑 BCrypt，响应会明显快于"密码错"——又是一个可枚举的信号。
+        // 所以这里显式走一次假校验，与"账号不存在"那条路径同等代价。
+        if (user.getPasswordHash() == null) {
+            passwordHasher.wasteTimeLikeAMatch();
+            rateLimiter.recordFailure(identifierKey, FAILURE_WINDOW);
+            rateLimiter.recordFailure(sourceKey, FAILURE_WINDOW);
+            throw AuthPort.unauthenticated(GENERIC_FAILURE);
+        }
         if (!passwordHasher.matches(rawPassword, user.getPasswordHash())) {
             rateLimiter.recordFailure(identifierKey, FAILURE_WINDOW);
             rateLimiter.recordFailure(sourceKey, FAILURE_WINDOW);

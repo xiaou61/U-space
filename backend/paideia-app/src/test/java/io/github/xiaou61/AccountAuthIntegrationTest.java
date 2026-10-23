@@ -57,6 +57,10 @@ class AccountAuthIntegrationTest {
     @Autowired
     InMemoryMailPort mailbox;
 
+    /** WORK-037：第三方注册的用户没有密码，而注册端点造不出这种账号，得直接插一行。 */
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @MockitoBean
     CaptchaImageRenderer captchaImageRenderer;
 
@@ -293,6 +297,36 @@ class AccountAuthIntegrationTest {
     }
 
     // ---------------------------------------------------------------- AC-009
+
+    /**
+     * WORK-037：第三方注册的账号没有密码。
+     *
+     * <p>这条守的是一个安静的安全属性：无密码账号必须与"账号不存在"给出**同一句话**，
+     * 否则登录接口会变成"哪些账号是第三方注册的"枚举器。
+     */
+    @Test
+    @DisplayName("AC-009 无密码账号走密码登录被拒，且文案与账号不存在一致")
+    void loginRejectsPasswordlessAccount() throws Exception {
+        String username = unique("oauth-only");
+        String email = uniqueEmail("oauth-only");
+        jdbcTemplate.update("""
+                INSERT INTO users (username, email, password_hash, role, email_verified_at)
+                VALUES (?, ?, NULL, 'learner', CURRENT_TIMESTAMP(3))
+                """, username, email);
+
+        String passwordless = postJson("/api/v1/auth/login", """
+                {"identifier":"%s","password":"%s"}
+                """.formatted(username, PASSWORD));
+        String missing = postJson("/api/v1/auth/login", """
+                {"identifier":"%s","password":"%s"}
+                """.formatted(unique("nosuch"), PASSWORD));
+
+        assertThat(codeOf(passwordless)).as("无密码账号居然登录成功了：%s", passwordless).isEqualTo(40100);
+        assertThat(messageOf(passwordless))
+                .as("文案必须与账号不存在完全一致，否则可据此枚举第三方账号")
+                .isEqualTo(messageOf(missing));
+        assertThat(passwordless).doesNotContain("accessToken");
+    }
 
     @Test
     @DisplayName("AC-009 那个不校验凭据的裸签发端点已经不存在")

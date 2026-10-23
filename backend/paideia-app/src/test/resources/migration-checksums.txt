@@ -26,6 +26,7 @@ src/main/resources/db/migration/V20261022170000__create_question_attempts_and_ma
 src/main/resources/db/migration/V20261022180940__drop_ai_model_credentials.sql 1278967933
 src/main/resources/db/migration/V20261023120000__create_review_sessions.sql -206923658
 src/main/resources/db/migration/V20261023140000__create_ai_feedback.sql -1994570702
+src/main/resources/db/migration/V20261023150000__oauth_identities.sql -1743407731
 src/main/resources/db/migration/V20__add_entry_read_indexes.sql -1148086735
 src/main/resources/db/migration/V21__create_ai_telemetry_tables.sql -891669932
 src/main/resources/db/migration/V22__create_learning_tracks.sql -976007377
