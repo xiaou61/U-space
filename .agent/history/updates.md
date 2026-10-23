@@ -5763,3 +5763,32 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 管理端 e2e **8 passed**（新增 2 条：两个新页从侧栏进得去、空状态说得清楚）。
 - S2 完成：T-07..T-11 全部 done。数据集三源（内置/私人/社区）+ 上传 + 审核治理已闭环。
 - 本地提交：见下一笔
+
+## 2026-10-23 11:50:00 +08:00 · WORK-035 T-15 / T-16 完成
+
+- 类型：implementation
+- 变更：
+  - `SqlDatasetTools.DescribeDataset`：只读工具 `sql_describe_dataset`，返回表结构、**不返回数据行**。
+  - `AgentToolBridge.toolsetsOf`：`sql` 组只给 `ASSISTANT` 与 `TUTOR`，**面试官不给**。
+  - 助手上下文加 `pageContext`（有界场景对象）与 `pendingSql`/`applySql`（填回编辑器）。
+  - 后端：`MessageRequest.pageContext` → `prepare(..., pageContext)` → `Request.pageContext`
+    → `ConversationPrompt.pageContext()` 进系统提示词。**不落库**。
+  - SQL 页：上报场景（数据集 + 草稿 + 最近结果摘要）、消费填回、"问助手"按钮。
+  - 对话面板：SQL 页的回答多一个「填入编辑器」按钮。
+- 决策：
+  - **不放数据行**：结果集可能上千行，塞进提示词既贵又可能送出不必要的内容。
+    摘要只写"报错原文"或"返回 N 个结果集共 M 行"。
+  - **前端截断，服务端只做兜底**（4000 字符）：两处都截会让"到底哪边生效"变成两处都要看。
+  - **填回不执行**：助手没有执行 SQL 的能力——跑一次要 3 秒与一次配额，写操作还会落数据。
+    与 WORK-006「自主只建议不动作」同一条口径。
+  - **取不到 sql 代码块就提示，不猜**：把整段解释文字塞进编辑器比不做更糟，
+    用户会以为是自己写错了。
+  - **`sql_describe_dataset` 内部自己判权限**：不假设模型只会传有权的 key。
+- 验证：
+  - `paideia-sandbox` **53 passed**（新增 SqlDatasetToolsTest 5 条）。
+  - `paideia-ai` **266 运行 / 0 失败 / 13 跳过**。
+  - `@paideia/assistant` **40 passed**（新增 page-context 15 条）。
+  - 应用真实启动成功（工具目录接受新工具）；构建 + 懒加载守卫通过。
+  - e2e `sql-practice` **4 passed**。
+- 已知未做：AI 现场出题（T-12）、AI 生成数据集（T-13）、载入关卡题（T-14）。
+- 本地提交：见下一笔

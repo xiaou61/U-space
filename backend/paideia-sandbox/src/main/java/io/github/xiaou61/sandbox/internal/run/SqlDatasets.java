@@ -56,7 +56,7 @@ public class SqlDatasets {
     private final SqlDatasetMapper mapper;
     private final DatasetStorage storage;
 
-    SqlDatasets(SqlDatasetMapper mapper, DatasetStorage storage) {
+    public SqlDatasets(SqlDatasetMapper mapper, DatasetStorage storage) {
         this.mapper = mapper;
         this.storage = storage;
     }

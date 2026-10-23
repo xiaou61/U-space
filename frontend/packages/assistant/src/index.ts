@@ -11,7 +11,17 @@ export { AssistantShell } from './assistant-shell'
 export { createAssistantApi } from './client'
 export type { AssistantApi } from './client'
 export { ConversationPanel } from './conversation-panel'
-export { AssistantProvider, useAssistantContext, type AssistantHarness, type PendingPrompt } from './context'
+export {
+  AssistantProvider,
+  useAssistantContext,
+  PAGE_CONTEXT_LIMITS,
+  truncateContext,
+  type AssistantHarness,
+  type PageContext,
+  type PendingPrompt,
+  type SqlWorkbenchPageContext,
+} from './context'
+export { extractSqlBlock, serializePageContext } from './page-context'
 export type { AssistantContextValue } from './context'
 export { CreditsPanel } from './credits-panel'
 export { MemoryPanel } from './memory-panel'

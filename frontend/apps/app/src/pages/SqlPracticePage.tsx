@@ -1,4 +1,5 @@
 import { createKnowledgeApi } from '@paideia/knowledge'
+import { useAssistantContext } from '@paideia/assistant'
 // 只引 schema 子入口：它是纯函数、不含 CodeMirror，静态引入不会把编辑器带进主 chunk。
 // 编辑器/结果表/执行计划/侧栏都走下面的 lazy()。
 import { parseSchema, toCompletionSchema } from '@paideia/sql-workbench/schema'
@@ -13,7 +14,7 @@ import {
 } from '@paideia/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Play, Search } from 'lucide-react'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
@@ -72,6 +73,8 @@ export function SqlPracticePage() {
   const [error, setError] = useState<string | null>(null)
   const [dataset, setDataset] = useState<string | null>(null)
 
+  const { setPageContext, pendingSql, clearPendingSql, ask } = useAssistantContext()
+
   const status = useQuery({
     queryKey: ['sandbox-status'],
     queryFn: () => knowledge.sandboxStatus(),
@@ -123,6 +126,45 @@ export function SqlPracticePage() {
     },
     onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
   })
+
+  /**
+   * 上报页面场景给助手（WORK-035 T-15）。
+   *
+   * <p>**只放错误或行数摘要，不放数据行**：结果集可能上千行，塞进提示词既贵又可能
+   * 把用户没想分享的数据送进模型。模型想看结构有 `sql_describe_dataset`。
+   *
+   * <p>离开页面时必须清掉——否则从 SQL 页跳到别处，助手还在说"你这段 SQL……"。
+   */
+  useEffect(() => {
+    if (selected === null) {
+      setPageContext(null)
+      return
+    }
+    const summary =
+      error !== null
+        ? `报错：${error}`
+        : tables !== null
+          ? `返回 ${tables.length} 个结果集，共 ${tables.reduce((sum, table) => sum + table.rows.length, 0)} 行`
+          : explainOutput !== null
+            ? '刚才看了执行计划'
+            : ''
+    setPageContext({ kind: 'sql-workbench', datasetKey: selected, draftSql: code, lastResult: summary })
+    return () => setPageContext(null)
+  }, [selected, code, error, tables, explainOutput, setPageContext])
+
+  /**
+   * 消费助手填回的 SQL（WORK-035 T-15）。
+   *
+   * <p>**只填回编辑器，不执行**：助手没有执行 SQL 的能力（跑一次要 3 秒与一次配额，
+   * 写操作还会真的落数据）。用户点"运行"才算数——这与 WORK-006 的"自主只建议不动作"一致。
+   */
+  useEffect(() => {
+    if (pendingSql === null) {
+      return
+    }
+    setCode(pendingSql.text)
+    clearPendingSql(pendingSql.id)
+  }, [pendingSql, clearPendingSql])
 
   return (
     <AppShell title="Paideia" actions={<LearnerHeader />} wide>
@@ -212,6 +254,14 @@ export function SqlPracticePage() {
               >
                 <Search className="size-4" />
                 {run.isPending && run.variables === true ? '分析中…' : '看执行计划'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                data-testid="sql-ask-assistant"
+                onClick={() => ask('帮我看看这段 SQL 哪里有问题')}
+              >
+                问助手
               </Button>
               <span className="text-muted-foreground text-xs">
                 每次运行约 4–5 秒（要起一个干净的数据库）

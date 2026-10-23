@@ -43,8 +43,8 @@ approver_role: CTO
 | T-12 | AI 现场出题 | S3 | pending |
 | T-13 | AI 生成数据集 | S3 | pending |
 | T-14 | 载入关卡题 | S3 | pending |
-| T-15 | 助手页面上下文与填回 | S3 | pending |
-| T-16 | `sql_describe_dataset` 只读工具 | S3 | pending |
+| T-15 | 助手页面上下文与填回 | S3 | done |
+| T-16 | `sql_describe_dataset` 只读工具 | S3 | done |
 | T-17 | 每人并发 1 与日上限调整 | S4 | pending |
 | T-18 | 验收报告 | — | pending |
 

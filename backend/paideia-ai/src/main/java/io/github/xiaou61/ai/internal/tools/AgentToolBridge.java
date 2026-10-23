@@ -82,12 +82,15 @@ public class AgentToolBridge {
      */
     static Set<String> toolsetsOf(Harness harness) {
         return switch (harness) {
-            case ASSISTANT -> Set.of("knowledge", "note", "account", "assessment", "assistant");
-            // 面试官与通用助手同样的读能力 + 草稿；它不该替用户写笔记，写工具本来也被只读过滤挡住
+            // sql 组（WORK-035）：只有 sql_describe_dataset 一个只读工具，让助手能看数据集结构。
+            // 它**不给执行能力**——跑一次 SQL 要 3 秒与一次配额，写操作还会真的落数据。
+            case ASSISTANT -> Set.of("knowledge", "note", "account", "assessment", "assistant", "sql");
+            // 面试官与通用助手同样的读能力 + 草稿；它不该替用户写笔记，写工具本来也被只读过滤挡住。
+            // **面试官不给 sql 组**：面试官不需要看你的 SQL 练习库。
             case INTERVIEW -> Set.of("knowledge", "assessment", "assistant");
             case REVIEW -> Set.of();
             // 导师要能查到本人学情（learning 组），也要按需检索知识点与读条目
-            case TUTOR -> Set.of("knowledge", "learning", "assessment", "assistant");
+            case TUTOR -> Set.of("knowledge", "learning", "assessment", "assistant", "sql");
         };
     }
 

@@ -75,6 +75,8 @@ export interface AssistantApi {
     message: string,
     onEvent: (event: ChatEvent) => void,
     signal?: AbortSignal,
+    /** 页面场景（WORK-035）：已截断的一段文本，只进提示词不落库。 */
+    pageContext?: string,
   ): Promise<void>
 }
 
@@ -155,11 +157,11 @@ export function createAssistantApi(client: ApiClient): AssistantApi {
         body: JSON.stringify({ type: 'text', text }),
       }),
 
-    sendMessage: async (conversationId, message, onEvent, signal) => {
+    sendMessage: async (conversationId, message, onEvent, signal, pageContext) => {
       const response = await client.stream(`${base}/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ message }),
+        body: JSON.stringify(pageContext === undefined ? { message } : { message, pageContext }),
         ...(signal === undefined ? {} : { signal }),
       })
       // 用量在线上是 `input`/`output`/`total`，界面用的是 `TokenUsage`。**只在这一处归一**：

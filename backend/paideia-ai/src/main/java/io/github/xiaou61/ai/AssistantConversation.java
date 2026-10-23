@@ -49,12 +49,27 @@ public interface AssistantConversation {
                    /** 本人这一站的学习记录摘要（WORK-020）；只有 TUTOR 行为会注入。空串表示没有记录。 */
                    String learningSummary,
                    List<String> memorySnippets,
-                   Harness harness) {
+                   Harness harness,
+                   /**
+                    * 页面场景（WORK-035 T-15）：前端已截断的一段文本，如 SQL 工作台的草稿与最近报错。
+                    *
+                    * <p>**只进提示词，不落库**——会话历史里不该出现"某次页面上写了什么"。
+                    * `null` 表示当前页面没有场景（绝大多数页面）。
+                    */
+                   String pageContext) {
 
         public Request {
             history = history == null ? List.of() : List.copyOf(history);
             memorySnippets = memorySnippets == null ? List.of() : List.copyOf(memorySnippets);
             harness = harness == null ? Harness.ASSISTANT : harness;
+        }
+
+        /** 不带页面场景的形态：既有调用点与测试用它。 */
+        public Request(long userId, List<ConversationTurn> history, String userMessage,
+                       String entryTitle, String entryBody, String learningSummary,
+                       List<String> memorySnippets, Harness harness) {
+            this(userId, history, userMessage, entryTitle, entryBody, learningSummary,
+                    memorySnippets, harness, null);
         }
 
         /**
@@ -66,6 +81,11 @@ public interface AssistantConversation {
         public Request(long userId, List<ConversationTurn> history, String userMessage,
                        String entryTitle, String entryBody, List<String> memorySnippets) {
             this(userId, history, userMessage, entryTitle, entryBody, "", memorySnippets, Harness.ASSISTANT);
+        }
+
+        /** 有没有页面场景。实现据此决定是否把它放进提示词。 */
+        public boolean hasPageContext() {
+            return pageContext != null && !pageContext.isBlank();
         }
 
         /** 有没有条目上下文。实现据此决定是否把正文放进提示词。 */
