@@ -83,6 +83,19 @@ public interface SqlDatasetMapper {
     int updateStatus(@Param("datasetKey") String datasetKey, @Param("status") String status,
                      @Param("now") Instant now);
 
+    /**
+     * 私人 → 社区（WORK-035 T-10）。
+     *
+     * <p>与 `updateStatus` 分两步而不是合成一条：状态与来源是两个维度
+     * （社区集也有 draft/published/taken_down 三态）。合成一条会让"把已下架的社区集重新发布"
+     * 与"把私人集发布"走同一个方法，而它们的权限检查不同。
+     */
+    @Update("""
+            UPDATE sql_datasets SET source = 'community', status = 'published', updated_at = #{now}
+            WHERE dataset_key = #{datasetKey} AND source = 'private'
+            """)
+    int promoteToCommunity(@Param("datasetKey") String datasetKey, @Param("now") Instant now);
+
     @Delete("DELETE FROM sql_datasets WHERE dataset_key = #{datasetKey} AND owner_user_id = #{userId}")
     int deleteOwned(@Param("datasetKey") String datasetKey, @Param("userId") long userId);
 

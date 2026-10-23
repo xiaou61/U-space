@@ -2,7 +2,7 @@ package io.github.xiaou61.sandbox.internal.run;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.xiaou61.sandbox.internal.dataset.DatasetStorage;
+import io.github.xiaou61.sandbox.DatasetStorage;
 import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetMapper;
 import java.time.Instant;
 import java.util.List;
@@ -26,91 +26,51 @@ class SqlDatasetsTest {
     private static final long OWNER = 7L;
     private static final long STRANGER = 8L;
 
-    /** 一个只认识固定几行的假 Mapper。真实 SQL 行为由集成测试覆盖。 */
+    /**
+     * 一个只实现"读"的假 Mapper。
+     *
+     * <p>**用动态代理而不是手写全部方法**：`SqlDatasetMapper` 有十几个方法，每加一个就要
+     * 回来补这个测试桩，而其中绝大多数在这个测试里根本用不到。代理让"没实现的方法"
+     * 抛 {@link UnsupportedOperationException}——如果哪个测试意外走到那里，它会立刻失败，
+     * 不会静默返回 null 让断言看起来通过了。
+     */
     private static SqlDatasetMapper mapperOf(List<SqlDatasetMapper.Row> rows) {
-        return new SqlDatasetMapper() {
-            @Override
-            public int insert(String datasetKey, String name, String source, Long ownerUserId,
-                              String storageId, String schemaJson, int tableCount, int rowCount,
-                              int sizeBytes, String status, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Optional<Row> findByKey(String datasetKey) {
-                return rows.stream().filter(row -> row.datasetKey().equals(datasetKey)).findFirst();
-            }
-
-            @Override
-            public List<Summary> listVisible(long userId) {
-                return rows.stream()
-                        .filter(row -> SqlDatasets.visible(row, userId))
-                        .map(row -> new Summary(row.datasetKey(), row.name(), row.source(),
-                                row.ownerUserId(), row.tableCount(), row.rowCount()))
-                        .toList();
-            }
-
-            @Override
-            public int updateSnapshot(String datasetKey, String schemaJson, int tableCount,
-                                      int rowCount, int sizeBytes, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int updateStatus(String datasetKey, String status, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int deleteOwned(String datasetKey, long userId) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int deletePrivateByOwner(long userId) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int orphanCommunityByOwner(long userId, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public List<Summary> listCommunity(String status, int limit) {
-                return List.of();
-            }
-
-            @Override
-            public int upsertReport(String datasetKey, long reporterUserId, String reason, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public List<ReportRow> listReports(String status, int limit) {
-                return List.of();
-            }
-
-            @Override
-            public int countReports(String datasetKey) {
-                return 0;
-            }
-
-            @Override
-            public int markReportsHandled(String datasetKey, String status, Instant now) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int deleteReportsByReporter(long userId) {
-                throw new UnsupportedOperationException();
-            }
-        };
+        return (SqlDatasetMapper) java.lang.reflect.Proxy.newProxyInstance(
+                SqlDatasetMapper.class.getClassLoader(),
+                new Class<?>[] {SqlDatasetMapper.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "findByKey" -> rows.stream()
+                            .filter(row -> row.datasetKey().equals(args[0]))
+                            .findFirst();
+                    case "listVisible" -> rows.stream()
+                            .filter(row -> SqlDatasets.visible(row, (Long) args[0]))
+                            .map(row -> new SqlDatasetMapper.Summary(row.datasetKey(), row.name(),
+                                    row.source(), row.ownerUserId(), row.tableCount(), row.rowCount()))
+                            .toList();
+                    case "listCommunity" -> List.of();
+                    case "listReports" -> List.of();
+                    case "countReports" -> 0;
+                    case "toString" -> "FakeSqlDatasetMapper";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> throw new UnsupportedOperationException("测试桩没有实现 " + method.getName());
+                });
     }
 
     /** 内容存储：id → 文本。 */
     private static DatasetStorage storageOf(Map<String, String> content) {
-        return id -> Optional.ofNullable(content.get(id)).map(text -> text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return new DatasetStorage() {
+            @Override
+            public Optional<byte[]> read(String storageId) {
+                return Optional.ofNullable(content.get(storageId))
+                        .map(text -> text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            @Override
+            public String put(byte[] bytes, String contentType) {
+                throw new UnsupportedOperationException("测试不写入");
+            }
+        };
     }
 
     private static SqlDatasetMapper.Row row(String key, String source, Long owner, String status) {

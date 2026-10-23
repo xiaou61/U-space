@@ -5708,3 +5708,32 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     断言"无权"与"不存在"返回同一结果（否则是可枚举的 oracle）。
   - 全后端（除 app 模块）**266 运行 / 0 失败 / 13 跳过**。
 - 本地提交：见下一笔
+
+## 2026-10-23 11:20:00 +08:00 · WORK-035 T-09 / T-10 完成
+
+- 类型：implementation
+- 变更：
+  - `SqlStatementGuard`：语句白名单（只许建表/建索引/建视图/ALTER/INSERT/REPLACE）
+    + 危险片段拒绝（TRIGGER/PROCEDURE/FUNCTION/EVENT/LOAD DATA/LOAD_FILE/OUTFILE/GRANT…）。
+  - `SqlDatasetUploadService`：三道检查（大小 → 白名单 → 干跑+抓结构），**先试后存**。
+  - `SqlDatasetSchemaReader`：`information_schema` 结果 → 与构建期脚本逐字段一致的结构 JSON。
+  - `SqlDatasetController`：上传、我的数据集、删除、发布为社区、举报。
+  - knowledge 侧新增 `AttachmentReader` 公开契约（read + put），装配根桥接到 sandbox 的
+    `DatasetStorage`。
+  - `DatasetStorage` 从 `sandbox.internal.dataset` **移到包根**（`ModularityTest` 要求）。
+- 决策：
+  - **干跑与抓结构在同一次运行里做完**：两次运行要各起一个容器（各 3–5 秒 + 各一次配额）。
+    数据集已灌好，顺手查一次 `information_schema` 是免费的。
+  - **白名单而不是黑名单**：MySQL 语句种类会随版本增加，黑名单永远会漏。白名单漏掉的
+    后果是"合法写法被拒"（可补），黑名单漏掉的是"任意逻辑被执行"。
+  - **必须先剥注释再判**：否则 `-- 这里不用 TRIGGER` 这种注释会让上传被误拒，
+    而 `/* x */ CREATE TRIGGER ...` 会漏报。
+  - **行数按 INSERT 语句数近似**，不跑 COUNT：精确值要再起一个容器，为展示一个数字不值得。
+- 验证：
+  - `paideia-sandbox` **48 passed**（新增 SqlStatementGuard 12 条 + SqlDatasetSchemaReader 7 条）。
+  - `ModularityTest` 通过——**它先拦下了两次真实违规**：装配根直接引 `knowledge.internal.file.FileStorage`
+    与 `sandbox.internal.dataset.DatasetStorage`。修法是 knowledge 开 `AttachmentReader` 公开契约、
+    `DatasetStorage` 移到包根，两个模块互不认识，装配根做唯一接缝。
+  - 全后端（除 app）**266 运行 / 0 失败 / 13 跳过**。
+- 已知未做：上传的界面（S2 剩 T-11 管理端）、社区下架的 ADMIN 端点。
+- 本地提交：见下一笔

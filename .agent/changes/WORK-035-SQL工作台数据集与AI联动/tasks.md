@@ -37,8 +37,8 @@ approver_role: CTO
 | T-06 | 结果图表 | S1 | done |
 | T-07 | 数据集迁移与 Mapper | S2 | done |
 | T-08 | 数据集解析改造（安全边界） | S2 | done |
-| T-09 | 上传与干跑 | S2 | pending |
-| T-10 | 社区发布、举报与下架 | S2 | pending |
+| T-09 | 上传与干跑 | S2 | done |
+| T-10 | 社区发布、举报与下架 | S2 | done（下架端点在 T-11 一并接） |
 | T-11 | 管理端两页 | S2 | pending |
 | T-12 | AI 现场出题 | S3 | pending |
 | T-13 | AI 生成数据集 | S3 | pending |
