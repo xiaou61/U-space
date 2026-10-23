@@ -8,7 +8,6 @@ import io.github.xiaou61.sandbox.internal.run.CodeRun;
 import io.github.xiaou61.sandbox.internal.run.CodeRunner;
 import io.github.xiaou61.sandbox.internal.run.RunSlot;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -63,17 +62,15 @@ public class SqlDatasetUploadService {
     private final CodeRunner runner;
     private final SandboxQuotaService quota;
     private final RunSlot slots;
-    private final Clock clock;
 
     SqlDatasetUploadService(SqlDatasetMapper mapper, DatasetStorage storage, CodeRunner runner,
-                            SandboxQuotaService quota, RunSlot slots, Clock clock) {
+                            SandboxQuotaService quota, RunSlot slots) {
         this.mapper = mapper;
         this.storage = storage;
         this.runner = runner;
         this.quota = quota;
         this.slots = slots;
-        this.clock = clock;
-    }
+            }
 
     /**
      * 上传一个私人数据集。
@@ -99,7 +96,7 @@ public class SqlDatasetUploadService {
 
         mapper.insert(key, name.trim(), "private", userId, storageId, schemaJson,
                 counts.tables(), countRows(sql), sql.getBytes(StandardCharsets.UTF_8).length,
-                "draft", clock.instant());
+                "draft", java.time.Instant.now());
         return key;
     }
 

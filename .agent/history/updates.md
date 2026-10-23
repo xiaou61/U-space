@@ -5737,3 +5737,29 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 全后端（除 app）**266 运行 / 0 失败 / 13 跳过**。
 - 已知未做：上传的界面（S2 剩 T-11 管理端）、社区下架的 ADMIN 端点。
 - 本地提交：见下一笔
+
+## 2026-10-23 11:30:00 +08:00 · WORK-035 T-11 完成，S2 收尾
+
+- 类型：implementation
+- 变更：
+  - `SqlDatasetAdminController`：社区数据集清单（按状态）、下架、恢复、举报清单。
+    `@ApiAccess(ADMIN)` 在类上统一给。
+  - 管理端两页：`SqlDatasetsPage`（数据集管理，带二次确认下架）、`SqlDatasetReportsPage`（举报处理）。
+  - 侧栏加「SQL 数据集」父菜单 + 两个子项，面包屑同步。
+- 决策：
+  - **只能下架与恢复，不能编辑内容**：内容属于作者，管理员能做的只是让它不可见——
+    与 `note_reports` 的治理口径一致。
+  - **下架同时把未处理举报标成 taken_down**：否则管理员会看到"已下架但还有三条待处理"。
+  - 数据集管理页的下架**要二次确认**（从浏览列表直接动手，缺上下文）；举报页不用
+    （那里点"下架"本身就是明确意图）。
+- 部署期发现并修掉一个真缺陷：
+  - 三个新服务注入 `java.time.Clock`，而**项目里没有这个 Bean**——`mvn test` 全绿、
+    `ModularityTest` 全绿，只有真正启动应用才报 `required a bean of type 'java.time.Clock'
+    that could not be found`。改成与仓库既有写法一致的 `Instant.now()`。
+    **这是"单测全绿但起不来"的典型**：装配问题只有启动能暴露。
+- 验证：
+  - `paideia-sandbox` **48 passed**；管理端 typecheck 通过。
+  - 应用真实启动成功（`Started PaideiaApplication in 12.8s`）。
+  - 管理端 e2e **8 passed**（新增 2 条：两个新页从侧栏进得去、空状态说得清楚）。
+- S2 完成：T-07..T-11 全部 done。数据集三源（内置/私人/社区）+ 上传 + 审核治理已闭环。
+- 本地提交：见下一笔

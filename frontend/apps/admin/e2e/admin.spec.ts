@@ -71,3 +71,31 @@ test('举报处理页：从侧栏进得去，空列表也说清楚', async ({ pa
   // 举报→列表→下架→链接失效那条链路由后端集成用例覆盖（NoteReportIntegrationTest）
   await expect(page.getByTestId('reports-empty')).toBeVisible()
 })
+
+/**
+ * SQL 数据集治理（WORK-035 T-11）。
+ *
+ * <p>两页都只断"从侧栏进得去、空状态说得清楚"——本地种子库没有社区数据集。
+ * 真正的发布 → 举报 → 下架链路要真实数据，由后端集成用例覆盖。
+ */
+test('SQL 数据集管理页：从侧栏进得去，空列表也说清楚', async ({ page }) => {
+  await signIn(page, ADMIN)
+  await expect(page.getByTestId('admin-console')).toBeVisible()
+
+  await page.getByTestId('admin-menu-SQL 数据集').click()
+  await page.getByRole('link', { name: '数据集管理' }).click()
+
+  await expect(page.getByRole('heading', { name: 'SQL 数据集' })).toBeVisible()
+  await expect(page.getByTestId('sql-datasets-empty')).toBeVisible()
+})
+
+test('SQL 数据集举报页：进得去，空列表也说清楚', async ({ page }) => {
+  await signIn(page, ADMIN)
+  await expect(page.getByTestId('admin-console')).toBeVisible()
+
+  await page.getByTestId('admin-menu-SQL 数据集').click()
+  // 这个子项与笔记举报同名，所以按 href 定位而不是按名字
+  await page.locator('a[href="#/sql-datasets/reports"]').click()
+
+  await expect(page.getByTestId('sql-dataset-reports-empty')).toBeVisible()
+})

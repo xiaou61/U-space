@@ -3,7 +3,6 @@ package io.github.xiaou61.sandbox.internal.user;
 import io.github.xiaou61.platform.UserDeletedEvent;
 import io.github.xiaou61.sandbox.internal.audit.CodeRunMapper;
 import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetMapper;
-import java.time.Clock;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -29,19 +28,17 @@ class SandboxUserDeletionListener {
 
     private final CodeRunMapper mapper;
     private final SqlDatasetMapper datasets;
-    private final Clock clock;
 
-    SandboxUserDeletionListener(CodeRunMapper mapper, SqlDatasetMapper datasets, Clock clock) {
+    SandboxUserDeletionListener(CodeRunMapper mapper, SqlDatasetMapper datasets) {
         this.mapper = mapper;
         this.datasets = datasets;
-        this.clock = clock;
-    }
+            }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     void onUserDeleted(UserDeletedEvent event) {
         mapper.deleteByUser(event.userId());
         datasets.deletePrivateByOwner(event.userId());
-        datasets.orphanCommunityByOwner(event.userId(), clock.instant());
+        datasets.orphanCommunityByOwner(event.userId(), java.time.Instant.now());
         datasets.deleteReportsByReporter(event.userId());
     }
 }

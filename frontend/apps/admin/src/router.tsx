@@ -9,6 +9,8 @@ import { KnowledgeConceptsPage } from './pages/KnowledgeConceptsPage'
 import { KnowledgeEntriesPage } from './pages/KnowledgeEntriesPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { NoteReportsPage } from './pages/NoteReportsPage'
+import { SqlDatasetReportsPage } from './pages/SqlDatasetReportsPage'
+import { SqlDatasetsPage } from './pages/SqlDatasetsPage'
 import { OpsPage } from './pages/OpsPage'
 import { RequireAdmin } from './require-admin'
 
@@ -63,6 +65,23 @@ export const router = createHashRouter([
     element: (
       <RequireAdmin>
         <NoteReportsPage />
+      </RequireAdmin>
+    ),
+  },
+  { path: '/sql-datasets', element: <Navigate to="/sql-datasets/list" replace /> },
+  {
+    path: '/sql-datasets/list',
+    element: (
+      <RequireAdmin>
+        <SqlDatasetsPage />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '/sql-datasets/reports',
+    element: (
+      <RequireAdmin>
+        <SqlDatasetReportsPage />
       </RequireAdmin>
     ),
   },

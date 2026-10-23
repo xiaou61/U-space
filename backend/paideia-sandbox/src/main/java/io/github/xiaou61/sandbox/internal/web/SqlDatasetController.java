@@ -9,7 +9,6 @@ import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetUploadService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.Clock;
 import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,13 +33,11 @@ class SqlDatasetController {
 
     private final SqlDatasetUploadService uploads;
     private final SqlDatasetMapper mapper;
-    private final Clock clock;
 
-    SqlDatasetController(SqlDatasetUploadService uploads, SqlDatasetMapper mapper, Clock clock) {
+    SqlDatasetController(SqlDatasetUploadService uploads, SqlDatasetMapper mapper) {
         this.uploads = uploads;
         this.mapper = mapper;
-        this.clock = clock;
-    }
+            }
 
     /**
      * 上传一个私人数据集。
@@ -96,7 +93,7 @@ class SqlDatasetController {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "只有私人数据集可以发布");
         }
         // 一条 UPDATE 同时改来源与状态：分两步会在中间留下"来源已是社区但状态还是 draft"的形态
-        mapper.promoteToCommunity(key, clock.instant());
+        mapper.promoteToCommunity(key, java.time.Instant.now());
         return ApiResponse.ok(null);
     }
 
@@ -114,7 +111,7 @@ class SqlDatasetController {
         if (!"community".equals(row.source())) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "只有社区数据集可以被举报");
         }
-        mapper.upsertReport(key, userId, body.reason(), clock.instant());
+        mapper.upsertReport(key, userId, body.reason(), java.time.Instant.now());
         return ApiResponse.ok(null);
     }
 
