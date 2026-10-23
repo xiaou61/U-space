@@ -24,9 +24,19 @@ import org.springframework.web.bind.annotation.RestController;
 class QuestionConceptAdminController {
 
     private final QuestionConceptAdminService service;
+    private final io.github.xiaou61.knowledge.QuestionTaggingPort tagging;
 
-    QuestionConceptAdminController(QuestionConceptAdminService service) {
+    QuestionConceptAdminController(QuestionConceptAdminService service,
+                                   io.github.xiaou61.knowledge.QuestionTaggingPort tagging) {
         this.service = service;
+        this.tagging = tagging;
+    }
+
+    /** AI 概念候选（REQ-010）：一次调用处理该条目全部题目，**只返回候选不写库**。 */
+    @org.springframework.web.bind.annotation.PostMapping("/question-concepts/suggest-ai")
+    ApiResponse<io.github.xiaou61.knowledge.QuestionTaggingPort.Result> suggestAi(
+            @RequestParam("entryId") long entryId) {
+        return ApiResponse.ok(service.suggestWithAi(entryId, tagging));
     }
 
     @GetMapping("/questions")
@@ -40,6 +50,13 @@ class QuestionConceptAdminController {
         service.replace(body.entryId(), body.blockKey(), body.questionKey(),
                 body.concepts(), body.source());
         return ApiResponse.ok(null);
+    }
+
+    /** 评估导出（REQ-012）：最近作答明细。 */
+    @GetMapping("/evaluation/export")
+    ApiResponse<java.util.List<io.github.xiaou61.knowledge.internal.question.QuestionAttemptMapper.AttemptRow>>
+    export(@RequestParam(name = "limit", defaultValue = "500") int limit) {
+        return ApiResponse.ok(service.exportAttempts(limit));
     }
 
     @GetMapping("/question-concepts/suggestions")

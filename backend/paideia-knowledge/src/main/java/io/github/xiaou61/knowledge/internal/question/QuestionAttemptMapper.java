@@ -117,6 +117,47 @@ public interface QuestionAttemptMapper {
             """)
     List<ConceptRow> findAllConcepts();
 
+    // ---- 练习选题与复习联动（WORK-033 第二轮）----
+
+    @Select("""
+            <script>
+            SELECT qc.entry_id, qc.block_key, qc.question_key, qd.fingerprint,
+                   qd.rating, qd.attempts, qd.updated_at
+            FROM question_concepts qc
+            LEFT JOIN question_difficulty qd
+              ON qd.entry_id = qc.entry_id AND qd.block_key = qc.block_key
+             AND qd.question_key = qc.question_key
+            WHERE qc.concept_id IN
+              <foreach item="id" collection="conceptIds" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    List<CandidateRow> findCandidates(@Param("conceptIds") List<Long> conceptIds);
+
+    /** 答错时把该条目的复习排期拉回明天；没有学习记录时不补建（没开始读的人不需要复习）。 */
+    @org.apache.ibatis.annotations.Update("""
+            UPDATE learning_progress
+            SET review_stage = 0, review_due_at = #{dueAt}
+            WHERE user_id = #{userId} AND entry_id = #{entryId}
+            """)
+    int scheduleReview(@Param("userId") long userId, @Param("entryId") long entryId,
+                       @Param("dueAt") Instant dueAt);
+
+    @Select("""
+            SELECT id, user_id, entry_id, block_key, question_key, fingerprint, correct,
+                   latency_ms, judged_by, created_at
+            FROM question_attempts ORDER BY id DESC LIMIT #{limit}
+            """)
+    List<AttemptRow> recentAttempts(@Param("limit") int limit);
+
+    record CandidateRow(long entryId, String blockKey, String questionKey, String fingerprint,
+                        Double rating, Integer attempts, java.time.Instant updatedAt) {
+    }
+
+    record AttemptRow(long id, long userId, long entryId, String blockKey, String questionKey,
+                      String fingerprint, boolean correct, Integer latencyMs, String judgedBy,
+                      java.time.Instant createdAt) {
+    }
+
     record LinkRow(long conceptId, double weight) {
     }
 

@@ -19,10 +19,14 @@ approver_role: CTO
 | T-02 | 题目解析与指纹 | done |
 | T-03 | 掌握度与难度纯函数 | done |
 | T-04 | 作答端点（服务端判定） | done |
-| T-05 | 概念标注与候选 | in_progress |
+| T-05 | 概念标注与候选 | done |
 | T-06 | 前置诊断与接口 | done |
 | T-07 | 图谱接入 BKT | done |
 | T-08 | 注销级联与前端逐题上报 | in_progress |
+| T-09 | 信息增益选题（REQ-008） | done |
+| T-10 | 答错联动复习（REQ-009） | done |
+| T-11 | 批量 AI 打标（REQ-010） | done |
+| T-12 | 评估导出（REQ-012） | done |
 
 
 ## 计划质量门

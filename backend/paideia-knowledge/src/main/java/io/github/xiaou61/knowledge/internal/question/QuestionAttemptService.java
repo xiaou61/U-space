@@ -64,6 +64,10 @@ public class QuestionAttemptService {
 
         mapper.insertAttempt(userId, entry.getId(), question.blockKey(), question.questionKey(),
                 question.fingerprint(), request.choice(), correct, latency, "server", now);
+        if (!correct) {
+            // 答错即回到复习队列：明天再来（REQ-009）。只影响已有学习记录的条目。
+            mapper.scheduleReview(userId, entry.getId(), now.plus(1, java.time.temporal.ChronoUnit.DAYS));
+        }
 
         List<QuestionAttemptMapper.LinkRow> links = mapper.findLinks(entry.getId(),
                 question.blockKey(), question.questionKey());
@@ -145,6 +149,46 @@ public class QuestionAttemptService {
         long failed = links.get(0).conceptId();
         return PrerequisiteDiagnosis.suggest(failed, mastery, edges,
                 PrerequisiteDiagnosis.DEFAULT_MAX_DEPTH);
+    }
+
+    /**
+     * 练习选题（REQ-008）：在给定概念集合里挑一道信息量最大的题。
+     *
+     * <p>没有候选、或概念都没有关联题目时返回空，不报错。
+     */
+    public java.util.Optional<PracticeSelector.Candidate> nextPractice(long userId, List<Long> conceptIds) {
+        if (conceptIds == null || conceptIds.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        // 同一道题在内容改动后可能有多条难度行，取最近更新的一条
+        Map<String, QuestionAttemptMapper.CandidateRow> latest = new HashMap<>();
+        for (QuestionAttemptMapper.CandidateRow row : mapper.findCandidates(conceptIds)) {
+            String key = row.entryId() + "/" + row.blockKey() + "/" + row.questionKey();
+            QuestionAttemptMapper.CandidateRow previous = latest.get(key);
+            if (previous == null || (row.updatedAt() != null
+                    && (previous.updatedAt() == null || row.updatedAt().isAfter(previous.updatedAt())))) {
+                latest.put(key, row);
+            }
+        }
+        Map<Long, Double> mastery = new HashMap<>();
+        for (QuestionAttemptMapper.MasteryRow row : mapper.findMastery(userId)) {
+            mastery.put(row.conceptId(), row.mastery());
+        }
+        double average = conceptIds.stream()
+                .mapToDouble(id -> mastery.getOrDefault(id, MasteryModel.PRIOR))
+                .average().orElse(MasteryModel.PRIOR);
+        List<PracticeSelector.Candidate> candidates = latest.values().stream()
+                .map(row -> new PracticeSelector.Candidate(row.entryId(), row.blockKey(),
+                        row.questionKey(), row.fingerprint() == null ? "unknown" : row.fingerprint(),
+                        row.rating() == null ? ItemRating.INITIAL : row.rating(),
+                        row.attempts() == null ? 0 : row.attempts()))
+                .toList();
+        return PracticeSelector.choose(candidates, PracticeSelector.abilityOf(average));
+    }
+
+    /** 评估导出（REQ-012）：最近作答明细，够回放与算指标。 */
+    public List<QuestionAttemptMapper.AttemptRow> exportAttempts(int limit) {
+        return mapper.recentAttempts(Math.max(1, Math.min(5000, limit)));
     }
 
     /** 我自己的全部掌握状态，按概念 id 升序。 */

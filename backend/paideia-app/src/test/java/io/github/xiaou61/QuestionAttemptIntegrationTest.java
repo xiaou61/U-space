@@ -159,4 +159,83 @@ class QuestionAttemptIntegrationTest {
                 "SELECT COUNT(*) FROM question_attempts WHERE user_id = ?", Integer.class, subject))
                 .isZero();
     }
+
+    @Test
+    @DisplayName("答错把该条目的复习排期拉回明天（REQ-009）")
+    void wrongAnswerSchedulesReview() throws Exception {
+        jdbcTemplate.update("""
+                INSERT INTO learning_progress
+                    (user_id, entry_id, challenges_json, quizzes_json, status)
+                VALUES (?, ?, '{}', '{}', 'in_progress')
+                """, subject, entryId);
+
+        mockMvc.perform(post("/api/v1/learning/attempts")
+                        .header("Authorization", token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(1)))
+                .andExpect(status().isOk());
+
+        java.sql.Timestamp due = jdbcTemplate.queryForObject("""
+                SELECT review_due_at FROM learning_progress WHERE user_id = ? AND entry_id = ?
+                """, java.sql.Timestamp.class, subject, entryId);
+        assertThat(due).isNotNull();
+        assertThat(due.toInstant()).isAfter(java.time.Instant.now().plus(23, java.time.temporal.ChronoUnit.HOURS));
+    }
+
+    @Test
+    @DisplayName("管理端标注成功路径、练习选题与评估导出（REQ-008/012）")
+    void adminTaggingPracticeAndExport() throws Exception {
+        String admin = "Bearer " + authPort.issue(
+                new AuthPort.Subject("900", AuthPort.ROLE_ADMIN)).value();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/learning/admin/questions").param("entryId", String.valueOf(entryId))
+                        .header("Authorization", admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].questionKey").value(BLOCK + "#0"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/learning/admin/question-concepts/suggestions")
+                        .param("entryId", String.valueOf(entryId))
+                        .param("blockKey", BLOCK).param("questionKey", BLOCK + "#0")
+                        .header("Authorization", admin))
+                .andExpect(status().isOk());
+
+        String replace = """
+                {"entryId":%d,"blockKey":"%s","questionKey":"%s#0",
+                 "concepts":[{"conceptId":%d,"weight":1.0}],"source":"author"}
+                """.formatted(entryId, BLOCK, BLOCK, conceptId);
+        for (int round = 0; round < 2; round++) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .put("/api/v1/learning/admin/question-concepts")
+                            .header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(replace))
+                    .andExpect(status().isOk());
+        }
+        assertThat(jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM question_concepts
+                WHERE entry_id = ? AND block_key = ? AND question_key = ?
+                """, Integer.class, entryId, BLOCK, BLOCK + "#0")).isEqualTo(1);
+
+        // 练习选题：关联后能返回这道题
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/learning/practice/next")
+                        .param("conceptIds", String.valueOf(conceptId))
+                        .header("Authorization", token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.questionKey").value(BLOCK + "#0"));
+
+        // 先作答一条，导出才有内容
+        mockMvc.perform(post("/api/v1/learning/attempts")
+                        .header("Authorization", token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(0)))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/learning/admin/evaluation/export")
+                        .header("Authorization", admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].entryId").value(entryId));
+    }
 }

@@ -44,6 +44,9 @@ public final class RunKind {
     /** 训练营出复测卷（WORK-029）。与诊断卷分开：用户要能看出"复测那一下花了多少"。 */
     public static final String CAMP_RETEST = "camp_retest";
 
+    /** 给题目生成概念候选（WORK-033）。按批一次调用。 */
+    public static final String QUESTION_TAGGING = "question_tagging";
+
     private RunKind() {
     }
 }

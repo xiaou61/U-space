@@ -5813,6 +5813,7 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：be3765b（架构图）/ 535a887（死表）/ 04c0973（课程基线）及本笔
 - 远端推送：未执行
 
+<<<<<<< HEAD
 ## 2026-10-23 09:19:31 +0800 · 推送并部署 master（死表删除上线）
 
 - 类型：deploy
@@ -5824,3 +5825,52 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 耗时 234 秒，含前端重建（`frontend/` 自上次发版有改动，脚本没跳过）。
 - 本地提交：无（本次只推送与部署）
 - 远端推送：已执行，`600d0a0..01c8eec  master -> master`
+=======
+## 2026-10-23 09:25:00 +08:00 · WORK-033 第二轮：选题、复习联动、AI 打标、评估导出
+
+- 类型：implementation
+- 变更：
+  - REQ-008 选题：`PracticeSelector` 纯函数（信息函数 + 未校准探索加分），
+    `GET /api/v1/learning/practice/next?conceptIds=`。
+  - REQ-009 复习联动：答错时把该条目的 `review_stage` 归零、`review_due_at` 设为明天
+    （只影响已有学习记录的条目）。
+  - REQ-010 AI 打标：`QuestionTaggingPort`（knowledge 定义、ai 实现），一次调用处理一篇条目，
+    新增 `RunKind.QUESTION_TAGGING` 记账；`POST /api/v1/learning/admin/question-concepts/suggest-ai`
+    **只返回候选不落库**，集合外的 id 直接丢弃。
+  - REQ-012 评估导出：`GET /api/v1/learning/admin/evaluation/export`（最近作答明细，上限 5000）。
+  - T-05 成功路径补齐：管理端题目清单、候选、覆盖标注（重复 PUT 仍只有一行）。
+- 验证：
+  - 新增 `PracticeSelectorTest` 3 条、`QuestionTaggingServiceTest` 3 条；
+    `QuestionAttemptIntegrationTest` 扩到 5 条（复习排期、管理端标注、选题、导出）。
+  - 后端全量：**278 运行 / 0 失败 / 4 跳过**；`ApiWalkthroughTest` 覆盖三个新端点并更新结构快照。
+- 仍未做：T-08 的逐题上报 e2e；AC-004/006 需要真实作答数据。
+- 本地提交：见下一笔
+- 远端推送：分支 `work-033-phase2`
+>>>>>>> origin/work-033-phase2
+## 2026-10-22 16:50:10 +0800 · 建项 WORK-034（学习闭环与复习入口）四件工件草案
+
+- 类型：docs
+- 变更：
+  - 新建 `.agent/changes/WORK-034-学习闭环与复习入口/requirements.md`（draft，strict / full）。
+  - 新建同目录 `proposal.md`、`design.md`、`tasks.md`（均为 draft）。
+  - 记录用户把「复习闭环、首页个性化、复习题评估、训练营入口」合并为一项的裁决：
+    S1 不依赖 WORK-033，S2 等 033 合并后做；Laya 不进入本项。
+  - 12 条需求（REQ-001..012）与 11 条验收（AC-001..011）。S1 先交付出口、排序、
+    零数据路径与训练营入口；S2 做新题会话、会话快照表、排期与降级。
+- 决策：
+  - 不建题库表；复习题用「会话 + 题干指纹」标识，掌握度消费 033 的端口。
+  - 答错按「档位不变、明天再来」写进设计，列为待确认项。
+  - 训练营只加首页入口；无简历开营不在本项（`camp_programs.resume_document_id` 非空）。
+  - Laya 只允许在 WORK-026 已批准范围内使用，本项零改动；**核对历史时更正**：
+    026 已于 2026-10-21 线上接通（`decision | 开`），不是仍关闭。
+- 验证：
+  - `project-lifecycle.py validate "F:/Paideia"`：WORK-034 只有 1 条**预期门槛错误**
+    「需求尚未形成，但已经存在下游工件」。原因是用户要求四件同批起草、`requirements`
+    尚未签署（已记为 D-06 豁免）；其余为历史工作项既有警告，与本项无关。
+  - 本轮只起草工件，未改代码、未建迁移、未跑测试；实施证据留到批准后。
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+ ## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
+ 
+ - 类型：implementation

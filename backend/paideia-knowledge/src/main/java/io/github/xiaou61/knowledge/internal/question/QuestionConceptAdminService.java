@@ -87,6 +87,30 @@ public class QuestionConceptAdminService {
         }
     }
 
+    /**
+     * AI 概念候选（REQ-010）：把该条目全部题目与全部概念交给端口，一次调用。
+     *
+     * <p>没有 AI 模块或没有凭据时端口返回空结果，不报错。
+     */
+    public io.github.xiaou61.knowledge.QuestionTaggingPort.Result suggestWithAi(
+            long entryId, io.github.xiaou61.knowledge.QuestionTaggingPort tagging) {
+        Entry entry = requireEntry(entryId);
+        var questions = QuestionCatalog.parse(entry.getId(), entry.getBody()).stream()
+                .map(question -> new io.github.xiaou61.knowledge.QuestionTaggingPort.Question(
+                        question.questionKey(), question.stem(), question.options()))
+                .toList();
+        var concepts = mapper.findAllConcepts().stream()
+                .map(row -> new io.github.xiaou61.knowledge.QuestionTaggingPort.Concept(
+                        row.id(), row.name(), row.summary()))
+                .toList();
+        return tagging.tag(new io.github.xiaou61.knowledge.QuestionTaggingPort.Request(questions, concepts));
+    }
+
+    /** 评估导出（REQ-012）：最近作答明细。 */
+    public List<QuestionAttemptMapper.AttemptRow> exportAttempts(int limit) {
+        return mapper.recentAttempts(Math.max(1, Math.min(5000, limit)));
+    }
+
     /** 候选：词面 + 结构加分，最多 5 条，不写库。 */
     public List<QuestionConceptSuggester.Suggestion> suggestions(long entryId, String blockKey,
                                                                  String questionKey, int limit) {

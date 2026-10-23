@@ -40,6 +40,15 @@ class QuestionAttemptController {
         return ApiResponse.ok(service.mastery(CurrentUserId.require()));
     }
 
+    /** 练习选题（REQ-008）：传概念 id 列表，返回一道信息量最大的题。 */
+    @GetMapping("/practice/next")
+    ApiResponse<Object> practiceNext(@RequestParam("conceptIds") String conceptIds) {
+        List<Long> ids = java.util.Arrays.stream(conceptIds.split(","))
+                .map(String::trim).filter(value -> !value.isEmpty())
+                .map(Long::valueOf).toList();
+        return ApiResponse.ok(service.nextPractice(CurrentUserId.require(), ids).orElse(null));
+    }
+
     @GetMapping("/diagnosis")
     ApiResponse<List<PrerequisiteDiagnosis.Suggestion>> diagnosis(
             @RequestParam("conceptId") long conceptId) {
