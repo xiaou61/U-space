@@ -68,8 +68,12 @@ export interface SandboxStatus {
   /** SQL 单独一档配额（WORK-032）：额度不与 Java/Python 共用。 */
   sqlDailyLimit?: number
   sqlUsedToday?: number
-  /** 已知数据集 key（SQL）。内容在服务端，客户端只拿 key。 */
-  datasets?: string[]
+  /**
+   * 可选数据集（SQL，WORK-035 起是对象而不是 key 字符串）。
+   *
+   * <p>`source` 让选择器能标出"内置 / 我的 / 社区"；隐藏集不在这个列表里。
+   */
+  datasets?: Array<{ key: string; name: string; source: string }>
   reason: string | null
 }
 

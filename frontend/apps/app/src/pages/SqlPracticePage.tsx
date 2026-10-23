@@ -87,7 +87,7 @@ export function SqlPracticePage() {
   })
 
   const datasets = status.data?.datasets ?? []
-  const selected = dataset ?? datasets[0] ?? null
+  const selected = dataset ?? datasets[0]?.key ?? null
   const sqlReady = status.data?.ready === true && (status.data?.languages ?? []).includes('sql')
   const remaining =
     status.data?.sqlDailyLimit === undefined || status.data?.sqlUsedToday === undefined
@@ -298,9 +298,9 @@ export function SqlPracticePage() {
                 value={selected ?? ''}
                 onChange={(event) => setDataset(event.target.value)}
               >
-                {datasets.map((key) => (
-                  <option key={key} value={key}>
-                    {key}
+                {datasets.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.name}
                   </option>
                 ))}
               </select>

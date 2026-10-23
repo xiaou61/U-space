@@ -111,7 +111,9 @@ describe('spreadApart', () => {
     let best = Number.POSITIVE_INFINITY
     for (let i = 0; i < points.length; i++) {
       for (let j = i + 1; j < points.length; j++) {
-        best = Math.min(best, Math.hypot(points[j].x - points[i].x, points[j].y - points[i].y))
+        const a = points[i]!
+        const b = points[j]!
+        best = Math.min(best, Math.hypot(b.x - a.x, b.y - a.y))
       }
     }
     return best
