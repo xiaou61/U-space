@@ -45,9 +45,30 @@ public class AccountDeletionService {
         this.profiles = profiles;
     }
 
+    /**
+     * 自助注销。
+     *
+     * <p><b>确认方式取决于账号有没有密码</b>（WORK-037）：第三方注册的账号从来没有密码
+     * （见 {@code OAuthLoginService}），要求密码就等于让这批人永远注销不了自己的账号——
+     * 而注销是「不可恢复」的，两条叠加会造出一块删不掉的数据。
+     *
+     * <p>没有密码时**仍然要求一次显式确认**（{@code confirmed = true}）。这不是形式主义：
+     * 注销只凭一个被偷走的令牌就能清空一个人的全部数据，代价不对等。有密码的账号路
+     * 保持原样，一个字没放松。
+     *
+     * @param confirmed 无密码账号必填 true；有密码账号忽略此参数
+     */
     @Transactional
-    public void delete(long userId, String rawPassword) {
+    public void delete(long userId, String rawPassword, boolean confirmed) {
         User user = users.findById(userId).orElseThrow(() -> notFound());
+        if (user.getPasswordHash() == null) {
+            if (!confirmed) {
+                throw new BizException(ErrorCode.INVALID_ARGUMENT,
+                        "注销不可恢复，请先确认。此账号未设置密码，因此以显式确认为凭据。");
+            }
+            deleteCascade(userId);
+            return;
+        }
         if (rawPassword == null || !hasher.matches(rawPassword, user.getPasswordHash())) {
             // 与"账号不存在"用同一条消息不合适（这里身份是已知的），但也不回显任何账号信息
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码不正确");

@@ -184,6 +184,20 @@ class ApiWalkthroughTest {
         String refresh3 = stringAt(rotated, "$.data.refreshToken");
 
         call("当前身份", "GET", "/api/v1/me", bearer, null);
+
+        // ---- 第三方登录（WORK-037）----
+        // 平台未配置时 providers 是空列表、start 返回 409——**那仍然是有效覆盖**：
+        // 端点存在、鉴权正确、错误语义清楚。真实授权往返由手验负责（见验证报告）。
+        call("第三方平台列表", "GET", "/api/v1/auth/oauth/providers", null, null);
+        bestEffort("POST", "/api/v1/auth/oauth/github/start", null);
+        // 回调是匿名 GET，带一个必然无效的 state：应当 302 回登录页，而不是 500
+        bestEffort("GET", "/api/v1/auth/oauth/github/callback?code=x&state=invalid-state", null);
+        // 握手码交换：无效的码应当 400 而不是 500
+        bestEffort("POST", "/api/v1/auth/oauth/exchange", null);
+        call("我的登录方式", "GET", "/api/v1/account/oauth/identities", bearer, null);
+        bestEffort("POST", "/api/v1/account/oauth/gitee/start", bearer);
+        // 解绑：这个账号只有密码，没有任何第三方绑定；删一个不存在的绑定应当是幂等的
+        bestEffort("DELETE", "/api/v1/account/oauth/gitee", bearer);
         call("读画像", "GET", "/api/v1/account/profile", bearer, null);
         call("写画像", "PUT", "/api/v1/account/profile", bearer,
                 "{\"identity\":\"job_seeker\",\"targetRole\":\"后端开发\",\"targetCity\":\"北京\","
@@ -591,6 +605,10 @@ class ApiWalkthroughTest {
         call("AI 调用概览", "GET", "/api/v1/ai/admin/runs/overview", adminToken(), null);
         call("AI 调用明细", "GET", "/api/v1/ai/admin/runs", adminToken(), null);
         call("AI 调用筛选项", "GET", "/api/v1/ai/admin/runs/meta", adminToken(), null);
+        // WORK-036：趋势序列、采集健康、账实对账。三者都只读，不需要预置数据。
+        call("AI 趋势序列", "GET", "/api/v1/ai/admin/runs/series?days=7", adminToken(), null);
+        call("AI 采集健康", "GET", "/api/v1/ai/admin/runs/health", adminToken(), null);
+        call("AI 账实对账", "GET", "/api/v1/ai/admin/runs/reconcile?days=7", adminToken(), null);
         // 详情要求一个真实 traceId；上面那轮对话已经写了一条（采集是异步的，等一下）
         String traceId = null;
         for (int attempt = 0; attempt < 20 && traceId == null; attempt++) {
@@ -604,6 +622,31 @@ class ApiWalkthroughTest {
         if (traceId != null) {
             call("AI 调用详情", "GET", "/api/v1/ai/admin/runs/" + traceId, adminToken(), null);
         }
+        // 回答反馈（WORK-036 C 组）：写一条再读管理端列表。traceId 可能为 null（采集关闭），
+        // 那时唯一键退化成不生效，写入仍然合法。
+        bestEffort("POST", "/api/v1/ai/feedback", bearer);
+        call("管理端回答反馈", "GET", "/api/v1/ai/feedback/admin", adminToken(), null);
+
+        // ---- SQL 数据集（WORK-035）----
+        // 上传需要真文件与白名单校验，自查不打这条路；其余端点用一个不存在的 key
+        // 走 404 分支——端点被走到、鉴权生效、错误语义正确，这就是覆盖要的东西。
+        call("我的数据集", "GET", "/api/v1/sql-datasets/mine", bearer, null);
+        bestEffort("POST", "/api/v1/sql-datasets", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/generate", bearer);
+        bestEffort("DELETE", "/api/v1/sql-datasets/__nonexistent__", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/publish", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/report", bearer);
+        bestEffort("POST", "/api/v1/sql-datasets/__nonexistent__/question", bearer);
+        call("数据集表结构", "GET", "/api/v1/sandbox/datasets/__nonexistent__/schema", bearer, null,
+                org.springframework.http.HttpStatus.OK.value(),
+                org.springframework.http.HttpStatus.NOT_FOUND.value());
+        call("管理端数据集", "GET", "/api/v1/sandbox/admin/sql-datasets", adminToken(), null);
+        call("管理端数据集举报", "GET", "/api/v1/sandbox/admin/sql-datasets/reports",
+                adminToken(), null);
+        bestEffort("POST", "/api/v1/sandbox/admin/sql-datasets/__nonexistent__/take-down",
+                adminToken());
+        bestEffort("POST", "/api/v1/sandbox/admin/sql-datasets/__nonexistent__/restore",
+                adminToken());
 
         // ---- 沙箱 ----
         call("沙箱状态", "GET", "/api/v1/sandbox/status", bearer, null);

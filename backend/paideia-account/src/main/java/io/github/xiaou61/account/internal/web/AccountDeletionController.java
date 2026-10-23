@@ -24,7 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/me")
 class AccountDeletionController {
 
-    record DeletionRequest(String password) {
+    /**
+     * 注销请求体。
+     *
+     * <p>{@code confirmed} 只对没有密码的账号有意义（WORK-037）：第三方注册的用户从未设过密码，
+     * 要求密码等于让他们永远注销不了。有密码的账号仍然只认密码，{@code confirmed} 被忽略。
+     */
+    record DeletionRequest(String password, Boolean confirmed) {
     }
 
     private final AccountDeletionService deletion;
@@ -41,7 +47,9 @@ class AccountDeletionController {
     @PostMapping("/deletion")
     ApiResponse<Boolean> delete(@RequestBody(required = false) DeletionRequest request) {
         long userId = requireUserId();
-        deletion.delete(userId, request == null ? null : request.password());
+        deletion.delete(userId,
+                request == null ? null : request.password(),
+                request != null && Boolean.TRUE.equals(request.confirmed()));
         return ApiResponse.ok(true);
     }
 

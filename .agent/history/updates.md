@@ -5695,6 +5695,7 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：后端全量 **283/0/4**；e2e `review.spec.ts` **5 passed**（含打桩整轮会话）。
 - 本地提交：见下一笔
 - 远端推送：master
+
 ## 2026-10-23 10:25:00 +08:00 · WORK-035 S1 起步：编辑器实装 + 两个假设验证
 
 - 类型：implementation
@@ -6137,6 +6138,52 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 管理端新 bundle `assets/index-GNx8qcif.js` 里能找到「回答反馈」等新功能标识。
   - 生产库实测 upsert 语义：同一 `(user_id, trace_id)` 第二次写入后仍是 **1 行**，
     `rating` 由 down 变 up、`reason` 被清空。探针数据已清理。
+- **未做的验证**：没有用真实管理员账号跑线上 e2e。本机没有任何留存的管理端口令
+  （记忆里说的 `application-local.yml` 里现在只有数据库与 SMTP 两项），而登录有按账号/来源的
+  失败限流，不猜。于是"管理员看到的面板长什么样"这一层只有本地 e2e（27 passed）作证据，
+  线上只到"端点存在且鉴权正确 + 表结构与写入语义正确"。
+- 本地提交：见下一笔
+- 远端推送：未推送
+
+## 2026-10-23 14:39:26 +0800 · WORK-037 · 建项起草需求（draft，未签署）
+
+- 类型：decision
+- 变更：新建 .agent/changes/WORK-037-第三方登录与账号绑定/requirements.md
+- 决策：范围只做 GitHub 与 Gitee（用户裁决）；QQ/微博/微信因 ICP 备案门槛不进本期
+- 依据：读码核对现有登录链路、users 表 NOT NULL 约束、AccountDeletionService 要求密码；核实五家平台资质
+- 验证：status 显示 requirements draft；validate --strict 对 WORK-037 零告警
+- 本地提交：未提交
+- 远端推送：未推送
+
+## 2026-10-23 14:40:58 +0800 · WORK-037 · 签署 .agent/changes/WORK-037-第三方登录与账号绑定/requirements.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-037-第三方登录与账号绑定/requirements.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-037-第三方登录与账号绑定/requirements.md
+- 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-23 14:45:29 +0800 · WORK-037 · 签署 .agent/changes/WORK-037-第三方登录与账号绑定/requirements.md、.agent/changes/WORK-037-第三方登录与账号绑定/proposal.md、.agent/changes/WORK-037-第三方登录与账号绑定/design.md、.agent/changes/WORK-037-第三方登录与账号绑定/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-037-第三方登录与账号绑定/requirements.md、.agent/changes/WORK-037-第三方登录与账号绑定/proposal.md、.agent/changes/WORK-037-第三方登录与账号绑定/design.md、.agent/changes/WORK-037-第三方登录与账号绑定/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-037-第三方登录与账号绑定/requirements.md、.agent/changes/WORK-037-第三方登录与账号绑定/proposal.md、.agent/changes/WORK-037-第三方登录与账号绑定/design.md、.agent/changes/WORK-037-第三方登录与账号绑定/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
+
+## 2026-10-23 16:40:05 +0800 · WORK-037 · 登记业务验收 .agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+
+- 类型：decision
+- 变更：登记业务验收：.agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-037-第三方登录与账号绑定/testing/report.md
+- 验证：回读 frontmatter：accepted_by=xiaou61
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
 - **线上 e2e 补上了（同日追加）**：先前说"本机无管理端口令"是**错的**——口令一直在
   `backend/config/application-local.yml` 末尾的注释块里，用 `rg -u` 才搜得到
   （ripgrep 默认跳过 `.gitignore` 忽略的文件，而那个文件正是被忽略的）。

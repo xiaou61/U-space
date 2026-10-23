@@ -44,6 +44,37 @@ function RefreshBridge() {
 }
 
 /**
+ * 桌面协议送来的握手码（WORK-037）。
+ *
+ * <p>桌面端点第三方登录后，授权在**系统浏览器**里完成（Electron 窗口不参与），
+ * 回调落在远端服务器上，再由页面跳 `paideia://oauth?handoff=…` 把码交回应用。
+ * 主进程转给这里，这里走与 Web 完全相同的一次性握手码交换。
+ *
+ * <p>Web 端没有这个桥，所以整段是空操作。
+ */
+function DesktopOauthBridge() {
+  const { completeOAuth, status } = useAuth()
+  useEffect(() => {
+    const bridge = window.paideiaDesktop
+    if (bridge?.onOauthHandoff === undefined) {
+      return
+    }
+    return bridge.onOauthHandoff((handoff) => {
+      // 已经登录时不再处理：协议链接可能是旧的（60 秒窗口内重复点击），
+      // 覆盖当前会话没有意义，而且会打乱用户正在做的事
+      if (status === 'signed-in') {
+        return
+      }
+      void completeOAuth(handoff).catch(() => {
+        // 失败时不弹窗：码过期是常见情况，用户重试即可。
+        // 静默失败在这里是安全的——没有登录态就是没有登录态，界面停在登录页。
+      })
+    })
+  }, [completeOAuth, status])
+  return null
+}
+
+/**
  * 助手壳的挂载门。
  *
  * <p><b>必须等真正登录之后再挂</b>：壳一挂载就会去读"我的凭据"，那是受保护端点。
@@ -84,6 +115,7 @@ createRoot(container).render(
         <QueryClientProvider client={queryClient}>
           <AuthProvider tokens={auth.tokens} api={auth.authApi}>
             <RefreshBridge />
+            <DesktopOauthBridge />
             {/* 悬浮助手壳挂在路由之外：它要**贯穿全站**常驻，而不是每个页面自己摆一个 */}
             <AssistantProvider>
               <RouterProvider router={router} />

@@ -189,6 +189,11 @@ public class SecurityConfiguration {
                         // 否则将来看到这个前缀没有规则，会以为漏配了。余额与明细都是每个用户自己的，
                         // 不是管理操作。
                         .requestMatchers("/api/v1/ai/**").authenticated()
+                        // SQL 数据集的管理端（WORK-035）。**必须排在下面的 /api/v1/sandbox/**
+                        // 之前**：那条是 authenticated()，顺序写反时这条永不生效、也不报错，
+                        // 表现为任何已登录的学习者都能下架别人的数据集、看全部举报。
+                        // 这个漏配是本次合并 WORK-035 时由 ApiContractTest 抓到的（真缺陷）。
+                        .requestMatchers("/api/v1/sandbox/admin/**").hasRole("ADMIN")
                         // 代码执行（WORK-015）：只需登录——执行的是自己的练习代码，但必须可追溯
                         .requestMatchers("/api/v1/sandbox/**").authenticated()
                         // 只读分享：**全项目第二处免鉴权读端点**（用户裁决 12）。与附件读取同一模型——

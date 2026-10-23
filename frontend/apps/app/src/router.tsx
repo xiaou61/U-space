@@ -20,6 +20,7 @@ import { McpTokensPage } from './pages/McpTokensPage'
 import { MyAssessmentsPage } from './pages/MyAssessmentsPage'
 import { NoteNewPage } from './pages/NoteNewPage'
 import { NotesPage } from './pages/NotesPage'
+import { OAuthCallbackPage } from './pages/OAuthCallbackPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResumeEditorPage } from './pages/ResumeEditorPage'
 import { ResumeImportReviewPage } from './pages/ResumeImportReviewPage'
@@ -52,6 +53,10 @@ export const router = createHashRouter([
   },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  // 第三方登录回调（WORK-037）。它**不包 RequireAuth**——此刻还没登录，
+  // 正是这个页面把用户变成已登录的。也不包 RequireGuest：已登录时从回调页进来
+  // 是正常的（比如在另一个标签页里刚登录过），不该被弹回首页。
+  { path: '/oauth/callback', element: <OAuthCallbackPage /> },
   {
     path: '/',
     element: (

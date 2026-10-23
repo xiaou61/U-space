@@ -25,6 +25,15 @@ export interface DesktopBridge {
   readonly cacheSnapshot: Record<string, string>
   /** 渲染进程的服务地址，用于显示与排查。 */
   readonly rendererOrigin: string
+  /**
+   * 订阅第三方登录握手码（WORK-037）。
+   *
+   * <p>主进程从 `paideia://oauth?handoff=…` 取到码后经这里送进来。
+   * **只订阅、不发送**：页面拿不到"伪造一次协议唤起"的能力。
+   *
+   * @returns 取消订阅的函数
+   */
+  readonly onOauthHandoff?: (callback: (handoff: string) => void) => () => void
 }
 
 declare global {

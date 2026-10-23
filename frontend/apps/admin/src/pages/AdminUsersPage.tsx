@@ -264,7 +264,10 @@ export function AdminUsersPage() {
                   {rows.map((row) => (
                     <TableRow key={row.id} data-testid={`admin-user-row-${row.id}`}>
                       <TableCell className="font-medium">{row.username}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{row.email}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {/* 第三方注册的用户可能没有邮箱（WORK-037）。空着看起来像数据丢了 */}
+                        {row.email ?? '无邮箱'}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={row.role === 'admin' ? 'default' : 'secondary'}>
                           {row.role === 'admin' ? '管理员' : '学习者'}
@@ -397,7 +400,7 @@ function UserEditor({
         <CardContent className="space-y-4 py-4">
           <div>
             <h3 className="text-base font-semibold">{user.username}</h3>
-            <p className="text-muted-foreground text-xs">{user.email}</p>
+            <p className="text-muted-foreground text-xs">{user.email ?? '无邮箱'}</p>
           </div>
 
           <div className="text-muted-foreground flex flex-wrap gap-3 text-xs">

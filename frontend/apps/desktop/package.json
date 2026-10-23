@@ -33,7 +33,16 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "protocols": [
+      {
+        "name": "Paideia OAuth",
+        "schemes": [
+          "paideia"
+        ]
+      }
+    ]
   }
 }

@@ -2,6 +2,7 @@ import { Alert, AlertDescription, Button, Input, Label, Spinner } from '@paideia
 import { useState, type FormEvent } from 'react'
 
 import { messageOf, useAuth } from './auth-context'
+import { OAuthButtons } from './oauth-buttons'
 
 /**
  * 登录表单。标识可以是用户名或邮箱——后端两种都认。
@@ -69,6 +70,9 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         {busy ? <Spinner /> : null}
         登录
       </Button>
+
+      {/* 第三方登录（WORK-037）。它自己取平台列表，没配置时整块不渲染 */}
+      <OAuthButtons />
     </form>
   )
 }
