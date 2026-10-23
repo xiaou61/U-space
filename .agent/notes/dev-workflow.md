@@ -682,6 +682,38 @@ scripts/test-db.sh --drop paideia_run_xxx            # 手动删
 
 **已知缺口**（四条）：
 1. 复习只有"进 `/learn` 看"，没有提醒（无邮件/推送）。
-2. 掌握度是"最高分"，不是知识追踪；重做一次就能通过，质量靠题库不靠算法。
+2. 掌握度是"最高分"，不是知识追踪；重做一次就通过，质量靠题库不靠算法。
 3. 声明了 `sort_order` 的线，手工插条目会打乱"上一篇/下一篇"。
 4. 导师是否真不给答案只由提示词保证，**没有自动检测完整答案的机制**——语义级行为无法单测。
+
+## 线上排障：Arthas（2026-10-23 本机实测，不建常驻）
+
+**定位**：Grafana（WORK-028）看 JVM 与 HTTP 的**结果**；Arthas 看**单个请求内部哪一行慢、收到了什么参数**。前者常驻，后者**临时 attach、查完 stop**，不进仓库、不加依赖、不建 WORK。
+
+**唯一用法**（jar 下到 `/tmp`，别落进仓库）：
+
+```bash
+cd /tmp && curl -O https://arthas.aliyun.com/arthas-boot.jar && /opt/jdk25/bin/java -jar arthas-boot.jar
+# 选 pid → dashboard -n 1 → trace/watch → 用完 stop
+```
+
+**实测能力**（JDK 25.0.4 + Arthas 4.3.5，与服务器同一个 JDK 版本，打的真实登录请求）：
+
+| 命令 | 拿到什么 |
+| --- | --- |
+| `dashboard -n 1` / `jvm` | 堆 114MB/4GB、42 线程、GC 28 次 |
+| `watch LoginService login '{params,throwExp}' -n 1 -x 2` | 入参三字段、抛出的 `BizException`、耗时 124ms、**`LoginService.java:69` 行号** |
+| `trace LoginService login -n 1` | 带行号与占比的耗时树；当场测出 `PasswordHasher:wasteTimeLikeAMatch()` 占 **95.2% / 54ms**（设计上的恒定延迟，防时序攻击，不是缺陷） |
+| `stop` | 释放 3658/8563，应用仍 `status: UP`，业务未断 |
+
+**五条实测约束**：
+
+1. **只绑回环**，这点是安全底线：实测 `TCP 127.0.0.1:3658` 与 `127.0.0.1:8563`，不对外。**控制台等于对我们进程的任意代码执行**，而那个进程里有数据源口令、JWT 密钥、SMTP 授权码、AI 平台 Key。绝不能改绑 `0.0.0.0`。
+2. **JDK 25 打六条 WARNING，不是四条**。除了 JEP 451 那四条（`A Java agent has been loaded dynamically` … `will be disallowed by default in a future release`），还有两条来自它自己的依赖：`sun.misc.Unsafe::arrayBaseOffset has been called by ...fastjson2.util.JDKUtils` 与 `... will be removed in a future release`。**现在是警告不是禁止**，加 `-XX:+EnableDynamicAgentLoading` 可消前四条。**触发重评**：升 JDK 大版本时若默认改成禁止，Arthas 会 attach 不上——看启动日志里有没有这几行即可判断；那时只能改 `-javaagent` 启动加载。
+3. **`watch` 不加限制会刷屏**：只写 `'{params,throwExp}'` 实测输出 18KB，绝大部分是 Tomcat filter 链。真用必须 `-n 1` 并排除框架类（`--exclude-class-pattern`）或压 `-x`。
+4. **服务器出网必须带代理**：`http_proxy=http://127.0.0.1:7890`，否则 `curl -O` 表现为**静默卡住、无报错**（与 Docker/apt 同一个坑）。
+5. **每次连接有固定开销**：从 attach 到出结果不是"秒级"，实测约 25 秒才拿到第一条 `watch` 输出。
+
+**不用 `redefine`（热更新）**：我们纯后端发版实测 57–64 秒，为省一分钟承担"不能新增方法/字段、事后必须补正式发版"的代价不值。只做诊断，不做热修复。
+
+**并发会话注意**：本机可能同时有别的会话的 jar 在跑（实测遇到 PID 40724 与我的 45168 并存）。attach 前用 `netstat -ano | grep :<端口>` 确认 pid 归属，别打错人。

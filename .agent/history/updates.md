@@ -6145,3 +6145,37 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   至此部署核验五层齐全（health / 启动日志 / 新端点 401 / bundle 标识 / 线上 e2e）。
 - 本地提交：见下一笔
 - 远端推送：未推送
+
+## 2026-10-23 15:30:00 +08:00 · 线上排障工具 Arthas 实测与笔记沉淀
+
+- 类型：documentation
+- 起因：用户给了一篇讲 Arthas 的公众号文章，问「这个对我们的项目有什么影响」，
+  随后问「是不是可以加入进去做 work 验证」并批准「开始吧」。
+- 结论：**不建 WORK**。Arthas 没有代码、依赖、迁移、端点或常驻形态，不产生持续资产；
+  按 AGENTS.md 的入口规则属低风险文档改动。WORK-028 已把需要常驻的部分（Prometheus + Grafana）建完。
+- 实测（本机 JDK **25.0.4**，与服务器 `/opt/jdk25` 同版本；Arthas **4.3.5**）：
+  - 环境：用本机 jar 起在 `:8099`。**头两次启动失败**，原因分别是
+    ① `application-local.yml` 指向 3307（服务器隧道）而本机 MySQL 在 3306；
+    ② 改指 `paideia_test` 后触发 Flyway 校验失败——该库有本地 jar 里不存在的迁移
+    （900 / 950–955 / 20261023110000），即 AGENTS.md 记录的共用库污染。
+    最终按 `scripts/test-db.sh` 的做法建独占库 `paideia_arthas_807`，17.9 秒启动成功。
+  - `dashboard -n 1` / `jvm`：堆 114.2MB / max 4GB、42 线程、GC 28 次、无死锁。
+  - `watch LoginService login '{params,throwExp}' -n 1 -x 2`：真实打登录请求后抓到
+    入参 `probe-user / probe-pass / 127.0.0.1`、`BizException`、耗时 **124.437ms**、
+    异常产生点 **`LoginService.java:69`**。
+  - `trace LoginService login -n 1`：输出带行号与占比的耗时树，测出
+    `PasswordHasher:wasteTimeLikeAMatch()` 占 **95.20% / 54.0493ms**
+    （设计上的恒定延迟，防时序攻击，**不是缺陷**）。
+  - `stop`：释放 3658/8563 两个端口，应用仍 `{"status":"UP"}`，业务未断。
+  - 安全：两个端口实测只绑 **`127.0.0.1`**，未对外。
+  - JDK 25 实测打 **六条** WARNING，多于 JEP 451 标准的四条——多出的两条来自其自身依赖
+    fastjson2 调用 `sun.misc.Unsafe::arrayBaseOffset`（`/25` 已标记将来删除）。
+    **当前是警告不是禁止**，Arthas 可用。
+- 变更：`.agent/notes/dev-workflow.md` 新增「线上排障：Arthas」一节
+  （定位、唯一用法、实测能力表、五条实测约束、不用 redefine 的理由、并发会话注意事项）。
+- 清理：临时目录 `/f/_probe_arthas` 已删；独占库 `paideia_arthas_807` 已 drop；
+  起的应用进程已 kill。**仓库工作区零改动**（`git status --porcelain` = 0）。
+- 未做：未在线上 `/opt/jdk25` attach（会往生产机落 jar 并开控制台，需用户单独授权）；
+  未验 `redefine` 与 `tt`（前者不推荐使用，后者与 `watch` 同机制）。
+- 本地提交：见下一笔
+- 远端推送：未推送
