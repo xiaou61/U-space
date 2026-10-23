@@ -37,6 +37,7 @@ import {
 import { useEffect, useState, type ComponentType } from 'react'
 
 import { api } from '../api'
+import { AccountSecuritySection } from '../components/AccountSecuritySection'
 import { LearnerHeader } from '../components/LearnerHeader'
 
 const identity = createIdentityApi(api)
@@ -302,6 +303,9 @@ export function ProfilePage() {
               </Alert>
             </div>
           )}
+
+          {/* 账号与安全（WORK-037）：登录方式与身份是两件事，所以单独一块、单独保存 */}
+          <AccountSecuritySection />
         </div>
       </div>
 

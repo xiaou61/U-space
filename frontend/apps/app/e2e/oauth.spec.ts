@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { signIn } from './session'
+
 /**
  * 第三方登录的界面（WORK-037）。
  *
@@ -59,4 +61,24 @@ test.describe('第三方登录', () => {
     await expect(page.getByTestId('oauth-callback')).toBeVisible()
     await expect(page.getByText('登录链接不完整，请重新登录。')).toBeVisible()
   })
+})
+
+/**
+ * 账号设置页的「账号与安全」（WORK-037 TASK-008）。
+ *
+ * <p>只验**界面呈现**：这一块在、它说的是登录方式而不是权限、密码状态如实显示。
+ * 真正的解绑闸在服务端（集成测试覆盖），界面变灰只是提示。
+ *
+ * <p>用 `signIn()` 而不是手建 context：`use.storageState` 只作用于默认 fixture 创建的页面，
+ * `browser.newContext()` 拿不到它——这一点与上面两个用例的目的正好相反（它们要**没有**会话）。
+ */
+test('账号与安全：列出登录方式，且明写它不影响权限', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/#/profile')
+
+  const security = page.getByTestId('account-security')
+  await expect(security).toBeVisible()
+  await expect(security).toContainText('不影响你能做什么')
+  // 种子账号有密码，所以这一行显示"已设置"
+  await expect(page.getByTestId('security-password-state')).toContainText('已设置')
 })

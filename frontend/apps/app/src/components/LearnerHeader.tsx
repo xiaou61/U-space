@@ -1,4 +1,4 @@
-import { useAuth } from '@paideia/auth'
+import { createAuthApi, useAuth } from '@paideia/auth'
 import { configFor, createIdentityApi } from '@paideia/identity'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -83,7 +83,7 @@ const NAV = [
 ]
 
 export function LearnerHeader() {
-  const { user, logout, api: authApi } = useAuth()
+  const { user, logout } = useAuth()
   const { pathname } = useLocation()
   // 导航按身份重排（WORK-010 T-12）。读不到身份时退回默认配置、**不阻塞页头**：
   // 页头是每页都有的东西，不能因为一个推荐用的接口慢就整页转圈。
@@ -357,7 +357,7 @@ export function LearnerHeader() {
               setDeleting(true)
               // 打开时现查：这个账号有没有密码决定对话框长什么样。
               // 查不到时保持 null，按"有密码"处理——保守方向是让人多填一次，而不是少填。
-              void authApi
+              void createAuthApi(api)
                 .oauthIdentities()
                 .then((result) => setHasPassword(result.hasPassword))
                 .catch(() => setHasPassword(null))
