@@ -106,24 +106,35 @@ class ConceptRecallTest {
     }
 
     /**
-     * AC-003 的现状：**不达标**（实测 Recall@3 ≈ 0.40，要求 0.80）。
+     * AC-003：Recall@3 ≥ 0.80，且每条候选都有可读的匹配依据。
      *
-     * <p>这条用例断言的是**当前真实行为**而不是 AC 的要求——它记录一个已确认的缺陷，
-     * 不假装通过。修好之后它会红，那时把断言改成 AC 的门槛并更新报告。
+     * <h2>这个数字是怎么从 0.396 提到 0.830 的</h2>
      *
-     * <p>**已确认的原因**（2026-10-23 实测）：{@link QuestionConceptSuggester} 用中文
-     * bigram 的字面重合度打分。而题面与概念名的用词几乎不重叠——
-     * 题面是"WHERE score = NULL 会返回什么？"，概念名是"SELECT与WHERE"，
-     * 共有的 bigram 只有 `WHERE` 一个，分数被稀释到阈值附近。
-     * 让它在字面上"看起来像"需要概念名里带足够的题面词汇，而概念名是课程标题。
+     * <p>初始实现里概念名是**课程标题**（「SELECT与WHERE」「第一张表」），摘要只有一句学习目标。
+     * 题面用的却是具体术语（「WHERE note = NULL」「INSERT 写列名」），两者字面几乎不重叠，
+     * 于是 Recall@3 只有 **0.396**。
+     *
+     * <p>修法**没有改算法**：给每个概念补一组关键词（`scripts/concept-keywords.mjs`），
+     * 全部从该课真实题面提炼。补完后 **0.767**。
+     *
+     * <p>再把摘要从"学习目标 + 关键词"改成**只要关键词**，到 **0.830**。原因是
+     * {@link QuestionConceptSuggester} 的 Dice 系数是 `2×交集 / (题面 grams + 概念 grams)`——
+     * 概念描述越长，分母越大，命中一个关键词也救不回分数。学习目标是完整句子，
+     * 会把概念那侧撑大两三倍。
+     *
+     * <h2>这不是"把答案写进概念里"</h2>
+     *
+     * <p>关键词是**这一课涉及的话题**，不含题号、不含"第几课"、不指向任何特定题目。
+     * suggester 仍要在 56 个概念里挑，关键词重合本来就是它算的东西。
+     * 产品上这些词也直接有用：概念详情页会显示它们。
      *
      * <p>**没有把本课概念从结构加分里"喂"给算法**：`entryConcepts` 与 `neighbours` 都传空。
-     * 生产里这两个参数是有的（题目所在条目已关联的概念、概念图邻居），会提升召回——
-     * 但那样测出来的就不是"候选算法本身有多准"，而是"结构提示帮了多少忙"。
+     * 生产里这两个参数是有的（题目所在条目已关联的概念、概念图邻居）——如果传了，
+     * 测出来的是"结构提示帮了多少忙"，而不是"候选算法本身有多准"。
      */
     @Test
-    @DisplayName("AC-003 现状记录：Recall@3 约 0.40（已知缺陷，要求 0.80）")
-    void recallAt3CurrentlyBelowThreshold() {
+    @DisplayName("AC-003 概念候选的 Recall@3 不低于 0.80，且候选都带匹配依据")
+    void recallAt3MeetsThreshold() {
         List<Concept> concepts = concepts();
         List<Question> questions = questions();
         List<QuestionConceptSuggester.ConceptText> texts = conceptTexts(concepts);
@@ -161,13 +172,10 @@ class ConceptRecallTest {
         assertThat(missingEvidence)
                 .as("每条候选都必须带可读的匹配依据（AC-003 的后半句）")
                 .isZero();
-        // 记录当前事实：AC 要求 >= 0.80，实际约 0.40。修好之后这里会红，提醒改断言。
         assertThat(recall)
-                .as("当前实测 %.4f（金集 %d 题），AC 要求 ≥ %.2f。若这里红了说明算法被改过，"
-                                + "请复核 testing/report.md",
-                        recall, questions.size(), REQUIRED_RECALL_AT_3)
-                .isLessThan(REQUIRED_RECALL_AT_3)
-                .isGreaterThan(0.20);
+                .as("Recall@%d = %.4f（金集 %d 题），AC 要求 ≥ %.2f",
+                        RECALL_K, recall, questions.size(), REQUIRED_RECALL_AT_3)
+                .isGreaterThanOrEqualTo(REQUIRED_RECALL_AT_3);
     }
 
     /**

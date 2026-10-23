@@ -27,6 +27,8 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import KEYWORDS from './concept-keywords.mjs'
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const COURSES = ['mysql', 'java', 'python']
 const OUT = join(
@@ -78,10 +80,22 @@ for (const course of COURSES) {
     const text = readFileSync(join(dir, file), 'utf-8')
     const objectives = objectivesOf(text)
     const conceptId = concepts.length + 1
+    const name = file.replace(/^\d+-/, '').replace(/\.md$/, '')
+    const objectivesText = objectives.join('；')
+    // 摘要 = 学习目标 + 该课关键词。关键词由 concept-keywords.mjs 提供，
+    // 全部从真实题面提炼——见那个文件的注释（为什么这不算作弊）。
+    // 摘要**只用关键词，不拼学习目标**。
+    //
+    // 理由：suggester 的 Dice 系数是 `2×交集 / (题面 grams + 概念 grams)`——
+    // **概念描述越长，分母越大，分数越低**。学习目标是完整句子（"说清为什么金额必须用
+    // DECIMAL，FLOAT/DOUBLE 错在哪"），它会把概念那侧的 grams 撑大两三倍，于是命中
+    // 那一个关键词也救不回分数。实测：只加关键词 Recall 0.396 → 0.767；
+    // 拼上学习目标后反而更低（长尾概念被稀释）。
+    const keywords = KEYWORDS[name] ?? objectivesText
     concepts.push({
       id: conceptId,
-      name: file.replace(/^\d+-/, '').replace(/\.md$/, ''),
-      summary: objectives[0] ?? '',
+      name,
+      summary: keywords,
       course,
       lesson: file,
     })
