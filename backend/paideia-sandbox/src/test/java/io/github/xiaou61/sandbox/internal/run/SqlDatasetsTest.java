@@ -36,4 +36,24 @@ class SqlDatasetsTest {
     void publicKeysIsStrictSubset() {
         assertThat(datasets.publicKeys()).isNotEqualTo(datasets.keys().stream().sorted().toList());
     }
+
+    /**
+     * 结构快照必须真的在（WORK-035 T-03）。
+     *
+     * <p>**这条守的是"数据集改了但快照忘了重新生成"**：那种情况下补全会提示一个不存在的列，
+     * 或者漏掉真实存在的列，而两种错都没有任何报错。断言表名足够——列数会随课程调整，
+     * 但表名变化意味着快照肯定过期了。
+     */
+    @Test
+    void schemaSnapshotExistsAndParses() {
+        String schema = datasets.schema("orders-public");
+        assertThat(schema).as("内置数据集必须有结构快照，否则补全与表结构侧栏都空").isNotNull();
+        assertThat(schema).contains("customers", "orders", "order_items");
+    }
+
+    /** 未知 key 返回 null（调用方转 404），不抛异常。 */
+    @Test
+    void schemaOfUnknownKeyIsNull() {
+        assertThat(datasets.schema("no-such-dataset")).isNull();
+    }
 }

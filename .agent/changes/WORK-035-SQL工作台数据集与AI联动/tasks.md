@@ -31,8 +31,8 @@ approver_role: CTO
 | --- | --- | --- | --- |
 | T-01 | 编辑器实测与懒加载守卫 | S1 | done |
 | T-02 | 结果表增强 | S1 | done |
-| T-03 | schema 接口与补全数据源 | S1 | pending |
-| T-04 | 表结构侧栏与 ER 图 | S1 | pending |
+| T-03 | schema 接口与补全数据源 | S1 | done |
+| T-04 | 表结构侧栏与 ER 图 | S1 | done |
 | T-05 | 执行计划可视化 | S1 | done |
 | T-06 | 结果图表 | S1 | pending |
 | T-07 | 数据集迁移与 Mapper | S2 | pending |

@@ -15,3 +15,13 @@ export {
   toCsv,
   type ResultTable,
 } from './result-tables'
+export {
+  parseSchema,
+  primaryKeys,
+  toCompletionSchema,
+  type DatasetSchema,
+  type SchemaColumn,
+  type SchemaRelation,
+  type SchemaTable,
+} from './dataset-schema'
+export { ErDiagram, SchemaSidebar } from './schema-views'

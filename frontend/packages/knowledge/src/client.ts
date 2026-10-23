@@ -32,6 +32,13 @@ export interface KnowledgeApi {
   sandboxStatus(): Promise<SandboxStatus>
   /** 执行一次练习代码。**服务端只回实际输出，判定在客户端**。 */
   runCode(input: RunCodeInput): Promise<RunCodeResult>
+  /**
+   * 数据集的结构快照（WORK-035）。只读、不含数据行、不占配额。
+   *
+   * <p>返回的是**原始 JSON 字符串**——服务端不解析它，前端拿到再 `JSON.parse`。
+   * 这样两端不必维护同一份结构定义的序列化逻辑。
+   */
+  datasetSchema(key: string): Promise<string>
   traceCode(input: RunCodeInput): Promise<TraceCodeResult>
   /** 记一次浏览（WORK-021）。旁路数据：失败不影响阅读。 */
   recordView(entryId: number): Promise<null>
@@ -159,6 +166,10 @@ export function createKnowledgeApi(client: ApiClient): KnowledgeApi {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
       }),
+
+    /** 数据集结构（WORK-035 T-03）：只读，不占配额。 */
+    datasetSchema: (key) =>
+      client.requestEnvelope<string>(`/api/v1/sandbox/datasets/${encodeURIComponent(key)}/schema`),
 
     /** 逐步录制（WORK-023）。不支持的语言由后端给可读原因，前端据此降级。 */
     traceCode: (input) =>

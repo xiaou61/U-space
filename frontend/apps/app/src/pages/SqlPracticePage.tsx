@@ -1,4 +1,7 @@
 import { createKnowledgeApi } from '@paideia/knowledge'
+// 只引 schema 子入口：它是纯函数、不含 CodeMirror，静态引入不会把编辑器带进主 chunk。
+// 编辑器/结果表/执行计划/侧栏都走下面的 lazy()。
+import { parseSchema, toCompletionSchema } from '@paideia/sql-workbench/schema'
 import {
   Alert,
   AlertDescription,
@@ -15,9 +18,7 @@ import { lazy, Suspense, useState } from 'react'
 import { api } from '../api'
 import { LearnerHeader } from '../components/LearnerHeader'
 
-const knowledge = createKnowledgeApi(api)
-
-/**
+const knowledge = createKnowledgeApi(api)/**
  * 工作台组件必须**懒加载**（WORK-035 T-01 / AC-001）：CodeMirror 精简版 gzip 后约 137 kB，
  * 是本站唯一的重前端依赖。静态 import 会让每个进入首页的人为它付费。
  *
@@ -36,6 +37,16 @@ const ResultTables = lazy(async () => {
 const ExplainTree = lazy(async () => {
   const module = await import('@paideia/sql-workbench')
   return { default: module.ExplainTree }
+})
+
+const SchemaSidebar = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.SchemaSidebar }
+})
+
+const ErDiagram = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.ErDiagram }
 })
 
 /**
@@ -68,6 +79,18 @@ export function SqlPracticePage() {
     status.data?.sqlDailyLimit === undefined || status.data?.sqlUsedToday === undefined
       ? null
       : status.data.sqlDailyLimit - status.data.sqlUsedToday
+
+  // 结构快照只读、不占配额，所以选中数据集就拉一次；切数据集会重新拉。
+  const schemaQuery = useQuery({
+    queryKey: ['dataset-schema', selected],
+    queryFn: () => knowledge.datasetSchema(selected!),
+    enabled: selected !== null,
+    // 快照是构建期生成的静态内容，不会在会话中变——没必要反复拉
+    staleTime: Infinity,
+  })
+  const schema = parseSchema(schemaQuery.data)
+  const completionSchema = toCompletionSchema(schema)
+  const [showEr, setShowEr] = useState(false)
 
   const run = useMutation({
     mutationFn: async (explain: boolean) => {
@@ -120,89 +143,110 @@ export function SqlPracticePage() {
       ) : null}
 
       {sqlReady ? (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="text-sm" htmlFor="sql-dataset">
-              数据集
-            </label>
-            <select
-              id="sql-dataset"
-              className="border-border bg-card rounded-md border px-2 py-1 text-sm"
-              value={selected ?? ''}
-              onChange={(event) => setDataset(event.target.value)}
-            >
-              {datasets.map((key) => (
-                <option key={key} value={key}>
-                  {key}
-                </option>
-              ))}
-            </select>
-            {remaining === null ? null : (
-              <span className="text-muted-foreground text-xs" data-testid="sql-practice-quota">
-                今天还能跑 {remaining} 次
-              </span>
-            )}
-          </div>
-
-          <Suspense
-            fallback={
-              <div
-                className="border-border bg-muted/30 flex min-h-56 w-full items-center justify-center rounded-lg border"
-                data-testid="sql-editor-loading"
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm" htmlFor="sql-dataset">
+                数据集
+              </label>
+              <select
+                id="sql-dataset"
+                className="border-border bg-card rounded-md border px-2 py-1 text-sm"
+                value={selected ?? ''}
+                onChange={(event) => setDataset(event.target.value)}
               >
-                <Spinner />
-              </div>
-            }
-          >
-            <SqlEditor
-              value={code}
-              onChange={setCode}
-              placeholder="写一段 SQL，按运行看结果"
-              ariaLabel="SQL 编辑器"
-            />
-          </Suspense>
+                {datasets.map((key) => (
+                  <option key={key} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
+              {remaining === null ? null : (
+                <span className="text-muted-foreground text-xs" data-testid="sql-practice-quota">
+                  今天还能跑 {remaining} 次
+                </span>
+              )}
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              data-testid="sql-practice-run"
-              disabled={run.isPending || selected === null}
-              onClick={() => run.mutate(false)}
+            <Suspense
+              fallback={
+                <div
+                  className="border-border bg-muted/30 flex min-h-56 w-full items-center justify-center rounded-lg border"
+                  data-testid="sql-editor-loading"
+                >
+                  <Spinner />
+                </div>
+              }
             >
-              <Play className="size-4" />
-              {run.isPending && run.variables === false ? '正在运行…' : '运行'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              data-testid="sql-practice-explain"
-              disabled={run.isPending || selected === null}
-              onClick={() => run.mutate(true)}
-            >
-              <Search className="size-4" />
-              {run.isPending && run.variables === true ? '分析中…' : '看执行计划'}
-            </Button>
-            <span className="text-muted-foreground text-xs">
-              每次运行约 4–5 秒（要起一个干净的数据库）
-            </span>
+              <SqlEditor
+                value={code}
+                onChange={setCode}
+                schema={completionSchema}
+                placeholder="写一段 SQL，按运行看结果"
+                ariaLabel="SQL 编辑器"
+              />
+            </Suspense>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                data-testid="sql-practice-run"
+                disabled={run.isPending || selected === null}
+                onClick={() => run.mutate(false)}
+              >
+                <Play className="size-4" />
+                {run.isPending && run.variables === false ? '正在运行…' : '运行'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                data-testid="sql-practice-explain"
+                disabled={run.isPending || selected === null}
+                onClick={() => run.mutate(true)}
+              >
+                <Search className="size-4" />
+                {run.isPending && run.variables === true ? '分析中…' : '看执行计划'}
+              </Button>
+              <span className="text-muted-foreground text-xs">
+                每次运行约 4–5 秒（要起一个干净的数据库）
+              </span>
+            </div>
+
+            {error === null ? null : (
+              <Alert variant="destructive" data-testid="sql-practice-error">
+                <AlertTitle>运行失败</AlertTitle>
+                <AlertDescription className="whitespace-pre-wrap font-mono text-xs">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Suspense fallback={<Spinner />}>
+              {explainOutput === null ? null : <ExplainTree output={explainOutput} />}
+            </Suspense>
+
+            <Suspense fallback={<Spinner />}>
+              {tables === null ? null : <ResultTables tables={tables} />}
+            </Suspense>
           </div>
 
-          {error === null ? null : (
-            <Alert variant="destructive" data-testid="sql-practice-error">
-              <AlertTitle>运行失败</AlertTitle>
-              <AlertDescription className="whitespace-pre-wrap font-mono text-xs">
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Suspense fallback={<Spinner />}>
-            {explainOutput === null ? null : <ExplainTree output={explainOutput} />}
-          </Suspense>
-
-          <Suspense fallback={<Spinner />}>
-            {tables === null ? null : <ResultTables tables={tables} />}
-          </Suspense>
+          <aside className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-medium">表结构</h2>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                data-testid="sql-toggle-er"
+                onClick={() => setShowEr((current) => !current)}
+              >
+                {showEr ? '看列表' : '看关系图'}
+              </Button>
+            </div>
+            <Suspense fallback={<Spinner />}>
+              {showEr ? <ErDiagram schema={schema} /> : <SchemaSidebar schema={schema} />}
+            </Suspense>
+          </aside>
         </div>
       ) : null}
     </AppShell>

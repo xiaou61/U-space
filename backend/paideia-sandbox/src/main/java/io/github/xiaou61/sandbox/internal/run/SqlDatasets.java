@@ -43,6 +43,9 @@ public class SqlDatasets {
 
     private final Map<String, String> cache = new ConcurrentHashMap<>();
 
+    /** schema 快照缓存：与内容缓存分开，两者的缺失语义不同（内容缺失是 bug，快照缺失可接受）。 */
+    private final Map<String, String> schemaCache = new ConcurrentHashMap<>();
+
     /** 已知的 key。给运行与校验用——**不要拿它给客户端渲染选择器**。 */
     public Set<String> keys() {
         return REGISTRY.keySet();
@@ -75,6 +78,34 @@ public class SqlDatasets {
             copy.put(key, sql(key));
         }
         return copy;
+    }
+
+    /**
+     * 数据集的结构快照（WORK-035 T-03）。未知 key 或快照文件缺失时返回 null。
+     *
+     * <p><b>快照是构建期生成的静态文件</b>（`scripts/gen-dataset-schema.mjs`），不在运行时抓：
+     * 抓一次要起容器（3–5 秒 + 一次配额），而数据集内容不变时 schema 也不会变。
+     *
+     * <p>**返回原始 JSON 字符串而不是解析成对象**：这份内容会原样转给前端补全与助手工具，
+     * 中途转成 Java 结构再序列化一遍只会引入"字段名对不上"这类错，而不带来任何好处。
+     */
+    public String schema(String key) {
+        if (!exists(key)) {
+            return null;
+        }
+        return schemaCache.computeIfAbsent(key, name -> readOrNull("/sandbox/datasets/" + name + ".schema.json"));
+    }
+
+    /** 读一个 classpath 资源；不存在时返回 null（快照缺失不该让接口 500）。 */
+    private static String readOrNull(String path) {
+        try (InputStream stream = SqlDatasets.class.getResourceAsStream(path)) {
+            if (stream == null) {
+                return null;
+            }
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException cause) {
+            throw new UncheckedIOException("读取资源失败：" + path, cause);
+        }
     }
 
     private static String read(String resource) {

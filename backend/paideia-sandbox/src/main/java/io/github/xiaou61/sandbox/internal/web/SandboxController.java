@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,6 +80,27 @@ class SandboxController {
                 // 隐藏当场失效。运行端点仍认全部 key（题面本来就明文写着它）。
                 datasets.publicKeys(),
                 ready ? null : runner.unavailableReason()));
+    }
+
+    /**
+     * 数据集的结构（WORK-035 T-03）。
+     *
+     * <p>给编辑器补全与「表结构」侧栏用。**只读、不含数据行**，所以它不占配额、不起容器。
+     *
+     * <p>**隐藏集在这里也被拒**：返回 404 而不是空对象。虽然 key 在课程题面里是明文，
+     * 但这个端点的用途是"渲染一个选择器里的结构"，隐藏集不在选择器里，给它结构没有意义，
+     * 而返回结构等于确认了 key 有效。
+     */
+    @GetMapping("/datasets/{key}/schema")
+    ApiResponse<String> datasetSchema(@PathVariable String key) {
+        if (!datasets.publicKeys().contains(key)) {
+            throw new BizException(ErrorCode.NOT_FOUND, "没有这个数据集");
+        }
+        String schema = datasets.schema(key);
+        if (schema == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "这个数据集还没有结构快照");
+        }
+        return ApiResponse.ok(schema);
     }
 
     @PostMapping("/run")

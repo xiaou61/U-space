@@ -5624,3 +5624,34 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 已知未做：结果图表（T-06）、表结构侧栏与 ER 图（T-04）、schema 补全数据源（T-03）。
 - 本地提交：见下一笔
 - 远端推送：未执行
+
+## 2026-10-23 10:50:00 +08:00 · WORK-035 T-03 / T-04 完成
+
+- 类型：implementation
+- 变更：
+  - `scripts/gen-dataset-schema.mjs`：用真实镜像生成内置数据集的 schema 快照
+    （`sandbox/datasets/*.schema.json`）。**构建期一次生成、提交进仓库**，运行时只读。
+  - `SqlDatasets.schema(key)` + `GET /api/v1/sandbox/datasets/{key}/schema`（只读、不占配额）。
+  - `dataset-schema.ts`：解析快照、转成 CodeMirror 补全 schema、取主键。
+  - `schema-views.tsx`：表结构侧栏（表/列/类型/主键/非空）+ ER 图（纯 SVG）。
+  - 页面改两栏布局：左边编辑器与结果，右边结构侧栏（可切关系图）。编辑器接上补全。
+  - `@paideia/sql-workbench` 加 `./schema` 子入口：页面静态引它（纯函数、不含 CodeMirror），
+    编辑器等仍走 lazy。
+- 决策：
+  - **schema 快照必须真跑一次生成，不能手写**：手写一定与实际不符——列顺序、`decimal(10,2)`
+    这类类型串、哪个列是主键都由 MySQL 决定。手写快照看起来正常，但补全会提示不存在的列，
+    且没有任何报错。
+  - **隐藏集不给结构**：`/datasets/{key}/schema` 对隐藏集返回 404。它不在选择器里，
+    给结构等于确认 key 有效。
+  - **ER 图用纯 SVG 不引图库**：布局是"表按网格摆、关系画线"，十几行代码；更重要的是
+    ER 图**不该自动布局**——位置稳定用户才记得住。
+  - **没有关联时明确说明**：课程第 08 关讲了很多团队不用外键，所以数据集常常一张外键都没有。
+    画一张只有框没有线的空图会让人以为功能坏了。
+- 验证：
+  - `@paideia/sql-workbench` **30 passed**（新增 dataset-schema 7 条）。
+  - `paideia-sandbox` **24 passed**（新增 2 条：快照存在且含三张真实表名、未知 key 返回 null）。
+  - 构建 + 懒加载守卫通过（编辑器 chunk 123.4 kB gzip）。
+  - e2e **4 passed**（新增：侧栏列出 customers/orders、切关系图给"没有标注表间关联"说明）。
+- 订正：`orders-public` 是**三张表**（customers / orders / order_items），
+  不是四张。之前对话与工件里的"订单四表"是记错，已按实际生成结果为准。
+- 本地提交：见下一笔
