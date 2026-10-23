@@ -5885,3 +5885,13 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 至此 WORK-033 的 T-01..T-12 全部 done；仅 AC-004/AC-006 需要真实作答数据后才能验收。
 - 本地提交：见下一笔
 - 远端推送：master
+
+## 2026-10-23 09:44:49 +0800 · WORK-034 · 签署 .agent/changes/WORK-034-学习闭环与复习入口/requirements.md、.agent/changes/WORK-034-学习闭环与复习入口/proposal.md、.agent/changes/WORK-034-学习闭环与复习入口/design.md、.agent/changes/WORK-034-学习闭环与复习入口/tasks.md
+
+- 类型：decision
+- 变更：.agent/changes/WORK-034-学习闭环与复习入口/requirements.md、.agent/changes/WORK-034-学习闭环与复习入口/proposal.md、.agent/changes/WORK-034-学习闭环与复习入口/design.md、.agent/changes/WORK-034-学习闭环与复习入口/tasks.md 由 xiaou61 签署为 approved
+- 决策：审批人 xiaou61（CTO）；签署字段由命令入口盖章，不由模型写入
+- 依据：.agent/changes/WORK-034-学习闭环与复习入口/requirements.md、.agent/changes/WORK-034-学习闭环与复习入口/proposal.md、.agent/changes/WORK-034-学习闭环与复习入口/design.md、.agent/changes/WORK-034-学习闭环与复习入口/tasks.md
+- 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
+- 本地提交：待用户授权/未提交
+- 远端推送：未执行
