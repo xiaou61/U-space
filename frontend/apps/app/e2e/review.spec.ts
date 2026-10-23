@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+// 手写 mock 加真类型标注：接口形状一改，tsc 立刻报错（e2e 在 tsconfig 的 include 里）。
+// 2026-10-23 的 datasets 事故就是手写 mock 不报错导致的。
+import type { ReviewDueList, ReviewSession, ReviewSubmitResult } from '@paideia/knowledge'
 
 import { REMOTE } from './env'
 import { signIn } from './session'
@@ -61,7 +64,7 @@ test.describe('复习', () => {
                 stage: 2,
               },
             ],
-          },
+          } satisfies ReviewDueList,
         },
       }),
     )
@@ -80,7 +83,7 @@ test.describe('复习', () => {
               { itemId: 0, conceptId: 1, stem: '第一题', options: ['A', 'B', 'C', 'D'] },
               { itemId: 1, conceptId: 1, stem: '第二题', options: ['A', 'B', 'C', 'D'] },
             ],
-          },
+          } satisfies ReviewSession,
         },
       }),
     )
@@ -96,7 +99,7 @@ test.describe('复习', () => {
               { itemId: 1, conceptId: 1, correct: false, explanation: '第二题解析' },
             ],
             schedule: [{ entryId: 42, stage: 3, reviewDueAt: '2026-11-12T00:00:00Z' }],
-          },
+          } satisfies ReviewSubmitResult,
         },
       }),
     )

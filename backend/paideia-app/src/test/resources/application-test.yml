@@ -11,6 +11,17 @@ spring:
     url: ${PAIDEIA_TEST_DB_URL:jdbc:mysql://127.0.0.1:3307/paideia_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=utf8}
     username: ${PAIDEIA_TEST_DB_USER:paideia}
     password: ${PAIDEIA_TEST_DB_PASSWORD:}
+    hikari:
+      # **每个 Spring 上下文各有一个连接池**，而 Spring 的测试上下文缓存会同时保留多个
+      # （配置键不同的测试类各起一个）。Hikari 默认 maximum-pool-size=10 且 minimum-idle
+      # 等于它，也就是**每个上下文一启动就预建 10 个连接**——本模块有 40 多个
+      # @SpringBootTest，15 个上下文就把 MySQL 的 max_connections=151 占满，
+      # 表现为后面的测试类报 "Too many connections"（2026-10-23 实测，全量跑必红）。
+      # 测试是串行执行的（surefire forkCount=1），2 个连接绰绰有余。
+      maximum-pool-size: 2
+      minimum-idle: 1
+      # 连接被 MySQL 主动掐断时（wait_timeout）不要立刻失败重试到上限
+      connection-timeout: 10000
   flyway:
     # 生产迁移 + 测试夹具表 + 开发种子（seed-learner / seed-admin 与知识库种子）。
     #

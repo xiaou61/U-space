@@ -1,4 +1,8 @@
 import { expect, test } from '@playwright/test'
+// 用真类型标注 mock：e2e 已纳入 tsc（tsconfig 的 include 含 e2e），
+// 所以接口形状一改，这里会**编译报错**而不是等运行时崩页面。
+// 2026-10-23 就是这么漏的：datasets 从 string[] 改成对象数组，手写 mock 不报错。
+import type { SandboxStatus } from '@paideia/knowledge'
 
 import { signIn } from './session'
 
@@ -64,10 +68,9 @@ test.describe('SQL 自由练习', () => {
             usedToday: 0,
             sqlDailyLimit: 20,
             sqlUsedToday: 0,
-            // WORK-035 起 datasets 是对象数组（多了 name 与 source），mock 必须跟着走
             datasets: [{ key: 'orders-public', name: 'orders-public', source: 'builtin' }],
             reason: null,
-          },
+          } satisfies SandboxStatus,
         }),
       })
     })
@@ -137,10 +140,9 @@ test.describe('SQL 自由练习', () => {
             usedToday: 0,
             sqlDailyLimit: 20,
             sqlUsedToday: 0,
-            // WORK-035 起 datasets 是对象数组（多了 name 与 source），mock 必须跟着走
             datasets: [{ key: 'orders-public', name: 'orders-public', source: 'builtin' }],
             reason: null,
-          },
+          } satisfies SandboxStatus,
         }),
       })
     })

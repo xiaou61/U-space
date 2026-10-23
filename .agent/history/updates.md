@@ -6319,3 +6319,23 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - **一处配置与代码不一致（不是缺陷但要知道）**：服务器 `application.yml` 写着
   `sql-daily-limit: 20`，覆盖了代码默认值 500。线上实际是 20/天。
 - 本地提交：`886ec91`、`23ac6e8`；已推送 `886ec91..23ac6e8`。
+
+## 2026-10-23 18:09:18 +0800 · WORK-037 · 核验远端同步
+
+- 类型：maintenance
+- 变更：确认 master 与 origin/master 一致（72f8c65）
+- 决策：无需额外推送
+- 依据：git rev-parse HEAD origin/master 两侧相同；rev-list 双向为 0
+- 验证：push-check: 远端核验 up_to_date
+- 本地提交：72f8c65
+- 远端推送：未执行
+
+## 2026-10-23 18:09:35 +0800 · WORK-037 · 核验远端同步（补）
+
+- 类型：maintenance
+- 变更：确认 master 与 origin/master 一致
+- 决策：无需额外推送
+- 依据：两侧 rev-parse 相同，rev-list 双向为 0
+- 验证：push-check: up_to_date
+- 本地提交：72f8c65
+- 远端推送：origin/master = 72f8c65（已核验）
