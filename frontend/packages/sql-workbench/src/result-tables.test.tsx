@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { NULL_MARKER, ResultTables, looksNumeric, toCsv } from './result-tables'
 
@@ -8,7 +8,10 @@ import { NULL_MARKER, ResultTables, looksNumeric, toCsv } from './result-tables'
  *
  * <p>核心是 **AC-002：`NULL` 与空串在界面上必须可区分**。这条不是"好看"问题——
  * 课程第 02 关专门讲 `NULL` 与 `''` 的区别，如果界面把它们渲染成一样，那一关的教学就白讲了。
+ *
+ * <p>**必须手动 cleanup**：本包没有 `globals: true`，自动清理不会注册。
  */
+afterEach(() => cleanup())
 
 const TABLE = {
   statementIndex: 0,

@@ -49,6 +49,11 @@ const ErDiagram = lazy(async () => {
   return { default: module.ErDiagram }
 })
 
+const ResultChart = lazy(async () => {
+  const module = await import('@paideia/sql-workbench')
+  return { default: module.ResultChart }
+})
+
 /**
  * SQL 工作台（WORK-032 的自由练习，WORK-035 起升级）。
  *
@@ -91,6 +96,7 @@ export function SqlPracticePage() {
   const schema = parseSchema(schemaQuery.data)
   const completionSchema = toCompletionSchema(schema)
   const [showEr, setShowEr] = useState(false)
+  const [showChart, setShowChart] = useState(false)
 
   const run = useMutation({
     mutationFn: async (explain: boolean) => {
@@ -228,6 +234,26 @@ export function SqlPracticePage() {
             <Suspense fallback={<Spinner />}>
               {tables === null ? null : <ResultTables tables={tables} />}
             </Suspense>
+
+            {/* 图表：只对第一张结果集提供（多语句时用户通常只关心主查询的那张） */}
+            {tables !== null && tables.length > 0 && tables[0] !== undefined ? (
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  data-testid="sql-toggle-chart"
+                  onClick={() => setShowChart((current) => !current)}
+                >
+                  {showChart ? '收起图表' : '把结果画成图'}
+                </Button>
+                {showChart ? (
+                  <Suspense fallback={<Spinner />}>
+                    <ResultChart table={tables[0]} />
+                  </Suspense>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <aside className="space-y-3">

@@ -25,3 +25,4 @@ export {
   type SchemaTable,
 } from './dataset-schema'
 export { ErDiagram, SchemaSidebar } from './schema-views'
+export { ResultChart, numericColumns, toNumber } from './result-chart'
