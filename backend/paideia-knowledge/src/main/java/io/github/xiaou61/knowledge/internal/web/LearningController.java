@@ -4,6 +4,7 @@ import io.github.xiaou61.knowledge.internal.concept.ConceptGraphService;
 import io.github.xiaou61.knowledge.internal.learning.LearningLineService;
 import io.github.xiaou61.knowledge.internal.learning.LearningProgressRules;
 import io.github.xiaou61.knowledge.internal.learning.LearningProgressService;
+import io.github.xiaou61.knowledge.internal.learning.LearningReviewService;
 import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import jakarta.validation.Valid;
@@ -35,12 +36,20 @@ class LearningController {
     private final LearningLineService lines;
     private final LearningProgressService progress;
     private final ConceptGraphService graph;
+    private final LearningReviewService reviews;
 
     LearningController(LearningLineService lines, LearningProgressService progress,
-                       ConceptGraphService graph) {
+                       ConceptGraphService graph, LearningReviewService reviews) {
         this.lines = lines;
         this.progress = progress;
         this.graph = graph;
+        this.reviews = reviews;
+    }
+
+    /** 到期复习列表（WORK-034 S1）。空列表是正常结果。 */
+    @GetMapping("/reviews")
+    ApiResponse<LearningReviewService.DueList> reviews() {
+        return ApiResponse.ok(reviews.due(CurrentUserId.require(), java.time.Instant.now()));
     }
 
     /**

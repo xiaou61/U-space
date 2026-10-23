@@ -284,6 +284,8 @@ class ApiWalkthroughTest {
                         "quizzes", Map.of("smoke", Map.of("score", 1, "total", 1)))));
         call("我的知识图谱", "GET", "/api/v1/learning/graph", bearer, null);
         call("重置本站", "DELETE", "/api/v1/learning/entries/" + entryId, bearer, null);
+        // WORK-034 S1：到期复习列表（没有到期项时返回空列表，是正常结果）
+        call("到期复习列表", "GET", "/api/v1/learning/reviews", bearer, null);
 
         // ---- 题目知识点关联与掌握诊断（WORK-033）----
         // 作答成功路径由 QuestionAttemptIntegrationTest 覆盖；这里只要求每个端点被真实打到。

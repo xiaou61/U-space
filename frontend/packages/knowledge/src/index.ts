@@ -74,6 +74,12 @@ export type {
 } from './learning-types'
 export { plainText } from './plain-text'
 export { SelfAssessmentButtons } from './self-assessment'
+export {
+  rankHomeEntries,
+  type HomeCandidate,
+  type HomeSignals,
+  type RankedEntry,
+} from './home-ranking'
 export { MarkdownBody } from './markdown-body'
 export { MarkdownField } from './markdown-field'
 export { KnowledgeNeighborhood } from './neighborhood'
