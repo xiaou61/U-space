@@ -48,6 +48,9 @@ public class ConceptGraphService {
 
     private static final Logger log = LoggerFactory.getLogger(ConceptGraphService.class);
 
+    /** 紧急回退开关（WORK-033 AC-010）：false 时全部概念走旧公式，即使有逐题作答。 */
+    private final boolean masteryBktEnabled;
+
     public record Graph(List<Node> concepts, List<Edge> edges, Stats stats) {
     }
 
@@ -91,7 +94,8 @@ public class ConceptGraphService {
                         LearningProgressService progressService,
                         SelfAssessmentService assessmentService,
                         MasteryEvidence masteryEvidence,
-                        QuestionAttemptMapper questionAttemptMapper) {
+                        QuestionAttemptMapper questionAttemptMapper,
+                        io.github.xiaou61.knowledge.internal.file.KnowledgeStorageProperties properties) {
         this.conceptMapper = conceptMapper;
         this.linkMapper = linkMapper;
         this.entryMapper = entryMapper;
@@ -101,6 +105,7 @@ public class ConceptGraphService {
         this.assessmentService = assessmentService;
         this.masteryEvidence = masteryEvidence;
         this.questionAttemptMapper = questionAttemptMapper;
+        this.masteryBktEnabled = properties.isMasteryBktEnabled();
     }
 
     public Graph build(long userId) {
@@ -146,8 +151,12 @@ public class ConceptGraphService {
         Instant now = Instant.now();
         // BKT 状态优先：有逐题证据的概念用概率模型的分数与档位，其余回退旧公式
         Map<Long, QuestionAttemptMapper.MasteryRow> bkt = new HashMap<>();
-        for (QuestionAttemptMapper.MasteryRow row : questionAttemptMapper.findMastery(userId)) {
-            bkt.put(row.conceptId(), row);
+        // 开关关掉时不去查，于是每个概念都走 `state == null` 的回退分支——
+        // 这是 AC-010 要的"一键退回旧口径"，与"按数据自动降级"是两个不同的问题。
+        if (masteryBktEnabled) {
+            for (QuestionAttemptMapper.MasteryRow row : questionAttemptMapper.findMastery(userId)) {
+                bkt.put(row.conceptId(), row);
+            }
         }
         List<Node> nodes = new ArrayList<>(concepts.size());
         for (Concept concept : concepts) {

@@ -12,16 +12,37 @@ class PracticeSelectorTest {
         return new PracticeSelector.Candidate(1, "quiz", key, key, difficulty, attempts);
     }
 
+    /**
+     * 选**目标难度**（能力下方 {@value PracticeSelector#TARGET_GAP} 分）最接近的题。
+     *
+     * <p>这条改过（2026-10-23）：原来断的是"难度等于能力"，而那是 50% 答对率、
+     * BKT 下学得最慢的选择。现在目标难度在能力下方 150 分（答对率约 70%）。
+     */
     @Test
-    @DisplayName("选难度最接近当前能力的那道题")
-    void picksClosestDifficulty() {
+    @DisplayName("选难度最接近目标难度（能力下方 150 分）的那道题")
+    void picksClosestToTargetDifficulty() {
+        // 能力 1200 → 目标 1050。三个候选里 1050 最近，1200 差 150，600 差 450
         var chosen = PracticeSelector.choose(List.of(
-                candidate("far-easy", 600, 10),
-                candidate("near", 1200, 10),
-                candidate("far-hard", 1900, 10)), 1200);
+                candidate("too-easy", 600, 10),
+                candidate("at-target", 1050, 10),
+                candidate("at-ability", 1200, 10)), 1200);
 
         assertThat(chosen).hasValueSatisfying(value ->
-                assertThat(value.questionKey()).isEqualTo("near"));
+                assertThat(value.questionKey()).isEqualTo("at-target"));
+    }
+
+    /** 目标难度确实不是"等于能力"——否则上面那条会因为两个候选都合理而变得含糊。 */
+    @Test
+    @DisplayName("难度等于能力的题不是最优选")
+    void abilityLevelQuestionIsNotPreferred() {
+        var chosen = PracticeSelector.choose(List.of(
+                candidate("at-ability", 1200, 10),
+                candidate("at-target", 1050, 10)), 1200);
+
+        assertThat(chosen).hasValueSatisfying(value ->
+                assertThat(value.questionKey())
+                        .as("难度等于能力意味着 50%% 答对率，BKT 下学得最慢")
+                        .isEqualTo("at-target"));
     }
 
     @Test

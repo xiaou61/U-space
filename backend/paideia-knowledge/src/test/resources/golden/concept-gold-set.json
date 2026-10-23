@@ -3,392 +3,392 @@
   {
    "id": 1,
    "name": "总览",
-   "summary": "",
+   "summary": "Java 学习路线 课程",
    "course": "mysql",
    "lesson": "00-总览.md"
   },
   {
    "id": 2,
    "name": "第一张表",
-   "summary": "建一个库、建一张表，说清表和库的区别",
+   "summary": "CREATE TABLE 建表 INSERT 插入 列名 主键 PRIMARY KEY DECIMAL 库 表 数据库",
    "course": "mysql",
    "lesson": "01-第一张表.md"
   },
   {
    "id": 3,
    "name": "SELECT与WHERE",
-   "summary": "用比较、逻辑组合、`IN`、`LIKE`、`BETWEEN` 把需要的行挑出来",
+   "summary": "SELECT WHERE 条件 筛选 NULL 空值 IS NULL 比较 OR AND 优先级 括号 LIKE 通配符 IN BETWEEN",
    "course": "mysql",
    "lesson": "02-SELECT与WHERE.md"
   },
   {
    "id": 4,
    "name": "排序分页与去重",
-   "summary": "用 `ORDER BY` 排序，知道多列排序是从左到右逐级生效的",
+   "summary": "ORDER BY 排序 升序 降序 ASC DESC LIMIT 分页 OFFSET 偏移 DISTINCT 去重 多列 NULL 位置",
    "course": "mysql",
    "lesson": "03-排序分页与去重.md"
   },
   {
    "id": 5,
    "name": "聚合与分组",
-   "summary": "用 `COUNT` / `SUM` / `AVG` / `MIN` / `MAX` 把多行压成一个数",
+   "summary": "COUNT SUM AVG MIN MAX 聚合 GROUP BY 分组 HAVING WHERE NULL 统计 行数",
    "course": "mysql",
    "lesson": "04-聚合与分组.md"
   },
   {
    "id": 6,
    "name": "多表连接",
-   "summary": "分清 `INNER JOIN` 与 `LEFT JOIN` 各自保留哪些行",
+   "summary": "JOIN INNER LEFT RIGHT 连接 ON WHERE 条件 一对多 行数 翻倍 COUNT DISTINCT",
    "course": "mysql",
    "lesson": "05-多表连接.md"
   },
   {
    "id": 7,
    "name": "数据类型",
-   "summary": "说清为什么金额必须用 `DECIMAL`，`FLOAT`/`DOUBLE` 错在哪",
+   "summary": "DECIMAL DOUBLE FLOAT VARCHAR CHAR 长度 字符 字节 utf8mb4 DATETIME TIMESTAMP 时区 金额 精度",
    "course": "mysql",
    "lesson": "06-数据类型.md"
   },
   {
    "id": 8,
    "name": "索引与约束",
-   "summary": "说清主键、唯一索引、普通索引三者各自约束什么",
+   "summary": "索引 INDEX 复合索引 最左前缀 唯一索引 UNIQUE 主键 NULL 函数 失效 EXPLAIN 扫描 约束",
    "course": "mysql",
    "lesson": "07-索引与约束.md"
   },
   {
    "id": 9,
    "name": "范式与表设计",
-   "summary": "说清第一、二、三范式各自禁止什么",
+   "summary": "范式 第一范式 第二范式 第三范式 冗余 拆表 宽表 反范式 字段 字段值",
    "course": "mysql",
    "lesson": "08-范式与表设计.md"
   },
   {
    "id": 10,
    "name": "事务与ACID",
-   "summary": "用 `BEGIN` / `COMMIT` / `ROLLBACK` 控制边界",
+   "summary": "事务 TRANSACTION BEGIN COMMIT ROLLBACK ACID 原子性 一致性 隔离性 持久性 影响行数 回滚",
    "course": "mysql",
    "lesson": "09-事务与ACID.md"
   },
   {
    "id": 11,
    "name": "隔离级别与锁",
-   "summary": "说清脏读、不可重复读、幻读各是什么现象",
+   "summary": "隔离级别 脏读 不可重复读 幻读 READ COMMITTED REPEATABLE READ FOR UPDATE 锁 间隙锁",
    "course": "mysql",
    "lesson": "10-隔离级别与锁.md"
   },
   {
    "id": 12,
    "name": "执行计划与慢查询",
-   "summary": "用 `EXPLAIN` 看出一句查询是走索引还是全表扫",
+   "summary": "EXPLAIN type ALL key rows 索引 全表扫描 慢查询 执行计划 用不上索引",
    "course": "mysql",
    "lesson": "11-执行计划与慢查询.md"
   },
   {
    "id": 13,
    "name": "小项目订单系统",
-   "summary": "把需求拆成四张表，并说清每张表为什么存在",
+   "summary": "订单 订单明细 unit_price 单价 下单 客户 统计 COUNT DISTINCT 影响行数 库存",
    "course": "mysql",
    "lesson": "12-小项目订单系统.md"
   },
   {
    "id": 14,
    "name": "总览",
-   "summary": "",
+   "summary": "Java 学习路线 课程",
    "course": "java",
    "lesson": "00-总览.md"
   },
   {
    "id": 15,
    "name": "编译运行与变量",
-   "summary": "用 `javac` 编译、用 `java` 运行一个 `.java` 文件",
+   "summary": "javac java 编译 运行 变量 int 除法 整型 String 类型 命令 class",
    "course": "java",
    "lesson": "01-编译运行与变量.md"
   },
   {
    "id": 16,
    "name": "运算符与条件",
-   "summary": "分清 `==` 在基本类型和 `String` 上的两种含义",
+   "summary": "运算符 == equals 字符串比较 null switch 箭头 条件 判断 安全",
    "course": "java",
    "lesson": "02-运算符与条件.md"
   },
   {
    "id": 17,
    "name": "循环与方法",
-   "summary": "用 `for`、`while`、`for-each` 三种循环，知道各自适合什么",
+   "summary": "for 循环 执行次数 方法 重载 返回类型 StringBuilder 字符串拼接 性能",
    "course": "java",
    "lesson": "03-循环与方法.md"
   },
   {
    "id": 18,
    "name": "数组与字符串",
-   "summary": "建数组、取长度、遍历、用 `Arrays` 工具类",
+   "summary": "数组 length 长度 split 正则 转义 ArrayStoreException 类型 越界",
    "course": "java",
    "lesson": "04-数组与字符串.md"
   },
   {
    "id": 19,
    "name": "类与对象",
-   "summary": "写带字段、构造器、方法的类，并用 `new` 创建对象",
+   "summary": "class 类 self 实例 类属性 可变 列表 对象 方法",
    "course": "java",
    "lesson": "05-类与对象.md"
   },
   {
    "id": 20,
    "name": "static与值传递",
-   "summary": "分清 `static` 成员与实例成员，知道为什么 `static` 方法里没有 `this`",
+   "summary": "static this 值传递 引用传递 方法参数 重新赋值 实例 类方法",
    "course": "java",
    "lesson": "06-static与值传递.md"
   },
   {
    "id": 21,
    "name": "继承多态与接口",
-   "summary": "写子类、用 `super()` 调父类构造器、重写方法",
+   "summary": "继承 extends implements 接口 多态 Override 重写 抽象 实现 父类 子类",
    "course": "java",
    "lesson": "07-继承多态与接口.md"
   },
   {
    "id": 22,
    "name": "集合与泛型",
-   "summary": "用 `List`、`Map`、`Set` 三种集合，知道各自按什么找东西",
+   "summary": "集合 List 泛型 类型擦除 List<Object> 通配符 遍历 remove ConcurrentModificationException",
    "course": "java",
    "lesson": "08-集合与泛型.md"
   },
   {
    "id": 23,
    "name": "字符串深入",
-   "summary": "说清 `String` 为什么不可变，以及\"不可变\"到底省了你什么事",
+   "summary": "String 不可变 字符串常量池 toUpperCase new String == 拼接 StringBuilder 性能",
    "course": "java",
    "lesson": "09-字符串深入.md"
   },
   {
    "id": 24,
    "name": "包装类与装箱",
-   "summary": "说清八种基本类型对应的包装类，以及为什么要有它们",
+   "summary": "Integer 装箱 拆箱 缓存 127 200 null NullPointerException 比较 ==",
    "course": "java",
    "lesson": "10-包装类与装箱.md"
   },
   {
    "id": 25,
    "name": "equals与hashCode",
-   "summary": "说清 `equals` 与 `hashCode` 各自的契约，以及为什么两者必须一起重写",
+   "summary": "equals hashCode 重写 HashSet 哈希 相等 契约 散列",
    "course": "java",
    "lesson": "11-equals与hashCode.md"
   },
   {
    "id": 26,
    "name": "集合选型",
-   "summary": "按\"要不要顺序、要不要去重、要不要排序、要不要按 key 查\"四问选对集合",
+   "summary": "ArrayList LinkedList HashMap TreeMap Set contains 时间复杂度 遍历 下标 选型",
    "course": "java",
    "lesson": "12-集合选型.md"
   },
   {
    "id": 27,
    "name": "异常",
-   "summary": "分清**受检异常**与**非受检异常**，知道为什么只有前者必须处理",
+   "summary": "异常 except try finally raise ValueError 裸except 捕获",
    "course": "java",
    "lesson": "13-异常.md"
   },
   {
    "id": 28,
    "name": "文件IO",
-   "summary": "用 `Files` 读写文本文件，并显式声明 UTF-8",
+   "summary": "Files read write Path 路径 编码 UTF-8 StandardCharsets 相对路径 覆盖 追加",
    "course": "java",
    "lesson": "14-文件IO.md"
   },
   {
    "id": 29,
    "name": "测试与构建",
-   "summary": "说清一个 JUnit 测试文件长什么样，`@Test` 与断言各做什么",
+   "summary": "测试 断言 assert Maven src main test 依赖 作用域 scope JUnit 构建",
    "course": "java",
    "lesson": "15-测试与构建.md"
   },
   {
    "id": 30,
    "name": "小项目与并发入门",
-   "summary": "把一个程序拆成\"数据 / 逻辑 / 入口\"三层，并说清每层不该做什么",
+   "summary": "并发 线程 i++ 原子 计数 synchronized 业务逻辑 纯函数 文件",
    "course": "java",
    "lesson": "16-小项目与并发入门.md"
   },
   {
    "id": 31,
    "name": "泛型",
-   "summary": "读懂 `List<String>`、`Map<K, V>`、`<T extends Comparable<T>>` 这些写法",
+   "summary": "泛型 类型参数 T 擦除 extends super 通配符 List<int> 装箱 add 读写",
    "course": "java",
    "lesson": "17-泛型.md"
   },
   {
    "id": 32,
    "name": "Optional",
-   "summary": "说清 `Optional` 解决的到底是什么问题",
+   "summary": "Optional orElse orElseGet of null 空值 字段 返回值 判空",
    "course": "java",
    "lesson": "18-Optional.md"
   },
   {
    "id": 33,
    "name": "日期时间",
-   "summary": "分清 `LocalDate` / `LocalTime` / `LocalDateTime` / `Instant` / `ZonedDateTime` 各自代表什么",
+   "summary": "LocalDate LocalDateTime Instant 日期 时间 时区 SimpleDateFormat 线程安全 注册",
    "course": "java",
    "lesson": "19-日期时间.md"
   },
   {
    "id": 34,
    "name": "Stream",
-   "summary": "把\"遍历 → 判断 → 收集\"三段循环改写成一条 Stream 链",
+   "summary": "Stream filter map 终结操作 惰性 toList collect anyMatch findFirst 性能",
    "course": "java",
    "lesson": "20-Stream.md"
   },
   {
    "id": 35,
    "name": "Lambda与函数式接口",
-   "summary": "读懂 `(a, b) -> a + b` 这种写法，知道它的类型从哪来",
+   "summary": "Lambda 函数式接口 类型推断 外部变量 final Function Predicate Supplier",
    "course": "java",
    "lesson": "21-Lambda与函数式接口.md"
   },
   {
    "id": 36,
    "name": "并发入门",
-   "summary": "用 `Runnable` 提交任务，知道为什么**不要自己 `new Thread()`**",
+   "summary": "并发 多线程 GIL CPU 密集 IO 密集 asyncio 异步 进程池 线程",
    "course": "java",
    "lesson": "22-并发入门.md"
   },
   {
    "id": 37,
    "name": "JVM内存与GC",
-   "summary": "说清 Java 内存的几块区域，以及对象到底分配在哪",
+   "summary": "JVM 堆 栈 GC 垃圾回收 ThreadLocal 内存泄漏 OutOfMemoryError native thread",
    "course": "java",
    "lesson": "23-JVM内存与GC.md"
   },
   {
    "id": 38,
    "name": "总览",
-   "summary": "",
+   "summary": "Java 学习路线 课程",
    "course": "python",
    "lesson": "00-总览.md"
   },
   {
    "id": 39,
    "name": "环境与第一行代码",
-   "summary": "在自己的电脑上把一段 Python 代码跑起来，看到输出",
+   "summary": "python 命令 运行 type 类型 报错 异常信息 Traceback 文件模式",
    "course": "python",
    "lesson": "01-环境与第一行代码.md"
   },
   {
    "id": 40,
    "name": "运算与条件",
-   "summary": "分清 `/`、`//`、`%` 各自干什么",
+   "summary": "除法 / 浮点 精度 0.1 0.2 if elif 顺序 条件 判断 取整",
    "course": "python",
    "lesson": "02-运算与条件.md"
   },
   {
    "id": 41,
    "name": "循环",
-   "summary": "用 `for ... in range(...)` 重复固定次数、用 `while` 重复到条件不成立",
+   "summary": "for while range continue break 遍历 remove 漏删 循环",
    "course": "python",
    "lesson": "03-循环.md"
   },
   {
    "id": 42,
    "name": "函数",
-   "summary": "定义带参数、带返回值的函数，并知道什么时候该抽成函数",
+   "summary": "def return 返回值 默认参数 可变参数 items=[] 陷阱 参数 引用",
    "course": "python",
    "lesson": "04-函数.md"
   },
   {
    "id": 43,
    "name": "列表与元组",
-   "summary": "建列表、按位置取、切片、增删改",
+   "summary": "list tuple 切片 slice 浅拷贝 深拷贝 deepcopy 可变 不可变 索引",
    "course": "python",
    "lesson": "05-列表与元组.md"
   },
   {
    "id": 44,
    "name": "字典与集合",
-   "summary": "用字典按\"名字\"取数据，知道取不到时该用 `get` 还是直接下标",
+   "summary": "dict set 字典 集合 键 key 哈希 去重 顺序 访问 KeyError",
    "course": "python",
    "lesson": "06-字典与集合.md"
   },
   {
    "id": 45,
    "name": "字符串与格式化",
-   "summary": "用 f-string 把变量拼进句子，并控制小数位",
+   "summary": "str 字符串 upper 不可变 join 拼接 格式化 f-string encoding 编码",
    "course": "python",
    "lesson": "07-字符串与格式化.md"
   },
   {
    "id": 46,
    "name": "文件读写",
-   "summary": "用 `with open(...)` 读、写文本文件，并说明为什么必须用 `with`",
+   "summary": "open 文件 读写 with 模式 w r 覆盖 逐行 readlines 迭代",
    "course": "python",
    "lesson": "08-文件读写.md"
   },
   {
    "id": 47,
    "name": "异常",
-   "summary": "用 `try / except` 接住**具体**的异常，而不是一把抓",
+   "summary": "异常 except try finally raise ValueError 裸except 捕获",
    "course": "python",
    "lesson": "09-异常.md"
   },
   {
    "id": 48,
    "name": "类与对象",
-   "summary": "定义带 `__init__` 的类，说清 `self` 是什么",
+   "summary": "class 类 self 实例 类属性 可变 列表 对象 方法",
    "course": "python",
    "lesson": "10-类与对象.md"
   },
   {
    "id": 49,
    "name": "继承与多态",
-   "summary": "写一个子类，用 `super()` 复用父类的初始化",
+   "summary": "继承 多态 重写 父类 子类 组合 super 方法解析顺序",
    "course": "python",
    "lesson": "11-继承与多态.md"
   },
   {
    "id": 50,
    "name": "模块与包",
-   "summary": "分清 `import x`、`from x import y`、`import x as z` 三种写法的后果",
+   "summary": "模块 import 包 package __name__ main from 导入 pip ModuleNotFoundError",
    "course": "python",
    "lesson": "12-模块与包.md"
   },
   {
    "id": 51,
    "name": "类型注解",
-   "summary": "给变量、函数参数、返回值写类型标注，并知道它们**运行时不起检查作用**",
+   "summary": "类型注解 type hint int str list[int] 运行时 dataclass 泛型",
    "course": "python",
    "lesson": "13-类型注解.md"
   },
   {
    "id": 52,
    "name": "迭代器与生成器",
-   "summary": "说清\"可迭代对象\"和\"迭代器\"的区别",
+   "summary": "迭代器 生成器 yield iter next 惰性 readlines 遍历两次 可迭代",
    "course": "python",
    "lesson": "14-迭代器与生成器.md"
   },
   {
    "id": 53,
    "name": "装饰器",
-   "summary": "解释\"函数也是对象\"，并把它当参数传、当返回值用",
+   "summary": "装饰器 decorator @ functools.wraps 闭包 三层 retry 包装",
    "course": "python",
    "lesson": "15-装饰器.md"
   },
   {
    "id": 54,
    "name": "上下文管理器",
-   "summary": "说清 `with open(...) as f` 里的 `f` 从哪来、关闭发生在什么时候",
+   "summary": "with 上下文管理器 __enter__ __exit__ contextmanager 异常 收尾 资源释放",
    "course": "python",
    "lesson": "16-上下文管理器.md"
   },
   {
    "id": 55,
    "name": "并发入门",
-   "summary": "分清 CPU 密集与 I/O 密集，并说清它们分别该用什么方案",
+   "summary": "并发 多线程 GIL CPU 密集 IO 密集 asyncio 异步 进程池 线程",
    "course": "python",
    "lesson": "17-并发入门.md"
   },
   {
    "id": 56,
    "name": "小项目",
-   "summary": "把一个脚本拆成\"数据层 / 逻辑层 / 入口\"，知道为什么这么拆",
+   "summary": "项目 虚拟环境 venv 纯函数 测试 业务规则 依赖 隔离",
    "course": "python",
    "lesson": "18-小项目.md"
   }
