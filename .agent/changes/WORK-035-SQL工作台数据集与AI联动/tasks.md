@@ -40,8 +40,8 @@ approver_role: CTO
 | T-09 | 上传与干跑 | S2 | done |
 | T-10 | 社区发布、举报与下架 | S2 | done |
 | T-11 | 管理端两页 | S2 | done |
-| T-12 | AI 现场出题 | S3 | pending |
-| T-13 | AI 生成数据集 | S3 | pending |
+| T-12 | AI 现场出题 | S3 | done |
+| T-13 | AI 生成数据集 | S3 | done |
 | T-14 | 载入关卡题 | S3 | done |
 | T-15 | 助手页面上下文与填回 | S3 | done |
 | T-16 | `sql_describe_dataset` 只读工具 | S3 | done |

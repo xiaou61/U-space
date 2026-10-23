@@ -5831,3 +5831,33 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     非 SQL 题型返回 null、多块只取匹配的）。
   - 构建 + 懒加载守卫通过；e2e `sql-practice` **4 passed**。
 - 本地提交：见下一笔
+
+## 2026-10-23 13:40:00 +08:00 · WORK-035 T-12 / T-13 完成
+
+- 类型：implementation
+- 变更：
+  - 两个端口（sandbox 包根）：`SqlQuestionPort`、`SqlDatasetGeneratorPort`。
+  - ai 侧实现（`internal/sql`）：`SqlModelCall`（共用骨架）+ `SqlQuestionGenerator` + `SqlDatasetGenerator`。
+    `RunKind` 新增 `sql_question` 与 `sql_dataset_generate`（分开记：成本差异大）。
+  - ai 模块新增对 sandbox 的依赖（只为两个端口；sandbox 不依赖 ai，无环）。
+  - `SqlAiService`：出题时**真跑参考解**取期望结果集；造数据时**走上传的同一套检查**。
+  - 端点 `POST /sql-datasets/{key}/question` 与 `POST /sql-datasets/generate`。
+  - 前端：`knowledge` 客户端两个方法；工作台「让 AI 出题」按钮与「造一个自己的数据集」折叠区。
+- 决策：
+  - **期望结果集只能来自实际执行**：让模型自己说"结果应该是 3 行"等于把判分权交给一个
+    会编的东西。参考解跑不通就**拒绝出题**，而不是给一道判不了的题。
+  - **AI 生成的 SQL 走手动上传的同一条路**（白名单 + 干跑 + 抓结构），不给它开更宽松的口子。
+  - **参考解返回超过 200 行时拒绝**：那说明题目范围太大，不是一道好题。
+  - **判定口径必须随题显示**：题目唯一性没法自动保证，用户看到的判据必须明确。
+  - **共用 `SqlModelCall` 骨架**：出题与造数据的调用完全一样，复制两份会让"记账漏了"
+    或"超时没设"只在一处修。
+- 验证：
+  - `paideia-sandbox` **66 passed**（新增 SqlAiServiceTest 7 条，含"期望结果来自实际执行"、
+    "参考解跑不通时拒绝出题"、"生成的 SQL 走上传流程"、"生成失败不写库"）。
+  - 全后端（除 app）**266 运行 / 0 失败 / 13 跳过**；`ModularityTest` 与三个迁移门禁通过。
+  - 构建 + 懒加载守卫通过；e2e `sql-practice` **4 passed**。
+- 已知未做：AI 出题/造数据没有 e2e（要真调上游，线上才有凭据）；这两条由单测覆盖，
+  线上验证需人工配 Key 后试一次。
+- 顺带发现（不在本项范围）：master 上 `concept-graph-layout.test.ts` 有 4 个既有类型错误，
+  不是本项引入，未修。
+- 本地提交：见下一笔

@@ -4,6 +4,7 @@ import io.github.xiaou61.platform.ApiAccess;
 import io.github.xiaou61.platform.ApiResponse;
 import io.github.xiaou61.platform.BizException;
 import io.github.xiaou61.platform.ErrorCode;
+import io.github.xiaou61.sandbox.internal.dataset.SqlAiService;
 import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetMapper;
 import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetUploadService;
 import jakarta.validation.Valid;
@@ -32,12 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 class SqlDatasetController {
 
     private final SqlDatasetUploadService uploads;
+    private final SqlAiService ai;
     private final SqlDatasetMapper mapper;
 
-    SqlDatasetController(SqlDatasetUploadService uploads, SqlDatasetMapper mapper) {
+    SqlDatasetController(SqlDatasetUploadService uploads, SqlAiService ai, SqlDatasetMapper mapper) {
         this.uploads = uploads;
+        this.ai = ai;
         this.mapper = mapper;
-            }
+    }
 
     /**
      * 上传一个私人数据集。
@@ -115,7 +118,40 @@ class SqlDatasetController {
         return ApiResponse.ok(null);
     }
 
+    /**
+     * 在数据集上现场出一道题（WORK-035 T-12）。
+     *
+     * <p>**参考解会在这个数据集上真跑一遍**，返回的期望结果集来自实际执行——
+     * 不是模型自己说的。题不落库，用完即弃。
+     */
+    @PostMapping("/{key}/question")
+    ApiResponse<SqlAiService.GeneratedQuestion> generateQuestion(
+            @PathVariable String key, @RequestBody(required = false) QuestionRequest body) {
+        long userId = currentUserId();
+        String goal = body == null ? null : body.goal();
+        return ApiResponse.ok(ai.generateQuestion(userId, key, goal));
+    }
+
+    /**
+     * 让 AI 造一个数据集并保存为私人数据集（WORK-035 T-13）。
+     *
+     * <p>生成的 SQL 走**与手动上传完全相同的检查**（白名单 + 干跑）——
+     * 不给 AI 开一条更宽松的路。
+     */
+    @PostMapping("/generate")
+    ApiResponse<CreatedView> generateDataset(@RequestBody(required = false) GenerateRequest body) {
+        long userId = currentUserId();
+        String topic = body == null ? null : body.topic();
+        return ApiResponse.ok(new CreatedView(ai.generateDataset(userId, topic)));
+    }
+
     record CreatedView(String key) {
+    }
+
+    record QuestionRequest(@Size(max = 200) String goal) {
+    }
+
+    record GenerateRequest(@Size(max = 200) String topic) {
     }
 
     record UploadRequest(@NotBlank @Size(max = 100) String name,

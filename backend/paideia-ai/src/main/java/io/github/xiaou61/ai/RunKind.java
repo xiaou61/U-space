@@ -47,6 +47,12 @@ public final class RunKind {
     /** 给题目生成概念候选（WORK-033）。按批一次调用。 */
     public static final String QUESTION_TAGGING = "question_tagging";
 
+    /** 在数据集上现场出题（WORK-035 T-12）。题不落库，用完即弃。 */
+    public static final String SQL_QUESTION = "sql_question";
+
+    /** 生成一个数据集（WORK-035 T-13）。与出题分开记：两者的成本差异很大。 */
+    public static final String SQL_DATASET_GENERATE = "sql_dataset_generate";
+
     private RunKind() {
     }
 }

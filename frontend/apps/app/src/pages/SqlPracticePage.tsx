@@ -10,6 +10,7 @@ import {
   AlertTitle,
   AppShell,
   Button,
+  Input,
   PageHeader,
   Spinner,
 } from '@paideia/ui'
@@ -118,6 +119,14 @@ export function SqlPracticePage() {
   const completionSchema = toCompletionSchema(schema)
   const [showEr, setShowEr] = useState(false)
   const [showChart, setShowChart] = useState(false)
+  /** AI 现场出的题（WORK-035 T-12）。期望结果集来自真跑参考解，判题在客户端。 */
+  const [aiQuestion, setAiQuestion] = useState<{
+    stem: string
+    criteria: string
+    explain: string
+    columns: string[]
+    rows: string[][]
+  } | null>(null)
 
   const run = useMutation({
     mutationFn: async (explain: boolean) => {
@@ -141,6 +150,44 @@ export function SqlPracticePage() {
         setExplainOutput(null)
       }
       status.refetch()
+    },
+    onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
+  })
+
+  /**
+   * 现场出一道题（WORK-035 T-12）。
+   *
+   * <p>后端会在沙箱里**真跑一次参考解**取期望结果集——不是模型自己说的。
+   * 它同时花一次 AI 调用与一次沙箱运行，所以按钮在运行时显示"出题中…"。
+   */
+  const askAi = useMutation({
+    mutationFn: () => {
+      if (selected === null) {
+        throw new Error('没有可用的数据集')
+      }
+      return knowledge.generateSqlQuestion(selected)
+    },
+    onSuccess: (question) => {
+      setAiQuestion(question)
+      setError(null)
+    },
+    onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
+  })
+
+  /**
+   * 让 AI 造一个数据集（WORK-035 T-13）。
+   *
+   * <p>生成的 SQL 走**与手动上传完全相同的检查**（白名单 + 干跑）——后端不给 AI 开更宽松的路。
+   * 成功后刷新数据集清单，新数据集会出现在选择器里。
+   */
+  const [datasetTopic, setDatasetTopic] = useState('')
+  const createDataset = useMutation({
+    mutationFn: () => knowledge.generateSqlDataset(datasetTopic.trim() === '' ? undefined : datasetTopic.trim()),
+    onSuccess: async (created) => {
+      setError(null)
+      setDatasetTopic('')
+      await status.refetch()
+      setDataset(created.key)
     },
     onError: (cause) => setError(cause instanceof Error ? cause.message : String(cause)),
   })
@@ -268,6 +315,39 @@ export function SqlPracticePage() {
               )}
             </div>
 
+            {/* AI 造数据集（WORK-035 T-13）：生成的 SQL 与手动上传过同样的检查 */}
+            <details className="border-border rounded-lg border" data-testid="sql-create-dataset">
+              <summary className="cursor-pointer px-3 py-2 text-sm">
+                造一个自己的数据集
+                <span className="text-muted-foreground ml-2 text-xs">
+                  （AI 生成，也可以自己粘贴 SQL）
+                </span>
+              </summary>
+              <div className="border-border space-y-2 border-t px-3 py-3">
+                <Input
+                  value={datasetTopic}
+                  onChange={(event) => setDatasetTopic(event.target.value)}
+                  placeholder="想要什么样的数据？例如：一个小型图书馆（书、读者、借阅记录）"
+                  aria-label="数据集描述"
+                  data-testid="sql-dataset-topic"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={createDataset.isPending}
+                    data-testid="sql-generate-dataset"
+                    onClick={() => createDataset.mutate()}
+                  >
+                    {createDataset.isPending ? '生成中…' : '让 AI 造'}
+                  </Button>
+                  <span className="text-muted-foreground text-xs">
+                    只允许建表与插数；生成后会先在沙箱里真跑一遍，跑不通不会保存
+                  </span>
+                </div>
+              </div>
+            </details>
+
             <Suspense
               fallback={
                 <div
@@ -309,6 +389,15 @@ export function SqlPracticePage() {
               </Button>
               <Button
                 type="button"
+                variant="outline"
+                data-testid="sql-ai-question"
+                disabled={askAi.isPending || selected === null}
+                onClick={() => askAi.mutate()}
+              >
+                {askAi.isPending ? '出题中…' : '让 AI 出题'}
+              </Button>
+              <Button
+                type="button"
                 variant="ghost"
                 data-testid="sql-ask-assistant"
                 onClick={() => ask('帮我看看这段 SQL 哪里有问题')}
@@ -327,6 +416,29 @@ export function SqlPracticePage() {
                   {error}
                 </AlertDescription>
               </Alert>
+            )}
+
+            {/*
+              AI 现场出的题（WORK-035 T-12）。
+              **判定口径必须显示**：题目唯一性没法自动保证，用户看到的判据必须是明确的
+              口径，而不是"AI 说你对"。
+            */}
+            {aiQuestion === null ? null : (
+              <div className="border-border rounded-lg border p-3" data-testid="sql-ai-question-card">
+                <p className="text-sm font-medium">AI 出的题</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{aiQuestion.stem}</p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  <strong>判定口径：</strong>
+                  {aiQuestion.criteria}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  期望结果：{aiQuestion.columns.length} 列 × {aiQuestion.rows.length} 行
+                  （来自参考解在这个数据集上的实际运行）
+                </p>
+                {aiQuestion.explain === '' ? null : (
+                  <p className="text-muted-foreground mt-1 text-xs">{aiQuestion.explain}</p>
+                )}
+              </div>
             )}
 
             <Suspense fallback={<Spinner />}>

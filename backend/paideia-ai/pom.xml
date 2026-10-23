@@ -41,6 +41,15 @@
       <groupId>io.github.xiaou61</groupId>
       <artifactId>paideia-knowledge</artifactId>
     </dependency>
+    <!--
+      只为了两个端口（WORK-035 T-12 / T-13）：SqlQuestionPort 与 SqlDatasetGeneratorPort。
+      **方向是 ai → sandbox**，sandbox 不依赖 ai，所以无环。与"knowledge 定义端口、ai 实现"
+      同一模式，只是端口的归属模块换成了持有数据的那个。
+    -->
+    <dependency>
+      <groupId>io.github.xiaou61</groupId>
+      <artifactId>paideia-sandbox</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
