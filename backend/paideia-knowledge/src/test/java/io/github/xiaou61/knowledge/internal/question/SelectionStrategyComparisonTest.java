@@ -82,22 +82,22 @@ class SelectionStrategyComparisonTest {
     }
 
     /**
-     * AC-006 的现状：**不达标**，且差距很大（信息增益比随机低约 17%）。
+     * AC-006：信息增益选题学到的东西明显多于随机选题。
      *
-     * <p>这条用例保留了"把数字打出来"的能力，但断言的是**当前真实行为**而不是 AC 的要求。
-     * 写成这样是刻意的：它记录了一个已确认的缺陷，而不是假装通过。
+     * <h2>这条曾经是红的（-17.3%），修在 {@link PracticeSelector}</h2>
      *
-     * <p><b>已确认的缺陷</b>（2026-10-23 实测）：`PracticeSelector` 把难度锁死在当前
-     * `ability(mastery)` 附近，而该映射是 `1200 + (mastery-0.5)*400`——
-     * 答错一次使 mastery 从 0.3 掉到 0.08，ability 随之从 1120 掉到 1032；
-     * 于是下一题更简单，但永远"刚好 50% 答对率"。BKT 在 50% 答对率下长期在中等区间震荡，
-     * 而反复答**低于**能力的题（如始终 800）能把 mastery 推到 0.999。
+     * <p>原实现让目标难度**等于当前能力**，即答对率 50%。而 BKT 里答错一次把掌握概率从
+     * 0.3 打到 0.08（`SLIP=0.10` 使一次答错被读成"其实没掌握"）、答对只涨到 0.71——
+     * 跌得比涨得狠，所以 50% 答对率下的稳态掌握度只有 **0.666**，永远够不到 0.8。
      *
-     * <p>修法不在本项范围（要改选题算法或改 AC 的度量），见 testing/report.md。
+     * <p>修法：目标难度改成能力下方 {@link PracticeSelector#TARGET_GAP} 分（答对率约 70%）。
+     * 实测提升 **23.3%**，超过 AC 要求的 20%。
+     *
+     * <p><b>如果这条又红了</b>，说明选题策略或 BKT 被改过，请复核 testing/report.md。
      */
     @Test
-    @DisplayName("AC-006 现状记录：信息增益选题的掌握度低于随机（已知缺陷）")
-    void informationGainCurrentlyLearnsLessThanRandom() {
+    @DisplayName("AC-006 固定题数后，信息增益选题的掌握度比随机高 20% 以上")
+    void informationGainLearnsMoreThanRandom() {
         List<PracticeSelector.Candidate> candidates = pool();
         double adaptiveSum = 0;
         double randomSum = 0;
@@ -113,13 +113,10 @@ class SelectionStrategyComparisonTest {
                 "[AC-006] %d 个种子 × %d 题：信息增益平均掌握度 %.4f，随机 %.4f，提升 %.1f%%%n",
                 SEEDS, QUESTIONS, adaptive, random, gain * 100);
 
-        // 记录当前事实：AC 要求 >= +20%，实际约 -17%。这条断言把时间锁住——
-        // 将来有人修好了，它会红，那时把断言改成 AC 的要求并更新报告。
         assertThat(gain)
-                .as("当前实测为负（%.4f vs %.4f）。若这里红了，说明算法被改过，请复核 report",
-                        adaptive, random)
-                .isLessThan(REQUIRED_GAIN)
-                .isLessThan(0.0);
+                .as("信息增益提升 %.1f%%（%.4f vs %.4f），AC 要求 ≥ 20%%",
+                        gain * 100, adaptive, random)
+                .isGreaterThanOrEqualTo(REQUIRED_GAIN);
     }
 
     /**

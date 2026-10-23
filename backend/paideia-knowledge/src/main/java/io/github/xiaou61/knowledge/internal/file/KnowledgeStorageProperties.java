@@ -32,6 +32,30 @@ public class KnowledgeStorageProperties {
     /** 对象存储参数。只在 {@code storage=s3} 时被用到。 */
     private final S3 s3 = new S3();
 
+    /**
+     * 是否用逐题作答算出的 BKT 掌握度（WORK-033）。
+     *
+     * <p><b>这是紧急回退开关</b>，不是让人日常切换的偏好。默认 {@code true}：
+     * 有逐题证据的概念用概率模型，其余自动回退旧的加权平均（见 `ConceptGraphService`）。
+     *
+     * <p>置 {@code false} 时**全部概念**都走旧公式——即使有逐题作答也不用 BKT。
+     * 用途只有一个：BKT 算出明显不合理的数、需要立刻回到旧口径时，
+     * 改这一行重启即可，不必回滚代码。
+     *
+     * <p>为什么要它（WORK-033 AC-010）：AC 预设了"关闭新实现开关后回退旧口径"，
+     * 而实现只做了"按数据自动降级"——那解决了"新用户会不会看到怪数"，
+     * 但没有解决"算法出问题时怎么一键退回去"。两者是不同的问题。
+     */
+    private boolean masteryBktEnabled = true;
+
+    public boolean isMasteryBktEnabled() {
+        return masteryBktEnabled;
+    }
+
+    public void setMasteryBktEnabled(boolean masteryBktEnabled) {
+        this.masteryBktEnabled = masteryBktEnabled;
+    }
+
     public String getStorage() {
         return storage;
     }
