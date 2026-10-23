@@ -9,9 +9,7 @@ schema_version: 1
 这里按时间顺序追加每轮实际变更、关键决策、依据、验证结果和 Git 边界。新记录标题精确到秒并带本地 numeric 时区；它是面向人阅读的项目时间线，不替代 `.agent/changes/` 工件或 Git 历史。
 
 记录格式见已安装 Skill 的 `references/update-history.md`。每条记录至少包含变更、决策、依据、验证、本地提交和远端推送字段；没有实际持久化改动的聊天不追加；不要删除或覆盖旧记录。
-
 ## 记录
-
 ## 2026-10-09 09:13:52 +0800 · maintenance · 初始化 Paideia 项目工作区
 
 - 类型：maintenance
@@ -21,7 +19,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 status --json：initialized=true，state=idle，无活动工作项；rules 按预期返回 draft 且 configured=false。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:26:30 +0800 · WORK-001 · 架构选型调研与 WORK-001 立项
 
 - 类型：decision
@@ -31,7 +28,6 @@ schema_version: 1
 - 验证：四路联网调研（平台版本、架构模式、MyBatis 多库、AI+前端）均返回带来源的结论；版本号来自官方 release 元数据。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:37:03 +0800 · WORK-001 · 补充架构方案：模块划分、AI 分层与双端前端
 
 - 类型：decision
@@ -41,7 +37,6 @@ schema_version: 1
 - 验证：两路联网调研复核：AgentScope Java 版本与能力边界（Maven Central 元数据 + 官方文档）、Tauri/Electron 版本与桌面共享架构（官方文档）。未运行构建或代码验证：仓库仍无源码，proposal 为 draft 且先于需求批准。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:38:25 +0800 · WORK-001 · 补工作区归因并核对仓库现状
 
 - 类型：maintenance
@@ -51,7 +46,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 status --json：workspace_attribution.status=complete，classified=4，unknown_paths 为空；validate 剩余两项错误分别需要用户确认项目规范与批准需求，非工件缺陷。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:40:46 +0800 · WORK-001 · 撤下越权的架构提案，改为中立技术选项登记表
 
 - 类型：decision
@@ -61,7 +55,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 status --json：workspace_attribution.status=complete；proposal.md 已不存在，validate 的「需求尚未形成但已有下游工件」错误应随之消除。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:45:06 +0800 · WORK-001 · 记录用户裁决：多库适配推迟、认证可扩展、桌面壳定 Tauri
 
 - 类型：decision
@@ -71,7 +64,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 status/validate：工件结构校验通过，仅剩「项目常驻规范未确认」一项，需用户确认；未运行构建或代码验证，仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:49:55 +0800 · WORK-001 · 记录第二轮裁决：架构形态、边界手段、迁移、分页、前端栈；桌面版推迟
 
 - 类型：decision
@@ -81,7 +73,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate：工件结构校验通过，仅剩「项目常驻规范未确认」一项需用户确认。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:50:57 +0800 · maintenance · 建立本地版本控制并把远端仓库重置为项目脚手架
 
 - 类型：maintenance
@@ -92,7 +83,6 @@ schema_version: 1
 - 本地提交：85bb656（chore: 初始化 Paideia 项目脚手架）；本条记录未提交
 - 远端推送：已执行（master 由 f7ed336 强制更新为 85bb656；其余分支、tag、Release 已删除）
 - 边界：本次推送只覆盖了 09:26:48 的快照。此后 WORK-001 的在途工件（workspace.md、technology-options.md 及 requirements/always/updates 的改动）按本工作区一贯纪律仍保持未提交，不在本次推送范围内。
-
 ## 2026-10-09 09:54:28 +0800 · WORK-001 · 第三轮裁决：改用 Modulith、MySQL 完全放开、桌面端同期交付
 
 - 类型：decision
@@ -102,7 +92,6 @@ schema_version: 1
 - 验证：grep 复核 requirements.md 与 always.md 中「可移植」「多数据库」「方言」残留，已清理两处过时表述；project-lifecycle.ps1 validate 工件结构校验通过，仅剩「项目常驻规范未确认」。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 09:56:46 +0800 · WORK-001 · 第四轮裁决：主键自增、MySQL 分页组件、Maven、单仓多模块、自签 JWT
 
 - 类型：decision
@@ -112,7 +101,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate：工件结构校验通过，仅剩「项目常驻规范未确认」。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:00:15 +0800 · WORK-001 · 定 RabbitMQ 与自托管部署；建立公开仓库保密规则
 
 - 类型：decision
@@ -122,7 +110,6 @@ schema_version: 1
 - 验证：git grep 扫描已跟踪文件：未发现服务器地址或凭据泄露（仅 repository_root 等误命中）。git check-ignore 自检：.env、.env.local、application-local.yml、.secrets/server.env、src-tauri/target 均已被忽略。project-lifecycle.ps1 validate：仅剩「项目常驻规范未确认」。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:02:50 +0800 · WORK-001 · 签署 .agent/changes/WORK-001-架构选型与项目骨架/requirements.md
 
 - 类型：decision
@@ -132,7 +119,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 10:02:50 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:05:12 +0800 · WORK-001 · 需求获批并起草架构提案
 
 - 类型：decision
@@ -142,7 +128,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate：结果通过，未发现结构、引用或证据问题（修正了 always.md 中残留的占位标记，它曾使 configured 失效）。status：WORK-001 进入方案选择阶段，requirements 已签署。未运行构建或代码验证：尚未创建任何源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:07:38 +0800 · WORK-001 · 定案 Maven 粒度、命名空间与本地开发环境
 
 - 类型：decision
@@ -152,7 +137,6 @@ schema_version: 1
 - 验证：grep 核对：requirements.md 中 RabbitMQ 与部署自托管记录完整；proposal.md 已无「推荐 A」残留，待决定事项已清零。project-lifecycle.ps1 validate：通过。未运行构建或代码验证：尚未创建任何源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:09:07 +0800 · WORK-001 · 签署 .agent/changes/WORK-001-架构选型与项目骨架/proposal.md
 
 - 类型：decision
@@ -162,7 +146,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 10:09:07 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:09:25 +0800 · WORK-001 · 提案获批；确认数据库端口对公网开放
 
 - 类型：decision
@@ -172,7 +155,6 @@ schema_version: 1
 - 验证：推送前扫描：grep -rnI 全树查 IP 与口令，无命中；凭据形态正则扫描无命中。gh auth status：已登录 xiaou61，含 repo 权限。project-lifecycle.ps1 validate：通过。未运行构建或代码验证：尚未创建任何源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:10:38 +0800 · WORK-001 · 本地提交并推送 025631f；核对远端发现遗留引用
 
 - 类型：maintenance
@@ -182,7 +164,6 @@ schema_version: 1
 - 验证：git grep HEAD 查 36.212 与口令：无命中；git log master：仅 85bb656 与 025631f 两条，旧历史不在 master 祖先中；git ls-remote origin：HEAD 与 refs/heads/master 均为 025631f。未运行构建或代码验证：尚未创建任何源码。
 - 本地提交：025631f
 - 远端推送：origin/master（85bb656..025631f）
-
 ## 2026-10-09 10:15:02 +0800 · WORK-001 · 清理远端遗留引用；起草详细设计与实施任务
 
 - 类型：implementation
@@ -192,7 +173,6 @@ schema_version: 1
 - 验证：git push：025631f..6f19cc5 成功，远端 refs/heads/master 已核对为 6f19cc5，工作区干净。git ls-remote：refs/remotes/origin/* 计数为 0。project-lifecycle.ps1 validate / checkpoint 待本轮记录后复核。未运行构建或代码验证：尚未创建任何源码。
 - 本地提交：6f19cc5
 - 远端推送：origin/master（025631f..6f19cc5）
-
 ## 2026-10-09 10:23:44 +0800 · WORK-001 · 清理服务器上的 Code-Nest 部署
 
 - 类型：maintenance
@@ -202,7 +182,6 @@ schema_version: 1
 - 验证：删除后核对：/opt 仅剩 jdk17 与 jdk25；find / -maxdepth 4 -iname '*codenest*'（排除备份目录）无结果；9999 端口无监听；无 crontab；redis-cli dbsize = 0；备份包 tar tzf 列出 28 个条目。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:24:37 +0800 · WORK-001 · 核实测试框架选型；记录服务器环境事实
 
 - 类型：decision
@@ -212,7 +191,6 @@ schema_version: 1
 - 验证：服务器复核：/opt 仅剩 jdk17 与 jdk25；MySQL 数据目录中仍存在 code_nest（待有凭据后删除）；redis-cli dbsize = 0。工件校验：project-lifecycle.ps1 validate 待复核。未运行构建或代码验证：仓库仍无源码。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:27:18 +0800 · WORK-001 · 签署 .agent/changes/WORK-001-架构选型与项目骨架/design.md
 
 - 类型：decision
@@ -222,7 +200,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 10:27:18 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:27:19 +0800 · WORK-001 · 签署 .agent/changes/WORK-001-架构选型与项目骨架/tasks.md
 
 - 类型：decision
@@ -232,7 +209,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 10:27:19 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:32:47 +0800 · WORK-001 · 重置服务器 MySQL 密码并建立 Paideia 数据库；开始 TASK-001
 
 - 类型：implementation
@@ -242,7 +218,6 @@ schema_version: 1
 - 验证：脚本输出：password-set-ok；MySQL 重启后 systemctl is-active 为 active；SHOW DATABASES 仅剩 information_schema、mysql、paideia、paideia_test、performance_schema、sys（code_nest 已不存在）；mysql.user 中 paideia@localhost 与 paideia@127.0.0.1 均为 caching_sha2_password；应用账号冒烟测试 SELECT DATABASE() 返回 paideia、USER() 返回 paideia@localhost。凭据管理器三项状态均为 configured。project-lifecycle.ps1 validate 通过。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:35:01 +0800 · maintenance · 建立代码审查约定：按范围、按需触发、报告归档 .agent/reviews/
 
 - 类型：decision
@@ -252,7 +227,6 @@ schema_version: 1
 - 验证：`ocr llm test` 连通性与 tool-call round trip 通过；`ocr review --commit HEAD --preview` 显示 HEAD 的 5 个改动文件全部因 `unsupported_ext` 被排除，据此确认 ocr 默认不审 md、且当前仓库无可审内容；扫描仓库内无 ocr 配置或残留文件。**未运行完整审查**：仓库仍无源码，运行审查为空转。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:37:18 +0800 · WORK-001 · 完成 TASK-001：后端多模块工程与模块边界强制
 
 - 类型：implementation
@@ -262,7 +236,6 @@ schema_version: 1
 - 验证：mvn -B verify：BUILD SUCCESS（paideia-platform Tests run 7、paideia-app ModularityTest 1）；compiler 3.15.0、surefire 3.5.6、spring-boot-maven-plugin 4.1.1。AC-002：java -jar 启动后 GET /actuator/health 返回 HTTP 200、status UP，启动耗时 3.093s，Tomcat 监听 8080。AC-004：向 paideia-platform 注入对 paideia-app 的依赖后 mvn compile 报 cyclic reference 并失败；还原后 mvn compile 成功（EXIT=0）。未验证：Modulith 层『跨模块访问内部包』的检查需要至少两个模块，当前只有 platform 一个模块，待 TASK-002 引入 paideia-web 后补验。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:38:26 +0800 · WORK-001 · TASK-001 提交并推送 f2b4ad3
 
 - 类型：maintenance
@@ -272,7 +245,6 @@ schema_version: 1
 - 验证：git push 输出 6f19cc5..f2b4ad3 master -> master；git ls-remote origin refs/heads/master 返回 f2b4ad3ed597be2080b115f8cd783aef1bfdc932；敏感串扫描无命中。project-lifecycle.ps1 validate 待本轮记录后复核。
 - 本地提交：f2b4ad3
 - 远端推送：origin/master（6f19cc5..f2b4ad3）
-
 ## 2026-10-09 10:51:22 +0800 · WORK-001 · 完成 TASK-002：Web 基础设施
 
 - 类型：implementation
@@ -282,7 +254,6 @@ schema_version: 1
 - 验证：mvn -B clean verify：BUILD SUCCESS（paideia-platform 7、paideia-web 9、paideia-app 1）。AC-004 的 Modulith 层补验：向 platform 添加 internal 子包并被 web 引用后，ModularityTest 报 Module 'web' depends on non-exposed type io.github.xiaou61.platform.internal.PlatformInternal within module 'platform' 且构建失败；还原后 mvn -B clean verify 恢复 SUCCESS。另修正一次构建失败：TASK-001 手动启动的应用进程未真正退出，锁住 jar 导致 spring-boot:repackage 改名失败，终止该进程后恢复。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 10:59:31 +0800 · WORK-001 · 完成 TASK-003：前端 workspace 与主体 SPA
 
 - 类型：implementation
@@ -292,7 +263,6 @@ schema_version: 1
 - 验证：pnpm -r typecheck：4 个包全部通过；pnpm -r test：core 6 个用例通过；pnpm build：产出 dist/index.html 与相对路径 assets（桌面壳所需）；pnpm test:e2e：2 个用例通过（页面展示后端真实 status=UP 与原始 JSON、响应带 X-Trace-Id）。提交前敏感串扫描无命中。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 11:06:43 +0800 · WORK-001 · 完成 TASK-004：持久层底座与真实 MySQL 集成测试
 
 - 类型：implementation
@@ -302,7 +272,6 @@ schema_version: 1
 - 验证：带凭据运行 mvn -B clean verify：BUILD SUCCESS，五个模块全绿；PaginationIntegrationTest 4 个用例在真实 MySQL（服务器 paideia_test，经 127.0.0.1:3307 SSH 隧道）通过——分页页大小与总数正确、翻页不重不漏、越界页返回空、归属过滤只返回本用户行且不带过滤的对照查询返回全部 5 行、超限页大小收敛到上限。不带凭据运行同一模块：跳过且构建保持 SUCCESS，stderr 有明确提示。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 11:21:33 +0800 · WORK-001 · 完成 TASK-005：认证与授权
 
 - 类型：implementation
@@ -312,7 +281,6 @@ schema_version: 1
 - 验证：mvn -B verify（带 PAIDEIA_TEST_DB_PASSWORD）：BUILD SUCCESS，五个模块全绿，共 35 个测试。JwtAuthServiceTest 8 个、AuthorizationIsolationTest 6 个（真实 MySQL：无令牌 401、伪造令牌 401、各自只看到自己的行、指定他人归属 403、不泄堆栈）。真实 HTTP 手验：local profile 启动 4.2 秒，健康检查 UP，无令牌 401，签发令牌后 /api/v1/me 返回 learner-a。前端 pnpm -r typecheck 通过；pnpm test:e2e 3 个用例通过。提交前敏感串扫描无命中。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 11:55:13 +0800 · WORK-001 · TASK-006：桌面壳改为 Electron 并完成运行时验证（安装包被网络阻塞）
 
 - 类型：implementation
@@ -322,7 +290,6 @@ schema_version: 1
 - 验证：后端 mvn -B verify：BUILD SUCCESS，38 个测试全绿（新增 3 个 CORS 用例：白名单来源在 /actuator/health 上获得 ACAO、未列入来源被拒 403、安全链处理预检且 401 响应也带 ACAO）。前端 pnpm -r typecheck 5 个包通过；pnpm -r test 8 个用例通过（含 2 个共享包边界检查）；pnpm -w build:desktop 前半段通过。桌面端运行验证：http://127.0.0.1:5310/ 返回 200，health 请求计数 1.0→2.0，electron 进程 4 个。未完成：Windows 安装包（网络）。未运行：apps/desktop 的 Playwright Electron 用例（环境不允许 spawn cmd.exe）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 12:12:04 +0800 · WORK-001 · 完成 TASK-007 与 TASK-008；WORK-001 因安装包受阻而未完成
 
 - 类型：implementation
@@ -332,7 +299,6 @@ schema_version: 1
 - 验证：后端 mvn -B verify（带 PAIDEIA_TEST_DB_PASSWORD）：BUILD SUCCESS，5 个模块 38 个测试全绿。前端 pnpm -r typecheck 6 个包通过；pnpm -r test 8 个用例通过；pnpm test:e2e 3 个用例通过；公开页构建产出含 699 字符正文的静态 HTML。运行时：启动 4.332 秒、健康 UP、无令牌 401、带令牌返回 learner-a 且带 traceId、CORS 白名单来源获 ACAO 而未列入来源 403、桌面端渲染服务 200 且后端请求计数 4.0→5.0。未完成：Windows 安装包。未运行：apps/desktop 的 Playwright Electron 用例（环境不允许 spawn cmd.exe）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 12:55:24 +0800 · WORK-001 · 补完 AC-007：安装包产出并验证打包应用；WORK-001 全部任务完成
 
 - 类型：verification
@@ -342,7 +308,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate：通过（仅剩两条非阻断警告：design.md 超过 20000 字节、核心 Markdown 7 个超过软阈值 6）。status：8 个任务全部 done，0 阻塞，阶段进入完成沉淀。安装包与打包应用运行证据见 testing/logs/desktop-packaged.txt。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 12:57:27 +0800 · WORK-001 · 完成沉淀：沉淀长期记忆与平台契约
 
 - 类型：maintenance
@@ -352,7 +317,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate：通过（仅剩两条非阻断警告）。status：8 个任务全部 done、0 阻塞。memory.md 的条目格式与 5 条编号已按规范自检（MEM-001..MEM-005，含标签、范围、依据、记录与复核日期）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 13:43:08 +0800 · WORK-001 · 登记业务验收 .agent/changes/WORK-001-架构选型与项目骨架/testing/report.md
 
 - 类型：decision
@@ -362,7 +326,6 @@ schema_version: 1
 - 验证：回读 frontmatter：accepted_by / accepted_at=2026-10-09 13:43:08 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 13:44:02 +0800 · WORK-001 · D-09 裁决为 AgentScope；WORK-001 登记业务验收并完成
 
 - 类型：decision
@@ -372,7 +335,6 @@ schema_version: 1
 - 验证：尖刺：mvn -B test BUILD SUCCESS，@SpringBootTest 上下文启动，名称含 agentscope 的 Bean 2 个，SpringBootVersion=4.1.1（工程为一次性产物未入库，步骤记在 WORK-002 需求文档）。WORK-001 验证报告状态 passed 且已登记 accepted_by=xiaou61。project-lifecycle.ps1 validate 待本轮记录后复核。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 13:53:30 +0800 · WORK-001 · 补记模型供应商 DeepSeek 与实测接入事实
 
 - 类型：decision
@@ -382,7 +344,6 @@ schema_version: 1
 - 验证：实测：GET https://api.deepseek.com/models 返回 deepseek-flash（context_window 1048576）；POST /chat/completions 普通调用在 max_tokens=100 时 content 为空而 reasoning_tokens=100，调到 3000 后正常返回；json_object 模式返回的 JSON 解析通过且 stem/options/answer_index/difficulty 四字段齐全。密钥泄漏核查：grep -rqI 全树无命中。文档核实：Maven Central 上不存在 io.agentscope:*deepseek* 构件。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 13:57:01 +0800 · WORK-001 · 把验证证据绑定到源码提交，完成状态可核对
 
 - 类型：maintenance
@@ -392,7 +353,6 @@ schema_version: 1
 - 验证：脚本断言通过：77b8290..HEAD 的变化全部在 .agent/ 内。project-lifecycle.ps1 status 的 code_sync 与 settlement_status 待复核。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 13:57:41 +0800 · WORK-001 · 更正上一条记录的验证描述；证据锚点已写入
 
 - 类型：maintenance
@@ -402,7 +362,6 @@ schema_version: 1
 - 验证：脚本输出：锚点 77b8290 之后的 3 个变化全部在 .agent/ 内，断言通过；report.md 已写入 verified_commit。project-lifecycle.ps1 status 的 code_sync 待复核是否由 unknown 变为 verified。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:04:11 +0800 · WORK-001 · 固化本机 git 代理配置（推送失败的真因）
 
 - 类型：maintenance
@@ -412,7 +371,6 @@ schema_version: 1
 - 验证：配置前：git config --get-regexp proxy 无输出，env 无代理变量；Clash 控制接口显示 mode=rule、mixed-port=7897、tun.enable=false。配置后：git push rc=0（Everything up-to-date）、git ls-remote rc=0 且返回 278fc3a，与本地 HEAD 一致。确认提交 278fc3a 已推送（1b99d34..278fc3a）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:23:12 +0800 · WORK-002 · 建立前端组件化与管理端拆分的需求工件
 
 - 类型：decision
@@ -422,7 +380,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 status` 返回 `next_work_id=WORK-002`、WORK-001 `phase=completed`。联网核实（2026-10-09）：shadcn CLI 包 `shadcn` 当前 4.21.4；其默认基座自 2026-07 起为 Base UI（**1.8.0 是当前版本号，不是"成为默认"那次变更的版本**），Radix 未被弃用；Tailwind CSS 4.3.3，v4 为 CSS-first（`@import "tailwindcss"` + `@theme`），`@source` 路径相对于写它的 CSS 文件且**必须写物理源码路径**（pnpm 把 workspace 包软链进 `node_modules`，会被 v4 的自动探测排除）；`backdrop-filter` 的 backdrop root 陷阱（父级 `opacity < 1` 或 `filter` 会让模糊失效）与 `prefers-reduced-transparency` 非 Baseline；CJK webfont（`@fontsource/noto-sans-sc`）整包约 74.5 MB。**未运行任何前端检查**——本工作项目前无源码改动。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:27:29 +0800 · WORK-002 · 签署 .agent/changes/WORK-002-前端组件化与管理端拆分/requirements.md
 
 - 类型：decision
@@ -432,7 +389,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 14:27:29 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:34:02 +0800 · WORK-002 · 起草方案、设计与任务计划
 
 - 类型：decision
@@ -442,7 +398,6 @@ schema_version: 1
 - 验证：本轮只写 Markdown 工件，**未运行任何构建或测试**。设计所依据的仓库事实为逐文件读取所得：`packages/platform-desktop/src/index.ts` 的同步镜像只由 `set` 写入、启动时不填充（缺陷确认）；`apps/desktop/electron/preload.cjs` 在 `sandbox: true` 下只能 `require('electron')`，故快照必须经启动参数传入；`apps/desktop/scripts/prepare-renderer.mjs` 只从 `../../app/dist` 拷贝（这是"管理端不进桌面产物"的依据）；`apps/public/scripts/prerender.mjs` 只注入 markup，样式由 Vite 正常产出。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:43:40 +0800 · WORK-002 · 组件展览页改为独立应用 apps/ui-kit
 
 - 类型：decision
@@ -452,7 +407,6 @@ schema_version: 1
 - 验证：本轮仍只改 Markdown 工件，**未运行任何构建或测试**；`project-lifecycle.ps1 validate` 存在一条已知的结构性 error（"方案尚未确认，但已经存在下游工件"），是"三件合并一次审阅"的中间态，已写入 proposal 的「门槛合并说明」，三件按序签署后消失。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:45:34 +0800 · WORK-002 · 签署 .agent/changes/WORK-002-前端组件化与管理端拆分/proposal.md
 
 - 类型：decision
@@ -462,7 +416,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 14:45:34 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:45:35 +0800 · WORK-002 · 签署 .agent/changes/WORK-002-前端组件化与管理端拆分/design.md
 
 - 类型：decision
@@ -472,7 +425,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 14:45:35 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 14:45:36 +0800 · WORK-002 · 签署 .agent/changes/WORK-002-前端组件化与管理端拆分/tasks.md
 
 - 类型：decision
@@ -482,7 +434,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 14:45:36 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 15:32:23 +0800 · WORK-002 · 实施 TASK-001..005：设计系统底座与组件展览页
 
 - 类型：implementation
@@ -494,7 +445,6 @@ schema_version: 1
   - **未运行**：`apps/app` 与 `apps/desktop` 的 e2e（需后端 jar 与 3307 隧道；桌面端另有本机 spawn 限制）；AC-004..AC-007 依赖尚未实施的 TASK-006..TASK-009。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 15:37:48 +0800 · WORK-002 · 展览页观感截图与交付前状态核对
 
 - 类型：verification
@@ -504,7 +454,6 @@ schema_version: 1
 - 验证：三张截图已生成（浅色 152 kB、深色 163 kB、深色对话框 72 kB）；对话框截图中遮罩与背景模糊符合预期。`project-lifecycle.ps1 validate` 报 WORK-002 两条 error——`验证报告状态为 partial，不能作为完成证据` 与 `结构化测试证据不完整`（四条检查未运行、无法计入通过）。二者是"工作项未完成"的正确表达，已写入报告说明，待 TASK-006..011 完成后改为 `passed` 即消失。WORK-001 归因表已随未提交路径重新登记（0 error）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 16:06:15 +0800 · WORK-002 · 视觉方向修订：令牌整组换成 Vercel Geist 实测值
 
 - 类型：decision
@@ -515,7 +464,6 @@ schema_version: 1
   - **检查拦住了我自己**：展览页说明文案里写了 `hsl(0 0% 9%)` 之类的字面量，被令牌单一来源检查判为违规 5 处。处理是改文案，不放宽检查。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 16:45:37 +0800 · WORK-002 · 完成 TASK-006..011，验证报告转 passed
 
 - 类型：implementation
@@ -526,7 +474,6 @@ schema_version: 1
   - **一次误判要记下**：查数据库连通时我先把 `curl telnet://` 当端口探测器（它不支持该协议，谎报 000），又把 JDBC URL 覆盖成 3306（那是另一个本地 MySQL），并用 `>` 截断了一个仍被旧进程持有的日志文件——于是读到的 "Access denied" 来自旧进程，据此错误地断言"隧道没起"。实际隧道一直是好的，用未经改动的本地配置后端直接 UP。教训：端口要用 `/dev/tcp` 或 netstat 探；重定向日志前先确认没有同文件的旧写者。服务器侧只做了只读查询（`mysql.user`、`show databases`），未改动任何配置。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 16:57:24 +0800 · WORK-002 · 远端推送核验
 
 - 类型：verification
@@ -536,7 +483,6 @@ schema_version: 1
 - 验证：远端 HEAD=976cd48ddeeaf407d503ac7c2b90fa1ad1e51aec
 - 本地提交：976cd48ddeeaf407d503ac7c2b90fa1ad1e51aec
 - 远端推送：已验证；远端 HEAD=976cd48ddeeaf407d503ac7c2b90fa1ad1e51aec
-
 ## 2026-10-09 17:12:36 +0800 · WORK-003 · 讨论账号与认证的技术细节并起草需求
 
 - 类型：decision
@@ -547,7 +493,6 @@ schema_version: 1
 - 待办（阻断实现）：**需要用户提供 SMTP 发信账号（地址/端口/账号/授权码）与发信人显示名**，否则需求 REQ-010 与验收 AC-002 的"真实发信"无法验证；凭据只写入被忽略的本地配置，不进仓库。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:17:41 +0800 · WORK-003 · 用户豁免 HTTPS 要求
 
 - 类型：decision
@@ -557,7 +502,6 @@ schema_version: 1
 - 验证：本轮只改 Markdown 工件，未运行构建或测试。`project-lifecycle.ps1 validate` 待复跑。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:24:49 +0800 · WORK-003 · 起草方案、设计与任务计划
 
 - 类型：decision
@@ -568,7 +512,6 @@ schema_version: 1
 - 待办：SMTP 凭据由用户决定**最后提供**（端口隔离使其不阻断实现与验证）；四件工件待用户一次审阅后按序签署。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:27:26 +0800 · WORK-003 · 签署 .agent/changes/WORK-003-账号与认证/requirements.md
 
 - 类型：decision
@@ -578,7 +521,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 17:27:26 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:27:28 +0800 · WORK-003 · 签署 .agent/changes/WORK-003-账号与认证/proposal.md
 
 - 类型：decision
@@ -588,7 +530,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 17:27:28 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:27:29 +0800 · WORK-003 · 签署 .agent/changes/WORK-003-账号与认证/design.md
 
 - 类型：decision
@@ -598,7 +539,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 17:27:29 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 17:27:30 +0800 · WORK-003 · 签署 .agent/changes/WORK-003-账号与认证/tasks.md
 
 - 类型：decision
@@ -608,7 +548,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-09 17:27:30 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 18:45:30 +0800 · WORK-003 · 实施 TASK-001..012：账号与认证落地
 
 - 类型：implementation
@@ -620,7 +559,6 @@ schema_version: 1
   - **未验证项（如实记录）**：**真实 SMTP 发信**未验证（用户决定最后提供发信凭据；当前未配 `paideia.mail.host` 时走日志实现，注册链路正确性由内存信箱集成测试证明）；桌面端认证未做端到端验证（本机限制）；后端仍无"按角色拒绝"的接口（本期没有管理员接口）；登出后 access 在剩余寿命内仍有效；无 HTTPS（用户豁免）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-09 19:32:08 +0800 · maintenance · 初始化 CodeGraph 代码索引
 
 - 类型：maintenance
@@ -630,7 +568,6 @@ schema_version: 1
 - 验证：`codegraph status` 报 165 files / 1,642 nodes / 3,137 edges（import 615、method 261、function 202、class 52、interface 33、route 15），DB 4.79 MB；`codegraph_explore`（MCP）对 `JwtAuthService` 返回带行号源码与 blast radius（5 处调用方 + 对应测试），确认 MCP 通路可用。`errors.log` 中 2 条 `ENOENT` 为工作区已删除的 `AuthController.java` 与 `frontend/apps/admin/src/session.ts` 残留于扫描清单，非索引缺陷。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 · WORK-003 · 真实 SMTP 发信实测通过，报告转 passed
 
 - 类型：verification
@@ -642,7 +579,6 @@ schema_version: 1
   - `project-lifecycle.ps1 validate` 结果：`valid: true`；WORK-001 / WORK-002 / WORK-003 均 0 error，WORK-003 为 `completed/complete`。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 · WORK-003 · 收件人确认收到验证码邮件，验证无未验证项
 
 - 类型：verification
@@ -652,7 +588,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate` 为 `valid: true`；WORK-001 / WORK-002 / WORK-003 均 0 error，WORK-003 为 `completed/complete`，12 个任务全部 `done`。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 09:21:22 +0800 · WORK-003 · 远端推送核验
 
 - 类型：verification
@@ -662,7 +597,6 @@ schema_version: 1
 - 验证：远端 HEAD=8ac11d966af8e987df040d7f8a08a176b6c44823
 - 本地提交：8ac11d966af8e987df040d7f8a08a176b6c44823
 - 远端推送：已验证；远端 HEAD=8ac11d966af8e987df040d7f8a08a176b6c44823
-
 ## 2026-10-10 · maintenance · 重做登录与注册页的观感，并修掉一个静默失效的扫描路径缺陷
 
 - 类型：implementation
@@ -673,7 +607,6 @@ schema_version: 1
   - **过程中修掉一个真缺陷，而且它是 WORK-003 带进来的**：`packages/auth` **不在 `globals.css` 的 `@source` 列表里**，因此只在认证包里出现的 Tailwind 类名从未被生成。发现方式是"主题切换按钮跑到了左上角"——探针查出容器的 `justify-content` 计算值是 `normal`（`justify-end` 类在 class 列表里但没有对应 CSS 规则）；而 `dialog.tsx` 里用的是 `sm:justify-end`，生成的是 `.sm\:justify-end`，**裸的 `.justify-end` 从未存在**。也就是说 WORK-003 交付的登录/注册页有一批类名（`justify-end`、`pb-20` 等）一直没生效，只是恰好多数类名在别处也用过，所以看起来"基本正常"。修法：补 `@source '../../../../packages/auth/src'`，并新增 `packages/ui/src/styles/source-coverage.test.ts` —— 枚举所有含 `.tsx` 的 workspace 源码目录，断言每一个都被某个 `@source` 覆盖；已用"临时删掉 auth 那行"复核过它会失败。`always.md` 的对应纪律也从"新增应用"扩写为"新增应用或任何含 `.tsx` 的包"。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 · maintenance · 修正 access 存活期默认值：2 小时 → 15 分钟
 
 - 类型：implementation
@@ -683,7 +616,6 @@ schema_version: 1
 - 验证：`cd backend && PAIDEIA_TEST_DB_PASSWORD=<本地读入> mvn -B verify` → **BUILD SUCCESS，63 条测试全过**（含改后的默认值断言）。修完后报告与 `always.md` 里写的"登出后 access 剩余寿命 ≤15 分钟"由错变对。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 10:24:30 +0800 · WORK-004 · 建立「知识库」需求草稿并登记讨论拆分
 
 - 类型：decision
@@ -694,7 +626,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate` → `valid: true`，四个工作项均 0 error（WORK-004 为 `requirements` 阶段、`draft` 状态）。**未运行构建与测试**——本轮只新增工件文档，无源码改动。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 11:10:10 +0800 · WORK-004 · 补齐提案、设计与任务，需求定稿待批
 
 - 类型：decision
@@ -706,7 +637,6 @@ schema_version: 1
 - 验证：**更正**——上一行原写作 `valid: true`，那是四件工件齐全**之前**的结果；补齐 `proposal/design/tasks` 后重跑，`validate` 因「需求尚未形成，但已经存在下游工件」报 `valid: false`。这是合并审阅期间的预期状态（需求仍是 `draft`），需求批准后消失。**未运行构建与测试**——本轮只新增工件文档，无源码改动。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 11:22:43 +0800 · WORK-004 · 按用户裁决把本地文件上传并入范围
 
 - 类型：decision
@@ -716,7 +646,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate` → `valid: false`，唯一错误为 WORK-004 的「需求尚未形成，但已经存在下游工件」（合并审阅期间的预期状态，需求批准后转绿）。**未运行构建与测试**——本轮只改工件文档，无源码改动。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 11:26:19 +0800 · WORK-004 · 用户暂不批准：可能更换整体架构，暂停在需求待批
 
 - 类型：decision
@@ -727,7 +656,6 @@ schema_version: 1
 - 验证：**未运行构建与测试**——本轮无源码改动，也未新增证据。`validate` 结果同上一条记录，唯一错误项不变。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 12:05:19 +0800 · maintenance · 全库代码审查（ocr 全文件扫描）并归档报告
 
 - 类型：maintenance
@@ -738,7 +666,6 @@ schema_version: 1
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
 - 遗留：报告文件与 `.agent/rules/always.md` 的本次改动尚未登记到任何工作项的 `workspace.md`——跨工作项的整体审查不对应单个 `WORK-*`，该归因项待用户裁决归入方式。
-
 ## 2026-10-10 13:01:00 +0800 · WORK-003 · 修复全库审查认定的必修缺陷（并发状态、邮件降级、桌面壳）
 
 - 类型：implementation
@@ -748,7 +675,6 @@ schema_version: 1
 - 验证：`mvn -B verify` 全绿，76 个测试、0 失败，含 `AccountAuthIntegrationTest` 13/13（其中有验证码尝试上限的端到端用例）、`AuthorizationIsolationTest` 9/9、`PaginationIntegrationTest` 4/4，以及新增的 4 条并发用例。集成测试受 `PAIDEIA_TEST_DB_PASSWORD` 门控，本轮从本地 profile 取值（未回显）。**反向验证**：把 `RateLimiter` 退回旧版后 `concurrentWindowLimitNeverExceedsLimit` 失败（expected 5），证明该用例确实会咬；另一条间隔用例在旧版该次未触发竞态，属弱守卫，如实记下。`node --check main.cjs` 通过。打包步骤 `repackage` 因本机 java 进程占用 `target/paideia-app-*.jar` 而失败，与改动无关，故验证时加 `-Dspring-boot.repackage.skip=true`。
 - 本地提交：本轮第二次提交（本工作项改动）
 - 远端推送：未执行
-
 ## 2026-10-10 13:02:00 +0800 · maintenance · 说明：本次提交夹带了其他会话已在工作区的改动
 
 - 类型：maintenance
@@ -758,7 +684,6 @@ schema_version: 1
 - 验证：`git show 3607d5f --stat` 显示 `updates.md +86`、`always.md 4 +-`，均大于本会话自身改动量。**未运行构建与测试**：本轮无源码改动。
 - 本地提交：3607d5f（归档审查报告）
 - 远端推送：未执行
-
 ## 2026-10-10 13:38:11 +0800 · WORK-004 · 修正两处失效的条款交叉引用
 
 - 类型：maintenance
@@ -768,7 +693,6 @@ schema_version: 1
 - 验证：人工比对三件的条款编号一致；**未运行构建与测试**（无源码改动）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:40:55 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/requirements.md
 
 - 类型：decision
@@ -778,7 +702,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 13:40:54 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:40:58 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/proposal.md
 
 - 类型：decision
@@ -788,7 +711,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 13:40:58 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:41:01 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/design.md
 
 - 类型：decision
@@ -798,7 +720,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 13:41:01 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:41:05 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/tasks.md
 
 - 类型：decision
@@ -808,7 +729,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 13:41:04 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:42:28 +0800 · WORK-004 · 已批准工件的一处本地订正：迁移编号不得写死 V2
 
 - 类型：maintenance
@@ -818,7 +738,6 @@ schema_version: 1
 - 验证：人工比对四件的迁移编号口径一致（需求 AC-001 只说"迁移执行通过"，不含编号，无需改）；`git status` 确认该 V2 文件仍属其他会话、未被本会话触碰。**未运行构建与测试**（无源码改动）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:47:14 +0800 · 项目 · 新建范围外能力登记（`.agent/notes/deferred-scope.md`）
 
 - 类型：decision
@@ -829,7 +748,6 @@ schema_version: 1
 - 验证：核查范围为对 `.agent/` 逐关键词检索（掌握度／学习路径／作答／判分／向量／富文本／版本历史／孤儿／多语言／SEO／全局关系图／音视频／对象存储），确认各项的现存记录位置与承接情况，再据此填表。**未运行构建与测试**（无源码改动）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:55:00 +0800 · WORK-003 · 修复审查的"该修"四批（前端会话链、后端错误处理、账号安全剩余、前端构建）
 
 - 类型：implementation
@@ -845,7 +763,6 @@ schema_version: 1
 - 协作备注：本轮的 `V2__pin_account_table_collation.sql` 曾与 WORK-004 计划中的建表迁移同号；该工作项已于 13:42 把自身工件里的编号改为"下一个可用编号"避让（见该条记录），因此本文件保持 V2、不需改名。两条迁移的编号在提交后由后者取其时的下一个空号即可。
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-10 13:54:57 +0800 · WORK-004 · 批准后追加六项范围，四件退回 draft
 
 - 类型：decision
@@ -856,7 +773,6 @@ schema_version: 1
 - 协作备注：期间另有会话提交两笔（`1fd37c5`、`f7b1e7a`），HEAD 已移至 `f7b1e7a`。归因错误此前报出、现已消失——**原因不是被修好，而是校验器在需求未批准时会提前返回、走不到归因检查**。本项 `workspace.md` 的 `base_commit` 仍是 `8ac11d9`，**重新批准后必须重锚**，否则会立刻报 stale。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:05:00 +0800 · 项目 · 定下审查修复口径（只修严重项）；更正两条此前的错误结论
 
 - 类型：decision
@@ -866,7 +782,6 @@ schema_version: 1
 - 验证：**git 代理结论反转**——`curl -x http://127.0.0.1:7897 https://github.com/` 返回 `http=000`（0.19 秒即失败），同一条命令**不加** `-x` 直连返回 `http=200`；设好按域代理后 `git push` 仍报 `OpenSSL SSL_connect: SSL_ERROR_SYSCALL`（real-exit=128），撤掉代理后推送成功（`8ac11d9..f7b1e7a master -> master`）。**更正此前一处结论**：本会话早前报的"重锚四张表后归因错误全清"不可靠——按上一条记录（13:54:57）的发现，校验器在需求未批准时会提前返回、走不到归因检查，所以"没有报错"未必等于"归因通过"，需重新批准后复验。**另记一条自身失误**：先前用 `git push … | tail` 读到的 `exit=0` 是 `tail` 的退出码而非 git 的，判退出码不能走管道。**未运行构建与测试**（无源码改动）。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
-
 ## 2026-10-10 14:09:05 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/requirements.md
 
 - 类型：decision
@@ -876,7 +791,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 14:09:05 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:09:06 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/proposal.md
 
 - 类型：decision
@@ -886,7 +800,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 14:09:06 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:09:07 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/design.md
 
 - 类型：decision
@@ -896,7 +809,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 14:09:07 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:09:08 +0800 · WORK-004 · 签署 .agent/changes/WORK-004-知识库/tasks.md
 
 - 类型：decision
@@ -906,7 +818,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-10 14:09:08 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:40:20 +0800 · WORK-004 · TASK-002—005：读取侧、检索、关系与管理端写端点
 
 - 类型：implementation
@@ -928,7 +839,6 @@ schema_version: 1
 - 协作备注：四张归因表已补上本轮 11 条新路径（基准仍是 `b26b40e`）。**仍未提交**，等用户授权。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行 · WORK-004 · TASK-001：知识库模块骨架与五张表迁移
-
 ## 2026-10-10 14:17:30 +0800 · WORK-004 · TASK-001：知识库模块骨架与五张表迁移
 
 - 类型：implementation
@@ -940,7 +850,6 @@ schema_version: 1
 - 协作备注：同一轮按用户明确要求提交两笔——`9c1c401`（WORK-003 在途的登录/注册页观感、`@source` 覆盖检查、access 默认值订正）与 `b26b40e`（WORK-004 工件与范围登记），提交后工作区清空。提交前跑过 `pnpm -r typecheck`（9 个包全过）与后端编译；**未重跑单测与 e2e**，`updates.md` 里记的是那些改动当时的结果。四张归因表已随本轮实现重锚到 `b26b40e` 并补上 5 条新路径。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:41:26 +0800 · 更正 · 上两条 WORK-004 记录的顺序颠倒
 
 - 类型：maintenance
@@ -950,7 +859,6 @@ schema_version: 1
 - 验证：`grep -n '^## ' .agent/history/updates.md | tail` 确认两条各有标题；`validate` → `valid: true`，四个工作项 0 error。**未运行构建与测试**（无源码改动）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:47:17 +0800 · 工作流 · 按用户要求停用「工作区归因表（workspace.md）」机制
 
 - 类型：decision
@@ -963,7 +871,6 @@ schema_version: 1
 - **注意（重要）**：技能是**全局**的，本次改动会影响所有使用它的项目；且技能升级时可能被覆盖。若日后要恢复该机制，实现见本仓库 Git 历史之外无副本——这是停用它的已知代价。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 14:52:22 +0800 · WORK-004 · TASK-006：管理端路由、知识库管理区与草稿预览
 
 - 类型：implementation
@@ -974,7 +881,6 @@ schema_version: 1
 - 未收口：TASK-007（本地文件存储与上传）、TASK-008（学习者自评）、TASK-009（e2e 与全量回归，含四项反向验证）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 16:15:52 +0800 · WORK-004 · TASK-007—009：附件、自评、e2e 与全量回归
 
 - 类型：implementation
@@ -989,7 +895,6 @@ schema_version: 1
 - 协作备注：为跑 e2e **按用户明确授权强行终止了占用 8080 的另一个会话的后端进程**（PID 62940，java.exe）；随后所有 e2e 共用一个自己启动的后端并在结束时收掉。证据日志写入 `testing/logs/`，但该目录被 `.gitignore` 忽略（与 WORK-001/002/003 一致），**证据只在本机**。
 - 本地提交：TASK-007 为 `f432391`、TASK-008 为 `f31657b`、测试节奏为 `f0edc79`；本轮新增的 `V952` 与两个 e2e spec **待提交**
 - 远端推送：未执行
-
 ## 2026-10-10 16:24:07 +0800 · 更正 · 上一条里"桌面安装包未构建、报告 partial"已不成立
 
 - 类型：verification
@@ -999,7 +904,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate` → **`valid: true`**；WORK-004 为 `phase: completed`、`state: complete`，0 error（此前两条 error 的唯一根因就是报告为 `partial`，随报告转 `passed` 一并消失）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 17:16:14 +0800 · 部署 · WORK-004 首次部署到线上，供用户验收
 
 - 类型：implementation
@@ -1020,7 +924,6 @@ schema_version: 1
 - 验证（**从本机对外网实测**，不是服务器上自测）：`GET /actuator/health` → `{"status":"UP"}`；`GET /` → **200 `text/html`**；`GET /admin/index.html` → **200**；`GET /api/v1/knowledge/categories`（无令牌）→ **401**；管理员登录 → `code = 0` 且拿到 access 令牌；带该令牌 `GET /api/v1/knowledge/admin/entries` → **200**、`GET /api/v1/knowledge/entries` → **200**。改动后全量后端 `mvn -B verify` → 退出码 0、**102 秒**（安全规则改动未破坏任何既有用例）。
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-10 17:28:35 +0800 · 远端推送核验
 
 - 类型：verification
@@ -1030,7 +933,6 @@ schema_version: 1
 - 验证：`git push origin master` 退出码 0，输出 `5181245..acd47c2  master -> master`；`git ls-remote origin master` 与 `git rev-parse HEAD` 同为 `acd47c2cf4d3547f6527e30c6f6295c7431da8a9`。部署复验（公网）：健康检查 `UP`、`GET /` 200、`/admin/index.html` 200、管理员登录 `code = 0`、匿名读数据接口 401。
 - 本地提交：8ac11d9 之前的提交已在远端；本次推送 `acd47c2`
 - 远端推送：已验证；远端 HEAD=`acd47c2cf4d3547f6527e30c6f6295c7431da8a9`
-
 ## 2026-10-10 17:45:11 +0800 · WORK-008 · 登记「对象存储接入」工作项（暂不实现）
 
 - 类型：decision
@@ -1043,7 +945,6 @@ schema_version: 1
 - 验证：未运行（仅新增/修改文档工件，无源码与行为变化）。
 - 本地提交：592a54c
 - 远端推送：未执行
-
 ## 2026-10-10 17:52:12 +0800 · 管理端改为后台式布局（用户验收项）
 
 - 类型：change
@@ -1067,7 +968,6 @@ schema_version: 1
 - 发现（**跨模块缺陷，待用户裁决，本轮未修**）：**所有时间戳都比真实时刻快 8 小时**。证据链：线上 JDBC URL 写了 `connectionTimeZone=UTC`，但**没有** `forceConnectionTimeZoneToSession`（`grep -c` = 0）；服务器 MySQL 会话时区是 `SYSTEM`——实测 `now(3) = 2026-10-10 17:48:51`、`utc_timestamp(3) = 2026-10-10 09:48:51`。于是 5 张表的 `DEFAULT CURRENT_TIMESTAMP(3)` 写进去的是**本地钟点**，驱动又按 UTC 口径把它转成 `Instant`，接口就返回 `2026-10-10T17:44:11.546Z`（那一刻真实是 09:44Z）。**这违反「时间存 UTC」那条规则**，不只影响管理端刚加的「更新时间」列。两条修法：①（推荐）各连接串补 `forceConnectionTimeZoneToSession=true`，一处配置让会话与驱动口径一致；② DDL 默认值改用 `UTC_TIMESTAMP(3)`，要改 5 张表连同 `ON UPDATE`。两种做法下**已存在的行**仍是 +8，需要一次性回拨或接受（现存数据基本都是演示与测试数据）。修法牵动所有表的时间语义与部署配置，按"重大数据/部署变化回到受影响工件"的规则交由用户裁决，**本轮不动**。
 - 本地提交：e5a9299
 - 远端推送：未执行（需用户明确授权）
-
 ## 2026-10-10 18:08:33 +0800 · 修复时间戳快 8 小时（用户裁决走路线 1）
 
 - 类型：change
@@ -1087,7 +987,6 @@ schema_version: 1
 - 规则更新：`.agent/rules/always.md` 的编码约定里，给「时间统一存 UTC」补上了机制说明（建表默认值也算数据库取时间、两个参数缺一不可、服务器无时区表也不必装）。
 - 本地提交：00abf58
 - 远端推送：已执行，见下一条核验
-
 ## 2026-10-10 18:12:40 +0800 · 远端推送核验
 
 - 类型：verification
@@ -1097,7 +996,6 @@ schema_version: 1
 - 验证：`git push origin master` 退出码 **0**，输出 `acd47c2..00abf58  master -> master`；`git ls-remote origin master` 与 `git rev-parse HEAD` 同为 `00abf58b17c29654f39e46a74adb34744abe8604`。部署复验（公网）：`/actuator/health` = `UP`、`GET /admin/index.html` = 200、匿名管理接口 = 401。
 - 本地提交：00abf58
 - 远端推送：已验证；远端 HEAD=`00abf58b17c29654f39e46a74adb34744abe8604`
-
 ## 2026-10-12 09:30:00 +0800 · 知识库拆成两个页面 + 父菜单子菜单 + e2e 可直打线上
 
 - 类型：change
@@ -1119,7 +1017,6 @@ schema_version: 1
 - 踩坑（值得记）：`E2E_ADMIN_PATH=/admin/index.html` **必须配 `MSYS_NO_PATHCONV=1`**——Git Bash 会把这个值改写成 Windows 路径，7 条用例全红，而报错是"元素找不到"，极易误判成界面坏了（第一次就是这样误判的）。
 - 本地提交：ff5539a（含拆页 cac957b、父菜单与 e2e 接线 13ee016、完成沉淀核对 ff5539a）
 - 远端推送：已执行并核验；远端 HEAD=`ff5539a`
-
 ## 2026-10-12 09:52:00 +0800 · WORK-005 需求讨论开始，登记第一条裁决
 
 - 类型：decision
@@ -1132,7 +1029,6 @@ schema_version: 1
 - 验证：未运行（仅文档登记，无源码与行为变化）
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-12 09:43:33 +0800 · WORK-005 · 签署 .agent/changes/WORK-005-AI精简与悬浮助手/requirements.md
 
 - 类型：decision
@@ -1142,7 +1038,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:43:33 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 09:48:30 +0800 · WORK-005 · 签署 .agent/changes/WORK-005-AI精简与悬浮助手/proposal.md
 
 - 类型：decision
@@ -1152,7 +1047,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:48:30 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 09:50:30 +0800 · WORK-005 · 签署 .agent/changes/WORK-005-AI精简与悬浮助手/design.md
 
 - 类型：decision
@@ -1162,7 +1056,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:50:30 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 09:51:05 +0800 · WORK-005 · 签署 .agent/changes/WORK-005-AI精简与悬浮助手/tasks.md
 
 - 类型：decision
@@ -1172,7 +1065,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 09:51:05 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 10:30:00 +0800 · WORK-005 实施：TASK-001—005（后端主体）
 
 - 类型：change
@@ -1190,7 +1082,6 @@ schema_version: 1
 - 验证：`mvn -B -o compile -pl paideia-ai -am` = BUILD SUCCESS（含 AgentScope 离线解析）；新增三条纯函数单测类 **26 条全过、0.7 秒**（`UpstreamGuardTest` 16 条覆盖回环/私网/元数据/ULA/IPv4 映射/非 https/含凭据、`SummarySchemaValidatorTest` 5 条含"空内容必须判失败"、`CredentialCipherTest` 5 条含篡改检测与主密钥缺失即拒绝启动）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 10:45:00 +0800 · WORK-005 实施完成并部署上线
 
 - 类型：change
@@ -1209,7 +1100,6 @@ schema_version: 1
   - 线上复验：`/actuator/health` = `UP`；匿名 `GET /api/v1/ai/credentials` = **401**；带令牌返回 `{configured:false,...}`（**响应里没有 Key 字段**）；`paideia` 库里已有 `ai_model_credentials`、`ai_entry_summaries` 两张表；学习者端产物里能搜到「AI 精简」（助手壳确实上线了）。
 - 本地提交：见下一笔
 - 远端推送：未执行（需用户明确授权）
-
 ## 2026-10-12 11:05:00 +0800 · 前端拆成两个地址：学习者端 `/`、管理端 `/admin/`
 
 - 类型：change
@@ -1221,7 +1111,6 @@ schema_version: 1
 - 验证：部署 `release.ps1` 完成（健康检查通过）。公网实测：`GET /` = **200**；`GET /admin/` = **200** 且页面标题是 `Paideia · 管理端`（确认拿到的是管理端而不是学习者端）；`GET /admin` = **200**；`GET /admin/index.html` = **200**（旧链接不破坏）。**用新入口跑线上管理端 e2e：7 passed / 14.6 秒**（`E2E_ADMIN_PATH=/admin/`），证明不是"能打开但用不了"。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 11:35:00 +0800 · 线上管理员口令简化（仅数据变更，无代码改动）
 
 - 类型：change
@@ -1237,7 +1126,6 @@ schema_version: 1
   - **线上端到端复验**：`POST /api/v1/auth/login` 两个账号用新口令均 → **HTTP 200 / code 0**（`admin` 返回 role=admin 且签发 accessToken，`e2e-learner` 返回 role=learner）；旧口令 → **HTTP 401**。
 - 本地提交：本条记录随本文件后续那次提交一起进 Git
 - 远端推送：未执行
-
 ## 2026-10-12 13:55:39 +0800 · 两处「需要处理」对账：WORK-005 结构化证据、WORK-001 代码核对
 
 - 类型：change
@@ -1259,7 +1147,6 @@ schema_version: 1
   - 桌面运行时复验：渲染服务 `GET 127.0.0.1:5310/` = 200；白名单来源获 ACAO；未列入来源 403；`/actuator/health` = UP（`testing/logs/runtime-and-desktop.txt`）。复验后已结束 `Paideia.exe` 与临时后端进程。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 14:05:00 +0800 · 修：学习者端没有通往内容的入口（页头导航）
 
 - 类型：fix
@@ -1278,7 +1165,6 @@ schema_version: 1
   - **反向验证咬住**：把「知识库」导航临时指向 `/my-assessments` → 新用例在 URL 断言处失败（`unexpected value "http://127.0.0.1:5173/#/my-assessments"`）；已还原并复跑 **14 passed**。这条证明用例验的是**去处**，不只是元素存在。
 - 本地提交：本笔
 - 远端推送与部署：**未执行**（按项目规则需单独授权）；线上仍是修前的版本。
-
 ## 2026-10-12 14:20:00 +0800 · 安全处置：清掉「未推送」提交里的口令明文（重写本地历史）
 
 - 类型：fix（安全）
@@ -1291,7 +1177,6 @@ schema_version: 1
 - 教训（第二次同类）：**同一目录同时有两个写入会话时，工作区里的未提交内容会被别人的 `git add` 卷进提交**——这次卷进去的是凭据。项目规则本来就要求同一目录同一时刻只允许一个写入对话；这条规则的实际价值在这次事件里体现得很直白。
 - 本地提交：本笔
 - 远端推送：未执行
-
 ## 2026-10-12 15:01:57 +0800 · WORK-006 需求讨论开始，登记前 10 条裁决
 
 - 类型：decision
@@ -1316,7 +1201,6 @@ schema_version: 1
 - 验证：未运行（仅文档登记，无源码与行为变化）
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 15:10:36 +0800 · WORK-006 需求讨论续：第 11—14 条裁决，决策树关闭
 
 - 类型：decision
@@ -1334,7 +1218,6 @@ schema_version: 1
 - 验证：未运行（仅文档登记，无源码与行为变化）
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 15:18:42 +0800 · WORK-006 建项：四件工件一次起草（需求／方案／设计／任务）
 
 - 类型：change
@@ -1355,7 +1238,6 @@ schema_version: 1
   - `project_status.py`：WORK-006 = 需求讨论｜草稿，4 个核心文件 57872 bytes，任务待办 16／进行中 0／完成 0／阻塞 0；依赖 WORK-004、WORK-005 均已完成（无硬阻塞）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 15:19:51 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/requirements.md
 
 - 类型：decision
@@ -1365,7 +1247,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:51 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 15:19:52 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/proposal.md
 
 - 类型：decision
@@ -1375,7 +1256,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:52 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 15:19:53 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/design.md
 
 - 类型：decision
@@ -1385,7 +1265,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:53 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 15:19:54 +0800 · WORK-006 · 签署 .agent/changes/WORK-006-Agent运行时记忆与个人笔记/tasks.md
 
 - 类型：decision
@@ -1395,7 +1274,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-12 15:19:54 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-12 15:31:12 +0800 · WORK-006 TASK-001 完成：会话与消息持久化
 
 - 类型：change
@@ -1417,7 +1295,6 @@ schema_version: 1
   - **SQL 层覆盖的本地调整**：TASK-001 的 DB 级断言挪到 TASK-002 的集成用例（完整上下文跑真实 `V5` 迁移）。在 `paideia-ai` 内另起 DB 装配会重复它，且 `paideia-ai` 在反应堆里早于 `paideia-app`，那时 `V5` 还没建。已写进 `tasks.md` TASK-001 的验证条目。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 15:47:43 +0800 · WORK-006 TASK-002 完成：对话端口与 SSE 端点
 
 - 类型：change
@@ -1440,7 +1317,6 @@ schema_version: 1
   - 三条过程教训（都是"红在哪一行"而不是"是否非 0"）：① 容器里有**两个 `TaskExecutor`**（应用执行器与调度器），注入歧义直接让上下文起不来，用 `@Qualifier("applicationTaskExecutor")` 指定；② 断言"整段响应体不含某个数字"会撞上随机 `traceId`，改为断言 `$.data`；③ **MySQL 的 `JSON` 列会规范化存储**（键重排、冒号后加空格），紧凑串读回来已变形，必须按 JSON 取值断言。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-12 16:17:19 +0800 · WORK-006 TASK-003 完成：助手对话前端（并修掉两个真缺陷）
 
 - 类型：change
@@ -1462,7 +1338,6 @@ schema_version: 1
   2. e2e 的 `signIn` 此前**点击后即返回**，没等登录完成；后面紧跟的"刷新页面→换访问令牌"会和"还没登录"的窗口抢时间，表现为随机 401。已改为等登录表单消失。
 - 本地提交：见下一笔
 - 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时（首页 200 但 `/info/refs` 000）。已探测：直连首页 200、代理 000、常见代理端口全 000。需要用户启动代理客户端后再推。
-
 ## 2026-10-12 16:50:45 +0800 · WORK-006 TASK-004 完成：记忆两路存储与召回
 
 - 类型：change
@@ -1484,7 +1359,6 @@ schema_version: 1
   - **一条过程教训**：`-Dtest='A+B'` 里的 `+` 不是 surefire 的分隔符（要用逗号），结果是 **BUILD SUCCESS 但一条测试都没跑**——又一次"绿了却没验"。
 - 本地提交：见下一笔
 - 远端推送：未执行（同上：等代理）
-
 ## 2026-10-12 16:57:26 +0800 · WORK-006 TASK-005 完成：记忆的查看与逐条删除
 
 - 类型：change
@@ -1503,7 +1377,6 @@ schema_version: 1
   - 前端 `pnpm -r typecheck` 全过、assistant 单测 10 条通过。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 17:09:04 +0800 · WORK-006 TASK-006 完成：只读工具与越权防护
 
 - 类型：change
@@ -1525,7 +1398,6 @@ schema_version: 1
   - 一处小坑：自评标记的合法取值是 `understood`／`unsure`（我按 `not_yet` 写，测试 400）。读一眼控制器就不该猜。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 18:52:44 +0800 · WORK-006 TASK-007 完成：新建 paideia-note 模块与笔记 CRUD
 
 - 类型：change
@@ -1545,7 +1417,6 @@ schema_version: 1
   - 一处小坑：断言"列表不含某字段"要用"响应体里没有这个键"，而不是取值为 null——后者会 PathNotFound，与"字段被漏掉"混在一起无法分辨。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 18:59:27 +0800 · WORK-006 TASK-008 完成：笔记前端页与 AI 内容落进笔记
 
 - 类型：change
@@ -1566,7 +1437,6 @@ schema_version: 1
   - 两条小坑：① 往 TS 里写 `split('\n')` 时用 python 替换把 `\n` 展开成了真换行，截断了字符串字面量——**插入含转义的代码不要走 python 字符串**；② 断言"删除后列表里不含它"不能用 `not.toContainText(容器)`：删掉唯一一条后容器整个不渲染，会报 element not found。改为断"那段文字在页面上计数为 0"。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:07:36 +0800 · WORK-006 TASK-009 完成：写本人私有数据（确认端点）
 
 - 类型：change
@@ -1587,7 +1457,6 @@ schema_version: 1
   - 一处自作自受：我用 python 字符串替换去改 TSX，把「记住这条」按钮的处理体替换成了「存进笔记」的，还多出一个重复按钮。**含 JSX/转义的改动别走 python 替换**，用 Edit 工具。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:16:42 +0800 · WORK-006 TASK-010 完成：助手写笔记 + 「工具 × 结构化输出」的解法
 
 - 类型：change
@@ -1609,7 +1478,6 @@ schema_version: 1
   - **仍然存在的缺口**：工具循环与 draft 的端到端（真实上游要工具→回喂→出草稿）**没有自动化覆盖**，本环境无真实上游。工具**自身**行为与事件**解析**都有用例，缺的是中间那一段。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:22:28 +0800 · WORK-006 TASK-011 完成：分享的创建、撤回与免鉴权读取
 
 - 类型：change
@@ -1636,7 +1504,6 @@ schema_version: 1
   **后端全量 `mvn -B -o verify` → BUILD SUCCESS、0 失败 0 跳过**（2:54；app 104 条）。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:28:35 +0800 · WORK-006 TASK-012 完成：分享前端（公开页 + 分享入口）
 
 - 类型：change
@@ -1657,7 +1524,6 @@ schema_version: 1
   - 一条过程教训：python 的三引号字符串会被 Java 的文本块 `"""` 提前终止——**在 Java 文件里做文本替换不要走 python heredoc**，用 Edit 工具。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:36:35 +0800 · WORK-006 TASK-013 完成：举报与管理员下架
 
 - 类型：change
@@ -1681,7 +1547,6 @@ schema_version: 1
   - 一处小坑：管理端**带子菜单**的项才有 `admin-menu-*` 的 testid，叶子项没有——按可访问名点更稳。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:43:44 +0800 · WORK-006 TASK-014 完成：注销级联硬删
 
 - 类型：change
@@ -1704,7 +1569,6 @@ schema_version: 1
   - `pnpm -r typecheck` 全过。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:47:10 +0800 · WORK-006 TASK-015 完成：用量返还与限流收口
 
 - 类型：change
@@ -1724,7 +1588,6 @@ schema_version: 1
   - `mvn -B -o verify` 见 TASK-016 的统一回归。
 - 本地提交：见下一笔
 - 远端推送：未执行（等代理）
-
 ## 2026-10-12 19:57:27 +0800 · WORK-006 TASK-016 完成：回归与整端验收（十六片收口）
 
 - 类型：change
@@ -1742,7 +1605,6 @@ schema_version: 1
 - 依据：WORK-006 `tasks.md` TASK-016、`design.md` 的测试策略；用户 2026-10-12「一直继续 task 到 16 不要停」
 - 本地提交：见下一笔
 - 远端推送：**未执行**——本机代理（Clash Verge mixed-port 7897）没运行，直连的 git smart-HTTP 端点超时。**这一项需要用户启动代理客户端后才能完成。**
-
 ## 2026-10-12 20:07:30 +0800 · 远端推送核验：16 笔提交已上线
 
 - 类型：change
@@ -1757,7 +1619,6 @@ schema_version: 1
   - 工作区干净。
 - 本地提交：见下一笔（本条 + 提交本身都是 `.agent/` 变动，所以 WORK-006 报告的 `verified_commit` 仍然成立）
 - 远端推送：**已执行并核验**（远端 HEAD = `78f39f9`）
-
 ## 2026-10-13 08:05:00 +0800 · 补 WORK-006 的验收级缺口：举报在界面上没有入口
 
 - 类型：change
@@ -1770,7 +1631,6 @@ schema_version: 1
 - 验证：`pnpm -r typecheck` 全过；学习者端 e2e **19 passed**（新增断言：匿名打开分享页时举报入口显示为登录引导）。
 - 本地提交：`438b0eb`（本条追加随下一笔）
 - 远端推送：见下一笔（推送 + 发版）
-
 ## 2026-10-13 08:40:00 +0800 · 项目 · 二次审查（`8ac11d9..b4ef038`）并按"只修严重项"修完 9 条 high
 
 - 类型：implementation
@@ -1789,7 +1649,6 @@ schema_version: 1
 - 环境：本轮用的是一把**新 key**——仓库外 ocr 配置里那把旧 key 已余额不足（`402 INSUFFICIENT_BALANCE`），新 key 已写入该配置并验证通过（连通 + 工具调用往返）。审查消耗约 3,658 万 tokens、44 分钟。
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-13 09:35:06  · 项目 · 补修上一轮遗留的 6 条 high（安全与健壮性收口）
 
 - 类型：implementation
@@ -1806,7 +1665,6 @@ schema_version: 1
 - 验证：后端 `mvn -B verify -Dspring-boot.repackage.skip=true` **BUILD SUCCESS**，116 个测试 0 失败（4 skipped）；前端 `pnpm -r typecheck` 11 个包 0 错、`pnpm -r test` 全过（77 条）。Flyway 那条用 `mvn -pl paideia-app dependency:tree -Dincludes=org.flywaydb` 复核解析结果仍是 `13.10.0`（不是 BOM 的 12.4.0），确认属性覆盖生效且没有降级。**未跑 e2e**。
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-13 09:45:00 +0800 · 首次真实上游验证（用户给了 DeepSeek Key）
 
 - 类型：change
@@ -1830,7 +1688,6 @@ schema_version: 1
 - 验证：真实上游一轮 = 用量 1171 tokens、thinking 135、content 57、done 1、error 0；第二轮 draft 1、笔记条数不变；第三轮 thinking 150、content 35、done 1。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-13 10:05:00 +0800 · 线上补齐那笔提示词修复（并从干净 worktree 发版）
 
 - 类型：change
@@ -1844,7 +1701,6 @@ schema_version: 1
 - 依据：用户 2026-10-13「这样，当前线上是最新的版本吗」（问时线上确实缺这一笔）
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-13 10:35:00 +0800 · 修用户报的两个 UI 问题（没首页 / 点导航整页变样）
 
 - 类型：change
@@ -1862,7 +1718,6 @@ schema_version: 1
 - 一条过程坑：e2e 的 webServer 起不来（"没有主清单属性"）——`target/` 里是个 **20KB 瘦 jar**，早先那次失败的 `mvn install -Dmaven.test.skip=true` 留下的。重新 `package` 即好（64MB）。**`install` 失败也会污染 target**，再跑 e2e 前先确认 jar 大小。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-14 17:20:00 +0800 · 换设计方向：加品牌色与语义色（用户说 UI 像 demo）
 
 - 类型：change
@@ -1884,7 +1739,6 @@ schema_version: 1
 - **还没做（下一步，属我给的 B 方案）**：条目卡片仍缺**摘要**（列表 API 不返回正文，要后端补一个截断字段）、条目页缺阅读排版（prose 字号行高/目录）、以及各页的 hero/空状态。用户看完成效再定要不要继续。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-14 18:05:00 +0800 · 第二轮 UI 反馈：分类做成二级页面、按钮变大、加动效、收空白
 
 - 类型：change
@@ -1903,7 +1757,6 @@ schema_version: 1
 - 仍未做（下一轮，按用户可能还有意见）：条目卡片**摘要**（列表 API 不返回正文，要后端补字段）、条目页阅读排版（prose/目录侧栏）、首页 hero、管理端同样过一遍观感。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 09:40:00 +0800 · UI 第三轮：条目摘要、阅读排版、首页 hero、管理端收口
 
 - 类型：change
@@ -1921,7 +1774,6 @@ schema_version: 1
   - 学习者端 e2e 见下一笔（打线上实例）。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 10:40:00 +0800 · 线上 e2e 验证这轮 UI 改动（15/20，其余 5 条是种子数据差异）
 
 - 类型：change
@@ -1935,7 +1787,6 @@ schema_version: 1
 - 未跑：后端集成测试（本机到服务器 MySQL 的 3307 隧道断了，隧道不在仓库里、由用户本机起）。列表那条 SQL 由线上 e2e 间接覆盖（列表页真的走了它）。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 11:20:00 +0800 · learner e2e 改成断言规则而非本地种子数据（线上 6 通过 / 2 跳过）
 
 - 类型：change
@@ -1955,7 +1806,6 @@ schema_version: 1
 - 顺手修正：我在上一笔的更新历史里写了**服务器地址**，违反公开仓库的保密规则（禁止把服务器地址写进任何被跟踪文件）。已改写该行并 `--amend` 掉那笔提交；`git log -S` 确认**已推出去的 origin/master 里从来没有过这个地址**。
 - 本地提交：`d8ba68a`（本轮共 4 笔：`d5c9853` 令牌层 / `5988519` 二级结构+动效 / `bb20e3d` 摘要+排版+hero+管理端 / `01d990e` e2e 打线上 / `f7c02bb` signIn 竞态 / `d8ba68a` 本例）
 - 远端推送：已推 `8791dfd..d8ba68a`。**HTTPS 那条当时不通**（直连 `http_code=000`、本机没有任何代理在监听：7890/7897/10809/1080/8080/8118 逐个探过都是 000），改走 **SSH**：`git push git@github.com:xiaou61/Paideia.git master`（`ssh -T git@github.com` 与 443 端口的 `ssh.github.com` 都通）。**origin 仍是 HTTPS，没有改它**——哪种传输通是会变的，别把方向固化进配置。
-
 ## 2026-10-15 13:10:00 +0800 · 隧道自起 + 后端全量集成测试真跑起来了 + e2e 两处竞态修掉
 
 - 类型：change
@@ -1974,7 +1824,6 @@ schema_version: 1
   - 本机 3307 隧道这条是我起的、现在仍在运行（用户自己那条原本是断的）；他若再起一条会撞端口。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 11:10:00 +0800 · 首页去掉「运行状态」+ 照着同类产品的界面重做（用户："你的设计能力不太可以，那我们就抄袭别人的"）
 
 - 类型：change
@@ -1995,7 +1844,6 @@ schema_version: 1
 - **踩坑（值得记）**：`playwright-cli` 用的是**跨会话共享的浏览器实例**，我量 DOM 时那个标签已经被**另一个会话**开到另一台服务器（`36.140.150.167:8031` 的管理端登录页）上了，于是我对着别人的页面得出"部署里没有新增的那一节"，差点去重发一遍。**用 `-s=<名字>` 开独立会话，动手量之前先确认标签的 URL。**
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 12:40:00 +0800 · 我的笔记按同类产品重做（用户："这里还是太简单了……站在用户的视角去想"）
 
 - 类型：change
@@ -2018,7 +1866,6 @@ schema_version: 1
 - 遗留：本地 `paideia_test` 里留了十多条我这几轮调试造的笔记（都叫「未命名笔记」/「e2e 拦截…」），清不清都行；线上 `e2e-learner` 账号留了一条演示笔记（幂等与重试）。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 14:10:00 +0800 · 新建笔记改独立页 + 管理端美化
 
 - 类型：change
@@ -2036,7 +1883,6 @@ schema_version: 1
 - **又一个验证陷阱（值得记）**：部署后我用 `goto` 打开线上页面量 DOM，量到的是**旧 bundle**——浏览器把入口 HTML 缓存住了，于是"我改的 `flex-col` 没生效"这个结论是假的（实际早就生效了）。**量之前先带一个缓存穿透参数**（`?v=<时间戳>`）或强制 reload，别拿缓存页下结论。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 14:15:00 +0800 · 自托管 Firecrawl 复检：公网入口整段 502（已修），extract 仍坏
 
 - 类型：ops/fix（服务器侧，未改仓库任何文件）
@@ -2051,7 +1897,6 @@ schema_version: 1
 - 未做（需用户裁决，或为避免与在跑的会话抢文件）：extract 的 LLM key 给不给；`SEARXNG_ENGINES` 去掉已挂的 quark；`nginx.conf` 的防复发改法。**另一个 AI 会话仍在同一台机上作业，因此我未改写它的 `docker-compose.override.yaml` 与 `nginx.conf`。**
 - 本地提交：无（未改仓库代码；服务器侧动作仅一次 `nginx -s reload`，可逆、不重建容器）
 - 远端推送：不适用
-
 ## 2026-10-15 14:25:00 +0800 · 给自托管 Firecrawl 接上 DeepSeek，extract 从 500 修好
 
 - 类型：ops/change（服务器侧，未改仓库任何文件）
@@ -2064,7 +1909,6 @@ schema_version: 1
 - 未做（用户未要求）：`SEARXNG_ENGINES` 里已被 CAPTCHA 封的 quark；`nginx.conf` 的防复发改法。**另一个 AI 会话仍可能在同一台机上作业。**
 - 本地提交：无（未改仓库代码）
 - 远端推送：不适用
-
 ## 2026-10-15 14:40:00 +0800 · 自评页页头重复标签 + 原生 select（用户报的观感问题）
 
 - 类型：change
@@ -2077,7 +1921,6 @@ schema_version: 1
 - 验证：typecheck 通过；本地 `knowledge.spec.ts` 8 passed；部署 75.2 秒；**线上 learner e2e 25 passed / 1 skipped（跳过的是"种子草稿"，线上没有那条草稿）、线上 admin e2e 8 passed**；线上截图核验自评页（页头无重复标签、筛选用设计系统下拉、列表有徽章与时间）。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 15:10:00 +0800 · WORK-007 · 对象存储接入启动（原 WORK-008 改号）+ 调研复核
 
 - 类型：change
@@ -2091,7 +1934,6 @@ schema_version: 1
 - 验证：无源码改动，故无测试；工件内部一致性用 grep 复核（`.agent` 下除历史日志外已无 `WORK-008` 残留）
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 15:30:00 +0800 · WORK-007 · RustFS 服务器端尖刺（验证通过）
 
 - 类型：change（服务器侧试验，**仓库无源码改动**）
@@ -2106,7 +1948,6 @@ schema_version: 1
 - 卸载一条命令：`pkill -f 'rustf[s] server'; rm -rf /opt/rustfs-trial`
 - 本地提交：见下一笔（仅本记录与需求稿）
 - 远端推送：见下一笔
-
 ## 2026-10-15 15:55:00 +0800 · WORK-007 · 记录 5 条裁决 + 三件工件起草 + RustFS 正式化
 
 - 类型：change（服务器侧已改，仓库无源码改动）
@@ -2119,7 +1960,6 @@ schema_version: 1
 - 未做：**没写任何 Java 代码**（等工件批准）、未切线上 `storage`、未开公网监听。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 16:11:08 +0800 · 项目 · 第三次审查（`b4ef038..a8b8ea0`）：critical 0 / high 0，无可修项
 
 - 类型：maintenance
@@ -2130,7 +1970,6 @@ schema_version: 1
 - 环境：本轮换了一把新 key——前两把都因 `402 INSUFFICIENT_BALANCE`（余额不足）不可用，新 key 已验证（连通 + 工具调用往返）并写入仓库外的 ocr 配置。
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-15 16:35:00 +0800 · WORK-007 · 实施完成并上线（对象存储接入）
 
 - 类型：change
@@ -2150,7 +1989,6 @@ schema_version: 1
 - 遗留与风险：RustFS **GA 仅约四周**（1.0.0 2026-09-16、1.0.1 10-03），桶私有 + 数据在 `/var/lib/rustfs/data` 可备份；**回滚有损**（切回 local 后 S3 期间上传的附件会 404）；管理端 e2e **没有覆盖上传按钮**（本轮界面上传那条链断了改用 API 验的，同一端点，但"点按钮上传"这件事没被自动化盯住——已记在这里）。
 - 本地提交：见下一笔
 - 远端推送：见下一笔
-
 ## 2026-10-15 17:42:18 +0800 · WORK-009 / WORK-010 · 两项建项并起草工件（积分与身份化）
 
 - 类型：decision
@@ -2164,7 +2002,6 @@ schema_version: 1
 - 未做：**未写任何代码**（等签字）、未配置任何平台凭据、未动数据库、未建 `testing/`（实施后才需要）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-15 17:58:00 +0800 · WORK-009 / WORK-010 · 两条待确认落定（审计一并删、自评覆盖）
 
 - 类型：decision
@@ -2176,7 +2013,6 @@ schema_version: 1
 - 未做：**未写任何代码**、未签署任何工件、未动数据库。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-15 17:50:05 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/requirements.md
 
 - 类型：decision
@@ -2186,7 +2022,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:05 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:50:30 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/proposal.md
 
 - 类型：decision
@@ -2196,7 +2031,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:30 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:50:31 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/design.md
 
 - 类型：decision
@@ -2206,7 +2040,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:31 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:50:32 +0800 · WORK-009 · 签署 .agent/changes/WORK-009-AI网关与积分配额/tasks.md
 
 - 类型：decision
@@ -2216,7 +2049,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:32 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:50:34 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/requirements.md
 
 - 类型：decision
@@ -2226,7 +2058,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:50:34 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:05:00 +0800 · WORK-009 四件签署 / WORK-010 其余三件起草
 
 - 类型：decision
@@ -2239,7 +2070,6 @@ schema_version: 1
 - 未做：**未写任何代码**、未动数据库；`WORK-010` 的三件**未签署**。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-15 18:20:00 +0800 · WORK-010 · 补齐三处实现选择（含一条隐私边界）+ 更正一处错误陈述
 
 - 类型：decision
@@ -2254,7 +2084,6 @@ schema_version: 1
 - 未做：**未写任何代码**、未签署 `WORK-010` 的三件、未改 WORK-007 的任何工件。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-15 17:57:33 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/proposal.md
 
 - 类型：decision
@@ -2264,7 +2093,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:33 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:57:34 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/design.md
 
 - 类型：decision
@@ -2274,7 +2102,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:34 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 17:57:35 +0800 · WORK-010 · 签署 .agent/changes/WORK-010-身份化千人千面与求职者面/tasks.md
 
 - 类型：decision
@@ -2284,7 +2111,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 17:57:35 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:30:00 +0800 · WORK-010 · 其余三件签署；一项校验器陷阱
 
 - 类型：decision
@@ -2295,7 +2121,6 @@ schema_version: 1
 - 未做：**未写任何代码**、未动数据库、未处理 WORK-007 的遗留（要用户点头才动）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-15 18:01:31 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/requirements.md
 
 - 类型：decision
@@ -2305,7 +2130,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:31 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:01:32 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/proposal.md
 
 - 类型：decision
@@ -2315,7 +2139,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:32 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:01:34 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/design.md
 
 - 类型：decision
@@ -2325,7 +2148,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:34 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:01:35 +0800 · WORK-007 · 签署 .agent/changes/WORK-007-对象存储接入/tasks.md
 
 - 类型：decision
@@ -2335,7 +2157,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-15 18:01:35 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-15 18:45:00 +0800 · WORK-007 · 清理校验问题（用户要求"007有问题也清理一下"）
 
 - 类型：maintenance
@@ -2350,7 +2171,6 @@ schema_version: 1
 - 未做：**未写任何代码**、未改 WORK-007 的历史 log 条目。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 09:05:00 +0800 · WORK-009 实施：T-01..T-10、T-14 完成，T-11..T-13 后端完成而前端未做
 
 - 类型：implementation
@@ -2400,7 +2220,6 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 10:20:00 +0800 · WORK-009 集成测试真跑起来了：抓到两个真缺陷并修掉（含更正上一笔的结论）
 
 - 类型：verification
@@ -2420,7 +2239,6 @@ schema_version: 1
 - 未做：前端三件（T-11/T-12/T-13 的界面）、T-15 部署（阻塞：需要上游 API Key）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 09:55:00 +0800 · WORK-009 前端三件完成（T-11/T-12/T-13）+ 凭据写路径下线
 
 - 类型：implementation
@@ -2451,7 +2269,6 @@ schema_version: 1
 - 未做：T-15 部署（**上游 Key 已到手，但部署会改变线上形态，未做**）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 09:55:00 +0800 · WORK-009 T-15 部署上线（含 V11 迁移与线上初始发分）
 
 - 类型：implementation（服务器侧已改 + 一条日志改动随发版上线）
@@ -2484,7 +2301,6 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 10:20:00 +0800 · 自行验证：修掉那条 e2e + 线上跑通真实调用 + 补验收报告
 
 - 类型：verification
@@ -2515,7 +2331,6 @@ schema_version: 1
 - 真正剩下的：管理端新增两页没有 e2e；远端 `push` 未执行（需授权）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 10:35:00 +0800 · 线上核查暴露并修掉一处时间戳偏移（裸 SQL 写库绕过 UTC 会话）
 
 - 类型：maintenance（生产数据订正）
@@ -2528,7 +2343,6 @@ schema_version: 1
 - **教训（写进 `dev-workflow.md`）**：在这台库上**用裸 `mysql` 写任何带 `DEFAULT CURRENT_TIMESTAMP` 的表之前，先 `SET time_zone='+00:00'`**，否则时间快 8 小时；随后的订正是"只能回拨默认值写的列"，应用写入的行本来就是对的、不要去动。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 10:50:00 +0800 · 积分历史去掉"预扣"（已改并上线）；助手面板/会话历史调研
 
 - 类型：change
@@ -2551,7 +2365,6 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 10:33:21 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/requirements.md
 
 - 类型：decision
@@ -2561,7 +2374,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:21 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 10:33:22 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/proposal.md
 
 - 类型：decision
@@ -2571,7 +2383,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:22 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 10:33:23 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/design.md
 
 - 类型：decision
@@ -2581,7 +2392,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:23 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 10:33:24 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/tasks.md
 
 - 类型：decision
@@ -2591,7 +2401,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 10:33:24 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 11:10:00 +0800 · WORK-011 建项并开工：T-01 完成，顺手抓到一处潜伏的映射缺陷
 
 - 类型：implementation
@@ -2603,7 +2412,6 @@ schema_version: 1
 - 未做：T-02..T-12（前端客户端方法 → 会话恢复/新开/切换 → 面板停靠化与让位 → 窄屏降级 → 快捷键 → 美化 → e2e → 文档）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 11:45:00 +0800 · WORK-011 T-02..T-12 完成（面板停靠化 + 会话历史），e2e 30/30 全绿
 
 - 类型：implementation
@@ -2635,7 +2443,6 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 11:05:09 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/requirements.md
 
 - 类型：decision
@@ -2645,7 +2452,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 11:05:09 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 11:05:10 +0800 · WORK-011 · 签署 .agent/changes/WORK-011-AI助手面板与会话历史/design.md
 
 - 类型：decision
@@ -2655,7 +2461,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 11:05:10 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 12:10:00 +0800 · WORK-011 面板改向：浮动对话框（按用户反馈推翻我自己的选型）
 
 - 类型：change
@@ -2670,7 +2475,6 @@ schema_version: 1
 - 遗留：管理端两页仍无 e2e；远端 `push` 未执行。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 12:40:00 +0800 · WORK-011 补首次入口指引；核实"解析格式不好看"的真因并给出拆项建议
 
 - 类型：change
@@ -2700,7 +2504,6 @@ schema_version: 1
 
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 13:20:00 +0800 · WORK-012 选型改定 streamdown（附体积实测），并已接线跑通
 
 - 类型：change
@@ -2730,7 +2533,6 @@ schema_version: 1
 - 未做：T-03 懒加载、T-04 挪包、T-05 语料（**等用户发测试用的 key 与 baseUrl**）、T-06..T-12。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-16 13:37:40 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/requirements.md
 
 - 类型：decision
@@ -2740,7 +2542,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:40 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 13:37:41 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/proposal.md
 
 - 类型：decision
@@ -2750,7 +2551,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:41 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 13:37:42 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/design.md
 
 - 类型：decision
@@ -2760,7 +2560,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:42 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 13:37:43 +0800 · WORK-012 · 签署 .agent/changes/WORK-012-流式Markdown渲染/tasks.md
 
 - 类型：decision
@@ -2770,7 +2569,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 13:37:43 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 15:08:07 +0800 · WORK-012 · 实施完成：助手回答按 markdown 渲染，渲染器统一到 @paideia/ui
 
 - 类型：implementation
@@ -2797,7 +2595,6 @@ schema_version: 1
   - 如实登记：**AC-006 的"流式过程中不闪"未覆盖**（既有 e2e 故意不打上游）；**深浅两套主题的观感待用户真人看**
 - 本地提交：2d824bb（四件工件）、3793a31（实施）
 - 远端推送：未执行（待用户明确授权）
-
 ## 2026-10-16 16:05:01 +0800 · WORK-013 · 建项并起草四件工件（记忆的自动提取与控制面）
 
 - 类型：decision
@@ -2813,7 +2610,6 @@ schema_version: 1
 - 验证：`project-lifecycle validate` 跑过——**WORK-012 的两个错误已修**（补「实现选择」一节；验证报告的矩阵按规范重写：章节名改为「验收矩阵」、每行的命令/退出码/结果/证据都不空、AC-006 那行改成"属性已验证、**e2e 级别未达**"并指向未验证项）；**WORK-013 余一条错误**："需求尚未形成，但已经存在下游工件"——这是"四件一起起草、需求还没签"这个状态的固有提示（WORK-010/012 起草期同样如此），**第一次签署后即消失**，如实登记不做绕过
 - 本地提交：待提交（本轮随工件一起提交）
 - 远端推送：未执行
-
 ## 2026-10-16 16:06:46 +0800 · 仓库卫生 · .gitignore 忽略 playwright-cli 的页面快照
 
 - 类型：chore
@@ -2822,7 +2618,6 @@ schema_version: 1
 - 验证：`.gitignore` 提交后 `git status` 为空，同一条 stale 警告消失
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-16 16:07:36 +0800 · WORK-012 · 登记"锚点之后只有非行为改动"这一事实
 
 - 类型：verification
@@ -2831,7 +2626,6 @@ schema_version: 1
 - 决策：**不把 `verified_commit` 改成新提交**（那等于替用户宣布"重新验过了"）。校验器按机械规则（只认 `.agent/` 变化）报 stale，属预期，如实登记
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-16 16:26:11 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/requirements.md
 
 - 类型：decision
@@ -2841,7 +2635,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:11 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 16:26:13 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/proposal.md
 
 - 类型：decision
@@ -2851,7 +2644,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:13 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 16:26:15 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/design.md
 
 - 类型：decision
@@ -2861,7 +2653,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:15 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 16:26:17 +0800 · WORK-013 · 签署 .agent/changes/WORK-013-AI记忆的自动提取与控制面/tasks.md
 
 - 类型：decision
@@ -2871,7 +2662,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-16 16:26:17 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-16 18:04:23 +0800 · 仓库卫生 · 修正 AGENTS.md 里 e2e 规范自相矛盾的一处
 
 - 类型：chore
@@ -2884,7 +2674,6 @@ schema_version: 1
 - 验证：纯文档措辞改动，无源码改动；三处规范现对齐（`AGENTS.md` 节奏节 / `dev-workflow.md` 三环表 / `always.md` 第 67、70 行的具体命令）
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-16 18:06:51 +0800 · 仓库卫生 · 删掉规范里"发布前"这个不存在的阶段
 
 - 类型：chore
@@ -2896,7 +2685,6 @@ schema_version: 1
 - 验证：纯文档改动，无源码改动。三端全量 e2e 与桌面产物两条信息**未丢失**，只是从"阶段"改为"按需"；"改动那一端"的判据把上一轮 WORK-012 的实例写进了笔记（ui-kit 对 markdown 零引用故不跑）
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-16 18:09:28 +0800 · 仓库卫生 · 重测并换掉过期的速度基线（旧数低估 4 倍）
 
 - 类型：chore
@@ -2910,7 +2698,6 @@ schema_version: 1
 - 结论（未改动任何代码）：一次全量 ≈ **10–12 分钟**；最大杠杆是**把测试库放本地实例**以消掉每条 SQL 的跨省公网 RTT，其余手段都只是小杠杆；已证无效的两条（合并上下文、加 forkCount）留在"别再试一遍"里
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-16 18:09:54 +0800 · WORK-013 · 实施完成：记忆自动整理 + 三开关控制面；数据库改公网直连
 
 - 类型：implementation
@@ -2923,7 +2710,6 @@ schema_version: 1
 - 如实登记的未验证项：**提炼质量无断言**（只能靠真实使用看）；并发跑时 ui 的 markdown 套件曾 transform 失败（单独复跑 93/93）；面板来源筛选无 e2e；DELETE 不留动作历史（设计里的非目标）
 - 本地提交：70e1b7f（实施）、472df61（报告 + 补两条用例）、本条目单独一笔
 - 远端推送：未执行
-
 ## 2026-10-17 09:10:00 +0800 · WORK-011 · 补三条验收缺口：AC-008 与「收起即中断」已覆盖，AC-004 被一处回滚挡住
 
 - 类型：test
@@ -2935,7 +2721,6 @@ schema_version: 1
 - 如实登记的未验证项：**AC-004 仍未覆盖**（被上面那处回滚挡住，本环境造不出"失败但已落库"的会话）；AC-008 只验了 700px 一档；那个 e2e 偶发（整套跑红、单跑绿）**本次未能复现**，只把诊断改到下次能看清状态
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-17 22:30:00 +0800 · 六项完成沉淀（001/006/007/009/012/013）重新核对并结算
 
 - 类型：verification
@@ -2949,7 +2734,6 @@ schema_version: 1
 - 如实登记：MockMvc 那处竞态**未修**（要串行化异步派发或改用真实端口，属测试基建）；WORK-009 那处「被积分闸拦下的轮次丢用户消息」**仍未修**，需用户裁决
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-17 22:29:09 +0800 · WORK-014 · 新建「源码解读专题与交互式代码走读」需求（draft 待签）
 
 - 类型：requirements
@@ -2959,7 +2743,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；requirements.md 包含「已确认事实 / 用户决定 / 目标 / 实现选择 / 待确认问题 / 验收标准」六个决策分层章节
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-17 22:30:36 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
 
 - 类型：decision
@@ -2969,7 +2752,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 22:30:36 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-17 22:31:00 +0800 · WORK-014 · 需求签署并起草方案（proposal draft 待签）
 
 - 类型：decision
@@ -2979,7 +2761,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 为「方案选择 / 待确认」
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-17 22:39:00 +0800 · WORK-014 · 用户反馈"功能太简单"，补充八个同类产品调研并扩容需求（退回 draft）
 
 - 类型：requirements
@@ -2990,7 +2771,6 @@ schema_version: 1
 - 验证：project-lifecycle.ps1 validate 结果「通过」；status 显示 WORK-014 回到需求讨论 / 草稿
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-17 23:10:00 +0800 · 修复：积分不足时用户消息被事务回滚丢掉
 
 - 类型：implementation
@@ -3002,7 +2782,6 @@ schema_version: 1
 - 如实登记：`AssistantConversationIntegrationTest` 的 MockMvc 异步响应头竞态**仍未修**（第 3 次出现，需串行化异步派发或改用真实端口，属测试基建）；本轮改动使 006/007/009/012/013 的报告锚点重新绑定到 `e941bcb`
 - 本地提交：e941bcb（代码与测试）、本条目随工件改动单独一笔
 - 远端推送：未执行
-
 ## 2026-10-17 23:20:00 +0800 · 测试提速：测试库改本机 + 前端换 happy-dom（后端省 69%）
 
 - 类型：maintenance
@@ -3018,7 +2797,6 @@ schema_version: 1
 - 依据：`/tmp/fulltest.log`（远端基线）、`/tmp/final.log`（本机结果）、各包 vitest 输出
 - 本地提交：60d117a（执行器）、d184e36（happy-dom）、本条目单独一笔
 - 远端推送：未执行
-
 ## 2026-10-17 23:39:27 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/requirements.md
 
 - 类型：decision
@@ -3028,7 +2806,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:39:27 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-17 23:40:47 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/proposal.md
 
 - 类型：decision
@@ -3038,7 +2815,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:47 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-17 23:40:48 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/design.md
 
 - 类型：decision
@@ -3048,7 +2824,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:48 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-17 23:40:49 +0800 · WORK-014 · 签署 .agent/changes/WORK-014-源码解读专题与交互式代码走读/tasks.md
 
 - 类型：decision
@@ -3058,7 +2833,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-17 23:40:49 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 00:35:16 +0800 · WORK-014 · 登记业务验收 .agent/changes/WORK-014-源码解读专题与交互式代码走读/testing/report.md
 
 - 类型：decision
@@ -3068,7 +2842,6 @@ schema_version: 1
 - 验证：回读 frontmatter：accepted_by / accepted_at=2026-10-18 00:35:16 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 00:36:00 +0800 · WORK-014 · 撤回一次误记的业务验收
 
 - 类型：maintenance
@@ -3078,7 +2851,6 @@ schema_version: 1
 - 验证：回读 frontmatter，已无 `accepted_*` 字段；`validate` 通过
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-18 00:38:00 +0800 · WORK-014 · 实施完成：五种交互块、地图联动、本地进度、AI 预填
 
 - 类型：implementation
@@ -3094,7 +2866,6 @@ schema_version: 1
 - 如实登记的未覆盖项：线上部署未做、读屏实测、深色主题高亮对比度、地图密集时的视觉重叠
 - 本地提交：c3f4872（实现）、30f96fe（窄屏与高亮验收）
 - 远端推送：未执行
-
 ## 2026-10-18 08:14:50 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/requirements.md
 
 - 类型：decision
@@ -3104,7 +2875,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:14:50 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:15:11 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/proposal.md
 
 - 类型：decision
@@ -3114,7 +2884,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:10 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:15:39 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/design.md
 
 - 类型：decision
@@ -3124,7 +2893,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:39 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:15:40 +0800 · WORK-015 · 签署 .agent/changes/WORK-015-代码执行沙箱与可运行练习/tasks.md
 
 - 类型：decision
@@ -3134,7 +2902,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 08:15:40 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:24:23 +0800 · WORK-016 · 建项起草：移动端最佳适配需求（draft）
 
 - 类型：implementation
@@ -3144,7 +2911,6 @@ schema_version: 1
 - 验证：project-lifecycle validate 通过：0 error，仅 1 条 WORK-016 自身超过 20KB 的软警告；未实现任何代码
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:45:00 +0800 · WORK-015 · 实施完成：加固容器执行，练习能真跑代码
 
 - 类型：implementation
@@ -3161,7 +2927,6 @@ schema_version: 1
 - 如实登记：本机无 Docker（真容器只在服务器验）、gVisor 未装、真 OOM 未端到端构造、线上 7 条 e2e 因依赖本地种子而失败（既有问题与本项无关）、生产库留下 5 行真机验证审计
 - 本地提交：随本条一起提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:52:57 +0800 · WORK-016 · 补架构条款：自适应行为落在共享层（REQ-023 / AC-013）
 
 - 类型：decision
@@ -3171,7 +2936,6 @@ schema_version: 1
 - 验证：validate 0 error；仅 WORK-016 自身超 20KB 的软警告
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 08:56:00 +0800 · WORK-014 / WORK-015 · 推送并完整部署（含前端）
 
 - 类型：maintenance
@@ -3188,7 +2952,6 @@ schema_version: 1
 - 已知：另一会话的 `WORK-016-移动端最佳适配/` 仍是未跟踪目录，未被本次提交或推送带上
 - 本地提交：本条单独一笔
 - 远端推送：已执行（本条随后一并推送）
-
 ## 2026-10-18 09:01:43 +0800 · WORK-016 · 签署 .agent/changes/WORK-016-移动端最佳适配/requirements.md
 
 - 类型：decision
@@ -3198,7 +2961,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 09:01:43 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 09:02:01 +0800 · WORK-016 · 签署 .agent/changes/WORK-016-移动端最佳适配/proposal.md
 
 - 类型：decision
@@ -3208,7 +2970,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 09:02:01 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 09:02:22 +0800 · WORK-016 · 签署 .agent/changes/WORK-016-移动端最佳适配/design.md
 
 - 类型：decision
@@ -3218,7 +2979,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 09:02:22 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 09:02:42 +0800 · WORK-016 · 签署 .agent/changes/WORK-016-移动端最佳适配/tasks.md
 
 - 类型：decision
@@ -3228,7 +2988,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 09:02:42 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 09:43:07 +0800 · WORK-016 · 实施完成：移动端最佳适配（12 任务、两端 79 条 e2e 全绿）
 
 - 类型：implementation
@@ -3238,7 +2997,6 @@ schema_version: 1
 - 验证：单测 240 passed；app e2e 60（45 桌面 + 15 移动）；admin e2e 19（9 桌面 + 10 移动）；PWA 2 条通过；typecheck 11 包全过；validate 0 error
 - 本地提交：fa7af45 / a0107e6 / bae8907 / 2a60c76 / 7b95298
 - 远端推送：未执行（需单独授权）
-
 ## 2026-10-18 10:10:47 +0800 · WORK-016 · 推送 WORK-016 六笔提交到 GitHub master
 
 - 类型：maintenance
@@ -3248,7 +3006,6 @@ schema_version: 1
 - 验证：推送后回读远端 ref 与本地 HEAD 相同；工作区干净；推送前扫描 diff 未发现凭据
 - 本地提交：b456788
 - 远端推送：已推送 b456788 到 origin master（SSH）
-
 ## 2026-10-18 11:13:28 +0800 · WORK-016 · 部署到线上并修复两处只在线上暴露的问题
 
 - 类型：implementation
@@ -3258,7 +3015,6 @@ schema_version: 1
 - 验证：线上：PWA 入口 6 项全 200、/api/v1/me 仍 401、学习者端移动 15 passed、管理端移动 10 passed；本地管理端全量 19 passed；PwaEntryPointsTest 3 passed 且反向验证过去掉白名单则 2 条红；validate 0 error
 - 本地提交：848d661 / 1b6aaff
 - 远端推送：未执行（待授权）
-
 ## 2026-10-18 11:14:07 +0800 · WORK-016 · 推送部署修复三笔到 GitHub
 
 - 类型：maintenance
@@ -3268,7 +3024,6 @@ schema_version: 1
 - 验证：线上健康检查 status=UP；PWA 入口 200、/api/v1/me 401；工作区干净
 - 本地提交：8bde7ab
 - 远端推送：已推送 8bde7ab 到 origin master（SSH）
-
 ## 2026-10-18 12:51:27  · 项目 · 第四次审查（`a8b8ea0..9c99033`）：修完 17 条 high
 
 - 类型：implementation
@@ -3286,7 +3041,6 @@ schema_version: 1
 - 环境：审查用 `deepseek-v4.1-flash-1017`（用户指定），约 3,920 万 tokens / 39 分钟；前两把 key 均因 `INSUFFICIENT_BALANCE` 不可用。
 - 本地提交：见本轮提交
 - 远端推送：未执行
-
 ## 2026-10-18 13:05:00 +0800 · 补账 · WORK-011 状态归位 + 6 个 stale 报告在当前 HEAD 复验
 
 - 类型：verification
@@ -3299,7 +3053,6 @@ schema_version: 1
 - 依据：`.agent/changes/WORK-011-*/{requirements,tasks,testing/report}.md`、6 份 report 的新增「复验记录」段
 - 本地提交：`1945ce7`（补账与复验）、本条与两份追加复验随后一笔
 - 远端推送：未执行
-
 ## 2026-10-18 14:00:25  · 项目 · 按"中低但要影响主流程"的口径，补修 6 条 medium/security
 
 - 类型：implementation
@@ -3315,7 +3068,6 @@ schema_version: 1
 - 验证：后端 `mvn -B verify` **BUILD SUCCESS**，143 个测试 0 失败（4 skipped，`PaginationIntegrationTest` 是既有问题已排除）。**反向验证**：把新增的 `KnowledgeUserDeletionListener` 暂时移走后，`AccountDeletionCascadeIntegrationTest` **当场失败**（2 errors），恢复后通过——证明这条断言确实会咬。前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` **240 条全过**。**未跑 e2e**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
-
 ## 2026-10-18 14:00:22 +0800 · 项目 · 起草接口测试标准（只落文档，未实施）
 
 - 类型：documentation
@@ -3325,7 +3077,6 @@ schema_version: 1
 - 验证：仅新增/追加 Markdown，未触碰工作区其它在飞改动，未运行构建与测试
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:06:30 +0800 · WORK-017 · 立为长期工作项并建测试台账目录
 
 - 类型：decision
@@ -3335,7 +3086,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate F:/Paideia` → `valid: true`、`errors: []`，WORK-017 为 `phase: requirements / state: draft / errors: 0 / warnings: 0`。未运行构建与测试（本轮无源码改动）
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:16:10 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/requirements.md
 
 - 类型：decision
@@ -3345,7 +3095,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:10 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:16:11 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/proposal.md
 
 - 类型：decision
@@ -3355,7 +3104,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:11 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:16:12 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/design.md
 
 - 类型：decision
@@ -3365,7 +3113,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:12 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:16:13 +0800 · WORK-017 · 签署 .agent/changes/WORK-017-接口契约测试与长期测试台账/tasks.md
 
 - 类型：decision
@@ -3375,7 +3122,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by / approved_at=2026-10-18 14:16:13 +0800
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 14:44:51  · 项目 · 自审 5 个提交（抓到 2 critical / 6 high，4 条是我自己引入的）；建审查基线
 
 - 类型：implementation
@@ -3392,7 +3138,6 @@ schema_version: 1
 - 验证：`mvn -B test` 覆盖 ai（50 条）、sandbox（6 条）、account、knowledge 四模块 **BUILD SUCCESS 0 失败**；前端 `pnpm -r typecheck` 11 包全过、`pnpm -r test` 240 条全过。`review_baseline.sh`：正向输出"已审到 6b30d4f，距 HEAD 还有 0 个提交"；把基线改成不存在时正确报错。**未跑 e2e**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
-
 ## 2026-10-18 14:50:00 +0800 · WORK-017 · 四层闸实施完成；部署闸与 CI 待授权
 
 - 类型：implementation
@@ -3420,7 +3165,6 @@ schema_version: 1
 - 未完成（需用户授权）：AC-007 部署闸（`release.ps1` 从工作区构建，当前工作区有并发在飞改动，部署会把他人未提交代码带上线）；AC-008 CI 首跑（workflow 需推送后才执行）。因此 `testing/report.md` 为 `partial`，WORK-017 尚未完成结算
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 15:12:00 +0800 · WORK-017 · 取消人工清单，改为 @ApiAccess 注解驱动
 
 - 类型：implementation
@@ -3445,7 +3189,6 @@ schema_version: 1
   无法无副作用探测鉴权，只由"匿名 401"覆盖；测试里用 `skipped` 断言其形态，不会悄悄扩大
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 15:20:00 +0800 · WORK-017 · 修正冒烟被默认 e2e 自动收录；补触发条件表
 
 - 类型：implementation
@@ -3464,7 +3207,6 @@ schema_version: 1
     这是已签署的既有规则，已写进触发条件表并指明补偿在 CI 的 `skipped == 0`
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 15:45:00 +0800 · WORK-018 · 建项起草：简历识别与优化
 
 - 类型：requirements（draft，未实施）
@@ -3492,7 +3234,6 @@ schema_version: 1
   2. 是否接受简历正文随两次模型调用发给上游（DeepSeek）
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 15:50:00 +0800 · WORK-017 · 方向订正：撤掉 CI/部署闸，改为「全接口手动自查标准」
 
 - 类型：implementation
@@ -3516,7 +3257,6 @@ schema_version: 1
   - `ApiSurfaceTest` 6 条 + `ApiContractTest` 9 条全绿；平台模块 11 条、模块边界校验均通过
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 15:57:47 +0800 · maintenance · 优化 project-lifecycle Skill：修三类失准、加 brief/archive/批量签署
 
 - 类型：maintenance
@@ -3526,7 +3266,6 @@ schema_version: 1
 - 验证：python -m unittest discover -s <Skill>/scripts -p test_*.py → 12 tests OK；本项目实测 brief 2.3KB（原 19KB/225KB）、resume 13.7KB（原 247KB）、validate 0 error；任务解析 16/16 工作项均能读出真实任务数（改前 8 个报 0）
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:04:50 +0800 · maintenance · 补齐 superpowers 第三条移植：计划接口块/评审焦点/结论-证据表
 
 - 类型：maintenance
@@ -3536,7 +3275,6 @@ schema_version: 1
 - 验证：python -m unittest discover -s <Skill>/scripts -p test_*.py → 16 tests OK；本项目 brief 2.2KB、validate 通过；评审焦点提示在 17 个工作项中只对 WORK-010（已批准未验证）触发
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:05:00 +0800 · WORK-018 · 按用户三项补充改需求：在线编辑 / 可视化逐项采纳 / 统一积分
 
 - 类型：requirements（仍为 draft，未实施）
@@ -3556,7 +3294,6 @@ schema_version: 1
   - REQ 编号 1–23 连续、AC 编号 1–12 连续（上一版合并段落时把 AC 编号弄成 001/003/005… 的跳号，已重排）
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:06:29 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/requirements.md
 
 - 类型：decision
@@ -3566,7 +3303,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:08:04 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/proposal.md
 
 - 类型：decision
@@ -3576,7 +3312,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:05:00 +0800 · WORK-017 · 补第四层：响应结构快照（字段变了也能抓）
 
 - 类型：implementation
@@ -3597,7 +3332,6 @@ schema_version: 1
   - 冒烟注意：首次生成快照前必须先重建依赖模块（`paideia-note` 等），否则快照会记下旧 jar 里的过期字段
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:09:48 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/design.md
 
 - 类型：decision
@@ -3607,7 +3341,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:12:14 +0800 · WORK-018 · 签署 .agent/changes/WORK-018-简历识别与优化/tasks.md
 
 - 类型：decision
@@ -3617,7 +3350,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 16:30:00 +0800 · WORK-017 · 推送接口自查标准到 GitHub
 
 - 类型：maintenance
@@ -3628,7 +3360,6 @@ schema_version: 1
 - 备注：本地领先的三笔里有**两笔属于并发会话**（`e0ca266` 38 文件 / +2028 行，`29f4298`），已被本次推送一并带上；此前已向用户说明该情况
 - 本地提交：`b5c73b6`
 - 远端推送：已推送 `b5c73b6` 到 origin master（SSH）
-
 ## 2026-10-18 16:40:00 +0800 · WORK-010 · 实施完成（T-01..T-13、T-15；T-14 待部署）
 
 - 类型：implementation
@@ -3654,7 +3385,6 @@ schema_version: 1
   - **如实登记**：报告为 `partial`——AC-009 的完整面试闭环要有积分才能验；"勾选后才带笔记"只有界面明示、控件未做；全量后端测试有一组已知不稳定（种子条目 id=1，见 notes）
 - 本地提交：`e0ca266`（后端）、`e0de914`（前端）、`57e32b4`（入口修复 + e2e）、本报告与历史随后一笔
 - 远端推送：未执行
-
 ## 2026-10-18 19:05:00 +0800 · WORK-018 · 实施完成：简历识别与优化
 
 - 类型：implementation（四件工件全部签署；13 个任务完成）
@@ -3697,7 +3427,6 @@ schema_version: 1
   - 打印视图只做代码级核对（`@page A4` / `break-inside: avoid`），**未做真实打印产物像素核对**
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-18 19:20:00 +0800 · WORK-018 · 推送核验
 
 - 类型：push-check
@@ -3709,7 +3438,6 @@ schema_version: 1
   不是我替别人提交的；`2df4d57` 里我的 `ApiWalkthroughTest` 改动是被那边 `git add` 卷进去的，内容与我本地一致
 - 凭据扫描：两轮（源码切片、工件切片）只命中 `InvalidPasswordException` 这个类名，**无密钥入仓**
 - 未执行：部署
-
 ## 2026-10-18 20:15:34 +0800 · maintenance · 修好 paideia_test 并给迁移上锁：校验和守卫 + 一会话一库
 
 - 类型：maintenance
@@ -3732,7 +3460,6 @@ schema_version: 1
   - **全量 `mvn -B test`（隔离库）BUILD SUCCESS：348 执行 / 0 失败 / 5 skipped**（1 条 S3 契约、4 条真实上游，均为既定跳过）。以前全量必红的三个知识库类这次 12/7/9 全绿
 - 本地提交：待提交
 - 远端推送：未执行
-
 ## 2026-10-18 20:40:00 +0800 · maintenance · WORK-018 推送并部署；线上 e2e 闸门恢复可信
 
 - 类型：deployment
@@ -3752,7 +3479,6 @@ schema_version: 1
   - `pnpm --filter @paideia/app typecheck` 通过
 - 本地提交：`38177e4`、`1d2225d`、`87df2a9`、`bc58d09`
 - 远端推送：已推送前 3 笔（`bc58d09` 待推送）
-
 ## 2026-10-18 22:57:15 +0800 · WORK-019 · MCP 网关与工具目录：四件工件起草（内部按需加载 + 外部 MCP server）
 
 - 类型：decision
@@ -3762,7 +3488,6 @@ schema_version: 1
 - 验证：research.md 记录外部事实与仓库核对；工件均为 draft，需求未签，代码未动
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-18 23:17:03 +0800 · WORK-019 · 签署 .agent/changes/WORK-019-MCP网关与工具目录/requirements.md、.agent/changes/WORK-019-MCP网关与工具目录/proposal.md、.agent/changes/WORK-019-MCP网关与工具目录/design.md、.agent/changes/WORK-019-MCP网关与工具目录/tasks.md
 
 - 类型：decision
@@ -3772,7 +3497,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 00:22:17 +0800 · WORK-019 · WORK-019 实施完成：工具目录 + 内外两层适配器
 
 - 类型：verification
@@ -3782,7 +3506,6 @@ schema_version: 1
 - 验证：后端 174 执行/0 失败/4 跳过（既有真实上游）；前端单测全绿；app e2e 69 passed/2 skipped；conformance 4 passed（initialize/ping/tools-list/logging），22 条失败逐条说明均在本项范围外；见 verification.md
 - 本地提交：0b760f1
 - 远端推送：未执行
-
 ## 2026-10-19 09:31:56 +0800 · WORK-019 · 真连 DeepSeek 与 ZCode：修掉六个只有实调才暴露的缺陷
 
 - 类型：verification
@@ -3792,7 +3515,6 @@ schema_version: 1
 - 验证：后端全量 174 执行/0 失败/0 跳过（含 4 条真实上游）；前端 e2e 69/2；MCP 客户端流程实连：initialize 2025-06-18、/mcp 9 工具、knowledge_list_categories 真返回分类数据、/mcp/write 13 工具含全部写工具
 - 本地提交：6810418
 - 远端推送：未执行
-
 ## 2026-10-19 09:47:21 +0800 · WORK-019 · WORK-019 部署上线：V16 迁移执行、线上 /mcp 实连验证
 
 - 类型：maintenance
@@ -3802,7 +3524,6 @@ schema_version: 1
 - 验证：线上 e2e：学习者端 50 passed / 21 skipped / 0 failed，管理端 19 passed / 0 failed；/actuator/health 200
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 10:19:49 +0800 · maintenance · 发版提速：183 秒降到 75 秒
 
 - 类型：maintenance
@@ -3812,7 +3533,6 @@ schema_version: 1
 - 验证：实测纯后端发版 75.3 秒（后端打包 18.1s / 跳过前端 / 打包 0.7s / 上传 31.2s / 就位 2.4s / 重启 2.1s / 健康 20.6s）；实测改前端那轮 88.7 秒；线上 health 200、/ 200、/admin/ 200、/mcp 9 工具正常
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 10:20:00 +0800 · UI · 身份页改卡片 + 弹窗选择，助手对话区观感统一
 
 - 类型：feature
@@ -3822,7 +3542,6 @@ schema_version: 1
 - 验证：`pnpm --filter @paideia/app typecheck` 通过；app e2e 69 passed / 2 skipped（本地）；线上 `E2E_BASE_URL` 跑 identity.spec 2 passed / 1 skipped（面试那条在线上会真调上游）；线上 light/dark 截图确认新界面与线上 bundle（含「选择你的身份」「identity-option-」）
 - 本地提交：1b043b8
 - 远端推送：未执行
-
 ## 2026-10-19 11:58:59 +0800 · WORK-020 · 从零开始学编程：起草需求与三件下游工件
 
 - 类型：design
@@ -3832,7 +3551,6 @@ schema_version: 1
 - 验证：project-lifecycle validate 报 WORK-020 需求未批准而下游工件已存在（预期状态，四件待签）；WORK-010 的两条错误为本轮之前既有
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-19 12:02:51 +0800 · WORK-020 · 定位改为「学习线」原语：可扩展性升为验收条件
 
 - 类型：design
@@ -3842,7 +3560,6 @@ schema_version: 1
 - 验证：project-lifecycle validate 对 WORK-020 仍报「需求尚未形成但已有下游工件」——预期，四件仍 draft 未签；其余输出与改动前一致
 - 本地提交：未提交
 - 远端推送：未执行
-
 ## 2026-10-19 13:32:19 +0800 · WORK-020 · 签署 .agent/changes/WORK-020-从零开始学编程/requirements.md、.agent/changes/WORK-020-从零开始学编程/proposal.md、.agent/changes/WORK-020-从零开始学编程/design.md、.agent/changes/WORK-020-从零开始学编程/tasks.md
 
 - 类型：decision
@@ -3852,7 +3569,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 14:01:23 +0800 · content · 建立阅读线内容通道 + 记录正文文风口径
 
 - 类型：docs
@@ -3863,7 +3579,6 @@ schema_version: 1
 - 验证：`python scripts/verify_course.py` 仍通过（25 个课程文件，不受影响）；样板文件 frontmatter 字段与围栏块 JSON 用脚本逐文件解析通过
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 14:12:00 +0800 · WORK-021 · 签署 .agent/changes/WORK-021-个人知识图谱与掌握度/requirements.md、.agent/changes/WORK-021-个人知识图谱与掌握度/proposal.md、.agent/changes/WORK-021-个人知识图谱与掌握度/design.md、.agent/changes/WORK-021-个人知识图谱与掌握度/tasks.md
 
 - 类型：decision
@@ -3873,7 +3588,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 14:41:47 +0800 · WORK-022 · 建项起草：AI 调用追踪与运营统计（四件 draft）
 
 - 类型：decision
@@ -3883,7 +3597,6 @@ schema_version: 1
 - 验证：project-lifecycle validate：WORK-022 报「需求尚未形成但已有下游工件」——预期，四件均 draft 未签；无新增其它错误
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 14:55:00 +0800 · WORK-020 · 学习线原语 + 两门课程 + 学习记录 + 导师行为
 
 - 类型：implementation
@@ -3902,7 +3615,6 @@ schema_version: 1
 - 验证：`verify_course.py` 26 文件全绿（含真执行）；导入 26 条 + 22 关系，第二次 created 0/updated 0；零代码加第三条线（git status 前后都是 65 项）；后端 191 执行/0 失败/4 跳过；学习者端 e2e 73/2/0；管理端 19/0
 - 本地提交：未提交（工作区同时有另一会话的 WORK-021 改动，无法只提交本项范围）
 - 远端推送：未执行
-
 ## 2026-10-19 15:20:15 +0800 · WORK-021 · 个人知识图谱与掌握度：四张表、掌握度纯函数、图谱页与管理端概念页
 
 - 类型：implementation
@@ -3912,7 +3624,6 @@ schema_version: 1
 - 验证：后端 191 执行 / 0 失败 / 4 跳过（均为需真上游用例）；学习者端 e2e 80 passed / 0 skipped / 0 failed；管理端 e2e 19 passed + concepts.spec 1 passed；前端单测 42 passed；app 与 admin typecheck 0 error；AC-009、AC-016 补测通过（后者发现 sigma 无 WebGL 时静默空白，改为挂载前探测）；注销级联做了反向验证
 - 本地提交：待提交
 - 远端推送：未执行
-
 ## 2026-10-19 15:52:00 +0800 · 并发会话隔离（P0 + P1，无 WORK 编号）
 
 - 类型：implementation
@@ -3937,7 +3648,6 @@ schema_version: 1
   · `mvn -B test` 全量（隔离库）：191 执行 / 2 失败（同上）/ 4 跳过；失败归因已核对到具体断言与迁移
 - 本地提交：未提交（工作区同时有 WORK-020/021/022 三个会话在飞改动）
 - 远端推送：未执行
-
 ## 2026-10-19 15:51:17 +0800 · WORK-010 · AC-009 面试闭环补验通过 + 修掉 maxTokens 截断缺陷
 
 - 类型：verification
@@ -3947,7 +3657,6 @@ schema_version: 1
 - 验证：ai 模块 118 条全绿；IdentityAndAssessmentBridge/AccountDeletionCascade/AgentToolBridge/McpStartupSmoke/ApiWalkthrough 共 21 条全绿；identity.spec.ts 3 条全绿且余额 0 与有余额两个分支都跑过；默认配置重启后点评一次通过（overall=2）
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 15:51:24 +0800 · WORK-019 · 两个缺口补验通过，报告归位，status partial→passed
 
 - 类型：verification
@@ -3957,7 +3666,6 @@ schema_version: 1
 - 验证：两个缺口各有实测记录并写进报告补验段；validate 对 WORK-019 不再报错，工作项状态推进到 complete
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 17:12:49 +0800 · WORK-020 · 内容导入线上并验收：26 课 + 22 关系，TASK-016 完成
 
 - 类型：verification
@@ -3967,7 +3675,6 @@ schema_version: 1
 - 验证：线上学习者端 e2e 60 passed/22 skipped/0 failed；管理端 20 passed；全量后端 475/0/5；前端 250 单测 + typecheck 0 error
 - 本地提交：7dd4258
 - 远端推送：c33ab1e 已推送到 GitHub（SSH）
-
 ## 2026-10-19 17:12:55 +0800 · WORK-010 · 线上部署验收：面试闭环在线上真跑通，T-14 完成
 
 - 类型：verification
@@ -3977,7 +3684,6 @@ schema_version: 1
 - 验证：线上健康检查 UP；学习者端 e2e 60 passed/22 skipped/0 failed；管理端 20 passed
 - 本地提交：7dd4258
 - 远端推送：c33ab1e 已推送
-
 ## 2026-10-19 17:21:03 +0800 · WORK-020 · 阅读线入库：source-reading 与 network-basics 成为内容源
 
 - 类型：implementation
@@ -3987,7 +3693,6 @@ schema_version: 1
 - 验证：线上导入 3 条（network 2 + source 1）；/learning/lines 返回 4 条线，reading 各 1/2 站；学习线 e2e 4 passed（含线上 reading 分组）
 - 本地提交：3cd28d2
 - 远端推送：已推送 3cd28d2
-
 ## 2026-10-19 17:54:59 +0800 · WORK-022 · 签署 .agent/changes/WORK-022-AI调用追踪与运营统计/requirements.md、.agent/changes/WORK-022-AI调用追踪与运营统计/proposal.md、.agent/changes/WORK-022-AI调用追踪与运营统计/design.md、.agent/changes/WORK-022-AI调用追踪与运营统计/tasks.md
 
 - 类型：decision
@@ -3997,7 +3702,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 17:55:08 +0800 · WORK-023 · 签署 .agent/changes/WORK-023-逐行执行与可视化调试/requirements.md、.agent/changes/WORK-023-逐行执行与可视化调试/proposal.md、.agent/changes/WORK-023-逐行执行与可视化调试/design.md、.agent/changes/WORK-023-逐行执行与可视化调试/tasks.md
 
 - 类型：decision
@@ -4007,7 +3711,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-19 18:10:00 +0800 · 性能压测与三处修复
 
 - 类型：implementation
@@ -4022,7 +3725,6 @@ schema_version: 1
 - 并发会话影响：仓库内另有 WORK-022 会话的在飞改动，含**同名 V20 迁移**（`V20__create_ai_telemetry_tables.sql`）。两者不能同时存在，需由该会话改为 V21。
 - 本地提交：325b4ed、869de5d
 - 远端推送：未执行
-
 ## 2026-10-19 19:27:59  · 项目 · 第五次区间审查（`6b30d4f..c259084`）：3 critical + 30 high，修掉 3 critical 与 8 条主流程 high
 
 - 类型：implementation
@@ -4042,7 +3744,6 @@ schema_version: 1
 - 验证：后端 `mvn -B -pl paideia-ai,paideia-knowledge,paideia-platform -am test` **127 条 0 失败**（含 `AgentToolBridgeTest` 10/10）；**反向验证**：移除视图校验后新用例失败（`writeToolCannotBeCalledByNameEvenOutOfView`）。前端 `pnpm -r typecheck` 全过、`pnpm -r test` **272 条全过**（含 identity 3、resume 15、knowledge 42）。基线已推进到 `c259084`；**审查期间别的会话又推了 2 个提交（WORK-022 埋点，59 文件），尚未审**。
 - 本地提交：见本轮提交
 - 远端推送：见本轮
-
 ## 2026-10-19 19:57:38 +0800 · WORK-022 · 实施完成并上线：AI 调用追踪与运营统计
 
 - 类型：implementation
@@ -4052,7 +3753,6 @@ schema_version: 1
 - 验证：全量后端 504 执行 / 0 失败 / 5 跳过；管理端 e2e 22 passed；学习者端 61 passed / 21 skipped / 0 failed
 - 本地提交：f45a97a 及后一笔 queue_ms 修复
 - 远端推送：已推送 master
-
 ## 2026-10-19 19:57:45 +0800 · WORK-023 · 实施完成并上线：逐行执行与可视化调试
 
 - 类型：implementation
@@ -4062,7 +3762,6 @@ schema_version: 1
 - 验证：全量后端 504/0/5；前端 256 条全绿（播放器 6 条）；线上学习者端 61 passed/21 skipped/0 failed；管理端 22 passed
 - 本地提交：a7d3ec3
 - 远端推送：已推送 master
-
 ## 2026-10-20 · WORK-025 · 需求首次起草：八股文专区（未实施）
 
 - 类型：requirements
@@ -4126,7 +3825,6 @@ schema_version: 1
 - 验证：`project-lifecycle.ps1 validate` 通过，WORK-025 无错误、无体积警告
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-20 09:49:15 +0800 · WORK-024 · 从零开始独立成学习轨道：关卡地图 + Java 24 关
 
 - 类型：implementation
@@ -4136,7 +3834,6 @@ schema_version: 1
 - 验证：verify_course.py 37 文件通过（示例真执行逐字比对）；新增 11 关每篇 5400-7900 字；线上 24 关 7 章节、导入成功；e2e 5 passed（轨道→地图→关卡→正文 + 360px 不溢出）；学习者端全套 62 passed/21 skipped/0 failed，管理端 22 passed
 - 本地提交：af21345、0c1aa68
 - 远端推送：已推送 master
-
 ## 2026-10-20 10:01:01 +0800 · WORK-024 · 关卡难度分级：入门/进阶/深入，可按难度筛选
 
 - 类型：implementation
@@ -4146,7 +3843,6 @@ schema_version: 1
 - 验证：线上分布 5 入门/11 进阶/8 深入；e2e 6 passed（新增难度徽章与筛选）；踩坑：改已应用的 V22 导致 Flyway 校验失败、线上服务起不来，改为新增 V23
 - 本地提交：bb4c858
 - 远端推送：已推送 master
-
 ## 2026-10-20 10:33:38 +0800 · 设计流程规则：先原型再设计，写进 AGENTS.md
 
 - 类型：docs
@@ -4156,7 +3852,6 @@ schema_version: 1
 - 验证：`figcraft-cli info` 读回母版为 10 页 / 835 节点 / 8 组件；九张 PNG 已导出
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-20 · WORK-026 · 决策模型 Laya 接入（代码已落地，工件仅 requirements）
 
 - 类型：implementation
@@ -4178,7 +3873,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **未完成**：① 只有 requirements 一件工件，proposal/design/tasks 缺失（严格模式要求）；② 没有 systemd / 开机自启，重启后服务消失；③ 未接入 WORK-022 遥测
-
 ## 2026-10-20 11:31:21 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/requirements.md
 
 - 类型：decision
@@ -4188,7 +3882,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 11:31:28 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/proposal.md
 
 - 类型：decision
@@ -4198,7 +3891,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 11:31:33 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/design.md
 
 - 类型：decision
@@ -4208,7 +3900,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 11:31:38 +0800 · WORK-026 · 签署 .agent/changes/WORK-026-决策模型接入Laya/tasks.md
 
 - 类型：decision
@@ -4259,7 +3950,6 @@ schema_version: 1
 - 验证：`mvn -pl paideia-ai -am test -Dtest=TechEssayFilterTest` 6/0/0；`project-lifecycle.ps1 validate` 无错误
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-20 · 撤销「先原型再设计」规范并移除 figcraft MCP
 
 - 类型：docs
@@ -4269,7 +3959,6 @@ schema_version: 1
 - 验证：`node -e "require('./config.json')"` 解析通过，剩余 MCP 服务 8 个（codegraph/context7/drawio/bep-mcp-prod/firecrawl/paideia/github/deepseek-search），figcraft 已不在其中
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-20 · WORK-027 每日技术速递 · 建项与数据源实测
 
 - 类型：requirements
@@ -4291,7 +3980,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-01..Q-06 与扩展点取舍待用户裁
-
 ## 2026-10-20 追加 · WORK-027 · 用户裁决四项 + GitHub token
 
 - 类型：requirements
@@ -4314,7 +4002,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-02（扩展点取舍）与 Q-07（token 形态）待用户答；WORK-025 前端入口未补，本项不得开工
-
 ## 2026-10-20 · WORK-028 运维监控面板 · 建项
 
 - 类型：requirements
@@ -4338,7 +4025,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **仍未做**：需求未签署；proposal/design/tasks 未起草；Q-01（技术路线）、Q-02（是否存时序）、Q-05（备份是否单独立项）待用户裁
-
 ## 2026-10-20 追加 · WORK-027 · 四条扩展点入一期 + 四件工件齐备
 
 - 类型：design
@@ -4361,7 +4047,6 @@ schema_version: 1
 - 本地提交：见本轮 commit
 - 远端推送：未推送
 - **仍未做**：四件工件全部未签署（签署只能由 `approve` 命令写入，Agent 不得代签）；WORK-025 前端入口未补，本项不得开工
-
 ## 2026-10-20 15:35:39 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/requirements.md
 
 - 类型：decision
@@ -4371,7 +4056,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 · WORK-025 · 八股文专区实施（抓取→过滤→抽题→入库全链路）
 
 - 类型：implementation
@@ -4407,7 +4091,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **仍未做**：① 定时任务未在生产启用（`enabled: false`）；② 未做 e2e 覆盖「从专区点进去看到条目」；③ 「平台精讲」未建
-
 ## 2026-10-20 15:36:46 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/proposal.md
 
 - 类型：decision
@@ -4417,7 +4100,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 15:36:51 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/design.md
 
 - 类型：decision
@@ -4427,7 +4109,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 15:36:57 +0800 · WORK-025 · 签署 .agent/changes/WORK-025-八股文专区/tasks.md
 
 - 类型：decision
@@ -4437,7 +4118,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 15:42:28 +0800 · WORK-028 · 签署 .agent/changes/WORK-028-运维监控面板/requirements.md、.agent/changes/WORK-028-运维监控面板/proposal.md、.agent/changes/WORK-028-运维监控面板/design.md、.agent/changes/WORK-028-运维监控面板/tasks.md
 
 - 类型：decision
@@ -4447,7 +4127,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-20 · 修复 /learn 与知识图谱，并给线上补齐真实数据
 
 - 类型：fix + data
@@ -4504,7 +4183,6 @@ schema_version: 1
 - 验证：`git ls-remote origin refs/heads/master` = `e175df2d...`，与本地 HEAD 一致；`git rev-list --count origin/master..HEAD` = **0**
 - 推送范围：19 笔。其中属于本次会话的是 `7cf1ec7`（八股文专区）、`554a87f`（去重修复）、`e175df2`（部署记录）；其余为**其他并发会话**的学习轨道（WORK-024）、WORK-027 建项与遥测修复等提交——它们此前也一直只在本地
 - 远端推送：已完成
-
 ## 2026-10-20 · WORK-028 运维监控面板 · 实施、首轮上线与四件工件
 
 - 类型：implementation
@@ -4529,7 +4207,6 @@ schema_version: 1
 - 本地提交：9 笔（`151958d` `970c8d9` `27b58e6` `c1a41ee` `25bebf8` 及其后续）
 - 远端推送：未推送
 - **仍未做**：管理端运维页的 e2e 用例；AC-005 的真实并发压满；慢查询日志开启；异地备份
-
 ## 2026-10-21 · WORK-028 并入 master，并修掉 master 上的 V24 种子冲突
 
 - 类型：maintenance
@@ -4546,7 +4223,6 @@ schema_version: 1
 - 线上复检：`health=200`，`paideia` / `grafana` / `prometheus` 全 active
 - 本地提交：`24c639b`
 - 远端推送：未推送
-
 ## 2026-10-21 · 工作树回收规矩与 D-08 迁移工具复核
 
 - 类型：decision
@@ -4566,7 +4242,6 @@ schema_version: 1
 - 本地提交：`44ddb49`
 - 远端推送：未推送
 - **仍未做**：`feat/ops-monitor` 分支未删（已完全合并，等确认）；`docs/design/` 与 `output/` 两个未跟踪目录仍未决定是否入库
-
 ## 2026-10-21 09:48:57 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/requirements.md
 
 - 类型：decision
@@ -4576,7 +4251,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 · 补八股文专区入口（WORK-025 AC-004 缺口）并批准 WORK-027 需求
 
 - 类型：implementation
@@ -4598,7 +4272,6 @@ schema_version: 1
 - 本地提交：`a512ee1`、`5a6f322`
 - 远端推送：未推送（WORK-027 批准记录 + 本次改动）
 - **仍未做**：5 条草稿未发布（等你过目）；WORK-027 proposal/design/tasks 仍是 draft，等签署
-
 ## 2026-10-21 10:01:43 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/proposal.md
 
 - 类型：decision
@@ -4608,7 +4281,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 · 迁移版本号改时间戳（多会话撞号）
 
 - 类型：decision
@@ -4633,7 +4305,6 @@ schema_version: 1
 - **过程中我自己踩了记录在案的老坑**：删掉探针 SQL 后没清 `target/classes`，Flyway 仍扫到它们 → 201 个错误。`always.md` 早有这条（"删掉资源文件后必须 `mvn clean`"），这次由我本人复现了一遍
 - 本地提交：`e4cd5bd`
 - 远端推送：未推送
-
 ## 2026-10-21 10:26:46 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/design.md
 
 - 类型：decision
@@ -4643,7 +4314,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 10:26:51 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/tasks.md
 
 - 类型：decision
@@ -4653,7 +4323,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-027 四件工件齐签，design/tasks 六处修正
 
 - 类型：requirements
@@ -4671,7 +4340,6 @@ schema_version: 1
 - 本地提交：未提交
 - 远端推送：未推送
 - **下一步**：按 tasks.md TASK-001..013 实施（13 个任务，尚未开始）
-
 ## 2026-10-21 · WORK-027 撤销「按身份筛源」
 
 - 类型：requirements
@@ -4686,7 +4354,6 @@ schema_version: 1
 - 本地提交：见下一笔
 - 远端推送：未推送
 - **下一步**：需求需重新签署；签完后 proposal/design/tasks 三件 stale 也要一并复核签署（改动集中在身份那一节，其余未变）
-
 ## 2026-10-21 · 修掉长期红的 ApiWalkthroughTest（真因是正则匹配，不是端点欠账）+ 五项未验证功能线上复核
 
 - 类型：verification
@@ -4727,7 +4394,6 @@ schema_version: 1
   - 该次提交（`0a4171e`）是并发会话在我做反向验证的**中途**提交了工作区——里面 `bySpecificity` 停在"只数 `{`"的临时状态，而 `/a/{b}` 断言已在，等于 HEAD 上必红。已用 `e47196e` 补回
 - 本地提交：`e47196e`
 - 远端推送：未推送
-
 ## 2026-10-21 · 后端测试耗时实测与内环规矩
 
 - 类型：maintenance
@@ -4753,7 +4419,6 @@ schema_version: 1
 - 验证：按文档命令实跑 `-T 1C -pl '!paideia-app'` → **148 运行 / 0 失败 / 3 跳过 / BUILD SUCCESS**，与记录的 1 分 12 秒一致
 - 本地提交：见下一笔
 - 远端推送：未推送
-
 ## 2026-10-21 · WORK-026 线上接通（开 Laya 开关）+ 修超时 + 补 WORK-024 工件
 
 - 类型：implementation
@@ -4786,7 +4451,6 @@ schema_version: 1
 - 本地提交：`3ed6ab7`（超时）、`2d036a7`（WORK-024 工件）
 - 远端推送：未推送
 - **仍未做**：WORK-024 与 WORK-027 的需求都需要用户重新签署（`validate` 各报一条「需求尚未形成，但已经存在下游工件」）
-
 ## 2026-10-21 · 线上界面导入 FigCraft 可编辑稿 + 恢复 figcraft MCP
 
 - 类型：tooling
@@ -4808,7 +4472,6 @@ schema_version: 1
 - 已知限制：Tailwind 的 `box-shadow`、`backdrop-filter`、CSS 灰阶以外的渐变角度未完整还原；响应式断点只抓了 1440 宽
 - 本地提交：未提交（`docs/design/` 与 `output/` 均未被 Git 跟踪，是否入库待定）
 - 远端推送：未推送
-
 ## 2026-10-21 · 移除 figcraft MCP（用户否决）
 
 - 类型：tooling
@@ -4819,7 +4482,6 @@ schema_version: 1
 - 保留：`docs/design/paideia-live-2026-10-21.figcraft` 与 `output/fc/` 脚本未删除（均未被 Git 跟踪），是否清理由用户决定
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 13:42:24 +0800 · WORK-024 · 签署 .agent/changes/WORK-024-学习轨道与闯关地图/requirements.md、.agent/changes/WORK-024-学习轨道与闯关地图/proposal.md、.agent/changes/WORK-024-学习轨道与闯关地图/design.md、.agent/changes/WORK-024-学习轨道与闯关地图/tasks.md
 
 - 类型：decision
@@ -4829,7 +4491,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 13:46:49 +0800 · WORK-027 · 签署 .agent/changes/WORK-027-每日技术速递/requirements.md、.agent/changes/WORK-027-每日技术速递/proposal.md、.agent/changes/WORK-027-每日技术速递/design.md、.agent/changes/WORK-027-每日技术速递/tasks.md
 
 - 类型：decision
@@ -4839,7 +4500,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 15:12 +0800 · WORK-029 · AI 训练营实现完成（A–I 段）
 
 - 类型：implementation
@@ -4868,7 +4528,6 @@ schema_version: 1
 - 收尾时又修掉三个真缺陷（见下一段），并补 `CampMasteryIntegrationTest` 4 条
 - 本地提交：5 笔（5408f06 / af82e64 / e94cd95 / 3f8e904 / 22005d3），在 `feat/work-029-camp` 工作树
 - 远端推送：未执行（等用户授权）
-
 ## 2026-10-21 15:30 +0800 · WORK-029 · 补测试时抓出三个真缺陷
 
 - 类型：fix
@@ -4915,7 +4574,6 @@ schema_version: 1
 - 验证：`pnpm -r test` 连续 4 次全绿（154/154 ui、总 284 条）；`graph.spec.ts` 补凭据后 6 passed
 - 本地提交：见下一笔
 - 远端推送：未推送
-
 ## 2026-10-21 · e2e 改为文件级选择性运行（实测省 65–92%）
 
 - 类型：maintenance
@@ -4939,7 +4597,6 @@ schema_version: 1
 - 验证：三种跑法都实跑过（27s / 54s / 13s），结果与用例数一致
 - 本地提交：见下一笔
 - 远端推送：未推送
-
 ## 2026-10-21 14:24:42 +0800 · WORK-030 · 建项：管理端优化（draft）
 
 - 类型：decision
@@ -4949,7 +4606,6 @@ schema_version: 1
 - 验证：validate 通过，无 WORK-030 相关错误或警告
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:28:34 +0800 · WORK-030 · 第二轮口述：删积分调整页、并入用户管理，管理端整体去简约
 
 - 类型：decision
@@ -4959,7 +4615,6 @@ schema_version: 1
 - 验证：逐页读码核实十页现状：条目管理是唯一同时有筛选与分页的页；举报与调用明细的后端已支持筛选但前端未用；validate 无 WORK-030 错误
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:31:50 +0800 · WORK-030 · 第三轮：参照物换成 new-api，用户管理补齐增删改与字段清单
 
 - 类型：decision
@@ -4969,7 +4624,6 @@ schema_version: 1
 - 验证：读码核实：TokenService.issueWithin 把 role 写进 claim（改角色对旧令牌无效）；RefreshTokenMapper.deleteByUser 已存在；AccountDeletionService.delete 校验用户密码；UserMapper 三条 SELECT 无 created_at；validate 仅余文件体积警告
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:37:37 +0800 · WORK-030 · 调用明细：核实 AgentScope 事件流不适用，改为补步骤级信息（REQ-050..055）
 
 - 类型：decision
@@ -4979,7 +4633,6 @@ schema_version: 1
 - 验证：逐行核实：pom 声明 agentscope-core 2.0.0；AgentScopeConversation:103 是手写 for 循环不是 ReActAgent；ai_run_spans 已记六列；SpanRecord.ttftMs 字段存在但 DefaultRunRecorder.close() 恒传 null；ALLOWED_ATTRS 仅 8 个请求级键；validate 无 WORK-030 错误，REQ 编号无重号
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:40:28 +0800 · WORK-030 · U-16/U-17 裁决：工具返回与完整 payload 都要存，新增 payload 表
 
 - 类型：decision
@@ -4989,7 +4642,6 @@ schema_version: 1
 - 验证：validate 无 WORK-030 错误；REQ 共 40 条无重号；误删的 REQ-030/031/040 已复位并复核存在
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:42:20 +0800 · WORK-030 · 核实为何不用 ReActAgent，结论写入 references（不迁移）
 
 - 类型：decision
@@ -4999,7 +4651,6 @@ schema_version: 1
 - 验证：解包核实：2.0.0 的 jar 无 FinalAnswerFilterMiddleware，2.0.4 有；2.0.4 传递 mcp 0.17.2 而仓库 pin 0.17.0；Maven Central 最新稳定 2.0.4、另有 2.1.0-BETA1；代码核实 AgentScopeConversation:103 为手写循环、:300 有 NoteDraft 旁路、:303 有 find_tools 逐轮发现
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:53:58 +0800 · WORK-031 · 尖刺实测通过：建 WORK-031（ReActAgent 迁移），并修正上一轮的错误结论
 
 - 类型：decision
@@ -5009,7 +4660,6 @@ schema_version: 1
 - 验证：真实 DeepSeek 跑通三个尖刺：Spike 5.9s（17 种事件、两轮工具调用、程序化 AgentTool 无需注解）；HookSpike 通过但 hook 包已标 removal；MiddlewareSpike 4.3s（ModelCallInput 给出 messages/tools/options/model，ChatUsage 给出 cached=256 与 reasoning）；validate 无 WORK-031 错误
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 14:57:46 +0800 · WORK-031 · 确定 WORK-030/031 顺序：031 先做，030 拆两阶段
 
 - 类型：decision
@@ -5019,7 +4669,6 @@ schema_version: 1
 - 验证：逐条比对两项的代码落点：030 的遥测簇采集点在 runRound/execute（031 会替换），030 阶段 A 只碰 paideia-account、管理端前端与既有只读端点；迁移目录无冲突（031 不动 db/migration）；validate 仅余 WORK-030 体积警告
 - 本地提交：未提交
 - 远端推送：未推送
-
 ## 2026-10-21 15:05:00 +0800 · 基础设施 · 建立架构图存档（mermaid + 生成 + 校验）
 
 - 类型：feature
@@ -5030,7 +4679,6 @@ schema_version: 1
 - 已知限制：校验只做语法不做渲染，布局拥挤查不出来；`subgraph` 标题含全角括号必须加引号，否则词法错误
 - 本地提交：已提交（updates.md 本身未随本笔提交——文件里有其它会话的 WORK-030/031 未提交条目）
 - 远端推送：未推送
-
 ## 2026-10-21 14:59:57 +0800 · WORK-031 · 签署 .agent/changes/WORK-031-Agent运行时迁移到ReActAgent/requirements.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/proposal.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/design.md、.agent/changes/WORK-031-Agent运行时迁移到ReActAgent/tasks.md
 
 - 类型：decision
@@ -5040,7 +4688,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 15:40:00 +0800 · 基础设施 · 架构存档补全到四张结构图，并更正部署图里的 RabbitMQ
 
 - 类型：feature
@@ -5085,7 +4732,6 @@ schema_version: 1
 - 验证：编译 0；dependency:tree 确认 agentscope-core 2.0.4 带 mcp 0.17.2；内环 150/0/3；全量 12 模块 545/0/4；反向验证按预期红 expected 0 but was 120；ApiWalkthroughTest 首跑红并指出新增字段，快照 diff 仅一处新增；Skipped 4 条均为既有设计
 - 本地提交：a1af6ce 版本，c001d4d 缓存修复
 - 远端推送：未推送
-
 ## 2026-10-21 16:19:04 +0800 · WORK-031 · 第二三步完成：工具循环改由 ReActAgent 驱动，全量 554/0/10
 
 - 类型：implementation
@@ -5095,7 +4741,6 @@ schema_version: 1
 - 验证：全量 554/0/10（基线 543，新增 11 条）；跳过 10 条逐条核过均为需外部服务（FileStorage 1、AgentLive 2、Laya 3、AssistantLiveUpstream 4）；真连 DeepSeek 两条 live 测试通过，工具循环答案含工具返回内容；反向验证：去掉 schema 收窄后 find_tools 用例按预期红；迁移中暴露并修掉两步序号并发撞号与用量累加丢更新
 - 本地提交：5c1d5f8
 - 远端推送：未推送
-
 ## 2026-10-21 · 工程规范 · 切片提交不再跑后端全量，改跑两段组合
 
 - 类型：docs
@@ -5124,7 +4769,6 @@ schema_version: 1
 - 未完成：全量在用例涨到 667 后**没有在干净树上重测**，文档里 3:30 已标注为"543 条时的实测"
 - 本地提交：待用户授权
 - 远端推送：未执行
-
 ## 2026-10-21 · AI 可观测性 · 补接 prompt_version 与终态归类（cancelled/timeout）
 
 - 变更：
@@ -5162,7 +4806,6 @@ schema_version: 1
   `backend/` 跑（根目录无 pom），`scripts/test-db.sh` 也要带 `-f backend/pom.xml`
 - 本地提交：待用户授权
 - 远端推送：未执行
-
 ## 2026-10-21 16:47:18 +0800 · WORK-030 · 签署 .agent/changes/WORK-030-管理端优化/requirements.md
 
 - 类型：decision
@@ -5172,7 +4815,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 16:48:21 +0800 · WORK-030 · 签署 .agent/changes/WORK-030-管理端优化/proposal.md
 
 - 类型：decision
@@ -5182,7 +4824,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 16:48:24 +0800 · WORK-030 · 签署 .agent/changes/WORK-030-管理端优化/design.md
 
 - 类型：decision
@@ -5192,7 +4833,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 16:48:29 +0800 · WORK-030 · 签署 .agent/changes/WORK-030-管理端优化/tasks.md
 
 - 类型：decision
@@ -5202,7 +4842,6 @@ schema_version: 1
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-027 · 推送 master 并部署上线（含一次线上事故）
 
 - 类型：deployment
@@ -5235,7 +4874,6 @@ schema_version: 1
   管理端删除的 e2e 未跑
 - 本地提交：`7bdd748`（及合并前的 5 笔）
 - 远端推送：**已完成**（`2309acb..7bdd748`）
-
 ## 2026-10-21 · 内容 · 计算机网络线补齐 7 篇 + 新开 MySQL 从零开始
 
 - 类型：content
@@ -5273,7 +4911,6 @@ schema_version: 1
 - 验证：后端全量 690/0/18（跳过 18 条逐条核过均需外部服务）；管理端 e2e 25 passed；权限规则反向验证按预期红（学习者拿到 200）；调积分/改角色/删号/不可自伤/口令不泄露五条各有集成用例；tsc 与构建通过
 - 本地提交：365859d 后端，df73133 前端
 - 远端推送：未推送
-
 ## 2026-10-21 · 建项 WORK-032 · MySQL 实训沙箱与题库（draft）
 
 - 类型：decision
@@ -5294,7 +4931,6 @@ schema_version: 1
   这是生命周期对"需求未批准先有下游"的纪律，**批准后自动消失**；其余为既有项告警
 - 本地提交：未提交（待用户确认需求）
 - 远端推送：未执行
-
 ## 2026-10-21 18:06:32 +0800 · WORK-032 · 签署 .agent/changes/WORK-032-MySQL实训沙箱与题库/requirements.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/proposal.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/design.md、.agent/changes/WORK-032-MySQL实训沙箱与题库/tasks.md
 
 - 类型：decision
@@ -5313,7 +4949,6 @@ schema_version: 1
 - 验证：全量 700/0/18；AiRunPayloadIntegrationTest 6 条（含凭据不入库的反向断言）；管理端 e2e 25 passed；api-shape 仅一个端点形状变化；migration-checksums 仅加一行
 - 本地提交：4353f2f 后端，6b09e86 前端
 - 远端推送：未推送
-
 ## 2026-10-21 · WORK-030 阶段 B 部署上线（首次失败，已修复）
 
 - 类型：implementation
@@ -5340,7 +4975,6 @@ schema_version: 1
 （Flyway 校验在建表前就抛），不是慢。60 秒等待掩盖了"服务根本没起来"这件事——
 日志里 status=exited code=1 与 systemd 反复重启才是判据。以后部署失败要先看
 systemctl is-active 与 journalctl 尾部，不要只看超时。
-
 ## 2026-10-21 · WORK-032 TASK-001~004 实施（判题口径 + SQL 执行能力）
 
 - 类型：implementation
@@ -5375,7 +5009,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   3. 未建库/未指定库 → `ERROR 1046 No database selected`（脚本里 `CREATE DATABASE practice` + `--database`）
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-032 TASK-005/007 题目质量门禁与先行 3 题
 
 - 类型：implementation
@@ -5402,7 +5035,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 自动断言挡得住"坏题"，挡不住"平庸的题"——TASK-008 之后仍需一次人工题目评审
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-032 TASK-006 能力探测与分档配额接线
 
 - 类型：implementation
@@ -5421,7 +5053,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     **旧的 sandbox jar**，不是代码错误。`mvn -pl paideia-sandbox install` 后通过
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-032 TASK-010（部分）SQL 题型渲染与前端契约
 
 - 类型：implementation
@@ -5442,7 +5073,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     已核对：这两个文件都不在本次改动里
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-032 TASK-008 十二关题目与课时接入
 
 - 类型：content
@@ -5469,7 +5099,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   3. 第 12 课的 alternatives 用标量子查询会把无订单客户带成 NULL 行，与 INNER JOIN 语义不同
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-21 · WORK-032 部署上线与线上真验
 
 - 类型：deployment
@@ -5499,7 +5128,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   两种取令牌的路都实测 401
 - 本地提交：master 上 5 笔（含两次 merge）
 - 远端推送：**未执行**（需用户授权）
-
 ## 2026-10-22 · WORK-032 TASK-010 收尾 + 两处遗留红测
 
 - 类型：implementation
@@ -5518,7 +5146,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 未做：TASK-010 的 e2e 级验收（关卡正文要真沙箱才有结果集），已在 tasks.md 写明
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 · WORK-032 验证报告入库（status: partial）
 
 - 类型：verification
@@ -5539,7 +5166,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - `project_status.py --work WORK-032` → 结构化证据校验通过（不再报"证据不完整"）
 - 本地提交：`661e322`（AC-013 测试）+ 本笔（报告）
 - 远端推送：未执行
-
 ## 2026-10-22 · WORK-032 AC-002 / AC-007 在真实沙箱上验证通过
 
 - 类型：verification
@@ -5559,7 +5185,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     「硬编码在隐藏数据集上竟然判对了——隐藏集没有起作用」，恢复后转绿
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 20:45:00 +08:00 · 速递日期口径、MCP 权限粒度、导航入口三件修复
 
 - 类型：bugfix
@@ -5602,7 +5227,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - e2e：学习者端 **82 passed / 0 failed**，管理端 **25 passed / 0 failed**（都打线上）
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 14:26:48 +08:00 · WORK-027 验收证据收口（validate 转绿）
 
 - 类型：docs
@@ -5623,7 +5247,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - `project-lifecycle.py status` → 31 个工作项全部「完成沉淀 | 已完成」。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 15:55:00 +08:00 · 速递热度分级 + GitHub 热榜修复 + 从零开始补全 + 知识库扩容
 
 - 类型：feat / content
@@ -5664,7 +5287,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     算法 9、网络 11、操作系统 8、人工智能 7。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 16:25:00 +08:00 · 建项 WORK-033（题目知识点关联与掌握诊断）需求草案
 
 - 类型：docs
@@ -5682,7 +5304,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     既有警告拖成非零，与本项无关）。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 16:27:49 +0800 · WORK-033 · 签署 .agent/changes/WORK-033-题目知识点关联与掌握诊断/requirements.md
 
 - 类型：decision
@@ -5692,7 +5313,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，1 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-22 16:30:26 +0800 · WORK-033 · 签署 .agent/changes/WORK-033-题目知识点关联与掌握诊断/requirements.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/proposal.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/design.md、.agent/changes/WORK-033-题目知识点关联与掌握诊断/tasks.md
 
 - 类型：decision
@@ -5702,7 +5322,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
 ## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
 
 - 类型：implementation
@@ -5726,7 +5345,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   T-05 两个管理端点与 T-08 的逐题上报 e2e 尚无测试。
 - 本地提交：见下一笔
 - 远端推送：未执行
-
 ## 2026-10-22 17:12:00 +08:00 · WORK-033 全量测试、推送与部署
 
 - 类型：verification
@@ -5745,7 +5363,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 本地提交：`9ed0132`
 - 远端推送：`origin/work-033-question-concept`（**分支**；master 未合并——主树有另一会话
   未提交的 `WORK-034` 与 `updates.md` 改动，不能带着别人的改动合并）
-
 ## 2026-10-22 17:55:00 +08:00 · 发版上传改为增量（WORK-033 分支）
 
 - 类型：maintenance
@@ -5771,7 +5388,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   - 线上 `/actuator/health` UP，`/learning/mastery` 等 WORK-033 端点仍 200。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-033-question-concept`
-
 ## 2026-10-22 18:20:00 +08:00 · 增量上传进阶：清单 v2（自家文件哈希、依赖按大小）
 
 - 类型：maintenance
@@ -5874,7 +5490,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
  ## 2026-10-22 16:52:00 +08:00 · WORK-033 第一轮实现（数据地基 + 作答 + BKT/Elo + 诊断 + 图谱接入）
  
  - 类型：implementation
-
 ## 2026-10-23 09:45:00 +08:00 · WORK-033 T-08 逐题上报 e2e
 
 - 类型：verification
@@ -5885,7 +5500,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 至此 WORK-033 的 T-01..T-12 全部 done；仅 AC-004/AC-006 需要真实作答数据后才能验收。
 - 本地提交：见下一笔
 - 远端推送：master
-
 ## 2026-10-23 09:44:49 +0800 · WORK-034 · 签署 .agent/changes/WORK-034-学习闭环与复习入口/requirements.md、.agent/changes/WORK-034-学习闭环与复习入口/proposal.md、.agent/changes/WORK-034-学习闭环与复习入口/design.md、.agent/changes/WORK-034-学习闭环与复习入口/tasks.md
 
 - 类型：decision
@@ -5895,8 +5509,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
-
-<<<<<<< HEAD
 ## 2026-10-23 09:55:00 +08:00 · 修隐藏数据集泄露 + 建项 WORK-035
 
 - 类型：fix + docs
@@ -5937,7 +5549,6 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
   `SqlResultCodec` 是否变形——两条都列为 S1 的前置任务（T-01 / T-05），不通过要改方案。
 - 本地提交：见下一笔
 - 远端推送：未执行
-=======
 ## 2026-10-23 09:58:00 +08:00 · WORK-034 开启：S1 前两件（排序纯函数、到期列表接口）
 
 - 类型：implementation
@@ -5953,4 +5564,3 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 说明：S1 的页面（TASK-003）与首页入口（TASK-004）尚未做，接口暂时只有测试消费。
 - 本地提交：见下一笔
 - 远端推送：分支 `work-034-learning-loop`
->>>>>>> work-034-learning-loop
