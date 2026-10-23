@@ -76,9 +76,10 @@ class SandboxController {
                 quota.usedToday(userId),
                 properties.getSqlDailyLimit(),
                 quota.usedToday(userId, "sql"),
-                // 只报**公开**数据集：隐藏集进了选择器，用户跑一句 SELECT * 就拿到内容，
-                // 隐藏当场失效。运行端点仍认全部 key（题面本来就明文写着它）。
-                datasets.publicKeys(),
+                // 选择器要的清单：内置公开集 + 自己的私人集 + 已发布的社区集。
+                // **隐藏集不在这里**——它进了选择器，用户跑一句 SELECT * 就拿到内容。
+                // 运行端点仍认全部内置 key（题面本来就明文写着它）。
+                datasets.options(userId),
                 ready ? null : runner.unavailableReason()));
     }
 
@@ -93,10 +94,11 @@ class SandboxController {
      */
     @GetMapping("/datasets/{key}/schema")
     ApiResponse<String> datasetSchema(@PathVariable String key) {
-        if (!datasets.publicKeys().contains(key)) {
+        if (datasets.publicKeys().contains(key) == false
+                && datasets.options(currentUserId()).stream().noneMatch(option -> option.key().equals(key))) {
             throw new BizException(ErrorCode.NOT_FOUND, "没有这个数据集");
         }
-        String schema = datasets.schema(key);
+        String schema = datasets.schema(currentUserId(), key);
         if (schema == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "这个数据集还没有结构快照");
         }
@@ -124,7 +126,9 @@ class SandboxController {
             if (dataset == null || dataset.isBlank()) {
                 throw new BizException(ErrorCode.INVALID_ARGUMENT, "SQL 运行必须指定数据集");
             }
-            stdin = datasets.sql(dataset);
+            // 必须带 userId：私人集只有本人能跑（WORK-035 的安全边界）。
+            // 无权访问与不存在都返回同一句文案——区分了就给出一个可枚举的 oracle。
+            stdin = datasets.sql(userId, dataset);
             if (stdin == null) {
                 throw new BizException(ErrorCode.INVALID_ARGUMENT, "未知数据集：" + dataset);
             }
@@ -250,8 +254,8 @@ class SandboxController {
                       int dailyLimit, int usedToday,
                       // SQL 单独一档（WORK-032 U-09）：额度不与其它语言共用
                       int sqlDailyLimit, int sqlUsedToday,
-                      // 已知数据集 key：客户端据此渲染选择器，内容仍由服务端持有
-                      List<String> datasets,
+                      // 可选数据集（WORK-035）：key + 名字 + 来源。内容仍由服务端持有。
+                      List<SqlDatasets.DatasetOption> datasets,
                       String reason) {
     }
 

@@ -5680,3 +5680,31 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
     **这个缺陷在单跑某个文件时不会出现，只在多文件同一进程里暴露**——已两个文件都补上。
 - S1 完成：T-01..T-06 全部 done。工作台已具备编辑器（带补全）、结果表、执行计划、表结构/ER 图、图表。
 - 本地提交：见下一笔
+
+## 2026-10-23 11:00:00 +08:00 · WORK-035 T-07 / T-08 完成（安全边界）
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261023110000__create_sql_dataset_tables.sql`：`sql_datasets` + `sql_dataset_reports`
+    （校验和已登记，`MigrationChecksumTest` / `VersionFormatTest` / `SeedOverlapTest` 全绿）。
+  - `SqlDatasetMapper`：增删改查 + 举报（`ON DUPLICATE KEY UPDATE`，同一人同一集只留一条）。
+  - **`SqlDatasets.sql(String key)` 已删除，改为 `sql(long userId, String key)`**（不重载）。
+  - `DatasetStorage` 端口（sandbox 自己的），`paideia-app` 用 `FileStorage` 桥接。
+  - 注销级联：私人集删、社区集置 `owner_user_id = NULL`、举报删。
+  - `/sandbox/status` 的 `datasets` 从 `List<String>` 改为带来源的选项列表。
+- 决策：
+  - **旧签名直接删除而不是重载**：留一个没有用户参数的版本，将来一定有人调到它，
+    而那正是越权的入口。
+  - **社区集在作者注销时不删，只解除归属**：别人可能正在用它做题；它已经不是私有数据了
+    （用户主动发布过）。这与"注销删掉本人数据"不冲突，是同一口径下的合理例外。
+  - **`DatasetStorage` 用独立端口而不是直接引 knowledge 的 `FileStorage`**：
+    后者在 `knowledge.internal.file`，跨模块访问 internal 会被 `ModularityTest` 拦下，
+    且会把 Maven 方向改成 sandbox → knowledge。
+  - 端口只要求 `read`：数据集内容只读不改，写入走同模块的上传服务。
+- 验证：
+  - `paideia-sandbox` **29 passed**（SqlDatasetsTest 从 5 条扩到 10 条）。
+  - **AC-007 反向测试**：`privateDatasetIsNotReadableByOthers`——作者本人能跑、
+    他人拿到 key 也拿不到内容。另有一条 `forbiddenAndMissingAreIndistinguishable`
+    断言"无权"与"不存在"返回同一结果（否则是可枚举的 oracle）。
+  - 全后端（除 app 模块）**266 运行 / 0 失败 / 13 跳过**。
+- 本地提交：见下一笔

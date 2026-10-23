@@ -1,9 +1,12 @@
 package io.github.xiaou61.sandbox.internal.run;
 
+import io.github.xiaou61.sandbox.internal.dataset.DatasetStorage;
+import io.github.xiaou61.sandbox.internal.dataset.SqlDatasetMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,22 +15,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * SQL 数据集白名单（WORK-032）。
+ * SQL 数据集解析（WORK-032 建，WORK-035 扩成三源）。
  *
- * <p><b>数据集为什么在服务端</b>：隐藏数据集的用途是让"把公开集上的答案硬编码进去"失败。
- * 如果数据集由客户端上传，客户端就必然持有它，隐藏集也就不隐藏了。所以数据集放在
- * 沙箱模块的 resources 里，客户端**只传 key**，服务端按 key 取内容。
+ * <p><b>两种来源，一条解析路径</b>：
+ * <ol>
+ *   <li><b>内置</b>：classpath 里的 `.sql`，受信任内容，任何人可跑，**不依赖对象存储**。
+ *       这一档永远在，因为它决定了"对象存储挂了时课程还能不能做题"。</li>
+ *   <li><b>私人 / 社区</b>：元信息在 `sql_datasets` 表，内容在 {@link FileStorage}。</li>
+ * </ol>
  *
- * <p>顺带解决另一件事：客户端上行的 SQL 永远不会被当成"数据集"执行，于是
- * "数据集必须先于用户 SQL 生效"这条顺序由服务端保证，不依赖客户端配合。
+ * <p><b>为什么数据集内容不进数据库</b>：它就是文件。塞成 blob 会让备份与迁移变重，
+ * 而对象存储端口（WORK-007）本来就是为这类东西准备的。
  *
- * <p>数据集是**受信任内容**（作者写的建表 + 插数），不是用户输入。加数据集 = 往
- * `resources/sandbox/datasets/` 放一个 `.sql` 并在下面登记 key。
+ * <p><b>隐藏集的边界</b>：{@link #publicKeys()} 不报隐藏集（否则它进了选择器就等于公开），
+ * 但 {@link #sql(long, String)} 仍认它——课程题面里明文写着这个 key，拒绝运行会让关卡做不了。
  */
 @Component
 public class SqlDatasets {
 
-    /** key → classpath 资源。加数据集从这里开始。 */
+    /** 内置数据集：key → classpath 资源。加内置集从这里开始。 */
     private static final Map<String, String> REGISTRY = Map.of(
             "orders-public", "orders-public.sql",
             "orders-hidden-a", "orders-hidden-a.sql");
@@ -41,59 +47,123 @@ public class SqlDatasets {
      */
     private static final Set<String> HIDDEN = Set.of("orders-hidden-a");
 
+    /** 内置集的内容缓存。私人/社区集不缓存内容——它们可以被作者改写。 */
     private final Map<String, String> cache = new ConcurrentHashMap<>();
 
     /** schema 快照缓存：与内容缓存分开，两者的缺失语义不同（内容缺失是 bug，快照缺失可接受）。 */
     private final Map<String, String> schemaCache = new ConcurrentHashMap<>();
 
-    /** 已知的 key。给运行与校验用——**不要拿它给客户端渲染选择器**。 */
+    private final SqlDatasetMapper mapper;
+    private final DatasetStorage storage;
+
+    SqlDatasets(SqlDatasetMapper mapper, DatasetStorage storage) {
+        this.mapper = mapper;
+        this.storage = storage;
+    }
+
+    /** 内置集的全部 key（含隐藏集）。给运行与校验用——**不要拿它给客户端渲染选择器**。 */
     public Set<String> keys() {
         return REGISTRY.keySet();
     }
 
-    /** 可以下发给客户端的 key（不含隐藏集）。顺序固定，避免选择器每次刷新都换位置。 */
+    /** 内置集中可以下发给客户端的 key（不含隐藏集）。顺序固定，避免选择器每次刷新都换位置。 */
     public List<String> publicKeys() {
         return REGISTRY.keySet().stream().filter(key -> !HIDDEN.contains(key)).sorted().toList();
     }
 
-    public boolean exists(String key) {
+    /** 是否是内置集（受信任档）。 */
+    public boolean isBuiltin(String key) {
         return key != null && REGISTRY.containsKey(key);
     }
 
     /**
-     * 取数据集内容。未知 key 返回 null——调用方负责拒绝，**不要在这里抛异常**：
-     * 未知 key 是客户端错误（400），不是服务端故障（500）。
+     * 取数据集内容（**唯一入口**，必须带 userId）。
+     *
+     * <p><b>签名里必须有用户</b>：WORK-032 的版本是 `sql(String key)`，没有用户参数——
+     * 任何人猜到 key 就能跑别人的私人数据集。这是本项唯一的真安全边界，所以旧签名
+     * **直接删除而不是重载**：留一个旧签名，将来一定有人调到它。
+     *
+     * <p>返回 null 表示"不存在**或**无权访问"，两者**刻意不区分**——区分了就给出一个
+     * 枚举 oracle，攻击者能靠文案差异确认某个 key 存在。
      */
-    public String sql(String key) {
-        if (!exists(key)) {
+    public String sql(long userId, String key) {
+        if (key == null) {
             return null;
         }
-        return cache.computeIfAbsent(key, name -> read(REGISTRY.get(name)));
+        // 1. 内置优先：它不依赖数据库与对象存储，任何情况下都可用
+        if (isBuiltin(key)) {
+            return cache.computeIfAbsent(key, name -> read(REGISTRY.get(name)));
+        }
+        // 2. 表里的私人 / 社区集
+        return mapper.findByKey(key)
+                .filter(row -> visible(row, userId))
+                .map(row -> storage.read(row.storageId())
+                        .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                        .orElse(null))
+                .orElse(null);
+    }
+
+    /**
+     * 可见性判定。
+     *
+     * <p>社区集必须是 `published`（`draft` 还没发布，`taken_down` 已下架）；
+     * 私人集必须是自己拥有。**顺序不重要，但每一条都要在**——漏一条就是越权。
+     */
+    static boolean visible(SqlDatasetMapper.Row row, long userId) {
+        if ("community".equals(row.source())) {
+            return "published".equals(row.status());
+        }
+        if ("private".equals(row.source())) {
+            return row.ownerUserId() != null && row.ownerUserId() == userId;
+        }
+        return false;
     }
 
     /** 便于测试注入。 */
     Map<String, String> snapshot() {
         Map<String, String> copy = new LinkedHashMap<>();
         for (String key : keys()) {
-            copy.put(key, sql(key));
+            copy.put(key, sql(0L, key));
         }
         return copy;
     }
 
     /**
-     * 数据集的结构快照（WORK-035 T-03）。未知 key 或快照文件缺失时返回 null。
+     * 数据集的结构快照（WORK-035 T-03）。
      *
-     * <p><b>快照是构建期生成的静态文件</b>（`scripts/gen-dataset-schema.mjs`），不在运行时抓：
-     * 抓一次要起容器（3–5 秒 + 一次配额），而数据集内容不变时 schema 也不会变。
+     * <p>内置集读构建期生成的静态文件；私人/社区集读表里的 `schema_json`。
+     * 未知 key、无权访问、或快照缺失时返回 null。
      *
      * <p>**返回原始 JSON 字符串而不是解析成对象**：这份内容会原样转给前端补全与助手工具，
-     * 中途转成 Java 结构再序列化一遍只会引入"字段名对不上"这类错，而不带来任何好处。
+     * 中途转成 Java 结构再序列化一遍只会引入"字段名对不上"这类错。
      */
-    public String schema(String key) {
-        if (!exists(key)) {
+    public String schema(long userId, String key) {
+        if (key == null) {
             return null;
         }
-        return schemaCache.computeIfAbsent(key, name -> readOrNull("/sandbox/datasets/" + name + ".schema.json"));
+        if (isBuiltin(key)) {
+            return schemaCache.computeIfAbsent(key, name -> readOrNull("/sandbox/datasets/" + name + ".schema.json"));
+        }
+        return mapper.findByKey(key)
+                .filter(row -> visible(row, userId))
+                .map(SqlDatasetMapper.Row::schemaJson)
+                .orElse(null);
+    }
+
+    /** 某用户能选的数据集：内置公开集 + 自己的私人集 + 已发布的社区集。 */
+    public List<DatasetOption> options(long userId) {
+        List<DatasetOption> result = new ArrayList<>();
+        for (String key : publicKeys()) {
+            result.add(new DatasetOption(key, key, "builtin"));
+        }
+        for (SqlDatasetMapper.Summary row : mapper.listVisible(userId)) {
+            result.add(new DatasetOption(row.datasetKey(), row.name(), row.source()));
+        }
+        return List.copyOf(result);
+    }
+
+    /** 选择器的一项。`source` 让前端分组显示。 */
+    public record DatasetOption(String key, String name, String source) {
     }
 
     /** 读一个 classpath 资源；不存在时返回 null（快照缺失不该让接口 500）。 */

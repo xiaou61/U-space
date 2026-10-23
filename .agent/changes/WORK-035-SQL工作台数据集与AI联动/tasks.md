@@ -35,8 +35,8 @@ approver_role: CTO
 | T-04 | 表结构侧栏与 ER 图 | S1 | done |
 | T-05 | 执行计划可视化 | S1 | done |
 | T-06 | 结果图表 | S1 | done |
-| T-07 | 数据集迁移与 Mapper | S2 | pending |
-| T-08 | 数据集解析改造（安全边界） | S2 | pending |
+| T-07 | 数据集迁移与 Mapper | S2 | done |
+| T-08 | 数据集解析改造（安全边界） | S2 | done |
 | T-09 | 上传与干跑 | S2 | pending |
 | T-10 | 社区发布、举报与下架 | S2 | pending |
 | T-11 | 管理端两页 | S2 | pending |
