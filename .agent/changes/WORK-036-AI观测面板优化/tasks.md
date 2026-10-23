@@ -5,6 +5,9 @@ work: AI 观测面板优化
 status: approved
 created: 2026-10-23
 updated: 2026-10-23
+approved_by: xiaou61
+approved_at: 2026-10-23 14:34:03 +0800
+approver_role: CTO
 ---
 
 # 任务 · AI 观测面板优化
