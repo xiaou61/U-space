@@ -162,3 +162,40 @@ export interface ReviewDueList {
   items: ReviewDueItem[]
   total: number
 }
+
+export interface ReviewSessionItem {
+  itemId: number
+  conceptId: number
+  stem: string
+  options: string[]
+}
+
+export interface ReviewFallback {
+  entryId: number
+  title: string
+}
+
+export interface ReviewSession {
+  sessionId: number
+  items: ReviewSessionItem[]
+  expiresAt: string | null
+  fallback: ReviewFallback[]
+}
+
+export interface ReviewResult {
+  itemId: number
+  conceptId: number
+  correct: boolean
+  explanation: string
+}
+
+export interface ReviewSchedule {
+  entryId: number
+  stage: number
+  reviewDueAt: string
+}
+
+export interface ReviewSubmitResult {
+  results: ReviewResult[]
+  schedule: ReviewSchedule[]
+}

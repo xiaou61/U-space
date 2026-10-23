@@ -104,7 +104,7 @@ approver_role: CTO
   3. 跑 `home.spec.ts`。
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/home.spec.ts` → 期望全绿。
 
-### TASK-005 | blocked | 冻结 WORK-033 掌握度端口
+### TASK-005 | done | 冻结 WORK-033 掌握度端口
 
 - 对应：`REQ-005`、`REQ-011`
 - 依赖：WORK-033 合并（硬依赖）
@@ -117,7 +117,7 @@ approver_role: CTO
   3. 若接口不满足，回到本项 `design.md` 的「待决定事项 1」并停。
 - 验证：笔记存在且被 TASK-006/007 的依据引用；`rg "review-mastery-contract" .agent/changes/WORK-034-*` 有命中。
 
-### TASK-006 | blocked | 出题端口与会话创建
+### TASK-006 | done | 出题端口与会话创建
 
 - 对应：`REQ-003`、`REQ-004`、`REQ-009`、`REQ-010`、`AC-004`、`AC-005`、`AC-009`
 - 依赖：TASK-005、TASK-002
@@ -131,7 +131,7 @@ approver_role: CTO
   4. 跑集成测试与生成器测试。
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=LearningReviewIntegrationTest test` → 期望新增用例全过；`scripts/test-db.sh mvn -B -pl paideia-ai -am -Dtest=ReviewQuestionGeneratorTest test` → 全过。
 
-### TASK-007 | blocked | 交卷与排期更新
+### TASK-007 | done | 交卷与排期更新
 
 - 对应：`REQ-005`、`REQ-009`、`REQ-010`、`AC-003`、`AC-005`、`AC-009`、`AC-011`
 - 依赖：TASK-006
@@ -145,7 +145,7 @@ approver_role: CTO
   4. 跑规则测试与集成测试。
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-knowledge -am -Dtest=LearningProgressRulesTest test`；`scripts/test-db.sh mvn -B -pl paideia-app -am -Dtest=LearningReviewIntegrationTest test` → 全绿。
 
-### TASK-008 | blocked | 复习会话页与结果页
+### TASK-008 | done | 复习会话页与结果页
 
 - 对应：`REQ-003`、`REQ-012`、`AC-003`、`AC-005`、`AC-009`
 - 依赖：TASK-007
@@ -158,7 +158,7 @@ approver_role: CTO
   3. 跑 `review.spec.ts`。
 - 验证：`cd frontend && pnpm --filter @paideia/app exec playwright test e2e/review.spec.ts` → 全绿。
 
-### TASK-009 | blocked | 复习题金标与回归
+### TASK-009 | done | 复习题金标与回归
 
 - 对应：`REQ-003`、`REQ-004`、`AC-004`
 - 依赖：TASK-006
@@ -171,7 +171,7 @@ approver_role: CTO
   3. 记录通过率到 `.agent/changes/WORK-034-*/testing/`。
 - 验证：`scripts/test-db.sh mvn -B -pl paideia-ai -am -Dtest=ReviewGoldenTest test` → 期望 0 重复、0 结构错误；真连结果单独记录。
 
-### TASK-010 | pending | 移动端与可访问性
+### TASK-010 | done | 移动端与可访问性
 
 - 对应：`REQ-012`、`AC-010`
 - 依赖：TASK-003、TASK-004（S1 部分可先做；S2 部分等 TASK-008）

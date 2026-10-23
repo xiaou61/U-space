@@ -47,6 +47,9 @@ public final class RunKind {
     /** 给题目生成概念候选（WORK-033）。按批一次调用。 */
     public static final String QUESTION_TAGGING = "question_tagging";
 
+    /** 复习会话出题（WORK-034）。一次会话一次调用。 */
+    public static final String REVIEW_GENERATE = "review_generate";
+
     private RunKind() {
     }
 }

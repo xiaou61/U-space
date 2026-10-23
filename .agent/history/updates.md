@@ -5577,3 +5577,29 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 未做：TASK-010 移动端/可访问性专项、TASK-011 验收报告；S2（TASK-005..009）未开始。
 - 本地提交：见下一笔
 - 远端推送：master（合并后）
+
+## 2026-10-23 10:55:00 +08:00 · WORK-034 S2：复习会话、出题、交卷与金标
+
+- 类型：implementation
+- 变更：
+  - 迁移 `V20261023120000__create_review_sessions.sql`：会话 + 答案 + 幂等闸 + 过期时间。
+  - `ReviewQuestionPort`（knowledge 定义、ai 实现）：一次调用给整场会话出 4 选 1，
+    校验选项数/下标/解析/题干长度/历史去重；失败返回空，走承载条目降级。
+  - `LearningReviewService.start/submit`：同日幂等返回同一份题；交卷服务端判定、
+    写 `learning_progress` 排期、调 033 的 `recordMastery` 更新掌握度；重复交卷 409。
+  - `GET/POST /learning/reviews/sessions*` 两个端点；注销级联加 `review_sessions`。
+  - 复习页加会话态与结果态；375px 不横向溢出；出题失败显示承载条目。
+  - 金标：20 条录制样本 + `ReviewGoldenTest`；掌握度契约写入
+    `.agent/notes/review-mastery-contract.md`。
+- 决策：
+  - 复习出题**不扣用户积分**（与速递同一条平台记账路径，只有 `ai_runs`）；若要按次收费，
+    接 WORK-009 的预留/结算即可，是一处调用点。
+  - 复习题没有条目身份，不写 `question_attempts`；掌握度通过 033 的 `recordMastery` 更新。
+- 验证：
+  - 后端全量 **283 运行 / 0 失败 / 4 跳过**；`ReviewScheduleTest` 3、`ReviewQuestionGeneratorTest` 4、
+    `ReviewGoldenTest` 20 条样本全过；`LearningReviewIntegrationTest` 5 条（含降级/409/404/过期）。
+  - e2e `review.spec.ts` **4 passed**；`home.spec.ts` 全绿。
+  - 顺手修正 `SandboxIntegrationTest` 一条过期断言（另一会话的隐藏数据集改动已提交，测试没跟上）。
+- 仍未做：真连上游出题的质量验证（金标只跑录制样本）；会话整轮完成的 e2e（缺确定性出题桩）。
+- 本地提交：见下一笔
+- 远端推送：master（合并后）

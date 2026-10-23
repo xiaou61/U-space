@@ -1,6 +1,6 @@
 import type { ApiClient } from '@paideia/core'
 
-import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport, ReviewDueList, TrackMap, TrackSummary } from './learning-types'
+import type { ConceptGraph, EntryProgressView, LearningLine, ProgressReport, ReviewDueList, ReviewSession, ReviewSubmitResult, TrackMap, TrackSummary } from './learning-types'
 
 /**
  * 学习线 / 学习记录的客户端（WORK-020）。
@@ -33,6 +33,23 @@ export function createLearningApi(client: ApiClient) {
 
     /** 到期复习列表（WORK-034 S1）。空列表是正常结果。 */
     reviews: () => client.requestEnvelope<ReviewDueList>('/api/v1/learning/reviews'),
+
+    /** 开始复习会话（WORK-034 S2）：同日重复调用返回同一份题。 */
+    startReview: () =>
+      client.requestEnvelope<ReviewSession>('/api/v1/learning/reviews/sessions', {
+        method: 'POST',
+      }),
+
+    /** 交卷：判定、排期与掌握度都由服务端完成。 */
+    submitReview: (sessionId: number, answers: { itemId: number; choice: number }[]) =>
+      client.requestEnvelope<ReviewSubmitResult>(
+        `/api/v1/learning/reviews/sessions/${sessionId}/answers`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers }),
+        },
+      ),
 
     /** 逐题作答（WORK-033）：只发选择，判定与掌握度更新都在服务端。 */
     attempt: (input: { entryId: number; blockKey: string; questionKey: string; choice: number }) =>

@@ -254,8 +254,9 @@ class SandboxIntegrationTest {
                 .contains("java", "python");
         assertThat(JsonPath.<Integer>read(json, "$.data.sqlDailyLimit")).isEqualTo(20);
         assertThat(JsonPath.<java.util.List<String>>read(json, "$.data.datasets"))
-                .as("数据集 key 由服务端持有，客户端只拿 key")
-                .contains("orders-public", "orders-hidden-a");
+                .as("只下发公开数据集；隐藏数据集由服务端持有（2026-10-23 起不再下发）")
+                .contains("orders-public")
+                .doesNotContain("orders-hidden-a");
     }
 
     private String token() {

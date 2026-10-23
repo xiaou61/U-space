@@ -86,6 +86,7 @@ class AccountDeletionCascadeIntegrationTest {
             // 逐题作答与掌握状态（WORK-033）：同样只外键到条目/概念
             {"question_attempts", "user_id"},
             {"concept_mastery_state", "user_id"},
+            {"review_sessions", "user_id"},
             {"refresh_tokens", "user_id"},
     };
 
@@ -331,6 +332,11 @@ class AccountDeletionCascadeIntegrationTest {
             var conceptIds = jdbcTemplate.queryForList(
                     "SELECT id FROM knowledge_concepts LIMIT 1", Long.class);
             Long conceptId = conceptIds.isEmpty() ? null : conceptIds.get(0);
+            jdbcTemplate.update("""
+                    INSERT INTO review_sessions
+                        (user_id, concept_ids_json, items_json, created_at, expires_at)
+                    VALUES (?, '[]', '[]', UTC_TIMESTAMP(3), DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 DAY))
+                    """, owner);
             if (conceptId != null) {
                 jdbcTemplate.update("""
                         INSERT INTO concept_mastery_state

@@ -286,6 +286,10 @@ class ApiWalkthroughTest {
         call("重置本站", "DELETE", "/api/v1/learning/entries/" + entryId, bearer, null);
         // WORK-034 S1：到期复习列表（没有到期项时返回空列表，是正常结果）
         call("到期复习列表", "GET", "/api/v1/learning/reviews", bearer, null);
+        call("开始复习会话", "POST", "/api/v1/learning/reviews/sessions", bearer, null);
+        call("交卷（会话不存在 → 404）", "POST",
+                "/api/v1/learning/reviews/sessions/999999999/answers", bearer,
+                json(Map.of("answers", List.of(Map.of("itemId", 0, "choice", 1)))), 404);
 
         // ---- 题目知识点关联与掌握诊断（WORK-033）----
         // 作答成功路径由 QuestionAttemptIntegrationTest 覆盖；这里只要求每个端点被真实打到。
