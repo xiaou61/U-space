@@ -5895,3 +5895,44 @@ systemctl is-active 与 journalctl 尾部，不要只看超时。
 - 验证：回读 frontmatter：approved_by=xiaou61，4 个工件同批签署
 - 本地提交：待用户授权/未提交
 - 远端推送：未执行
+
+## 2026-10-23 09:55:00 +08:00 · 修隐藏数据集泄露 + 建项 WORK-035
+
+- 类型：fix + docs
+- 变更：
+  - **修 bug**：`/api/v1/sandbox/status` 曾把全部数据集 key 下发给客户端（含 `orders-hidden-a`），
+    自由练习页把它渲染进下拉框，任何登录用户选中跑一句 `SELECT *` 就能看到隐藏集全部数据——
+    隐藏集存在的唯一目的（"没法把公开集上的答案硬编码进去"）当场失效，且界面无异常。
+  - `SqlDatasets` 拆分 `keys()`（运行与校验用，全集）与 `publicKeys()`（下发用，排除隐藏集）；
+    `SandboxController` 只报 `publicKeys()`。运行端点仍认全部 key（题面本来就明文写着它）。
+  - 新增 `SqlDatasetsTest` 三条：下发清单不含隐藏集、隐藏集仍可运行、公开清单是全集的真子集。
+  - 新建 `WORK-035 SQL 工作台、数据集与 AI 联动` 四件工件（均 draft）。
+- 决策（用户 2026-10-23 当场裁的七条）：
+  - D-01 配额改成「每人并发 1 + 日上限 500 + 不显眼提示」，不设真无限。
+    理由是全局并发闸只有 2 个槽且所有语言共用——开放注册下一个人能长期占死，连带堵住 Java/Python。
+  - D-02 社区数据集**这一期就做**（不推二期）。
+  - D-03 闯关留在课程正文不动，练习页升级成工作台，且可载入某一道关卡来试。
+  - D-04 结果图表这一期要做（唯一需要新增前端依赖的地方）。
+  - D-07 AI 现场出题 + AI 生成数据集，两者都要。
+- 实现选择（写进 requirements 的 I-01..I-12）：
+  - 编辑器选 CodeMirror 6（`@codemirror/lang-sql` 按 schema 补全），只在 SQL 页懒加载，门槛 400 kB。
+  - 数据集元信息进表、内容进对象存储（复用 `FileStorage` 端口），不塞 blob、不加 classpath。
+  - **`SqlDatasets.sql(key)` 直接删除改为 `sql(userId, key)`**——现有签名没有用户，
+    任何人猜到 key 就能跑别人的私人数据集。这是本项唯一的真安全边界，AC-007 反向测试是硬门槛。
+  - 执行计划只做 `EXPLAIN FORMAT=TREE`（不做逐行单步：MySQL 算子级单步要 optimizer trace，
+    重且依赖版本）；与用户 SQL 在同一次运行里跑，不另起容器。
+  - AI 出题的期望值在沙箱真跑参考 SQL 取得，不靠模型自觉；AI **不获得执行 SQL 的工具**，
+    只把 SQL 填回编辑器（与 WORK-006「自主只建议不动作」同一口径）。
+- 依据：`frontend/apps/app/src/pages/SqlPracticePage.tsx`、`backend/paideia-sandbox/.../SqlDatasets.java`、
+  `RunSlot.java`（`Semaphore(2)` 全语言共用）、`SandboxQuotaService.java`、
+  `frontend/packages/assistant/src/context.tsx`（只有 `KnowledgeEntryPage` 调 `setEntry`）、
+  `AgentToolBridge.java`（`ToolQuery.internal` 固定 readOnly）、`content/courses/mysql/07-索引与约束.md`
+  （整关讲 EXPLAIN 但只有静态文本）。
+- 验证：
+  - `scripts/test-db.sh mvn -B -pl paideia-sandbox test` → **20 运行 / 0 失败 / 0 跳过**（含新增 3 条）。
+  - `project-lifecycle.py validate`：WORK-035 只有 1 条预期门槛错误「需求尚未形成，但已经存在下游工件」
+    （四件同批起草、requirements 未签署，与 WORK-034 当初同一情况）；其余为历史工作项既有警告。
+- 已知未做：CodeMirror 6 在 React 19 + Vite 8 下的实测体积、`EXPLAIN FORMAT=TREE` 输出过
+  `SqlResultCodec` 是否变形——两条都列为 S1 的前置任务（T-01 / T-05），不通过要改方案。
+- 本地提交：见下一笔
+- 远端推送：未执行
