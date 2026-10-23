@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 class ReviewQuestionGeneratorTest {
 
-    private final ReviewQuestionGenerator generator = new ReviewQuestionGenerator(null, null, null);
+    private final ReviewQuestionGenerator generator = new ReviewQuestionGenerator(null, null, null, null);
 
     private static final List<Concept> CONCEPTS = List.of(
             new Concept(1, "索引", "B+ 树与最左前缀", "MySQL 索引"),

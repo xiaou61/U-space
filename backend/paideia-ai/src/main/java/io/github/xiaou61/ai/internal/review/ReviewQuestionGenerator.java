@@ -14,6 +14,7 @@ import io.github.xiaou61.ai.RunKind;
 import io.github.xiaou61.ai.RunOutcome;
 import io.github.xiaou61.ai.RunRecorder;
 import io.github.xiaou61.ai.RunSpec;
+import io.github.xiaou61.ai.internal.billing.CreditService;
 import io.github.xiaou61.ai.internal.credential.CredentialService;
 import io.github.xiaou61.ai.internal.provider.GuardedHttpTransport;
 import io.github.xiaou61.knowledge.ReviewQuestionPort;
@@ -53,12 +54,14 @@ class ReviewQuestionGenerator implements ReviewQuestionPort {
     private final CredentialService credentials;
     private final GuardedHttpTransport transport;
     private final RunRecorder recorder;
+    private final CreditService credits;
 
     ReviewQuestionGenerator(CredentialService credentials, GuardedHttpTransport transport,
-                            RunRecorder recorder) {
+                            RunRecorder recorder, CreditService credits) {
         this.credentials = credentials;
         this.transport = transport;
         this.recorder = recorder;
+        this.credits = credits;
     }
 
     @Override
@@ -73,6 +76,8 @@ class ReviewQuestionGenerator implements ReviewQuestionPort {
             return Optional.empty();
         }
         ModelAccess model = access.get();
+        // 预留先于上游调用：余额不足直接 402，一个请求都不发（WORK-009 的硬规则）
+        long reserved = credits.reserve(userId, credits.estimate());
         var run = recorder.begin(RunSpec.of(RunKind.REVIEW_GENERATE, 0L)
                 .withModel(model.model())
                 .withPromptVersion(VERSION));
@@ -85,8 +90,14 @@ class ReviewQuestionGenerator implements ReviewQuestionPort {
             run.finish(questions.isEmpty() ? RunOutcome.FAILED : RunOutcome.OK, null);
             return questions.isEmpty() ? Optional.empty() : Optional.of(new Result(questions, model.model(),
                     call.inputTokens(), call.outputTokens()));
+        } catch (io.github.xiaou61.platform.BizException biz) {
+            // 积分不足等业务错误原样抛给调用方，由接口返回 402
+            credits.refund(userId, reserved, null, "复习出题未发起");
+            run.finish(RunOutcome.FAILED, "insufficient_or_rejected");
+            throw biz;
         } catch (RuntimeException exception) {
             log.warn("复习出题失败：{}", exception.getMessage());
+            credits.refund(userId, reserved, null, "复习出题失败");
             run.finish(RunOutcome.FAILED, null);
             return Optional.empty();
         } finally {
@@ -95,6 +106,14 @@ class ReviewQuestionGenerator implements ReviewQuestionPort {
     }
 
     private record Call(String text, Integer inputTokens, Integer outputTokens) {
+    }
+
+    private void settleOrRefund(long userId, long reserved, ModelAccess model, Call call) {
+        if (call.inputTokens() == null) {
+            credits.refund(userId, reserved, null, "复习出题未返回用量");
+        } else {
+            credits.settleReview(userId, reserved, model.model(), call.inputTokens(), call.outputTokens());
+        }
     }
 
     private Call call(ModelAccess access, List<Concept> concepts, Set<String> previousStems) {

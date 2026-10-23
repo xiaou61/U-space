@@ -30,7 +30,7 @@ class ReviewGoldenTest {
         try (InputStream in = getClass().getResourceAsStream("/review-golden/recorded.json")) {
             raw = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         }
-        ReviewQuestionGenerator generator = new ReviewQuestionGenerator(null, null, null);
+        ReviewQuestionGenerator generator = new ReviewQuestionGenerator(null, null, null, null);
 
         var questions = generator.parse(new ObjectMapper().readTree(raw).toString(), CONCEPTS, Set.of());
 

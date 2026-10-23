@@ -53,6 +53,9 @@ class CreditLedger {
      */
     static final String KIND_CAMP = "CAMP";
 
+    /** 复习会话出题（WORK-034）：一次会话一次调用，与训练营分开记，便于看单次复习成本。 */
+    static final String KIND_REVIEW = "REVIEW";
+
     private Long id;
     private Long userId;
     private long delta;
