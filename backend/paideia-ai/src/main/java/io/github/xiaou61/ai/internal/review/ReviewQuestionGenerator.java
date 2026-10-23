@@ -87,6 +87,13 @@ class ReviewQuestionGenerator implements ReviewQuestionPort {
             if (call.inputTokens() != null) {
                 run.tokens(call.inputTokens(), call.outputTokens(), 0);
             }
+            if (questions.isEmpty()) {
+                // 用了 token 就按实际结算；一个 token 都没产生才全退
+                settleOrRefund(userId, reserved, model, call);
+            } else {
+                credits.settleReview(userId, reserved, model.model(),
+                        call.inputTokens(), call.outputTokens());
+            }
             run.finish(questions.isEmpty() ? RunOutcome.FAILED : RunOutcome.OK, null);
             return questions.isEmpty() ? Optional.empty() : Optional.of(new Result(questions, model.model(),
                     call.inputTokens(), call.outputTokens()));

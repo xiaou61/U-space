@@ -1,1 +1,0 @@
-{"code":0,"message":"ok","data":{"results":[{"itemId":0,"conceptId":21,"correct":true,"explanation":"变量是内存中值的一个名字，而类型规定了该值的合法运算及存储大小。"}],"schedule":[{"entryId":24,"stage":1,"reviewDueAt":"2026-10-26T03:34:07.997951961Z"}]},"traceId":"03843b7d11ca4b729aa2eee35689be8e"}
